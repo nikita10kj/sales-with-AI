@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - Email Marketing Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <link href="{% static 'users/css/common.css' %}" rel="stylesheet">
+
+    <link href="{% static 'users/css/analytics-styles.css' %}" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-gradient-dark">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-envelope-open-text me-2"></i>
+                Email Marketing Pro
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'home' %}">Generator</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#templates">Templates</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'analytics' %}">Analytics</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle"></i> Account
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 sidebar">
+                <div class="sidebar-content">
+                    <h5 class="sidebar-title">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Analytics Dashboard
+                    </h5>
+                    <div class="analytics-nav">
+                        <div class="nav-item active" data-section="overview">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Overview</span>
+                        </div>
+                        <div class="nav-item" data-section="campaigns">
+                            <i class="fas fa-envelope-open"></i>
+                            <span>Campaigns</span>
+                        </div>
+                        <div class="nav-item" data-section="performance">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Performance</span>
+                        </div>
+                        <div class="nav-item" data-section="audience">
+                            <i class="fas fa-users"></i>
+                            <span>Audience</span>
+                        </div>
+                        <div class="nav-item" data-section="reports">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Reports</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 main-content-analytics">
+                <!-- Overview Section -->
+                <div class="analytics-section active" id="overview">
+                    <div class="section-header">
+                        <h2><i class="fas fa-tachometer-alt me-2"></i>Analytics Overview</h2>
+                        <div class="date-filter">
+                            <select class="form-select" id="dateRange">
+                                <option value="7">Last 7 days</option>
+                                <option value="30" selected>Last 30 days</option>
+                                <option value="90">Last 90 days</option>
+                                <option value="365">Last year</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Key Metrics Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-icon bg-success">
+                                    <i class="fas fa-paper-plane"></i>
+                                </div>
+                                <div class="metric-content">
+                                    <h3 id="totalSent">1,247</h3>
+                                    <p>Emails Sent</p>
+                                    <span class="metric-change positive">+12.5%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-icon bg-info">
+                                    <i class="fas fa-envelope-open"></i>
+                                </div>
+                                <div class="metric-content">
+                                    <h3 id="openRate">24.8%</h3>
+                                    <p>Open Rate</p>
+                                    <span class="metric-change positive">+3.2%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-icon bg-warning">
+                                    <i class="fas fa-mouse-pointer"></i>
+                                </div>
+                                <div class="metric-content">
+                                    <h3 id="clickRate">4.7%</h3>
+                                    <p>Click Rate</p>
+                                    <span class="metric-change negative">-1.1%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="metric-icon bg-danger">
+                                    <i class="fas fa-reply"></i>
+                                </div>
+                                <div class="metric-content">
+                                    <h3 id="responseRate">8.3%</h3>
+                                    <p>Response Rate</p>
+                                    <span class="metric-change positive">+2.1%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <h5><i class="fas fa-chart-line me-2"></i>Email Performance Trends</h5>
+                                    <div class="chart-controls">
+                                        <button class="btn btn-sm btn-outline-secondary active" data-metric="sent">Sent</button>
+                                        <button class="btn btn-sm btn-outline-secondary" data-metric="opened">Opened</button>
+                                        <button class="btn btn-sm btn-outline-secondary" data-metric="clicked">Clicked</button>
+                                    </div>
+                                </div>
+                                <canvas id="performanceChart" height="300"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <h5><i class="fas fa-chart-pie me-2"></i>Campaign Types</h5>
+                                </div>
+                                <canvas id="campaignTypesChart" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="activity-card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-clock me-2"></i>Recent Activity</h5>
+                                </div>
+                                <div class="activity-list">
+                                    <div class="activity-item">
+                                        <div class="activity-icon bg-success">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </div>
+                                        <div class="activity-content">
+                                            <p><strong>Campaign "Tech Outreach Q4"</strong> sent to 45 recipients</p>
+                                            <small class="text-muted">2 hours ago</small>
+                                        </div>
+                                    </div>
+                                    <div class="activity-item">
+                                        <div class="activity-icon bg-info">
+                                            <i class="fas fa-envelope-open"></i>
+                                        </div>
+                                        <div class="activity-content">
+                                            <p><strong>12 emails opened</strong> from "Partnership Proposal" campaign</p>
+                                            <small class="text-muted">4 hours ago</small>
+                                        </div>
+                                    </div>
+                                    <div class="activity-item">
+                                        <div class="activity-icon bg-warning">
+                                            <i class="fas fa-reply"></i>
+                                        </div>
+                                        <div class="activity-content">
+                                            <p><strong>New response</strong> from john@techcorp.com</p>
+                                            <small class="text-muted">6 hours ago</small>
+                                        </div>
+                                    </div>
+                                    <div class="activity-item">
+                                        <div class="activity-icon bg-primary">
+                                            <i class="fas fa-plus"></i>
+                                        </div>
+                                        <div class="activity-content">
+                                            <p><strong>New campaign created:</strong> "Holiday Greetings 2024"</p>
+                                            <small class="text-muted">1 day ago</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="top-performers-card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-trophy me-2"></i>Top Performing Campaigns</h5>
+                                </div>
+                                <div class="performers-list">
+                                    <div class="performer-item">
+                                        <div class="performer-rank">1</div>
+                                        <div class="performer-content">
+                                            <h6>AIDA Framework - Tech Outreach</h6>
+                                            <div class="performer-stats">
+                                                <span class="stat">Open: 32.1%</span>
+                                                <span class="stat">Click: 8.7%</span>
+                                                <span class="stat">Response: 12.3%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="performer-item">
+                                        <div class="performer-rank">2</div>
+                                        <div class="performer-content">
+                                            <h6>PAS Framework - Healthcare</h6>
+                                            <div class="performer-stats">
+                                                <span class="stat">Open: 28.9%</span>
+                                                <span class="stat">Click: 6.4%</span>
+                                                <span class="stat">Response: 9.8%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="performer-item">
+                                        <div class="performer-rank">3</div>
+                                        <div class="performer-content">
+                                            <h6>Before-After-Bridge - Finance</h6>
+                                            <div class="performer-stats">
+                                                <span class="stat">Open: 26.3%</span>
+                                                <span class="stat">Click: 5.9%</span>
+                                                <span class="stat">Response: 8.1%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Campaigns Section -->
+                <div class="analytics-section" id="campaigns">
+                    <div class="section-header">
+                        <h2><i class="fas fa-envelope-open me-2"></i>Campaign Analytics</h2>
+                        <button class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>New Campaign
+                        </button>
+                    </div>
+
+                    <div class="campaigns-table-card">
+                        <div class="table-controls">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" class="form-control" placeholder="Search campaigns...">
+                            </div>
+                            <div class="filter-controls">
+                                <select class="form-select">
+                                    <option>All Campaigns</option>
+                                    <option>Active</option>
+                                    <option>Completed</option>
+                                    <option>Draft</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table campaigns-table">
+                                <thead>
+                                    <tr>
+                                        <th>Campaign Name</th>
+                                        <th>Framework</th>
+                                        <th>Sent</th>
+                                        <th>Open Rate</th>
+                                        <th>Click Rate</th>
+                                        <th>Response Rate</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="campaignsTableBody">
+                                    <!-- Campaign rows will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Section -->
+                <div class="analytics-section" id="performance">
+                    <div class="section-header">
+                        <h2><i class="fas fa-chart-line me-2"></i>Performance Analysis</h2>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <h5><i class="fas fa-chart-bar me-2"></i>Framework Performance</h5>
+                                </div>
+                                <canvas id="frameworkChart" height="300"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <h5><i class="fas fa-clock me-2"></i>Best Send Times</h5>
+                                </div>
+                                <canvas id="sendTimesChart" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="heatmap-card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-calendar-alt me-2"></i>Email Activity Heatmap</h5>
+                                </div>
+                                <div class="heatmap-container">
+                                    <div class="heatmap-legend">
+                                        <span>Less</span>
+                                        <div class="legend-scale">
+                                            <div class="scale-item" data-level="0"></div>
+                                            <div class="scale-item" data-level="1"></div>
+                                            <div class="scale-item" data-level="2"></div>
+                                            <div class="scale-item" data-level="3"></div>
+                                            <div class="scale-item" data-level="4"></div>
+                                        </div>
+                                        <span>More</span>
+                                    </div>
+                                    <div id="activityHeatmap"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Audience Section -->
+                <div class="analytics-section" id="audience">
+                    <div class="section-header">
+                        <h2><i class="fas fa-users me-2"></i>Audience Insights</h2>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="audience-metric-card">
+                                <div class="metric-header">
+                                    <h5>Total Contacts</h5>
+                                    <i class="fas fa-address-book"></i>
+                                </div>
+                                <div class="metric-value">2,847</div>
+                                <div class="metric-subtitle">+127 this month</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="audience-metric-card">
+                                <div class="metric-header">
+                                    <h5>Active Subscribers</h5>
+                                    <i class="fas fa-user-check"></i>
+                                </div>
+                                <div class="metric-value">2,341</div>
+                                <div class="metric-subtitle">82.2% of total</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="audience-metric-card">
+                                <div class="metric-header">
+                                    <h5>Avg. Engagement</h5>
+                                    <i class="fas fa-heart"></i>
+                                </div>
+                                <div class="metric-value">67.3%</div>
+                                <div class="metric-subtitle">+5.1% vs last month</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <h5><i class="fas fa-industry me-2"></i>Industry Breakdown</h5>
+                                </div>
+                                <canvas id="industryChart" height="300"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <h5><i class="fas fa-building me-2"></i>Company Size Distribution</h5>
+                                </div>
+                                <canvas id="companySizeChart" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports Section -->
+                <div class="analytics-section" id="reports">
+                    <div class="section-header">
+                        <h2><i class="fas fa-file-alt me-2"></i>Reports & Exports</h2>
+                        <button class="btn btn-success">
+                            <i class="fas fa-download me-2"></i>Export All Data
+                        </button>
+                    </div>
+
+                    <div class="reports-grid">
+                        <div class="report-card">
+                            <div class="report-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="report-content">
+                                <h5>Performance Report</h5>
+                                <p>Comprehensive analysis of all campaign metrics</p>
+                                <button class="btn btn-outline-primary">Generate Report</button>
+                            </div>
+                        </div>
+                        <div class="report-card">
+                            <div class="report-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="report-content">
+                                <h5>Audience Report</h5>
+                                <p>Detailed breakdown of your contact database</p>
+                                <button class="btn btn-outline-primary">Generate Report</button>
+                            </div>
+                        </div>
+                        <div class="report-card">
+                            <div class="report-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="report-content">
+                                <h5>Campaign Summary</h5>
+                                <p>Individual campaign performance analysis</p>
+                                <button class="btn btn-outline-primary">Generate Report</button>
+                            </div>
+                        </div>
+                        <div class="report-card">
+                            <div class="report-icon">
+                                <i class="fas fa-calendar"></i>
+                            </div>
+                            <div class="report-content">
+                                <h5>Monthly Report</h5>
+                                <p>Month-over-month performance comparison</p>
+                                <button class="btn btn-outline-primary">Generate Report</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="export-options">
+                        <h5>Export Options</h5>
+                        <div class="export-formats">
+                            <button class="btn btn-outline-secondary">
+                                <i class="fas fa-file-csv me-2"></i>CSV
+                            </button>
+                            <button class="btn btn-outline-secondary">
+                                <i class="fas fa-file-excel me-2"></i>Excel
+                            </button>
+                            <button class="btn btn-outline-secondary">
+                                <i class="fas fa-file-pdf me-2"></i>PDF
+                            </button>
+                            <button class="btn btn-outline-secondary">
+                                <i class="fas fa-file-code me-2"></i>JSON
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{% static 'users/js/analytics-script.js' %}"></script>
+</body>
+</html>

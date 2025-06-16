@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Home</title>
+</head>
+<body>
+    {% if user.is_authenticated %}
+        <h1>Welcome, {{ user.full_name }}!</h1>
+        <form action="{% url 'logout' %}" method="post">
+        {% csrf_token %}
+            <button type="submit" class="dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-danger d-flex align-items-center gap-3">
+            <iconify-icon icon="lucide:power" class="icon text-xl"></iconify-icon>  Log Out</button>
+        </form>
+    {% else %}
+        <h1>Welcome Guest!</h1>
+        <a href="{% url 'login' %}">Login</a><br>
+    {% endif %}
+</body>
+</html>

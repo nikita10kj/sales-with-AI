@@ -1,0 +1,426 @@
+:root {
+  --primary-color: #6f42c1;
+  --secondary-color: #6c757d;
+  --success-color: #198754;
+  --danger-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #0dcaf0;
+  --light-color: #f8f9fa;
+  --dark-color: #212529;
+  --gradient-primary: linear-gradient(135deg, #6f42c1 0%, #8b5cf6 100%);
+  --gradient-dark: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+}
+
+body {
+  background-color: #f5f7fa;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Navbar Styles - Updated to dark gradient */
+.bg-gradient-dark {
+  background: var(--gradient-dark) !important;
+}
+
+.navbar-brand {
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.navbar-nav .nav-link.active {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+}
+
+.navbar-nav .nav-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+}
+
+/* Sidebar Styles */
+.sidebar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: calc(100vh - 56px);
+  padding: 0;
+  position: sticky;
+  top: 56px;
+}
+
+.sidebar-content {
+  padding: 2rem 1rem;
+}
+
+.sidebar-title {
+  color: white;
+  font-weight: 600;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+
+/* Common Step/Nav Item Styles */
+.step,
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.step:hover,
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.step.active,
+.nav-item.active {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.step.completed {
+  background: rgba(25, 135, 84, 0.3);
+  color: white;
+}
+
+.step i,
+.nav-item i {
+  margin-right: 0.75rem;
+  font-size: 1.1rem;
+  width: 20px;
+}
+
+.step span,
+.nav-item span {
+  font-weight: 500;
+}
+
+/* Main Content */
+.main-content,
+.main-content-analytics {
+  padding: 2rem;
+}
+
+.step-content,
+.analytics-section {
+  display: none;
+  animation: fadeIn 0.5s ease-in;
+}
+
+.step-content.active,
+.analytics-section.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Card Styles */
+.card,
+.chart-card,
+.activity-card,
+.top-performers-card,
+.campaigns-table-card {
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2rem;
+  background: white;
+  overflow: hidden;
+}
+
+.card-header,
+.chart-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: var(--dark-color);
+  border-radius: 15px 15px 0 0 !important;
+  padding: 1.5rem;
+  border: none;
+}
+
+.card-header h4,
+.card-header h5,
+.chart-header h5 {
+  margin: 0;
+  font-weight: 600;
+}
+
+.card-body {
+  padding: 2rem;
+}
+
+/* Form Styles */
+.form-label {
+  font-weight: 600;
+  color: var(--dark-color);
+  margin-bottom: 0.5rem;
+}
+
+.form-control,
+.form-select {
+  border-radius: 10px;
+  border: 2px solid #e9ecef;
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.15);
+}
+
+.form-control.is-invalid {
+  border-color: var(--danger-color);
+}
+
+.form-control.is-valid {
+  border-color: var(--success-color);
+}
+
+/* Button Styles */
+.btn {
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+  background: #5a2d91;
+  border-color: #5a2d91;
+}
+
+.btn-gradient {
+  background: var(--gradient-primary);
+  border: none;
+  color: white;
+}
+
+.btn-gradient:hover {
+  background: linear-gradient(135deg, #5a2d91 0%, #7c3aed 100%);
+  color: white;
+}
+
+/* Framework Options */
+.framework-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.framework-card {
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  padding: 1rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.framework-card:hover {
+  border-color: var(--primary-color);
+  background-color: rgba(111, 66, 193, 0.05);
+}
+
+.framework-card input[type="radio"]:checked + label {
+  color: var(--primary-color);
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.loading-content {
+  text-align: center;
+  color: white;
+}
+
+.loading-content .spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Step Navigation */
+.step-navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #dee2e6;
+}
+
+/* Section Header */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.section-header h2 {
+  margin: 0;
+  color: var(--dark-color);
+  font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .sidebar,
+  .sidebar-analytics {
+    position: relative;
+    min-height: auto;
+  }
+
+  .progress-steps,
+  .analytics-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+  }
+
+  .step,
+  .nav-item {
+    min-width: 150px;
+    flex-shrink: 0;
+  }
+
+  .main-content,
+  .main-content-analytics {
+    padding: 1rem;
+  }
+
+  .framework-options {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+}
+
+/* Utility Classes */
+.text-gradient {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animation Classes */
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+.slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Success States */
+.success-state {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.success-state i {
+  font-size: 4rem;
+  color: var(--success-color);
+  margin-bottom: 1rem;
+}
+
+.success-state h3 {
+  color: var(--success-color);
+  margin-bottom: 1rem;
+}
+
+/* Email Template Styles */
+.email-template {
+  background: white;
+  border-radius: 10px;
+  padding: 2rem;
+  margin: 1rem 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.email-template .subject-line {
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #f8f9fa;
+}
+
+.email-template .email-body {
+  line-height: 1.8;
+  color: #333;
+}
+
+.email-template .signature {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+  font-style: italic;
+  color: #666;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #5a2d91;
+}

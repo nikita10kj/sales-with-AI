@@ -1,0 +1,78 @@
+{% extends "users/theme.html" %}
+{% load static %}
+
+{% block content %}
+<section class="auth bg-base d-flex flex-wrap">
+    <div class="auth-left d-lg-block d-none">
+        <div class="d-flex align-items-center flex-column h-100 justify-content-center">
+            <div class="position-relative ">
+                <img src="{% static 'users/images/auth-img.png' %}" alt="" class="img-fluid">
+                <!-- <h6 class="position-absolute px-3 py-2"  style="top: 20px;">
+                    Get a Valuation Prepared By a Valuation Expert Within 3 Business Days
+                </h6> -->
+
+            </div>
+        </div>
+    </div>
+    <div class="auth-right py-32 px-24 d-flex flex-column justify-content-center">
+        <div class="max-w-464-px mx-auto w-100">
+            <div>
+                    <img src="{% static 'users/images/allanytics_cake.png' %}" alt="">
+<!--                    <img src="{% static 'users/images/Allanytics _Logo.png' %}" alt="">-->
+<!--                    <div class="d-flex align-items-end justify-content-end space-x-2">-->
+<!--                        <span class="text-center me-1 mb-0" style="line-height: 1;">Partnered with  </span>-->
+<!--                        <img src="{% static 'users/images/cake_logo.png' %}" alt="" class="w-25 ms-1" >-->
+<!--                    </div>-->
+                <h4 class="mb-12">Sign Up</h4>
+                <p class="mb-32 text-secondary-light text-lg">Welcome!</p>
+            </div>
+            <form autocomplete="off" id="formAuthentication" enctype="multipart/form-data"
+                   class="mb-4 needs-validation {% if form.email.errors %}was-validated{% endif %}"
+                   method="post">
+                {% csrf_token %}
+                <div class="icon-field has-validation mb-16">
+                    <span class="icon">
+                        <iconify-icon icon="mage:email"></iconify-icon>
+                    </span>
+                    <input name="email" id="id_email" type="email"
+                           class="form-control bg-neutral-50 radius-12"
+                           placeholder="Email"
+                           required>
+                    {% if form.errors %}
+                      {% for error in form.email.errors %}
+                        <div class="invalid-feedback">
+                            {{ error }}
+                        </div>
+                      {% endfor %}
+                    {% endif %}
+
+                </div>
+
+                <div class="">
+                    <div class="d-flex justify-content-between gap-2">
+                        <div class="form-check style-check d-flex align-items-start">
+                            <input class="form-check-input border border-neutral-300 mt-4" type="checkbox" value="" id="condition" required>
+                            <label class="form-check-label text-sm" for="condition">
+                                By creating an account you agree to the
+                                <a href="#" class="text-primary-600 fw-semibold no-loader">Terms & Conditions</a> and our
+                                <a href="#" class="text-primary-600 fw-semibold no-loader">Privacy Policy</a>
+                            </label>
+                        </div>
+
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary text-sm btn-sm px-12 py-16 w-100 radius-12 mt-32"> Sign Up</button>
+
+                <div class="mt-32 text-center text-sm">
+                    <p class="mb-0">Already have an account? <a href="{% url 'login'%}" class="text-primary-600 fw-semibold">Sign In</a></p>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</section>
+
+
+{% endblock %}
+
