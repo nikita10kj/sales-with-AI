@@ -31,7 +31,7 @@ def csrf_failure(request, reason=""):
     return redirect('login')
 
 class HomeView(LoginRequiredMixin, TemplateView):
-    template_name = 'users/base.html'
+    template_name = 'users/dashboard.html'
     title = "Home"
 
     def get_context_data(self, **kwargs):
@@ -40,15 +40,15 @@ class HomeView(LoginRequiredMixin, TemplateView):
 
         return context
 
-class AnalyticsView(LoginRequiredMixin, TemplateView):
-    template_name = 'users/analytics.html'
-    title = "Analytics"
+# class AnalyticsView(LoginRequiredMixin, TemplateView):
+#     template_name = 'users/dashboard.html'
+#     title = "Analytics"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["title"] = self.title
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         context["title"] = self.title
 
-        return context
+#         return context
 
 
 
