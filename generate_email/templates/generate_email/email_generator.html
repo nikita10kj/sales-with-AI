@@ -9,23 +9,17 @@
                         Email Generator
                     </h5>
                     <div class="progress-steps">
-                        <div class="step active" data-step="1">
-                            <i class="fas fa-info-circle"></i>
-                            <span>Basic Info</span>
-                        </div>
-                        <div class="step" data-step="2">
-                            <i class="fas fa-building"></i>
-                            <span>Company Details</span>
-                        </div>
-                        <div class="step" data-step="3">
+
+
+                        <div class="step" data-step="1">
                             <i class="fas fa-bullseye"></i>
                             <span>Target & Framework</span>
                         </div>
-                        <div class="step" data-step="4">
+                        <div class="step" data-step="2">
                             <i class="fas fa-envelope"></i>
                             <span>Generate Emails</span>
                         </div>
-                        <div class="step" data-step="5">
+                        <div class="step" data-step="3">
                             <i class="fas fa-paper-plane"></i>
                             <span>Send Campaign</span>
                         </div>
@@ -35,121 +29,13 @@
 
             <!-- Main Content -->
             <div class="col-md-9 main-content">
-                <!-- Step 1: Basic Information -->
-                <div class="step-content active" id="step-1">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4><i class="fas fa-info-circle me-2"></i>Basic Information</h4>
-                            <p class="text-muted mb-0">Enter your company's basic details</p>
-                        </div>
-                        <div class="card-body">
-                            <form id="basicInfoForm">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="companyName" class="form-label">Your Company Name *</label>
-                                            <input type="text" class="form-control" id="companyName" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="senderName" class="form-label">Sender Name *</label>
-                                            <input type="text" class="form-control" id="senderName" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="senderEmail" class="form-label">Sender Email *</label>
-                                            <input type="email" class="form-control" id="senderEmail" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="companyWebsite" class="form-label">Company Website *</label>
-                                            <input type="url" class="form-control" id="companyWebsite" placeholder="https://example.com" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="companyLinkedin" class="form-label">Company LinkedIn URL</label>
-                                    <input type="url" class="form-control" id="companyLinkedin" placeholder="https://linkedin.com/company/example">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="productFiles" class="form-label">Product/Service Files</label>
-                                    <input type="file" class="form-control" id="productFiles" multiple accept=".pdf,.doc,.docx,.txt,.jpg,.png">
-                                    <div class="form-text">Upload brochures, product sheets, or any relevant documents</div>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 2: Company Details -->
-                <div class="step-content" id="step-2">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4><i class="fas fa-building me-2"></i>Company Details</h4>
-                            <p class="text-muted mb-0">Tell us more about your business</p>
-                        </div>
-                        <div class="card-body">
-                            <form id="companyDetailsForm">
-                                <div class="mb-3">
-                                    <label for="companyDescription" class="form-label">Company Description *</label>
-                                    <textarea class="form-control" id="companyDescription" rows="4" placeholder="Describe what your company does, your main products/services..." required></textarea>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="industry" class="form-label">Industry *</label>
-                                            <select class="form-select" id="industry" required>
-                                                <option value="">Select Industry</option>
-                                                <option value="technology">Technology</option>
-                                                <option value="healthcare">Healthcare</option>
-                                                <option value="finance">Finance</option>
-                                                <option value="education">Education</option>
-                                                <option value="retail">Retail</option>
-                                                <option value="manufacturing">Manufacturing</option>
-                                                <option value="consulting">Consulting</option>
-                                                <option value="marketing">Marketing</option>
-                                                <option value="other">Other</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="companySize" class="form-label">Company Size</label>
-                                            <select class="form-select" id="companySize">
-                                                <option value="">Select Size</option>
-                                                <option value="1-10">1-10 employees</option>
-                                                <option value="11-50">11-50 employees</option>
-                                                <option value="51-200">51-200 employees</option>
-                                                <option value="201-1000">201-1000 employees</option>
-                                                <option value="1000+">1000+ employees</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="valueProposition" class="form-label">Unique Value Proposition *</label>
-                                    <textarea class="form-control" id="valueProposition" rows="3" placeholder="What makes your company unique? What problems do you solve?" required></textarea>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="keyProducts" class="form-label">Key Products/Services</label>
-                                    <input type="text" class="form-control" id="keyProducts" placeholder="Separate multiple items with commas">
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Step 3: Target & Framework -->
-                <div class="step-content" id="step-3">
+                <div class="step-content" id="step-1">
                     <div class="card">
                         <div class="card-header">
                             <h4><i class="fas fa-bullseye me-2"></i>Target & Framework</h4>
-                            <p class="text-muted mb-0">Define your target and email strategy</p>
+                            <p class="text-light mb-0">Define your target and email strategy</p>
                         </div>
                         <div class="card-body">
                             <form id="targetFrameworkForm">
@@ -185,10 +71,7 @@
                                     <label for="targetPersonName" class="form-label">Target Person Name</label>
                                     <input type="text" class="form-control" id="targetPersonName" placeholder="Contact person's name">
                                 </div>
-                                <div class="mb-3">
-                                    <label for="targetPersonRole" class="form-label">Target Person Role</label>
-                                    <input type="text" class="form-control" id="targetPersonRole" placeholder="e.g., CEO, Marketing Manager, CTO">
-                                </div>
+
                                 <div class="mb-3">
                                     <label class="form-label">Email Framework *</label>
                                     <div class="framework-options">
@@ -240,7 +123,7 @@
                 </div>
 
                 <!-- Step 4: Generate Emails -->
-                <div class="step-content" id="step-4">
+                <div class="step-content" id="step-2">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <div>
@@ -263,7 +146,7 @@
                 </div>
 
                 <!-- Step 5: Send Campaign -->
-                <div class="step-content" id="step-5">
+                <div class="step-content" id="step-3">
                     <div class="card">
                         <div class="card-header">
                             <h4><i class="fas fa-paper-plane me-2"></i>Send Campaign</h4>

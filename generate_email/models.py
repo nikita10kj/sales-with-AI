@@ -9,10 +9,12 @@ import uuid
 class TargetAudience(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='target_audience')
     email = models.EmailField(validators=[EmailValidator])
-    company_name = models.CharField(max_length=500)
+    receiver_name = models.CharField(max_length=500, blank=True, null=True)
+    company_name = models.CharField(max_length=500, blank=True, null=True)
     linkedin_url = models.URLField(blank=True, null=True)
     company_url = models.URLField(blank=True, null=True)
     framework = models.CharField(max_length=255, blank=True, null=True)
+    campaign_goal = models.CharField(max_length=255, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
 
 class SentEmail(models.Model):

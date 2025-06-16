@@ -22,6 +22,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     # path('accounts/', include('allauth.urls')),  # this line enables allauth
     path('', include('users.urls')),  # default landing page
+    path('generator/', include('generate_email.urls')),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
 ]

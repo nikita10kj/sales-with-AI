@@ -1,7 +1,7 @@
 class EmailMarketingApp {
   constructor() {
     this.currentStep = 1
-    this.totalSteps = 5
+    this.totalSteps = 3
     this.formData = {}
     this.generatedEmails = []
     this.selectedEmails = []
@@ -31,8 +31,8 @@ class EmailMarketingApp {
     document.getElementById("generateEmails").addEventListener("click", () => this.generateEmails())
 
     // Form submissions
-    document.getElementById("basicInfoForm").addEventListener("submit", (e) => e.preventDefault())
-    document.getElementById("companyDetailsForm").addEventListener("submit", (e) => e.preventDefault())
+//    document.getElementById("basicInfoForm").addEventListener("submit", (e) => e.preventDefault())
+//    document.getElementById("companyDetailsForm").addEventListener("submit", (e) => e.preventDefault())
     document.getElementById("targetFrameworkForm").addEventListener("submit", (e) => e.preventDefault())
   }
 
