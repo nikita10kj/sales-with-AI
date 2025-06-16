@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'users',
+    'generate_email'
     # allauth apps
     # 'allauth',
     # 'allauth.account',

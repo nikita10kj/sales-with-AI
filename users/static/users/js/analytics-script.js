@@ -549,13 +549,13 @@ class EmailAnalytics {
 const analytics = new EmailAnalytics()
 
 // Additional event listeners
-document.addEventListener('DOMContentLoaded', () => {
-  // Search functionality
-  const searchInput = document.querySelector('.search-box input')
-  if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-      const searchTerm = e.target.value.toLowerCase()
-      const rows = document.querySelectorAll('#campaignsTableBody tr')
-      
-      rows.forEach(row => {\
-        const campaignName = row.querySelector('t
+//document.addEventListener('DOMContentLoaded', () => {
+//  // Search functionality
+//  const searchInput = document.querySelector('.search-box input')
+//  if (searchInput) {
+//    searchInput.addEventListener('input', (e) => {
+//      const searchTerm = e.target.value.toLowerCase()
+//      const rows = document.querySelectorAll('#campaignsTableBody tr')
+//
+//      rows.forEach(row => {\
+//        const campaignName = row.querySelector('t
