@@ -23,6 +23,8 @@ from django.shortcuts import redirect, get_object_or_404
 
 from django.views.decorators.csrf import requires_csrf_token
 from django.http import HttpResponseForbidden
+from django.core.validators import URLValidator, EmailValidator
+from django.core.exceptions import ValidationError
 
 @requires_csrf_token
 def csrf_failure(request, reason=""):
@@ -200,3 +202,30 @@ class UserDetailsView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, "Your details have been saved successfully.")
         return super().form_valid(form)
+    
+class ProfileView(LoginRequiredMixin, View):
+    def get(self, request):
+        user = request.user
+        return render(request, 'users/profile.html', {'user': user})
+
+    def post(self, request):
+        user = request.user
+
+        # Update fields from POST data
+        user.full_name = request.POST.get('full_name')
+        user.company_url = request.POST.get('company_url')
+        user.linkedin_url = request.POST.get('linkedin_url')
+        user.product_url = request.POST.get('product_url')
+
+        email = request.POST.get('email')
+        try:
+            EmailValidator()(email)
+            user.email = email
+        except ValidationError:
+            return render(request, 'profile.html', {'user': user, 'error': 'Invalid email format'})
+
+        if 'product' in request.FILES:
+            user.product = request.FILES['product']
+
+        user.save()
+        return redirect('profile')

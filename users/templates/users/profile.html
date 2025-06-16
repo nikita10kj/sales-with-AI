@@ -1,0 +1,80 @@
+{% extends "users/base.html" %}
+{% load static %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center mt-3">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-user-edit me-2"></i>Profile Information</h4>
+                    <p class="mb-0 text-white-50">Update your personal and company details</p>
+                </div>
+                <div class="card-body">
+                    {% if error %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                    {% endif %}
+                    
+                    <form method="post" enctype="multipart/form-data" class="profile-form">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email *</label>
+                                    <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="full_name" class="form-label">Full Name</label>
+                                    <input type="text" class="form-control" id="full_name" name="full_name" value="{{ user.full_name }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="company_url" class="form-label">Company URL</label>
+                                    <input type="url" class="form-control" id="company_url" name="company_url" value="{{ user.company_url }}" placeholder="https://yourcompany.com">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="linkedin_url" class="form-label">LinkedIn URL</label>
+                                    <input type="url" class="form-control" id="linkedin_url" name="linkedin_url" value="{{ user.linkedin_url }}" placeholder="https://linkedin.com/in/yourprofile">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="product_url" class="form-label">Product URL</label>
+                            <input type="url" class="form-control" id="product_url" name="product_url" value="{{ user.product_url }}" placeholder="https://yourproduct.com">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="product" class="form-label">Product File</label>
+                            {% if user.product %}
+                                <div class="current-file mb-2">
+                                    <span class="badge bg-light text-dark">
+                                        <i class="fas fa-paperclip me-1"></i>
+                                        Current: <a href="{{ user.product.url }}" target="_blank">{{ user.product.name|truncatechars:30 }}</a>
+                                    </span>
+                                </div>
+                            {% endif %}
+                            <input type="file" class="form-control" id="product" name="product">
+                            <div class="form-text">Upload product brochure, PDF, or other relevant files</div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end mt-4">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-2"></i>Update Profile
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
