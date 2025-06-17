@@ -99,7 +99,7 @@
                             <label for="product_usp" class="form-label">3–5 Unique Benefits (USP) of Your Product</label>
                            <!-- Product USP -->
                             <textarea class="form-control" id="product_usp" name="product_usp" rows="3"
-                                    placeholder="Highlight key benefits">
+                                    placeholder="Highlight key benefits"> 
                                 {{ request.POST.product_usp|default:product_service.product_usp|default_if_none:'' }}
                             </textarea>
                         </div>
