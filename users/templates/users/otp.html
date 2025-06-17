@@ -1,69 +1,59 @@
 {% extends "users/theme.html" %}
 {% load static %}
 
+{% block title %}Verify OTP - SalesAI{% endblock %}
+
+{% block extra_head %}
+<link href="{% static 'users/css/styles.css' %}" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
-<section class="auth bg-base d-flex flex-wrap">
-    <div class="auth-left d-lg-block d-none">
-        <div class="d-flex align-items-center flex-column h-100 justify-content-center">
-
-        </div>
-    </div>
-    <div class="auth-right py-32 px-24 d-flex flex-column justify-content-center">
-        <div class="max-w-464-px mx-auto w-100">
-            <div>
-                <a href="index.html" class="mb-40 max-w-290-px">
-                  <img src="{% static 'users/images/allanytics_cake.png' %}" alt="">
-                </a>
-
-                <h4 class="mb-12">Verify OTP</h4>
-                <p class="mb-32 text-secondary-light text-lg">Please enter the OTP sent to your Register email.</p>
+<div class="row justify-content-center mt-5 w-100">
+    <div class="col-lg-6 col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-key me-2"></i>Verify OTP</h4>
+                <p class="mb-0">Please enter the OTP sent to your registered email.</p>
             </div>
-
-
-
-            <form  id="formPasswordAuthentication" enctype="multipart/form-data"
-                   class="mb-4 needs-validation {% if form.errors %}was-validated{% endif %}"
-                   method="post">
-                {% csrf_token %}
-                <div class="position-relative mb-20">
-                <div class="icon-field">
-                    <span class="icon">
-                        <iconify-icon icon="solar:lock-password-outline"></iconify-icon>
-                    </span>
+            <div class="card-body p-4">
+                <form id="formPasswordAuthentication" enctype="multipart/form-data"
+                      class="needs-validation {% if form.errors %}was-validated{% endif %}"
+                      method="post">
+                    {% csrf_token %}
                     <input type="hidden" name="email" value="{{ form.initial.email }}">
 
-                    <input name="otp" id="id_otp2" type="password"
-                           class="form-control bg-neutral-50 radius-12"
-                           placeholder="Enter OTP"
-                           required
-                           >
-                    <span class="toggle-password ri-eye-line cursor-pointer position-absolute end-0 top-50 translate-middle-y me-16 text-secondary-light" data-toggle="#id_otp"></span>
-
+                    <div class="mb-3">
+                        <label for="id_otp2" class="form-label">OTP</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-lock text-muted"></i>
+                            </span>
+                            <input name="otp" id="id_otp2" type="password"
+                                   class="form-control"
+                                   placeholder="Enter OTP"
+                                   required>
+                        </div>
                         {% if form.otp.errors %}
-                          {% for error in form.otp.errors %}
-                            <div class="invalid-feedback">
-                                {{ error }}
-                            </div>
-                          {% endfor %}
-
+                            {% for error in form.otp.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
                         {% endif %}
                         {% if form.email.errors %}
-                        {% for error in form.email.errors %}
-                            <div class="invalid-feedback">
-                                {{ error }}
-                            </div>
-                          {% endfor %}
+                            {% for error in form.email.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
                         {% endif %}
-
-
-
-                </div>
                     </div>
 
-
-                <button type="submit" class="btn btn-primary text-sm btn-sm px-12 py-16 w-100 radius-12 mt-32"> Submit</button>
-
-            </form>
+                    <button type="submit" class="btn btn-primary w-100 py-2 mt-3">
+                        <i class="fas fa-check-circle me-2"></i>Submit
+                    </button>
+                </form>
 <!--            <form method="post" action="{% url 'resend_otp' %}">-->
 <!--              {% csrf_token %}-->
 <!--              <input type="hidden" name="email" value="{{ form.initial.email }}">-->
@@ -101,38 +91,36 @@
 <!--                <button type="submit" class="btn btn-primary text-sm btn-sm px-12 py-16 w-100 radius-12 mt-32"> Verify OTP</button>-->
 
 <!--            </form>-->
-            {% if user.groups.first.name == 'admin' or user.groups.first.name == 'manager'%}
-            {% if not new_login %}
-<!--            <div class="">-->
-                <div class="mt-32 text-center text-sm">
-                    <a href="{% url 'password_reset' %}" class="text-primary-600 fw-medium">Forgot Password?</a>
-                </div>
-<!--            </div>-->
+            {% if user.groups.first.name == 'admin' or user.groups.first.name == 'manager' %}
+                    {% if not new_login %}
+                        <div class="mt-3 text-center">
+                            <a href="{% url 'password_reset' %}" class="text-primary fw-semibold">Forgot Password?</a>
+                        </div>
+                    {% else %}
+                        <form method="post" action="{% url 'resend_otp' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="email" value="{{ form.initial.email }}">
+                            <div class="mt-3 text-center">
+                                <p class="mb-0">Didn't receive an email?
+                                    <button type="submit" class="btn btn-link text-primary fw-semibold p-0">Resend OTP</button>
+                                </p>
+                            </div>
+                        </form>
+                    {% endif %}
                 {% else %}
-                <form method="post" action="{% url 'resend_otp' %}">
-                  {% csrf_token %}
-                  <input type="hidden" name="email" value="{{ form.initial.email }}">
-                  <div class="mt-32 text-center text-sm">
-                    <p class="mb-0">Didn't receive an email?
-                        <button type="submit" class="text-primary-500 fw-semibold">Resend OTP</button></p>
-                  </div>
-                </form>
+                    <form method="post" action="{% url 'resend_otp' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="email" value="{{ form.initial.email }}">
+                        <div class="mt-3 text-center">
+                            <p class="mb-0">Didn't receive an email?
+                                <button type="submit" class="btn btn-link text-primary fw-semibold p-0">Resend OTP</button>
+                            </p>
+                        </div>
+                    </form>
                 {% endif %}
-            {% else %}
-            <form method="post" action="{% url 'resend_otp' %}">
-              {% csrf_token %}
-              <input type="hidden" name="email" value="{{ form.initial.email }}">
-              <div class="mt-32 text-center text-sm">
-                <p class="mb-0">Didn't receive an email?
-                    <button type="submit" class="text-primary-500 fw-semibold">Resend OTP</button></p>
-              </div>
-            </form>
-            {% endif %}
-
+            </div>
         </div>
     </div>
-</section>
-
-
+</div>
 {% endblock %}
 
