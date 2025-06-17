@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import FormView, View,TemplateView
 from django.contrib.auth import login, authenticate
 from django.contrib import messages
-from .models import EmailOTP, CustomUser
+from .models import EmailOTP, CustomUser,ProductService
 from .forms import EmailForm, OTPForm
 from .utils import sendOTP
 from django.contrib.auth.views import PasswordResetView
@@ -173,20 +173,23 @@ class ResendOTPView(View):
 
 class UserDetailsView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = CustomUser
-    fields = ['full_name', 'company_url', 'linkedin_url', 'product_url', 'product']
+    fields = [
+        'full_name',
+        'company_name',
+        'company_url',
+        'company_linkedin_url',
+        'user_linkedin_url',
+    ]
     template_name = 'users/user_details.html'
     success_url = reverse_lazy('home')
     title = "User Details"
 
     def test_func(self):
-        # Check if a CustomUser with the logged-in user's email exists
         user = get_object_or_404(CustomUser, pk=self.kwargs['pk'])
         return self.request.user == user
 
     def handle_no_permission(self):
-        # Provide a forbidden response if the user is not authorized
         if not self.request.user.is_authenticated:
-            # Redirect to login page if not authenticated
             return super().handle_no_permission()
         return HttpResponseForbidden("You do not have permission to access this page.")
 
@@ -196,36 +199,59 @@ class UserDetailsView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["title"] = self.title
-
+        # Ensure we always have a product_service to avoid template errors
+        context["product_service"], _ = ProductService.objects.get_or_create(user=self.request.user)
         return context
 
     def form_valid(self, form):
-        messages.success(self.request, "Your details have been saved successfully.")
-        return super().form_valid(form)
+        response = super().form_valid(form)
+
+        # Save related ProductService data
+        product_service, _ = ProductService.objects.get_or_create(user=self.request.user)
+        product_service.service_name = self.request.POST.get('service_name')
+        product_service.product_url = self.request.POST.get('product_url')
+        product_service.product_usp = self.request.POST.get('product_usp')
+        product_service.save()
+
+        messages.success(self.request, "Your details have been updated successfully.")
+        return response
     
 class ProfileView(LoginRequiredMixin, View):
     def get(self, request):
-        user = request.user
-        return render(request, 'users/profile.html', {'user': user})
+        # Always ensure a ProductService instance exists
+        product_service, _ = ProductService.objects.get_or_create(user=request.user)
+        return render(request, 'users/profile.html', {
+            'user': request.user,
+            'product_service': product_service
+        })
 
     def post(self, request):
         user = request.user
+        product_service, _ = ProductService.objects.get_or_create(user=user)
 
-        # Update fields from POST data
         user.full_name = request.POST.get('full_name')
+        user.company_name = request.POST.get('company_name')
         user.company_url = request.POST.get('company_url')
-        user.linkedin_url = request.POST.get('linkedin_url')
-        user.product_url = request.POST.get('product_url')
+        user.company_linkedin_url = request.POST.get('company_linkedin_url')
+        user.user_linkedin_url = request.POST.get('user_linkedin_url')
 
         email = request.POST.get('email')
         try:
             EmailValidator()(email)
             user.email = email
         except ValidationError:
-            return render(request, 'profile.html', {'user': user, 'error': 'Invalid email format'})
-
-        if 'product' in request.FILES:
-            user.product = request.FILES['product']
+            return render(request, 'users/profile.html', {
+                'user': user,
+                'product_service': product_service,
+                'error': 'Invalid email format'
+            })
 
         user.save()
+
+        # Update ProductService data
+        product_service.service_name = request.POST.get('service_name')
+        product_service.product_url = request.POST.get('product_url')
+        product_service.product_usp = request.POST.get('product_usp')
+        product_service.save()
+
         return redirect('profile')

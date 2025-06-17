@@ -48,9 +48,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True, validators=[EmailValidator])
     full_name = models.CharField(max_length=50, null=True)
     company_url = models.URLField(null=True, blank=True)
-    linkedin_url = models.URLField(null=True, blank=True)
-    product_url = models.URLField(null=True, blank=True)
-    product = models.FileField(null=True, blank=True)
+    company_linkedin_url = models.URLField(null=True, blank=True)
+    user_linkedin_url = models.URLField(null=True, blank=True)
     company_name = models.CharField(max_length=255, null=True, blank=True)
 
     is_active = models.BooleanField(default=True)
@@ -67,4 +66,11 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def save(self, *args, **kwargs):
         self.email = self.email.lower()  # Always save email as lowercase
         super().save(*args, **kwargs)
+
+class ProductService(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="product_service")
+    service_name = models.CharField(max_length=255, null=True)
+    product_url = models.URLField(null=True, blank=True)
+    product_usp = models.TextField(null=True, blank=True)  
+
 

@@ -2,204 +2,205 @@
 {% load static %}
 {% block content %}
 <!-- Sidebar -->
-            <div class="col-md-3 sidebar">
-                <div class="sidebar-content">
-                    <h5 class="sidebar-title">
-                        <i class="fas fa-cogs me-2"></i>
-                        Email Generator
-                    </h5>
-                    <div class="progress-steps">
+<div class="col-md-3 sidebar">
+    <div class="sidebar-content">
+        <h5 class="sidebar-title">
+            <i class="fas fa-cogs me-2"></i>
+            Email Generator
+        </h5>
+        <div class="progress-steps">
 
 
-                        <div class="step" data-step="1">
-                            <i class="fas fa-bullseye"></i>
-                            <span>Target & Framework</span>
-                        </div>
-                        <div class="step" data-step="2">
-                            <i class="fas fa-envelope"></i>
-                            <span>Generate Emails</span>
-                        </div>
-                        <div class="step" data-step="3">
-                            <i class="fas fa-paper-plane"></i>
-                            <span>Send Campaign</span>
-                        </div>
-                    </div>
-                </div>
+            <div class="step" data-step="1">
+                <i class="fas fa-bullseye"></i>
+                <span>Target & Framework</span>
             </div>
-
-            <!-- Main Content -->
-            <div class="col-md-9 main-content">
-
-                <!-- Step 3: Target & Framework -->
-                <div class="step-content" id="step-1">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4><i class="fas fa-bullseye me-2"></i>Target & Framework</h4>
-                            <p class="text-light mb-0">Define your target and email strategy</p>
-                        </div>
-                        <div class="card-body">
-                            <form id="targetFrameworkForm">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="targetCompanyName" class="form-label">Target Company Name *</label>
-                                            <input type="text" class="form-control" id="targetCompanyName" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="targetEmail" class="form-label">Target Email *</label>
-                                            <input type="email" class="form-control" id="targetEmail" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="targetWebsite" class="form-label">Target Company Website</label>
-                                            <input type="url" class="form-control" id="targetWebsite" placeholder="https://target-company.com">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="targetLinkedin" class="form-label">Target Company LinkedIn</label>
-                                            <input type="url" class="form-control" id="targetLinkedin" placeholder="https://linkedin.com/company/target">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="targetPersonName" class="form-label">Target Person Name</label>
-                                    <input type="text" class="form-control" id="targetPersonName" placeholder="Contact person's name">
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">Email Framework *</label>
-                                    <div class="framework-options">
-                                        <div class="form-check framework-card">
-                                            <input class="form-check-input" type="radio" name="framework" id="aida" value="aida" checked>
-                                            <label class="form-check-label" for="aida">
-                                                <strong>AIDA Framework</strong>
-                                                <small class="d-block text-muted">Attention → Interest → Desire → Action</small>
-                                            </label>
-                                        </div>
-                                        <div class="form-check framework-card">
-                                            <input class="form-check-input" type="radio" name="framework" id="pas" value="pas">
-                                            <label class="form-check-label" for="pas">
-                                                <strong>PAS Framework</strong>
-                                                <small class="d-block text-muted">Problem → Agitate → Solution</small>
-                                            </label>
-                                        </div>
-                                        <div class="form-check framework-card">
-                                            <input class="form-check-input" type="radio" name="framework" id="before-after" value="before-after">
-                                            <label class="form-check-label" for="before-after">
-                                                <strong>Before-After-Bridge</strong>
-                                                <small class="d-block text-muted">Current State → Desired State → Solution</small>
-                                            </label>
-                                        </div>
-                                        <div class="form-check framework-card">
-                                            <input class="form-check-input" type="radio" name="framework" id="star" value="star">
-                                            <label class="form-check-label" for="star">
-                                                <strong>STAR Framework</strong>
-                                                <small class="d-block text-muted">Situation → Task → Action → Result</small>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="campaignGoal" class="form-label">Campaign Goal *</label>
-                                    <select class="form-select" id="campaignGoal" required>
-                                        <option value="">Select Goal</option>
-                                        <option value="lead-generation">Lead Generation</option>
-                                        <option value="partnership">Partnership Opportunity</option>
-                                        <option value="product-demo">Product Demo</option>
-                                        <option value="meeting-request">Meeting Request</option>
-                                        <option value="service-inquiry">Service Inquiry</option>
-                                        <option value="collaboration">Collaboration</option>
-                                    </select>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 4: Generate Emails -->
-                <div class="step-content" id="step-2">
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <div>
-                                <h4><i class="fas fa-envelope me-2"></i>Generated Emails</h4>
-                                <p class="text-muted mb-0">Review and customize your email variations</p>
-                            </div>
-                            <button class="btn btn-primary" id="generateEmails">
-                                <i class="fas fa-magic me-2"></i>Generate Emails
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <div id="emailsContainer">
-                                <div class="text-center py-5">
-                                    <i class="fas fa-envelope-open-text fa-3x text-muted mb-3"></i>
-                                    <h5 class="text-muted">Click "Generate Emails" to create your email variations</h5>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 5: Send Campaign -->
-                <div class="step-content" id="step-3">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4><i class="fas fa-paper-plane me-2"></i>Send Campaign</h4>
-                            <p class="text-muted mb-0">Review and send your selected emails</p>
-                        </div>
-                        <div class="card-body">
-                            <div id="sendCampaignContent">
-                                <div class="text-center py-5">
-                                    <i class="fas fa-paper-plane fa-3x text-muted mb-3"></i>
-                                    <h5 class="text-muted">Generate emails first to proceed with sending</h5>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Navigation Buttons -->
-                <div class="step-navigation">
-                    <button class="btn btn-secondary" id="prevBtn" style="display: none;">
-                        <i class="fas fa-arrow-left me-2"></i>Previous
-                    </button>
-                    <button class="btn btn-primary" id="nextBtn">
-                        Next<i class="fas fa-arrow-right ms-2"></i>
-                    </button>
-                </div>
+            <div class="step" data-step="2">
+                <i class="fas fa-envelope"></i>
+                <span>Generate Emails</span>
             </div>
+            <div class="step" data-step="3">
+                <i class="fas fa-paper-plane"></i>
+                <span>Send Campaign</span>
+            </div>
+        </div>
+    </div>
+</div>
 
-                <!-- Email Preview Modal -->
-    <div class="modal fade" id="emailPreviewModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Email Preview</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<!-- Main Content -->
+<div class="col-md-9 main-content">
+
+    <!-- Step 3: Target & Framework -->
+    <div class="step-content" id="step-1">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-bullseye me-2"></i>Target & Framework</h4>
+                <p class="text-light mb-0">Define your target and email strategy</p>
+            </div>
+            <div class="card-body">
+                <form id="targetFrameworkForm">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="targetCompanyName" class="form-label">Target Company Name *</label>
+                                <input type="text" class="form-control" id="targetCompanyName" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="targetEmail" class="form-label">Target Email *</label>
+                                <input type="email" class="form-control" id="targetEmail" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="targetWebsite" class="form-label">Target Company Website</label>
+                                <input type="url" class="form-control" id="targetWebsite" placeholder="https://target-company.com">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="targetLinkedin" class="form-label">Target Company LinkedIn</label>
+                                <input type="url" class="form-control" id="targetLinkedin" placeholder="https://linkedin.com/company/target">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="targetPersonName" class="form-label">Target Person Name</label>
+                        <input type="text" class="form-control" id="targetPersonName" placeholder="Contact person's name">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Email Framework *</label>
+                        <div class="framework-options">
+                            <div class="form-check framework-card">
+                                <input class="form-check-input" type="radio" name="framework" id="aida" value="aida" checked>
+                                <label class="form-check-label" for="aida">
+                                    <strong>AIDA Framework</strong>
+                                    <small class="d-block text-muted">Attention → Interest → Desire → Action</small>
+                                </label>
+                            </div>
+                            <div class="form-check framework-card">
+                                <input class="form-check-input" type="radio" name="framework" id="pas" value="pas">
+                                <label class="form-check-label" for="pas">
+                                    <strong>PAS Framework</strong>
+                                    <small class="d-block text-muted">Problem → Agitate → Solution</small>
+                                </label>
+                            </div>
+                            <div class="form-check framework-card">
+                                <input class="form-check-input" type="radio" name="framework" id="before-after" value="before-after">
+                                <label class="form-check-label" for="before-after">
+                                    <strong>Before-After-Bridge</strong>
+                                    <small class="d-block text-muted">Current State → Desired State → Solution</small>
+                                </label>
+                            </div>
+                            <div class="form-check framework-card">
+                                <input class="form-check-input" type="radio" name="framework" id="star" value="star">
+                                <label class="form-check-label" for="star">
+                                    <strong>STAR Framework</strong>
+                                    <small class="d-block text-muted">Situation → Task → Action → Result</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campaignGoal" class="form-label">Campaign Goal *</label>
+                        <select class="form-select" id="campaignGoal" required>
+                            <option value="">Select Goal</option>
+                            <option value="lead-generation">Lead Generation</option>
+                            <option value="partnership">Partnership Opportunity</option>
+                            <option value="product-demo">Product Demo</option>
+                            <option value="meeting-request">Meeting Request</option>
+                            <option value="service-inquiry">Service Inquiry</option>
+                            <option value="collaboration">Collaboration</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 4: Generate Emails -->
+    <div class="step-content" id="step-2">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h4><i class="fas fa-envelope me-2"></i>Generated Emails</h4>
+                    <p class="text-muted mb-0">Review and customize your email variations</p>
                 </div>
-                <div class="modal-body">
-                    <div id="emailPreviewContent"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="saveEmailChanges">Save Changes</button>
+                <button class="btn btn-primary" id="generateEmails">
+                    <i class="fas fa-magic me-2"></i>Generate Emails
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="emailsContainer">
+                    <div class="text-center py-5">
+                        <i class="fas fa-envelope-open-text fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Click "Generate Emails" to create your email variations</h5>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-content">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
+    <!-- Step 5: Send Campaign -->
+    <div class="step-content" id="step-3">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-paper-plane me-2"></i>Send Campaign</h4>
+                <p class="text-muted mb-0">Review and send your selected emails</p>
             </div>
-            <p class="mt-3">Generating your personalized emails...</p>
+            <div class="card-body">
+                <div id="sendCampaignContent">
+                    <div class="text-center py-5">
+                        <i class="fas fa-paper-plane fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Generate emails first to proceed with sending</h5>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- Navigation Buttons -->
+    <div class="step-navigation">
+        <button class="btn btn-secondary" id="prevBtn" style="display: none;">
+            <i class="fas fa-arrow-left me-2"></i>Previous
+        </button>
+        <button class="btn btn-primary" id="nextBtn">
+            Next<i class="fas fa-arrow-right ms-2"></i>
+        </button>
+    </div>
+</div>
+
+        <!-- Email Preview Modal -->
+<div class="modal fade" id="emailPreviewModal" tabindex="-1">
+<div class="modal-dialog modal-lg">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Email Preview</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <div id="emailPreviewContent"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" id="saveEmailChanges">Save Changes</button>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+<div class="loading-content">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-3">Generating your personalized emails...</p>
+</div>
+</div>
 {% endblock content %}
