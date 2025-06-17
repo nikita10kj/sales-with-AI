@@ -41,37 +41,60 @@
                 <form id="targetFrameworkForm">
                     {% csrf_token %}
                     <div class="row">
+
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="targetCompanyName" class="form-label">Target Company Name *</label>
-                                <input type="text" class="form-control" id="targetCompanyName" required>
+                                <label for="targetEmail" class="form-label">Target Person Email *</label>
+                                <input type="email" name="email" class="form-control" id="targetEmail" placeholder="targetperson@gmail.com" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="targetEmail" class="form-label">Target Email *</label>
-                                <input type="email" class="form-control" id="targetEmail" required>
+                                <label for="targetCompanyName" class="form-label">Target Person LinkedIn *</label>
+                                <input type="text" name="receiver_linkedin_url" class="form-control" id="targetCompanyName" placeholder="https://linkedin.com/person/target" required>
                             </div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="targetWebsite" class="form-label">Target Company Website</label>
-                                <input type="url" class="form-control" id="targetWebsite" placeholder="https://target-company.com">
+                                <label for="targetWebsite" class="form-label">Target Company Website *</label>
+                                <input type="url" name="company_url" class="form-control" required id="targetWebsite" placeholder="https://target-company.com">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="targetLinkedin" class="form-label">Target Company LinkedIn</label>
-                                <input type="url" class="form-control" id="targetLinkedin" placeholder="https://linkedin.com/company/target">
+                                <label for="targetLinkedin" class="form-label">Target Company LinkedIn *</label>
+                                <input type="url" name="company_linkedin_url" class="form-control" required id="targetLinkedin" placeholder="https://linkedin.com/company/target">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_first_name" class="form-label">Target Person First Name *</label>
+                                <input type="text" name="receiver_first_name" class="form-control" id="id_first_name" placeholder="Contact person's first name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_last_name" class="form-label">Target Person Last Name</label>
+                                <input type="text" name="receiver_last_name" class="form-control" id="id_last_name" placeholder="Contact person's last name">
                             </div>
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label for="targetPersonName" class="form-label">Target Person Name</label>
-                        <input type="text" class="form-control" id="targetPersonName" placeholder="Contact person's name">
+                        <label for="id_service" class="form-label">Service *</label>
+                        <select class="form-select" name="selected_service" id="id_service" required>
+                            <option value="">Select Service</option>
+                            <option value="lead-generation">Hiring</option>
+                            <option value="partnership">IT</option>
+                            <option value="product-demo">Education</option>
+
+                        </select>
                     </div>
+
+
 
                     <div class="mb-3">
                         <label class="form-label">Email Framework *</label>
@@ -104,11 +127,18 @@
                                     <small class="d-block text-muted">Situation → Task → Action → Result</small>
                                 </label>
                             </div>
+                            <div class="form-check framework-card">
+                                <input class="form-check-input" type="radio" name="framework" id="magic" value="magic">
+                                <label class="form-check-label" for="magic">
+                                    <strong>Magic Framework</strong>
+                                    <small class="d-block text-muted">Situation → Task → Action → Result</small>
+                                </label>
+                            </div>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label for="campaignGoal" class="form-label">Campaign Goal *</label>
-                        <select class="form-select" id="campaignGoal" required>
+                        <select class="form-select" name="campaign_goal" id="campaignGoal" required>
                             <option value="">Select Goal</option>
                             <option value="lead-generation">Lead Generation</option>
                             <option value="partnership">Partnership Opportunity</option>
@@ -118,6 +148,9 @@
                             <option value="collaboration">Collaboration</option>
                         </select>
                     </div>
+                    <button type="submit" class="btn btn-primary">
+                        Submit<i class="fas fa-arrow-right ms-2"></i>
+                    </button>
                 </form>
             </div>
         </div>

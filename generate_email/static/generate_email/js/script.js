@@ -28,12 +28,14 @@ class EmailMarketingApp {
     })
 
     // Generate emails button
-    document.getElementById("generateEmails").addEventListener("click", () => this.generateEmails())
+//    document.getElementById("generateEmails").addEventListener("click", () => this.generateEmails())
 
     // Form submissions
-//    document.getElementById("basicInfoForm").addEventListener("submit", (e) => e.preventDefault())
-//    document.getElementById("companyDetailsForm").addEventListener("submit", (e) => e.preventDefault())
-    document.getElementById("targetFrameworkForm").addEventListener("submit", (e) => e.preventDefault())
+    document.getElementById("targetFrameworkForm").addEventListener("submit", (e) => {
+      e.preventDefault()
+      this.nextStep()
+      this.submitForm()
+    })
   }
 
   nextStep() {
@@ -125,9 +127,9 @@ class EmailMarketingApp {
           this.formData[element.name] = element.value
         }
       } else if (element.type === "file") {
-        this.formData[element.id] = element.files
+        this.formData[element.name] = element.files
       } else {
-        this.formData[element.id] = element.value
+        this.formData[element.name] = element.value
       }
     })
   }
@@ -137,233 +139,87 @@ class EmailMarketingApp {
     return stepNumber < this.currentStep
   }
 
-  async generateEmails() {
-    this.showLoading(true)
-
+  async submitForm() {
+    this.showLoading(true, "Submitting your details...");
     try {
-      // Simulate API call to generate emails
-      await this.simulateEmailGeneration()
-      this.displayGeneratedEmails()
-      this.setupSendCampaign()
-      this.showAlert("Emails generated successfully!", "success")
+    console.log("form",this.formData)
+      const response = await fetch('/generator/generate_email/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': this.getCSRFToken(), // Include CSRF token if needed
+        },
+        body: JSON.stringify(this.formData),
+      });
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      this.generatedEmails = data.emails; // Assuming the response contains the generated emails
+      this.displayGeneratedEmails();
+      this.showAlert("Details submitted successfully!", "success");
     } catch (error) {
-      this.showAlert("Error generating emails. Please try again.", "danger")
+      this.showAlert("Error submitting details. Please try again.", "danger");
     } finally {
-      this.showLoading(false)
+      this.showLoading(false);
     }
   }
 
-  async simulateEmailGeneration() {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 3000))
-
-    const framework = this.formData.framework || "aida"
-    const templates = this.getEmailTemplates(framework)
-
-    this.generatedEmails = templates.map((template, index) => ({
-      id: index + 1,
-      title: template.title,
-      subject: this.personalizeText(template.subject),
-      body: this.personalizeText(template.body),
-      framework: framework,
-      selected: false,
-    }))
-  }
-
-  getEmailTemplates(framework) {
-    const templates = {
-      aida: [
-        {
-          title: "AIDA - Direct Approach",
-          subject: "Quick question about {{targetCompanyName}}'s {{industry}} strategy",
-          body: `Hi {{targetPersonName}},
-
-I noticed {{targetCompanyName}} has been making impressive strides in the {{industry}} space. Your recent work caught my attention.
-
-At {{companyName}}, we've helped similar companies like yours achieve remarkable results through our {{valueProposition}}. 
-
-I'd love to show you how we could potentially help {{targetCompanyName}} achieve even greater success. Would you be open to a brief 15-minute conversation this week?
-
-Best regards,
-{{senderName}}
-{{companyName}}`,
-        },
-        {
-          title: "AIDA - Problem-Focused",
-          subject: "Solving {{industry}} challenges at {{targetCompanyName}}",
-          body: `Hello {{targetPersonName}},
-
-Many {{industry}} leaders are struggling with efficiency and growth challenges in today's market.
-
-I've been following {{targetCompanyName}}'s journey and believe our solution at {{companyName}} could be a perfect fit. We specialize in {{valueProposition}} and have helped companies achieve significant improvements.
-
-I'd be happy to share a quick case study relevant to your industry. Are you available for a brief call to discuss how this could benefit {{targetCompanyName}}?
-
-Looking forward to connecting,
-{{senderName}}`,
-        },
-        {
-          title: "AIDA - Value Proposition",
-          subject: "Increase {{targetCompanyName}}'s efficiency by 40%",
-          body: `Hi {{targetPersonName}},
-
-What if I told you that {{targetCompanyName}} could increase efficiency by 40% in the next quarter?
-
-Our clients in the {{industry}} sector have seen exactly these results using our proven methodology. {{companyName}} specializes in {{valueProposition}}, and I believe we could deliver similar outcomes for you.
-
-I'd love to schedule a quick demo to show you exactly how this works. Would next Tuesday or Wednesday work better for a 20-minute call?
-
-Best,
-{{senderName}}
-{{companyName}}`,
-        },
-        {
-          title: "AIDA - Social Proof",
-          subject: "How [Similar Company] achieved 200% growth",
-          body: `Dear {{targetPersonName}},
-
-I hope this email finds you well. I wanted to reach out because of {{targetCompanyName}}'s reputation in the {{industry}} industry.
-
-We recently helped a company similar to yours achieve 200% growth using our {{valueProposition}}. The results were so impressive that I thought you might be interested in learning more.
-
-{{companyName}} has a track record of helping {{industry}} companies overcome their biggest challenges and achieve breakthrough results.
-
-Would you be interested in a brief conversation about how we might be able to help {{targetCompanyName}} achieve similar success?
-
-Warm regards,
-{{senderName}}`,
-        },
-        {
-          title: "AIDA - Curiosity Hook",
-          subject: "The secret {{industry}} leaders don't want you to know",
-          body: `Hi {{targetPersonName}},
-
-There's a strategy that top {{industry}} companies are using to stay ahead of the competition, but most businesses don't know about it.
-
-I've been studying {{targetCompanyName}} and your approach to {{industry}}, and I believe this strategy could be a game-changer for you.
-
-At {{companyName}}, we've helped implement this approach with remarkable results. Our {{valueProposition}} has consistently delivered outstanding outcomes.
-
-I'd love to share this strategy with you in a quick 15-minute call. When would be a good time to connect?
-
-Best regards,
-{{senderName}}`,
-        },
-      ],
-      pas: [
-        {
-          title: "PAS - Efficiency Problem",
-          subject: "Is inefficiency costing {{targetCompanyName}} money?",
-          body: `Hi {{targetPersonName}},
-
-Many {{industry}} companies are losing thousands of dollars monthly due to inefficient processes and outdated systems.
-
-This problem only gets worse over time, leading to frustrated teams, missed opportunities, and declining competitive advantage. The longer you wait, the more it costs.
-
-That's exactly why we created {{companyName}}. Our {{valueProposition}} has helped companies like yours eliminate these inefficiencies and boost profitability.
-
-Would you like to see how we could solve this for {{targetCompanyName}}?
-
-Best,
-{{senderName}}`,
-        },
-        {
-          title: "PAS - Growth Challenges",
-          subject: "Why {{targetCompanyName}}'s growth might be stalling",
-          body: `Hello {{targetPersonName}},
-
-Most {{industry}} companies hit a growth plateau around your stage, struggling to scale effectively while maintaining quality.
-
-This stagnation can be frustrating and costly. Teams become overwhelmed, customer satisfaction drops, and competitors start gaining ground. Without the right solution, this cycle continues indefinitely.
-
-{{companyName}} specializes in breaking through these growth barriers. Our {{valueProposition}} has helped numerous companies overcome these exact challenges and achieve sustainable growth.
-
-I'd love to show you how we can help {{targetCompanyName}} break through to the next level. Are you available for a brief call this week?
-
-Regards,
-{{senderName}}`,
-        },
-      ],
-      "before-after": [
-        {
-          title: "Before-After-Bridge - Transformation",
-          subject: "Transform {{targetCompanyName}}'s {{industry}} operations",
-          body: `Hi {{targetPersonName}},
-
-Before: Most {{industry}} companies struggle with inefficient processes, high costs, and limited scalability.
-
-After: Imagine {{targetCompanyName}} operating with streamlined processes, reduced costs, and unlimited growth potential.
-
-Bridge: {{companyName}}'s {{valueProposition}} is the solution that makes this transformation possible. We've helped companies achieve this exact transformation.
-
-Would you like to learn how we can help {{targetCompanyName}} make this transition?
-
-Best regards,
-{{senderName}}`,
-        },
-      ],
-      star: [
-        {
-          title: "STAR - Success Story",
-          subject: "How we helped [Company] achieve 300% ROI",
-          body: `Hi {{targetPersonName}},
-
-Situation: A {{industry}} company similar to {{targetCompanyName}} was struggling with efficiency and growth challenges.
-
-Task: They needed to streamline operations while scaling their business effectively.
-
-Action: We implemented our {{valueProposition}} solution, providing comprehensive support throughout the process.
-
-Result: They achieved 300% ROI within 6 months and continue to see sustained growth.
-
-I believe {{companyName}} could deliver similar results for {{targetCompanyName}}. Would you be interested in learning more?
-
-Best,
-{{senderName}}`,
-        },
-      ],
-    }
-
-    return templates[framework] || templates.aida
-  }
-
-  personalizeText(text) {
-    let personalizedText = text
-
-    // Replace placeholders with actual data
-    const replacements = {
-      "{{targetCompanyName}}": this.formData.targetCompanyName || "[Target Company]",
-      "{{targetPersonName}}": this.formData.targetPersonName || "[Name]",
-      "{{targetPersonRole}}": this.formData.targetPersonRole || "[Role]",
-      "{{companyName}}": this.formData.companyName || "[Your Company]",
-      "{{senderName}}": this.formData.senderName || "[Your Name]",
-      "{{industry}}": this.formData.industry || "[Industry]",
-      "{{valueProposition}}": this.formData.valueProposition || "[Value Proposition]",
-    }
-
-    Object.keys(replacements).forEach((placeholder) => {
-      personalizedText = personalizedText.replace(new RegExp(placeholder, "g"), replacements[placeholder])
-    })
-
-    return personalizedText
+  getCSRFToken() {
+    // Function to get CSRF token from cookies
+    const cookieValue = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+    return cookieValue ? cookieValue.split('=')[1] : '';
   }
 
   displayGeneratedEmails() {
     const container = document.getElementById("emailsContainer")
     container.innerHTML = ""
+    // Main email
+      if (this.generatedEmails && this.generatedEmails.main_email) {
+        const main = this.generatedEmails.main_email;
+        const mainCard = document.createElement("div");
+        mainCard.className = "email-card";
+        mainCard.innerHTML = `
+          <div class="email-header">
+              <h5 class="email-title">${main.title}</h5>
+              <div class="email-actions">
+                  <button class="btn btn-sm btn-outline-primary" onclick="app.previewEmail(${main.id})">
+                      <i class="fas fa-eye"></i> Preview
+                  </button>
+                  <button class="btn btn-sm btn-outline-secondary" onclick="app.editEmail(${main.id})">
+                      <i class="fas fa-edit"></i> Edit
+                  </button>
+                  <div class="form-check ms-2">
+                      <input class="form-check-input" type="checkbox" id="select-${main.id}"
+                             onchange="app.toggleEmailSelection(${main.id})">
+                      <label class="form-check-label" for="select-${main.id}">Select</label>
+                  </div>
+              </div>
+          </div>
+          <div class="email-body">
+              <div class="email-subject">
+                  <strong>Subject:</strong> ${main.subject}
+              </div>
+              <div class="email-content">
+                  ${main.body.replace(/\n/g, "<br>")}
+              </div>
+          </div>
+        `;
+        container.appendChild(mainCard);
+      }
 
-    this.generatedEmails.forEach((email) => {
-      const emailCard = this.createEmailCard(email)
+    this.generatedEmails.follow_ups.forEach((email, index) => {
+      const emailCard = this.createEmailCard(email, index + 1)
       container.appendChild(emailCard)
     })
   }
 
-  createEmailCard(email) {
+  createEmailCard(email, count) {
     const card = document.createElement("div")
     card.className = "email-card"
     card.innerHTML = `
             <div class="email-header">
-                <h5 class="email-title">${email.title}</h5>
+                <h5 class="email-title">Follow Up Email - ${count}</h5>
                 <div class="email-actions">
                     <button class="btn btn-sm btn-outline-primary" onclick="app.previewEmail(${email.id})">
                         <i class="fas fa-eye"></i> Preview
