@@ -1,118 +1,136 @@
 {% extends "users/theme.html" %}
 {% load static %}
 
-{% block content %}
-<section class="auth bg-base d-flex flex-wrap">
-    <div class="auth-left d-lg-block d-none">
-        <div class="d-flex align-items-center flex-column h-100 justify-content-center">
-            <img src="{% static 'users/images/auth-img.png' %}" alt="">
-        </div>
-    </div>
-    <div class="auth-right py-32 px-24 d-flex flex-column justify-content-center">
-        <div class="max-w-464-px mx-auto w-100">
-            <div>
-                    <img src="{% static 'users/images/allanytics_cake.png' %}" alt="">
-                <h4 class="mb-12">Sign In</h4>
-                <p class="mb-32 text-secondary-light text-lg">Welcome back!</p>
-            </div>
-            <form  id="formAuthentication" enctype="multipart/form-data"
-                   class="mb-4 needs-validation {% if form.email.errors %}was-validated{% endif %}"
-                   method="post" autocomplete="off">
-                {% csrf_token %}
-                <div class="icon-field mb-16 has-validation">
-                    <span class="icon">
-                        <iconify-icon icon="mage:email"></iconify-icon>
-                    </span>
-                    <input name="full_name" id="id_full_name" type="text"
-                           class="form-control bg-neutral-50 radius-12"
-                           placeholder="Full Name"
-                           required>
-                    {% if form.errors %}
-                      {% for error in form.full_name.errors %}
-                        <div class="invalid-feedback">
-                            {{ error }}
-                        </div>
-                      {% endfor %}
-                    {% endif %}
+{% block title %}Submit Details - SalesAI{% endblock %}
 
-                </div>
-                <div class="icon-field mb-16 has-validation">
-                    <span class="icon">
-                        <iconify-icon icon="mage:email"></iconify-icon>
-                    </span>
-                    <input name="company_url" id="id_company_url" type="text"
-                           class="form-control bg-neutral-50 radius-12"
-                           placeholder="company_url"
-                           required>
-                    {% if form.errors %}
-                      {% for error in form.company_url.errors %}
-                        <div class="invalid-feedback">
-                            {{ error }}
-                        </div>
-                      {% endfor %}
-                    {% endif %}
-
-                </div>
-                <div class="icon-field mb-16 has-validation">
-                    <span class="icon">
-                        <iconify-icon icon="mage:email"></iconify-icon>
-                    </span>
-                    <input name="linkedin_url" id="id_linkedin_url" type="text"
-                           class="form-control bg-neutral-50 radius-12"
-                           placeholder="linkedin_url"
-                           required>
-                    {% if form.errors %}
-                      {% for error in form.linkedin_url.errors %}
-                        <div class="invalid-feedback">
-                            {{ error }}
-                        </div>
-                      {% endfor %}
-                    {% endif %}
-
-                </div>
-                <div class="icon-field mb-16 has-validation">
-                    <span class="icon">
-                        <iconify-icon icon="mage:email"></iconify-icon>
-                    </span>
-                    <input name="product_url" id="id_product_url" type="text"
-                           class="form-control bg-neutral-50 radius-12"
-                           placeholder="product_url"
-                           required>
-                    {% if form.errors %}
-                      {% for error in form.product_url.errors %}
-                        <div class="invalid-feedback">
-                            {{ error }}
-                        </div>
-                      {% endfor %}
-                    {% endif %}
-
-                </div>
-                <div class="icon-field mb-16 has-validation">
-                    <span class="icon">
-                        <iconify-icon icon="mage:email"></iconify-icon>
-                    </span>
-                    <input name="product" id="id_product" type="text"
-                           class="form-control bg-neutral-50 radius-12"
-                           placeholder="product"
-                           required>
-                    {% if form.errors %}
-                      {% for error in form.product.errors %}
-                        <div class="invalid-feedback">
-                            {{ error }}
-                        </div>
-                      {% endfor %}
-                    {% endif %}
-
-                </div>
-
-                <button type="submit" class="btn btn-primary text-sm btn-sm px-12 py-16 w-100 radius-12 mt-32 "> Submit</button>
-
-
-            </form>
-        </div>
-    </div>
-</section>
-
-
+{% block extra_head %}
+<link href="{% static 'users/css/styles.css' %}" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 {% endblock %}
 
+{% block content %}
+<div class="row justify-content-center mt-5 w-100">
+    <div class="col-lg-6 col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-user-edit me-2"></i>Submit Details</h4>
+                <p class="mb-0">Please complete the form below</p>
+            </div>
+            <div class="card-body p-4">
+                <form id="formAuthentication" method="post" autocomplete="off"
+                      class="needs-validation {% if form.errors %}was-validated{% endif %}" novalidate>
+                    {% csrf_token %}
+
+                    <!-- Full Name -->
+                    <div class="mb-3">
+                        <label for="id_full_name" class="form-label">Full Name</label>
+                        <input type="text" name="full_name" id="id_full_name"
+                               class="form-control"
+                               placeholder="Full Name"
+                               value="{{ form.data.full_name|default:user.full_name|default_if_none:'' }}"
+                               required>
+                        {% if form.errors %}
+                          {% for error in form.full_name.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                          {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Company Name -->
+                    <div class="mb-3">
+                        <label for="id_company_name" class="form-label">Company Name</label>
+                        <input type="text" name="company_name" id="id_company_name"
+                               class="form-control"
+                               placeholder="Company Name"
+                               value="{{ form.data.company_name|default:user.company_name|default_if_none:'' }}"
+                               required>
+                        {% if form.errors %}
+                          {% for error in form.company_name.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                          {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Company URL -->
+                    <div class="mb-3">
+                        <label for="id_company_url" class="form-label">Company URL</label>
+                        <input type="url" name="company_url" id="id_company_url"
+                               class="form-control"
+                               placeholder="Company URL"
+                               value="{{ form.data.company_url|default:user.company_url|default_if_none:'' }}"
+                               required>
+                        {% if form.errors %}
+                          {% for error in form.company_url.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                          {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Company LinkedIn URL -->
+                    <div class="mb-3">
+                        <label for="id_company_linkedin_url" class="form-label">Company LinkedIn URL</label>
+                        <input type="url" name="company_linkedin_url" id="id_company_linkedin_url"
+                               class="form-control"
+                               placeholder="Company LinkedIn URL"
+                               value="{{ form.data.company_linkedin_url|default:user.company_linkedin_url|default_if_none:'' }}"
+                               required>
+                        {% if form.errors %}
+                          {% for error in form.company_linkedin_url.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                          {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <!-- User LinkedIn URL -->
+                    <div class="mb-3">
+                        <label for="id_user_linkedin_url" class="form-label">Your LinkedIn URL</label>
+                        <input type="url" name="user_linkedin_url" id="id_user_linkedin_url"
+                               class="form-control"
+                               placeholder="Your LinkedIn URL"
+                               value="{{ form.data.user_linkedin_url|default:user.user_linkedin_url|default_if_none:'' }}"
+                               required>
+                        {% if form.errors %}
+                          {% for error in form.user_linkedin_url.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                          {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Service Name -->
+                    <div class="mb-3">
+                        <label for="id_service_name" class="form-label">Service Name</label>
+                        <input type="text" name="service_name" id="id_service_name"
+                            class="form-control"
+                            placeholder="Service Name"
+                            value="{{ product_service.service_name|default_if_none:'' }}">
+                    </div>
+
+                    <!-- Product URL -->
+                    <div class="mb-3">
+                        <label for="id_product_url" class="form-label">Product URL</label>
+                        <input type="url" name="product_url" id="id_product_url"
+                            class="form-control"
+                            placeholder="https://yourproduct.com"
+                            value="{{ product_service.product_url|default_if_none:'' }}">
+                    </div>
+
+                    <!-- Product USP -->
+                    <div class="mb-3">
+                        <label for="id_product_usp" class="form-label">3–5 Unique Benefits (USP) of Your Product</label>
+                        <textarea name="product_usp" id="id_product_usp"
+                                class="form-control"
+                                rows="3"
+                                placeholder="Highlight the top benefits of your product">{{ product_service.product_usp|default_if_none:'' }}</textarea>
+                    </div>
+
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-primary w-100 py-2 mt-3">
+                        <i class="fas fa-paper-plane me-2"></i>Submit
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

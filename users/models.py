@@ -71,9 +71,6 @@ class ProductService(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="product_service")
     service_name = models.CharField(max_length=255, null=True)
     product_url = models.URLField(null=True, blank=True)
+    product_usp = models.TextField(null=True, blank=True)  
 
-class ProductDocument(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="product_document")
-    product_service = models.ForeignKey(ProductService, on_delete=models.CASCADE, related_name="product_document")
-    product = models.FileField(null=True, blank=True)
 

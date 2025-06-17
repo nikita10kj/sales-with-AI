@@ -24,32 +24,42 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home' %}">Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'generate_email' %}">Generator</a>
-                    </li>
-                
-                    
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle"></i> Account
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="fas fa-cog me-2"></i>Settings</a></li>
-                            <li>
-                                <form action="{% url 'logout' %}" method="post">
-                                {% csrf_token %}
-                                <button type="submit" class="dropdown-item ">
-                                <i class="fas fa-sign-out-alt me-2"></i>  Log Out</button>
-                                </form>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
+    <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">
+                Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'generate_email' %}active{% endif %}" href="{% url 'generate_email' %}">
+                Generator
+            </a>
+        </li>
+
+        <li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">
+        <i class="fas fa-user-circle"></i> Account
+    </a>
+    <ul class="dropdown-menu">
+        <li>
+            <a class="dropdown-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}">
+                <i class="fas fa-user me-2"></i>Profile
+            </a>
+        </li>
+        <li>
+            <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="dropdown-item">
+                    <i class="fas fa-sign-out-alt me-2"></i> Log Out
+                </button>
+            </form>
+        </li>
+    </ul>
+</li>
+
+    </ul>
+</div>
+
         </div>
     </nav>
 

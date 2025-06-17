@@ -1,5 +1,6 @@
 {% extends "users/base.html" %}
 {% load static %}
+
 {% block content %}
 <div class="container">
     <div class="row justify-content-center mt-3">
@@ -13,59 +14,97 @@
                     {% if error %}
                         <div class="alert alert-danger">{{ error }}</div>
                     {% endif %}
-                    
+
                     <form method="post" enctype="multipart/form-data" class="profile-form">
                         {% csrf_token %}
-                        
+
+                        <!-- Email & Full Name -->
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="email" class="form-label">Email *</label>
-                                    <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                                    <input type="email" class="form-control" id="email" name="email"
+                                           value="{{ user.email }}" required>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="full_name" class="form-label">Full Name</label>
-                                    <input type="text" class="form-control" id="full_name" name="full_name" value="{{ user.full_name }}">
+                                    <input type="text" class="form-control" id="full_name" name="full_name"
+                                           value="{{ user.full_name }}">
                                 </div>
                             </div>
                         </div>
-                        
+
+                        <!-- Company Name & URL -->
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="company_url" class="form-label">Company URL</label>
-                                    <input type="url" class="form-control" id="company_url" name="company_url" value="{{ user.company_url }}" placeholder="https://yourcompany.com">
+                                    <label for="company_name" class="form-label">Company Name</label>
+                                    <input type="text" class="form-control" id="company_name" name="company_name"
+                                           value="{{ user.company_name }}">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="linkedin_url" class="form-label">LinkedIn URL</label>
-                                    <input type="url" class="form-control" id="linkedin_url" name="linkedin_url" value="{{ user.linkedin_url }}" placeholder="https://linkedin.com/in/yourprofile">
+                                    <label for="company_url" class="form-label">Company URL</label>
+                                    <input type="url" class="form-control" id="company_url" name="company_url"
+                                           value="{{ user.company_url }}" placeholder="https://yourcompany.com">
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="product_url" class="form-label">Product URL</label>
-                            <input type="url" class="form-control" id="product_url" name="product_url" value="{{ user.product_url }}" placeholder="https://yourproduct.com">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="product" class="form-label">Product File</label>
-                            {% if user.product %}
-                                <div class="current-file mb-2">
-                                    <span class="badge bg-light text-dark">
-                                        <i class="fas fa-paperclip me-1"></i>
-                                        Current: <a href="{{ user.product.url }}" target="_blank">{{ user.product.name|truncatechars:30 }}</a>
-                                    </span>
+
+                        <!-- LinkedIn URLs -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="company_linkedin_url" class="form-label">Company LinkedIn URL</label>
+                                    <input type="url" class="form-control" id="company_linkedin_url" name="company_linkedin_url"
+                                           value="{{ user.company_linkedin_url }}" placeholder="https://linkedin.com/company/yourcompany">
                                 </div>
-                            {% endif %}
-                            <input type="file" class="form-control" id="product" name="product">
-                            <div class="form-text">Upload product brochure, PDF, or other relevant files</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="user_linkedin_url" class="form-label">Your LinkedIn URL</label>
+                                    <input type="url" class="form-control" id="user_linkedin_url" name="user_linkedin_url"
+                                           value="{{ user.user_linkedin_url }}" placeholder="https://linkedin.com/in/yourprofile">
+                                </div>
+                            </div>
                         </div>
-                        
+
+                        <!-- ProductService Fields -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="service_name" class="form-label">Service Name</label>
+                                    <!-- Service Name -->
+                    
+                                    <input type="text" class="form-control" id="service_name" name="service_name"
+                                        value="{{ request.POST.service_name|default:product_service.service_name|default_if_none:'' }}"
+                                        placeholder="e.g. AI Content Analyzer">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="product_url" class="form-label">Product URL</label>
+                                    <!-- Product URL -->
+                                    <input type="url" class="form-control" id="product_url" name="product_url"
+                                        value="{{ request.POST.product_url|default:product_service.product_url|default_if_none:'' }}"
+                                        placeholder="https://yourproduct.com">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="product_usp" class="form-label">3–5 Unique Benefits (USP) of Your Product</label>
+                           <!-- Product USP -->
+                            <textarea class="form-control" id="product_usp" name="product_usp" rows="3"
+                                    placeholder="Highlight key benefits">
+                                {{ request.POST.product_usp|default:product_service.product_usp|default_if_none:'' }}
+                            </textarea>
+                        </div>
+
+                        <!-- Submit Button -->
                         <div class="d-flex justify-content-end mt-4">
                             <button type="submit" class="btn btn-primary px-4">
                                 <i class="fas fa-save me-2"></i>Update Profile

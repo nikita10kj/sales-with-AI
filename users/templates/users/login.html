@@ -1,65 +1,57 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "users/theme.html" %}
 {% load static %}
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="{% static 'users/css/styles.css' %}" rel="stylesheet">
-</head>
-<body>
-    <div class="container">
-        <div class="row justify-content-center mt-5">
-            <div class="col-lg-6 col-md-8">
-                <div class="card shadow">
-                    <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Sign In</h4>
-                        <p class="mb-0 text-white-50">Welcome back!</p>
-                    </div>
-                    <div class="card-body p-4">
-                        
-                        
-                        <form id="formAuthentication" method="post" autocomplete="off" class="needs-validation {% if form.email.errors %}was-validated{% endif %}">
-                            {% csrf_token %}
-                            
-                            <div class="mb-3">
-                                <label for="id_email" class="form-label">Email</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light">
-                                        <i class="fas fa-envelope text-muted"></i>
-                                    </span>
-                                    <input name="email" id="id_email" type="email"
-                                           class="form-control"
-                                           placeholder="Enter your email"
-                                           required>
-                                </div>
-                                {% if form.errors %}
-                                {% for error in form.email.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ error }}
-                                    </div>
-                                {% endfor %}
-                                {% endif %}
-                            </div>
 
-                            <button type="submit" class="btn btn-primary w-100 py-2 mt-3">
-                                <i class="fas fa-sign-in-alt me-2"></i>Sign In
-                            </button>
+{% block title %}Sign In - SalesAI{% endblock %}
 
-                            <div class="mt-3 text-center">
-                                <p class="mb-0">Don't have an account? 
-                                    <a href="{% url 'register'%}" class="text-primary fw-semibold">Sign Up</a>
-                                </p>
+{% block extra_head %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<link href="{% static 'users/css/styles.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5 w-100">
+    <div class="col-lg-6 col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Sign In</h4>
+                <p class="mb-0">Welcome back!</p>
+            </div>
+            <div class="card-body p-4">
+                <form id="formAuthentication" method="post" autocomplete="off" class="needs-validation {% if form.email.errors %}was-validated{% endif %}">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="id_email" class="form-label">Email</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-envelope text-muted"></i>
+                            </span>
+                            <input name="email" id="id_email" type="email"
+                                   class="form-control"
+                                   placeholder="Enter your email"
+                                   required>
+                        </div>
+                        {% if form.errors %}
+                        {% for error in form.email.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ error }}
                             </div>
-                        </form>
+                        {% endfor %}
+                        {% endif %}
                     </div>
-                </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 mt-3">
+                        <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                    </button>
+
+                    <div class="mt-3 text-center">
+                        <p class="mb-0">Don't have an account? 
+                            <a href="{% url 'register'%}" class="text-primary fw-semibold">Sign Up</a>
+                        </p>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</div>
+{% endblock %}
