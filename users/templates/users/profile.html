@@ -11,8 +11,8 @@
                     <p class="mb-0 text-white-50">Update your personal and company details</p>
                 </div>
                 <div class="card-body">
-                    {% if error %}
-                        <div class="alert alert-danger">{{ error }}</div>
+                    {% if errors.email %}
+                        <div class="alert alert-danger">{{ errors.email }}</div>
                     {% endif %}
 
                     <form method="post" enctype="multipart/form-data" class="profile-form">
@@ -20,89 +20,74 @@
 
                         <!-- Email & Full Name -->
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="email" class="form-label">Email *</label>
-                                    <input type="email" class="form-control" id="email" name="email"
-                                           value="{{ user.email }}" required>
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="email" name="email"
+                                       value="{{ user.email }}" required>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="full_name" class="form-label">Full Name</label>
-                                    <input type="text" class="form-control" id="full_name" name="full_name"
-                                           value="{{ user.full_name }}">
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="full_name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="full_name" name="full_name"
+                                       value="{{ user.full_name }}">
                             </div>
                         </div>
 
                         <!-- Company Name & URL -->
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="company_name" class="form-label">Company Name</label>
-                                    <input type="text" class="form-control" id="company_name" name="company_name"
-                                           value="{{ user.company_name }}">
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="company_name" class="form-label">Company Name</label>
+                                <input type="text" class="form-control" id="company_name" name="company_name"
+                                       value="{{ user.company_name }}">
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="company_url" class="form-label">Company URL</label>
-                                    <input type="url" class="form-control" id="company_url" name="company_url"
-                                           value="{{ user.company_url }}" placeholder="https://yourcompany.com">
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="company_url" class="form-label">Company URL</label>
+                                <input type="url" class="form-control" id="company_url" name="company_url"
+                                       value="{{ user.company_url }}" placeholder="https://yourcompany.com">
                             </div>
                         </div>
 
                         <!-- LinkedIn URLs -->
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="company_linkedin_url" class="form-label">Company LinkedIn URL</label>
-                                    <input type="url" class="form-control" id="company_linkedin_url" name="company_linkedin_url"
-                                           value="{{ user.company_linkedin_url }}" placeholder="https://linkedin.com/company/yourcompany">
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="company_linkedin_url" class="form-label">Company LinkedIn URL</label>
+                                <input type="url" class="form-control" id="company_linkedin_url" name="company_linkedin_url"
+                                       value="{{ user.company_linkedin_url }}" placeholder="https://linkedin.com/company/yourcompany">
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="user_linkedin_url" class="form-label">Your LinkedIn URL</label>
-                                    <input type="url" class="form-control" id="user_linkedin_url" name="user_linkedin_url"
-                                           value="{{ user.user_linkedin_url }}" placeholder="https://linkedin.com/in/yourprofile">
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="user_linkedin_url" class="form-label">Your LinkedIn URL</label>
+                                <input type="url" class="form-control" id="user_linkedin_url" name="user_linkedin_url"
+                                       value="{{ user.user_linkedin_url }}" placeholder="https://linkedin.com/in/yourprofile">
                             </div>
                         </div>
 
-                        <!-- ProductService Fields -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="service_name" class="form-label">Service Name</label>
-                                    <!-- Service Name -->
-                    
-                                    <input type="text" class="form-control" id="service_name" name="service_name"
-                                        value="{{ request.POST.service_name|default:product_service.service_name|default_if_none:'' }}"
-                                        placeholder="e.g. AI Content Analyzer">
+                        <!-- Product Services Section -->
+                        <h5 class="mt-4 mb-3">Your Services</h5>
+                        <div id="services-container">
+                            {% for svc in services %}
+                            <div class="service-block row mb-3 border p-3 rounded position-relative">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Service Name*</label>
+                                    <input type="text" name="service_name_{{ forloop.counter0 }}" class="form-control"
+                                        placeholder="e.g. AI Content Analyzer" value="{{ svc.service_name }}" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Service URL*</label>
+                                    <input type="url" name="product_url_{{ forloop.counter0 }}" class="form-control"
+                                        placeholder="https://yourproduct.com" value="{{ svc.product_url }}" required>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">3–5 Unique Benefits (USP)</label>
+                                    <textarea name="product_usp_{{ forloop.counter0 }}" class="form-control" rows="3"
+                                            placeholder="Highlight key benefits">{{ svc.product_usp }}</textarea>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="product_url" class="form-label">Product URL</label>
-                                    <!-- Product URL -->
-                                    <input type="url" class="form-control" id="product_url" name="product_url"
-                                        value="{{ request.POST.product_url|default:product_service.product_url|default_if_none:'' }}"
-                                        placeholder="https://yourproduct.com">
-                                </div>
-                            </div>
+                            {% endfor %}
                         </div>
 
-                        <div class="mb-3">
-                            <label for="product_usp" class="form-label">3–5 Unique Benefits (USP) of Your Product</label>
-                           <!-- Product USP -->
-                            <textarea class="form-control" id="product_usp" name="product_usp" rows="3"
-                                    placeholder="Highlight key benefits"> 
-                                {{ request.POST.product_usp|default:product_service.product_usp|default_if_none:'' }}
-                            </textarea>
-                        </div>
+                        <!-- Add Another Service Button -->
+                        <button type="button" class="btn btn-sm btn-primary mb-4" id="add-service-btn">
+                            <i class="fas fa-plus"></i> Add Another Service
+                        </button>
 
                         <!-- Submit Button -->
                         <div class="d-flex justify-content-end mt-4">
@@ -116,4 +101,46 @@
         </div>
     </div>
 </div>
+
+<!-- JS for dynamic service blocks -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    let index = {{ services|length|default:1 }};
+    const container = document.getElementById('services-container');
+    const addBtn = document.getElementById('add-service-btn');
+
+    addBtn.addEventListener('click', function () {
+        const block = document.createElement('div');
+        block.className = 'service-block row mb-3 border p-3 rounded position-relative';
+        block.innerHTML = `
+            <button type="button" class="btn-close position-absolute top-0 end-0 mt-2 me-2 remove-service-btn" aria-label="Remove"></button>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Service Name*</label>
+                <input type="text" name="service_name_${index}" class="form-control"
+                       placeholder="e.g. AI Content Analyzer" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Service URL*</label>
+                <input type="url" name="product_url_${index}" class="form-control"
+                       placeholder="https://yourproduct.com" required>
+            </div>
+            <div class="col-md-12 mb-3">
+                <label class="form-label">3–5 Unique Benefits (USP)</label>
+                <textarea name="product_usp_${index}" class="form-control" rows="3"
+                          placeholder="Highlight key benefits"></textarea>
+            </div>
+        `;
+        container.appendChild(block);
+        index++;
+    });
+
+    // Remove button handler
+    container.addEventListener('click', function (e) {
+        if (e.target.classList.contains('remove-service-btn')) {
+            e.target.closest('.service-block').remove();
+        }
+    });
+});
+</script>
 {% endblock %}
