@@ -10,44 +10,43 @@
 
 {% block content %}
 <div class="row justify-content-center mt-5 w-100">
-    <div class="col-lg-6 col-md-8">
+    <div class="col-lg-8 col-md-10">
         <div class="card shadow">
             <div class="card-header bg-primary text-white">
                 <h4 class="mb-0"><i class="fas fa-user-edit me-2"></i>Submit Details</h4>
                 <p class="mb-0">Please complete the form below</p>
             </div>
             <div class="card-body p-4">
-                <form id="formAuthentication" method="post" autocomplete="off"
-                      class="needs-validation {% if form.errors %}was-validated{% endif %}" novalidate>
+                <form id="formAuthentication" method="post" autocomplete="off">
                     {% csrf_token %}
-
+                    
                     <!-- Full Name -->
                     <div class="mb-3">
-                        <label for="id_full_name" class="form-label">Full Name</label>
+                        <label for="id_full_name" class="form-label">Full Name*</label>
                         <input type="text" name="full_name" id="id_full_name"
                                class="form-control"
                                placeholder="Full Name"
                                value="{{ form.data.full_name|default:user.full_name|default_if_none:'' }}"
                                required>
-                        {% if form.errors %}
-                          {% for error in form.full_name.errors %}
-                            <div class="invalid-feedback d-block">{{ error }}</div>
-                          {% endfor %}
+                        {% if form.full_name.errors %}
+                            {% for error in form.full_name.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
                         {% endif %}
                     </div>
 
                     <!-- Company Name -->
                     <div class="mb-3">
-                        <label for="id_company_name" class="form-label">Company Name</label>
+                        <label for="id_company_name" class="form-label">Company Name*</label>
                         <input type="text" name="company_name" id="id_company_name"
                                class="form-control"
                                placeholder="Company Name"
                                value="{{ form.data.company_name|default:user.company_name|default_if_none:'' }}"
                                required>
-                        {% if form.errors %}
-                          {% for error in form.company_name.errors %}
-                            <div class="invalid-feedback d-block">{{ error }}</div>
-                          {% endfor %}
+                        {% if form.company_name.errors %}
+                            {% for error in form.company_name.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
                         {% endif %}
                     </div>
 
@@ -56,72 +55,79 @@
                         <label for="id_company_url" class="form-label">Company URL</label>
                         <input type="url" name="company_url" id="id_company_url"
                                class="form-control"
-                               placeholder="Company URL"
+                               placeholder="https://example.com"
                                value="{{ form.data.company_url|default:user.company_url|default_if_none:'' }}"
-                               required>
-                        {% if form.errors %}
-                          {% for error in form.company_url.errors %}
-                            <div class="invalid-feedback d-block">{{ error }}</div>
-                          {% endfor %}
+                               >
+                        {% if form.company_url.errors %}
+                            {% for error in form.company_url.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
                         {% endif %}
                     </div>
 
                     <!-- Company LinkedIn URL -->
                     <div class="mb-3">
-                        <label for="id_company_linkedin_url" class="form-label">Company LinkedIn URL</label>
+                        <label for="id_company_linkedin_url" class="form-label">Company LinkedIn URL*</label>
                         <input type="url" name="company_linkedin_url" id="id_company_linkedin_url"
                                class="form-control"
-                               placeholder="Company LinkedIn URL"
+                               placeholder="https://example.com"
                                value="{{ form.data.company_linkedin_url|default:user.company_linkedin_url|default_if_none:'' }}"
                                required>
-                        {% if form.errors %}
-                          {% for error in form.company_linkedin_url.errors %}
-                            <div class="invalid-feedback d-block">{{ error }}</div>
-                          {% endfor %}
+                        {% if form.company_linkedin_url.errors %}
+                            {% for error in form.company_linkedin_url.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
                         {% endif %}
                     </div>
 
                     <!-- User LinkedIn URL -->
                     <div class="mb-3">
-                        <label for="id_user_linkedin_url" class="form-label">Your LinkedIn URL</label>
+                        <label for="id_user_linkedin_url" class="form-label">Your LinkedIn URL*</label>
                         <input type="url" name="user_linkedin_url" id="id_user_linkedin_url"
                                class="form-control"
-                               placeholder="Your LinkedIn URL"
+                               placeholder="https://example.com"
                                value="{{ form.data.user_linkedin_url|default:user.user_linkedin_url|default_if_none:'' }}"
                                required>
-                        {% if form.errors %}
-                          {% for error in form.user_linkedin_url.errors %}
-                            <div class="invalid-feedback d-block">{{ error }}</div>
-                          {% endfor %}
+                        {% if form.user_linkedin_url.errors %}
+                            {% for error in form.user_linkedin_url.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
                         {% endif %}
                     </div>
 
-                    <!-- Service Name -->
-                    <div class="mb-3">
-                        <label for="id_service_name" class="form-label">Service Name</label>
-                        <input type="text" name="service_name" id="id_service_name"
-                            class="form-control"
-                            placeholder="Service Name"
-                            value="{{ product_service.service_name|default_if_none:'' }}">
+                    <div class="border rounded p-3 mb-3">
+                    <h5 class="mb-3">Service/Product Details</h5>
+
+                    <div id="services-container">
+                        <!-- First service -->
+                        <div class="service-block row mb-3 border p-3 rounded">
+                            <div class="col-md-6">
+                                <label class="form-label">Service Name*</label>
+                                <input type="text" name="service_name_0" class="form-control"
+                                      placeholder="e.g., Lead Generation Tool" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Service URL*</label>
+                                <input type="url" name="product_url_0" class="form-control"
+                                      placeholder="https://yourservice.com" required>
+                            </div>
+                            <div class="col-md-12 mt-3">
+                                <label class="form-label">3–5 Unique Benefits (USP)</label>
+                                <textarea name="product_usp_0" class="form-control" rows="3"
+                                          placeholder="Highlight top features or value points" ></textarea>
+                            </div>
+                        </div>
+                        
+
+                        
                     </div>
 
-                    <!-- Product URL -->
-                    <div class="mb-3">
-                        <label for="id_product_url" class="form-label">Product URL</label>
-                        <input type="url" name="product_url" id="id_product_url"
-                            class="form-control"
-                            placeholder="https://yourproduct.com"
-                            value="{{ product_service.product_url|default_if_none:'' }}">
-                    </div>
+                    <!-- Add Button -->
+                    <button type="button" class="btn btn-primary mt-2" id="add-service-btn">
+                        <i class="fas fa-plus"></i> Add Another Service
+                    </button>
+                </div>
 
-                    <!-- Product USP -->
-                    <div class="mb-3">
-                        <label for="id_product_usp" class="form-label">3–5 Unique Benefits (USP) of Your Product</label>
-                        <textarea name="product_usp" id="id_product_usp"
-                                class="form-control"
-                                rows="3"
-                                placeholder="Highlight the top benefits of your product">{{ product_service.product_usp|default_if_none:'' }}</textarea>
-                    </div>
 
 
                     <!-- Submit Button -->
@@ -133,4 +139,52 @@
         </div>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    let index = document.querySelectorAll('.service-block').length;
+ // Start from after the two static blocks
+    const container = document.getElementById('services-container');
+    const addBtn = document.getElementById('add-service-btn');
+
+    addBtn.addEventListener('click', function () {
+        const newBlock = document.createElement('div');
+        newBlock.className = 'service-block row mb-3 border p-3 rounded position-relative';
+
+        newBlock.innerHTML = `
+            <!-- Delete Button -->
+            <button type="button" class="btn-close position-absolute top-0 end-0 m-2 remove-service-btn" aria-label="Remove"></button>
+
+            <div class="col-md-6">
+                <label class="form-label">Service Name*</label>
+                <input type="text" name="service_name_${index}" class="form-control"
+                       placeholder="e.g., Lead Generation Tool" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Service URL*</label>
+                <input type="url" name="product_url_${index}" class="form-control"
+                       placeholder="https://yourservice.com" required>
+            </div>
+            <div class="col-md-12 mt-3">
+                <label class="form-label">3–5 Unique Benefits (USP)</label>
+                <textarea name="product_usp_${index}" class="form-control" rows="3"
+                          placeholder="Highlight top features or value points" ></textarea>
+            </div>
+        `;
+
+        container.appendChild(newBlock);
+
+        index++;
+    });
+
+    // Delegate remove button click
+    container.addEventListener('click', function (e) {
+        if (e.target.classList.contains('remove-service-btn')) {
+            const block = e.target.closest('.service-block');
+            block.remove();
+        }
+    });
+});
+</script>
+
+
 {% endblock %}

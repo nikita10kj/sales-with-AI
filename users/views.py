@@ -199,59 +199,102 @@ class UserDetailsView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["title"] = self.title
-        # Ensure we always have a product_service to avoid template errors
-        context["product_service"], _ = ProductService.objects.get_or_create(user=self.request.user)
+        context["services"] = ProductService.objects.filter(user=self.request.user)
         return context
 
     def form_valid(self, form):
         response = super().form_valid(form)
+        user = self.request.user
 
-        # Save related ProductService data
-        product_service, _ = ProductService.objects.get_or_create(user=self.request.user)
-        product_service.service_name = self.request.POST.get('service_name')
-        product_service.product_url = self.request.POST.get('product_url')
-        product_service.product_usp = self.request.POST.get('product_usp')
-        product_service.save()
+        # Delete previous services
+        ProductService.objects.filter(user=user).delete()
 
-        messages.success(self.request, "Your details have been updated successfully.")
+        # Handle multiple service entries
+        index = 0
+        while True:
+            service_name = self.request.POST.get(f'service_name_{index}')
+            product_url = self.request.POST.get(f'product_url_{index}')
+            product_usp = self.request.POST.get(f'product_usp_{index}')
+
+            # Break if we've reached the end of the service entries
+            if not service_name and not product_url and not product_usp:
+                break
+
+            # Only create if we have required fields
+            if service_name and product_url:
+                ProductService.objects.create(
+                    user=user,
+                    service_name=service_name.strip(),
+                    product_url=product_url.strip(),
+                    product_usp=product_usp.strip() if product_usp else ''
+                )
+
+            index += 1
+
+        messages.success(self.request, "Your details and services have been updated successfully.")
         return response
     
 class ProfileView(LoginRequiredMixin, View):
     def get(self, request):
-        # Always ensure a ProductService instance exists
-        product_service, _ = ProductService.objects.get_or_create(user=request.user)
+        # Fetch all services linked to the current user
+        services = ProductService.objects.filter(user=request.user).order_by('id')
         return render(request, 'users/profile.html', {
             'user': request.user,
-            'product_service': product_service
+            'services': services,
         })
 
     def post(self, request):
         user = request.user
-        product_service, _ = ProductService.objects.get_or_create(user=user)
+        errors = {}
 
-        user.full_name = request.POST.get('full_name')
-        user.company_name = request.POST.get('company_name')
-        user.company_url = request.POST.get('company_url')
-        user.company_linkedin_url = request.POST.get('company_linkedin_url')
-        user.user_linkedin_url = request.POST.get('user_linkedin_url')
-
-        email = request.POST.get('email')
+        # Validate and update email
+        email = request.POST.get('email', '').strip()
         try:
             EmailValidator()(email)
             user.email = email
         except ValidationError:
+            errors['email'] = 'Invalid email format'
+
+        # Collect other user info from form
+        user.full_name = request.POST.get('full_name', '').strip()
+        user.company_name = request.POST.get('company_name', '').strip()
+        user.company_url = request.POST.get('company_url', '').strip()
+        user.company_linkedin_url = request.POST.get('company_linkedin_url', '').strip()
+        user.user_linkedin_url = request.POST.get('user_linkedin_url', '').strip()
+
+        # If there's any validation error, re-render the form with errors and data
+        if errors:
+            services = ProductService.objects.filter(user=user)
             return render(request, 'users/profile.html', {
                 'user': user,
-                'product_service': product_service,
-                'error': 'Invalid email format'
+                'services': services,
+                'errors': errors
             })
 
+        # Save updated user data
         user.save()
 
-        # Update ProductService data
-        product_service.service_name = request.POST.get('service_name')
-        product_service.product_url = request.POST.get('product_url')
-        product_service.product_usp = request.POST.get('product_usp')
-        product_service.save()
+        # Delete old services and re-create based on submitted data
+        ProductService.objects.filter(user=user).delete()
+        
+        index = 0
+        while True:
+            name = request.POST.get(f'service_name_{index}')
+            url = request.POST.get(f'product_url_{index}')
+            usp = request.POST.get(f'product_usp_{index}')
+            
+            # Break if we've reached the end of the service entries
+            if not name and not url and not usp:
+                break
+
+            # Only create if we have required fields
+            if name and url:
+                ProductService.objects.create(
+                    user=user,
+                    service_name=name.strip(),
+                    product_url=url.strip(),
+                    product_usp=usp.strip() if usp else ''
+                )
+            index += 1
 
         return redirect('profile')
