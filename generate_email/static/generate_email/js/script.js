@@ -16,8 +16,8 @@ class EmailMarketingApp {
 
   bindEvents() {
     // Navigation buttons
-    document.getElementById("nextBtn").addEventListener("click", () => this.nextStep())
-    document.getElementById("prevBtn").addEventListener("click", () => this.prevStep())
+//    document.getElementById("nextBtn").addEventListener("click", () => this.nextStep())
+//    document.getElementById("prevBtn").addEventListener("click", () => this.prevStep())
 
     // Step navigation from sidebar
     document.querySelectorAll(".step").forEach((step) => {
@@ -36,6 +36,11 @@ class EmailMarketingApp {
       this.nextStep()
       this.submitForm()
     })
+
+    document.getElementById("sendEmail").addEventListener("click", () => {
+        this.sendEmail()
+    })
+
   }
 
   nextStep() {
@@ -80,20 +85,20 @@ class EmailMarketingApp {
     })
 
     // Update navigation buttons
-    const prevBtn = document.getElementById("prevBtn")
-    const nextBtn = document.getElementById("nextBtn")
+//    const prevBtn = document.getElementById("prevBtn")
+//    const nextBtn = document.getElementById("nextBtn")
 
-    prevBtn.style.display = this.currentStep === 1 ? "none" : "inline-block"
+//    prevBtn.style.display = this.currentStep === 1 ? "none" : "inline-block"
 
-    if (this.currentStep === this.totalSteps) {
-      nextBtn.style.display = "none"
-    } else {
-      nextBtn.style.display = "inline-block"
-      nextBtn.innerHTML =
-        this.currentStep === 4
-          ? 'Generate & Review<i class="fas fa-arrow-right ms-2"></i>'
-          : 'Next<i class="fas fa-arrow-right ms-2"></i>'
-    }
+//    if (this.currentStep === this.totalSteps) {
+//      nextBtn.style.display = "none"
+//    } else {
+//      nextBtn.style.display = "inline-block"
+//      nextBtn.innerHTML =
+//        this.currentStep === 4
+//          ? 'Generate & Review<i class="fas fa-arrow-right ms-2"></i>'
+//          : 'Next<i class="fas fa-arrow-right ms-2"></i>'
+//    }
   }
 
   validateCurrentStep() {
@@ -140,9 +145,8 @@ class EmailMarketingApp {
   }
 
   async submitForm() {
-    this.showLoading(true, "Submitting your details...");
+    this.showLoading(true);
     try {
-    console.log("form",this.formData)
       const response = await fetch('/generator/generate_email/', {
         method: 'POST',
         headers: {
@@ -156,20 +160,18 @@ class EmailMarketingApp {
       }
       const data = await response.json();
       this.generatedEmails = data.emails; // Assuming the response contains the generated emails
+      this.targetId = data.targetId;
       this.displayGeneratedEmails();
       this.showAlert("Details submitted successfully!", "success");
     } catch (error) {
+    console.log("submit error:", error)
       this.showAlert("Error submitting details. Please try again.", "danger");
     } finally {
       this.showLoading(false);
     }
   }
 
-  getCSRFToken() {
-    // Function to get CSRF token from cookies
-    const cookieValue = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
-    return cookieValue ? cookieValue.split('=')[1] : '';
-  }
+
 
   displayGeneratedEmails() {
     const container = document.getElementById("emailsContainer")
@@ -179,21 +181,16 @@ class EmailMarketingApp {
         const main = this.generatedEmails.main_email;
         const mainCard = document.createElement("div");
         mainCard.className = "email-card";
+        mainCard.dataset.emailId = "main_email"; // <-- Assign emailId here
         mainCard.innerHTML = `
           <div class="email-header">
               <h5 class="email-title">${main.title}</h5>
               <div class="email-actions">
-                  <button class="btn btn-sm btn-outline-primary" onclick="app.previewEmail(${main.id})">
-                      <i class="fas fa-eye"></i> Preview
-                  </button>
-                  <button class="btn btn-sm btn-outline-secondary" onclick="app.editEmail(${main.id})">
+
+                  <button class="btn btn-sm btn-outline-primary" onclick="app.editEmail(this)">
                       <i class="fas fa-edit"></i> Edit
                   </button>
-                  <div class="form-check ms-2">
-                      <input class="form-check-input" type="checkbox" id="select-${main.id}"
-                             onchange="app.toggleEmailSelection(${main.id})">
-                      <label class="form-check-label" for="select-${main.id}">Select</label>
-                  </div>
+
               </div>
           </div>
           <div class="email-body">
@@ -201,7 +198,7 @@ class EmailMarketingApp {
                   <strong>Subject:</strong> ${main.subject}
               </div>
               <div class="email-content">
-                  ${main.body.replace(/\n/g, "<br>")}
+                  ${main.body}
               </div>
           </div>
         `;
@@ -217,21 +214,17 @@ class EmailMarketingApp {
   createEmailCard(email, count) {
     const card = document.createElement("div")
     card.className = "email-card"
+    card.dataset.emailId = "follow_up_${count-1}"; // <-- Assign emailId here
+
     card.innerHTML = `
             <div class="email-header">
                 <h5 class="email-title">Follow Up Email - ${count}</h5>
                 <div class="email-actions">
-                    <button class="btn btn-sm btn-outline-primary" onclick="app.previewEmail(${email.id})">
-                        <i class="fas fa-eye"></i> Preview
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="app.editEmail(${email.id})">
+
+                    <button class="btn btn-sm btn-outline-primary" onclick="app.editEmail(this)">
                         <i class="fas fa-edit"></i> Edit
                     </button>
-                    <div class="form-check ms-2">
-                        <input class="form-check-input" type="checkbox" id="select-${email.id}" 
-                               onchange="app.toggleEmailSelection(${email.id})">
-                        <label class="form-check-label" for="select-${email.id}">Select</label>
-                    </div>
+
                 </div>
             </div>
             <div class="email-body">
@@ -239,7 +232,7 @@ class EmailMarketingApp {
                     <strong>Subject:</strong> ${email.subject}
                 </div>
                 <div class="email-content">
-                    ${email.body.replace(/\n/g, "<br>")}
+                    ${email.body}
                 </div>
             </div>
         `
@@ -265,8 +258,17 @@ class EmailMarketingApp {
     }
   }
 
-  editEmail(emailId) {
-    const email = this.generatedEmails.find((e) => e.id === emailId)
+  editEmail(button) {
+      const card = button.closest('.email-card');
+      const emailKey = card.dataset.emailId;
+
+      let email;
+      if (emailKey === 'main_email') {
+        email = this.generatedEmails.main_email;
+      } else if (emailKey.startsWith('follow_up_')) {
+        const index = parseInt(emailKey.split('_')[2]); // e.g. 'follow_up_0'
+        email = this.generatedEmails.follow_ups[index];
+      }
     if (email) {
       const modal = new bootstrap.Modal(document.getElementById("emailPreviewModal"))
       document.getElementById("emailPreviewContent").innerHTML = `
@@ -276,13 +278,15 @@ class EmailMarketingApp {
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Email Body</label>
-                    <textarea class="form-control" id="editBody" rows="15">${email.body}</textarea>
+                     <div id="editBody" contenteditable="true" class="form-control" style="min-height: 200px; ">
+                       ${email.body}
+                     </div>
                 </div>
             `
 
       document.getElementById("saveEmailChanges").onclick = () => {
         email.subject = document.getElementById("editSubject").value
-        email.body = document.getElementById("editBody").value
+        email.body = document.getElementById("editBody").innerHTML
         this.displayGeneratedEmails()
         modal.hide()
         this.showAlert("Email updated successfully!", "success")
@@ -291,6 +295,41 @@ class EmailMarketingApp {
       modal.show()
     }
   }
+
+  async sendEmail() {
+        const emails = this.generatedEmails;
+
+      try {
+        const response = await fetch("/generator/send_email/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": this.getCSRFToken(), // You should have this function already
+          },
+          body: JSON.stringify({
+            emails:emails,
+            targetId:this.targetId
+          }),
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          alert("Email sent and saved successfully!");
+        } else {
+          alert("Failed to send email.");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("An error occurred while sending the email.");
+      }
+
+  }
+
+    getCSRFToken() {
+        // Function to get CSRF token from cookies
+        const cookieValue = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+        return cookieValue ? cookieValue.split('=')[1] : '';
+    }
 
   toggleEmailSelection(emailId) {
     const email = this.generatedEmails.find((e) => e.id === emailId)

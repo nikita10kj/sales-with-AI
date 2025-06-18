@@ -24,6 +24,7 @@ class SentEmail(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sent_email')
     target_audience = models.ForeignKey(TargetAudience, on_delete=models.CASCADE, related_name='sent_email')
     uid = models.UUIDField(default=uuid.uuid4, unique=True)
+    message_id = models.CharField(max_length=500, null=True)
     email = models.EmailField(validators=[EmailValidator])
     subject = models.CharField(max_length=500)
     message = models.TextField()
