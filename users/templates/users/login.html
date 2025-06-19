@@ -1,11 +1,12 @@
 {% extends "users/theme.html" %}
 {% load static %}
-
 {% block title %}Sign In - SalesAI{% endblock %}
 
 {% block extra_head %}
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 <link href="{% static 'users/css/styles.css' %}" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async></script>
+
 {% endblock %}
 
 {% block content %}
@@ -51,7 +52,12 @@
                     </div>
                 </form>
             </div>
+
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+
 {% endblock %}
