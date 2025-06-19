@@ -41,7 +41,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="company_url" class="form-label">Company URL</label>
-                                <input type="url" class="form-control" id="company_url" name="company_url"
+                                <input type="text" class="form-control" id="company_url" name="company_url"
                                        value="{{ user.company_url }}" placeholder="https://yourcompany.com">
                             </div>
                         </div>
@@ -50,12 +50,12 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="company_linkedin_url" class="form-label">Company LinkedIn URL</label>
-                                <input type="url" class="form-control" id="company_linkedin_url" name="company_linkedin_url"
+                                <input type="text" class="form-control" id="company_linkedin_url" name="company_linkedin_url"
                                        value="{{ user.company_linkedin_url }}" placeholder="https://linkedin.com/company/yourcompany">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="user_linkedin_url" class="form-label">Your LinkedIn URL</label>
-                                <input type="url" class="form-control" id="user_linkedin_url" name="user_linkedin_url"
+                                <input type="text" class="form-control" id="user_linkedin_url" name="user_linkedin_url"
                                        value="{{ user.user_linkedin_url }}" placeholder="https://linkedin.com/in/yourprofile">
                             </div>
                         </div>
@@ -72,7 +72,7 @@
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Service URL*</label>
-                                    <input type="url" name="product_url_{{ forloop.counter0 }}" class="form-control"
+                                    <input type="text" name="product_url_{{ forloop.counter0 }}" class="form-control"
                                         placeholder="https://yourproduct.com" value="{{ svc.product_url }}" required>
                                 </div>
                                 <div class="col-md-12 mb-3">
@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
             <div class="col-md-6 mb-3">
                 <label class="form-label">Service URL*</label>
-                <input type="url" name="product_url_${index}" class="form-control"
+                <input type="text" name="product_url_${index}" class="form-control"
                        placeholder="https://yourproduct.com" required>
             </div>
             <div class="col-md-12 mb-3">

@@ -172,6 +172,7 @@ class ResendOTPView(View):
 
 
 class UserDetailsView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    # Specify the model and fields to update
     model = CustomUser
     fields = [
         'full_name',
@@ -184,59 +185,104 @@ class UserDetailsView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     success_url = reverse_lazy('home')
     title = "User Details"
 
+    # Helper function to prepend https:// if missing from the URL
+    def normalize_url(self, url):
+        if url and not url.startswith(('http://', 'https://')):
+            return f'https://{url.strip()}'
+        return url.strip() if url else ''
+
+    # Override get_form to sanitize URL fields before form validation
+    def get_form(self, form_class=None):
+        print("→ get_form called!")  # Debug print
+        form = super().get_form(form_class)
+
+        # If the request is POST, modify the form data before validation
+        if self.request.method == "POST":
+            # Make the POST data mutable
+            data = self.request.POST.copy()
+
+            # Normalize each URL field and print debug info
+            for field in ['company_url', 'company_linkedin_url', 'user_linkedin_url']:
+                original = data.get(field)
+                normalized = self.normalize_url(original)
+                data[field] = normalized
+                print(f"{field}: '{original}' → '{normalized}'")  # Debug print
+
+            # Re-create the form with cleaned data
+            form = form.__class__(data, instance=self.get_object(), files=self.request.FILES)
+
+        return form
+
+    # Restrict access: users can only edit their own profile
     def test_func(self):
         user = get_object_or_404(CustomUser, pk=self.kwargs['pk'])
         return self.request.user == user
 
+    # Handle unauthorized access attempts
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
             return super().handle_no_permission()
         return HttpResponseForbidden("You do not have permission to access this page.")
 
+    # Always return the current logged-in user for this view
     def get_object(self, queryset=None):
         return self.request.user
 
+    # Add additional context variables to the template
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["title"] = self.title
         context["services"] = ProductService.objects.filter(user=self.request.user)
         return context
 
+    # Called when form is valid - also saves the ProductService entries
     def form_valid(self, form):
+        print("→ form_valid called!")  # Debug print
         response = super().form_valid(form)
         user = self.request.user
 
-        # Delete previous services
+        # Clear existing ProductService entries for this user
         ProductService.objects.filter(user=user).delete()
 
-        # Handle multiple service entries
+        # Loop through dynamic service fields and recreate entries
         index = 0
         while True:
             service_name = self.request.POST.get(f'service_name_{index}')
             product_url = self.request.POST.get(f'product_url_{index}')
             product_usp = self.request.POST.get(f'product_usp_{index}')
 
-            # Break if we've reached the end of the service entries
+            # Stop if no more entries
             if not service_name and not product_url and not product_usp:
                 break
 
-            # Only create if we have required fields
+            # Only save if required fields are present
             if service_name and product_url:
+                cleaned_url = self.normalize_url(product_url)
+                print(f"Service {index}: '{product_url}' → '{cleaned_url}'")  # Debug print
+
                 ProductService.objects.create(
                     user=user,
                     service_name=service_name.strip(),
-                    product_url=product_url.strip(),
+                    product_url=cleaned_url,
                     product_usp=product_usp.strip() if product_usp else ''
                 )
 
             index += 1
 
+        # Show success message
         messages.success(self.request, "Your details and services have been updated successfully.")
         return response
     
 class ProfileView(LoginRequiredMixin, View):
+
+    def normalize_url(self, url):
+        """Prepends https:// if the URL does not start with http:// or https://"""
+        if url and not url.startswith(('http://', 'https://')):
+            return f'https://{url.strip()}'
+        return url.strip() if url else ''
+
     def get(self, request):
-        # Fetch all services linked to the current user
+        # Fetch services for the logged-in user
         services = ProductService.objects.filter(user=request.user).order_by('id')
         return render(request, 'users/profile.html', {
             'user': request.user,
@@ -255,14 +301,14 @@ class ProfileView(LoginRequiredMixin, View):
         except ValidationError:
             errors['email'] = 'Invalid email format'
 
-        # Collect other user info from form
+        # Collect and normalize user fields
         user.full_name = request.POST.get('full_name', '').strip()
         user.company_name = request.POST.get('company_name', '').strip()
-        user.company_url = request.POST.get('company_url', '').strip()
-        user.company_linkedin_url = request.POST.get('company_linkedin_url', '').strip()
-        user.user_linkedin_url = request.POST.get('user_linkedin_url', '').strip()
+        user.company_url = self.normalize_url(request.POST.get('company_url', ''))
+        user.company_linkedin_url = self.normalize_url(request.POST.get('company_linkedin_url', ''))
+        user.user_linkedin_url = self.normalize_url(request.POST.get('user_linkedin_url', ''))
 
-        # If there's any validation error, re-render the form with errors and data
+        # If any validation error occurred, re-render form with data and errors
         if errors:
             services = ProductService.objects.filter(user=user)
             return render(request, 'users/profile.html', {
@@ -271,30 +317,33 @@ class ProfileView(LoginRequiredMixin, View):
                 'errors': errors
             })
 
-        # Save updated user data
+        # Save updated user profile
         user.save()
 
-        # Delete old services and re-create based on submitted data
+        # Delete previous services
         ProductService.objects.filter(user=user).delete()
-        
+
+        # Add new services from form
         index = 0
         while True:
             name = request.POST.get(f'service_name_{index}')
             url = request.POST.get(f'product_url_{index}')
             usp = request.POST.get(f'product_usp_{index}')
-            
-            # Break if we've reached the end of the service entries
+
+            # Stop loop if all fields are empty
             if not name and not url and not usp:
                 break
 
-            # Only create if we have required fields
+            # Save only if name and URL are provided
             if name and url:
+                normalized_url = self.normalize_url(url)
                 ProductService.objects.create(
                     user=user,
                     service_name=name.strip(),
-                    product_url=url.strip(),
+                    product_url=normalized_url,
                     product_usp=usp.strip() if usp else ''
                 )
+
             index += 1
 
         return redirect('profile')
