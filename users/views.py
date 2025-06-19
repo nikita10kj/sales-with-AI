@@ -7,7 +7,7 @@ from django.contrib.auth import login, authenticate
 from django.contrib import messages
 from .models import EmailOTP, CustomUser,ProductService
 from .forms import EmailForm, OTPForm
-from .utils import sendOTP
+from .utils import sendOTP, add_single_sender
 from django.contrib.auth.views import PasswordResetView
 
 from django.utils.timezone import now
@@ -54,6 +54,29 @@ class HomeView(LoginRequiredMixin, TemplateView):
 
 
 
+# class RegisterView(FormView):
+#     template_name = 'users/register.html'
+#     form_class = EmailForm
+#     title = "Sign Up"
+#
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         context["title"] = self.title
+#
+#         return context
+#
+#     def form_valid(self, form):
+#         email = form.cleaned_data['email'].lower()
+#         if CustomUser.objects.filter(email=email).exists():
+#             form.add_error('email', 'Email already registered. Try login.')
+#             return self.form_invalid(form)
+#
+#         sendOTP(email)
+#
+#         self.request.session['otp_email'] = email
+#         messages.success(self.request, 'OTP has been sent to your email.')
+#         return redirect('verify-otp')
+
 class RegisterView(FormView):
     template_name = 'users/register.html'
     form_class = EmailForm
@@ -77,6 +100,29 @@ class RegisterView(FormView):
         messages.success(self.request, 'OTP has been sent to your email.')
         return redirect('verify-otp')
 
+# class LoginView(FormView):
+#     template_name = 'users/login.html'
+#     form_class = EmailForm
+#     title = "Sign In"
+#
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         context["title"] = self.title
+#
+#         return context
+#
+#     def form_valid(self, form):
+#         email = form.cleaned_data['email'].lower()
+#         if not CustomUser.objects.filter(email=email).exists():
+#             form.add_error('email', 'Email not registered. Try registering.')
+#             return self.form_invalid(form)
+#
+#         sendOTP(email)
+#         messages.success(self.request, "OTP has been sent to your email.")
+#
+#         self.request.session['otp_email'] = email
+#
+#         return redirect('verify-otp')
 
 class LoginView(FormView):
     template_name = 'users/login.html'
@@ -101,7 +147,6 @@ class LoginView(FormView):
         self.request.session['otp_email'] = email
 
         return redirect('verify-otp')
-
 
 class VerifyOTPView(FormView):
     # verify with OTP or Password Login for Admin & Manager
@@ -231,6 +276,7 @@ class UserDetailsView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
             index += 1
 
+        add_single_sender(user)
         messages.success(self.request, "Your details and services have been updated successfully.")
         return response
     

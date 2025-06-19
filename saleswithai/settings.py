@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'users',
-    'generate_email'
+    'generate_email',
     # allauth apps
     # 'allauth',
     # 'allauth.account',
@@ -51,7 +51,9 @@ INSTALLED_APPS = [
 ]
 
 # SOCIALACCOUNT_PROVIDERS = {
+#
 #     'google': {
+#
 #         'AUTH_PARAMS': {
 #             'prompt': 'select_account',
 #             "access_type": "online",
@@ -60,6 +62,8 @@ INSTALLED_APPS = [
 #         'SCOPE': [
 #             'profile',
 #             'email',
+#             'https://www.googleapis.com/auth/gmail.send',  # Add this line
+#
 #         ],
 #     }
 # }
@@ -149,12 +153,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Email configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = os.environ['EMAIL_HOST_USER']
+# EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
+# DEFAULT_FROM_EMAIL = f"Sales with AI <{os.environ['EMAIL_HOST_USER']}>"
+EMAIL_HOST = 'smtp.sendgrid.net'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.environ['EMAIL_HOST_USER']
-EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
-DEFAULT_FROM_EMAIL = f"Sales with AI <{os.environ['EMAIL_HOST_USER']}>"
+EMAIL_HOST_USER = 'apikey'
+EMAIL_HOST_PASSWORD = os.environ['SENDGRID_API']
+DEFAULT_FROM_EMAIL = f"Sales with AI <nikita@jmsadvisory.in>"
 
 # AUTHENTICATION_BACKENDS = (
 #     'django.contrib.auth.backends.ModelBackend',
@@ -165,4 +175,9 @@ LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
 LOGIN_URL = 'login'
 ACCOUNT_LOGOUT_REDIRECT_URL = 'login'  # Redirect URL after logout
-
+ACCOUNT_USERNAME_REQUIRED = False  # Disable username requirement
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None # tell allauth there's no 'username'
+ACCOUNT_LOGIN_METHODS = ["email"]
+ACCOUNT_EMAIL_REQUIRED = True  # Email is required
+ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = True
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
