@@ -220,7 +220,6 @@ class ResendOTPView(View):
 
 
 class UserDetailsView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    # Specify the model and fields to update
     model = CustomUser
     fields = [
         'full_name',
@@ -269,7 +268,6 @@ class UserDetailsView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         user = get_object_or_404(CustomUser, pk=self.kwargs['pk'])
         return self.request.user == user
 
-    # Handle unauthorized access attempts
     def handle_no_permission(self):
         """
         Custom response for unauthorized access.
@@ -278,14 +276,12 @@ class UserDetailsView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             return super().handle_no_permission()
         return HttpResponseForbidden("You do not have permission to access this page.")
 
-    # Always return the current logged-in user for this view
     def get_object(self, queryset=None):
         """
         Always use the logged-in user as the object.
         """
         return self.request.user
 
-    # Add additional context variables to the template
     def get_context_data(self, **kwargs):
         """
         Add additional context like title and services to the template.
@@ -377,7 +373,7 @@ class ProfileView(LoginRequiredMixin, View):
                 'errors': errors
             })
 
-        # Save updated user profile
+        # Save updated user data
         user.save()
 
         # Delete previous services
