@@ -44,29 +44,42 @@ INSTALLED_APPS = [
     'users',
     'generate_email',
     # allauth apps
-    # 'allauth',
-    # 'allauth.account',
-    # 'allauth.socialaccount',
-    # 'allauth.socialaccount.providers.google',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.microsoft',
 ]
 
-# SOCIALACCOUNT_PROVIDERS = {
-#
-#     'google': {
-#
-#         'AUTH_PARAMS': {
-#             'prompt': 'select_account',
-#             "access_type": "online",
-#
-#         },
-#         'SCOPE': [
-#             'profile',
-#             'email',
-#             'https://www.googleapis.com/auth/gmail.send',  # Add this line
-#
-#         ],
-#     }
-# }
+SOCIALACCOUNT_PROVIDERS = {
+
+    'google': {
+
+        'AUTH_PARAMS': {
+            'prompt': 'consent',
+            "access_type": "offline",
+
+        },
+        'SCOPE': [
+            'profile',
+            'email',
+            'https://www.googleapis.com/auth/gmail.send',  # Add this line
+
+        ],
+    },
+    'microsoft': {
+
+        'SCOPE': [
+            'User.Read',
+            'Mail.Send',  # 👈 Needed to send email
+            'offline_access'
+        ],
+        'AUTH_PARAMS': {
+            'response_type': 'code',
+            'prompt': 'select_account'
+        }
+    }
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -76,7 +89,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # 'allauth.account.middleware.AccountMiddleware'
+    'allauth.account.middleware.AccountMiddleware'
 ]
 
 ROOT_URLCONF = 'saleswithai.urls'
@@ -153,23 +166,23 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Email configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.gmail.com'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = os.environ['EMAIL_HOST_USER']
-# EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
-# DEFAULT_FROM_EMAIL = f"Sales with AI <{os.environ['EMAIL_HOST_USER']}>"
-EMAIL_HOST = 'smtp.sendgrid.net'
+EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'apikey'
-EMAIL_HOST_PASSWORD = os.environ['SENDGRID_API']
-DEFAULT_FROM_EMAIL = f"Sales with AI <nikita@jmsadvisory.in>"
+EMAIL_HOST_USER = os.environ['EMAIL_HOST_USER']
+EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
+DEFAULT_FROM_EMAIL = f"Sales with AI <{os.environ['EMAIL_HOST_USER']}>"
+# EMAIL_HOST = 'smtp.sendgrid.net'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'apikey'
+# EMAIL_HOST_PASSWORD = os.environ['SENDGRID_API']
+# DEFAULT_FROM_EMAIL = f"Sales with AI <nikita@jmsadvisory.in>"
 
-# AUTHENTICATION_BACKENDS = (
-#     'django.contrib.auth.backends.ModelBackend',
-#     'allauth.account.auth_backends.AuthenticationBackend',
-# )
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
 
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
@@ -181,3 +194,6 @@ ACCOUNT_LOGIN_METHODS = ["email"]
 ACCOUNT_EMAIL_REQUIRED = True  # Email is required
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = True
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_STORE_TOKENS = True
+ACCOUNT_ADAPTER = 'users.adapters.CustomSocialAccountAdapter'

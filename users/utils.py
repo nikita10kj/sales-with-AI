@@ -21,7 +21,7 @@ def sendOTP(email):
     email_msg = EmailMessage(
         subject,
         html_message,
-        from_email='nikita@jmsadvisory.in',
+        # from_email='nikita@jmsadvisory.in',
         to=[email]
     )
     email_msg.content_subtype = 'html'

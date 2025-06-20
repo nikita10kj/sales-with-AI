@@ -1,5 +1,6 @@
 {% extends "users/theme.html" %}
 {% load static %}
+{% load socialaccount %}
 {% block title %}Sign In - SalesAI{% endblock %}
 
 {% block extra_head %}
@@ -51,6 +52,12 @@
                         </p>
                     </div>
                 </form>
+
+            </div>
+            <div>
+                <p>or Login with:</p>
+                <a href="{% provider_login_url 'google' %}">Login with Google</a>
+                <a href="{% provider_login_url 'microsoft' %}">Login with Microsoft</a>
             </div>
 
         </div>

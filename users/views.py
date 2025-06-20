@@ -276,7 +276,7 @@ class UserDetailsView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
             index += 1
 
-        add_single_sender(user)
+        # add_single_sender(user)
         messages.success(self.request, "Your details and services have been updated successfully.")
         return response
     
@@ -328,6 +328,7 @@ class ProfileView(LoginRequiredMixin, View):
             name = request.POST.get(f'service_name_{index}')
             url = request.POST.get(f'product_url_{index}')
             usp = request.POST.get(f'product_usp_{index}')
+            print("u", name, url)
             
             # Break if we've reached the end of the service entries
             if not name and not url and not usp:
@@ -341,6 +342,7 @@ class ProfileView(LoginRequiredMixin, View):
                     product_url=url.strip(),
                     product_usp=usp.strip() if usp else ''
                 )
+                print("d", user.product_service)
             index += 1
 
         return redirect('profile')

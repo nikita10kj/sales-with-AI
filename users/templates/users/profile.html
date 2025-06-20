@@ -105,7 +105,8 @@
 <!-- JS for dynamic service blocks -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    let index = {{ services|length|default:1 }};
+    let index = {{ services|length|default:0 }};
+    console.log("i", index);
     const container = document.getElementById('services-container');
     const addBtn = document.getElementById('add-service-btn');
 

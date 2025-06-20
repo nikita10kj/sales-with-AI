@@ -10,8 +10,76 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Email, To, Content, ReplyTo
 # Load environment variables (if using a .env file)
 from dotenv import load_dotenv
+import requests
+from allauth.socialaccount.models import SocialToken, SocialAccount
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+import base64
+from email.mime.text import MIMEText
+
+def get_user_provider(user):
+    try:
+        account = SocialAccount.objects.get(user=user)
+        return account.provider  # returns 'google' or 'microsoft'
+    except SocialAccount.DoesNotExist:
+        return None
+
+def get_gmail_service(user):
+    token = SocialToken.objects.get(account__user=user, account__provider='google')
+
+    credentials = Credentials(
+        token.token,
+        refresh_token=token.token_secret,  # token_secret stores refresh_token if present
+        token_uri='https://oauth2.googleapis.com/token',
+        client_id=os.getenv('GOOGLE_CLIENT_ID'),
+        client_secret=os.getenv('GOOGLE_CLIENT_SECRET')
+    )
+
+    service = build('gmail', 'v1', credentials=credentials)
+    return service
+
+
+def create_message(sender, to, subject, body):
+    message = MIMEText(body, 'html')
+    message['to'] = to
+    message['from'] = sender
+    message['subject'] = subject
+    raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+    return {'raw': raw_message}
 
 load_dotenv()  # Make sure you have python-dotenv installed
+
+def send_microsoft_email(user, to_email, subject, html_body):
+    token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
+    access_token = token.token
+
+    url = 'https://graph.microsoft.com/v1.0/me/sendMail'
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json'
+    }
+
+    message = {
+        "message": {
+            "subject": subject,
+            "body": {
+                "contentType": "HTML",
+                "content": html_body
+            },
+            "toRecipients": [
+                {
+                    "emailAddress": {
+                        "address": to_email
+                    }
+                }
+            ]
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=message)
+    response.raise_for_status()
+    return response.json() if response.content else {"status": "sent"}
+
 def sendGeneratedEmail(request, user, target_audience, main_email):
     subject = main_email["subject"]
     message = main_email["body"]
@@ -29,8 +97,25 @@ def sendGeneratedEmail(request, user, target_audience, main_email):
         message_id=message_id
     )
 
+    provider = get_user_provider(user)
+
+    if provider == 'google':
+        service = get_gmail_service(user)
+        messages = create_message(user.email, email, subject, message)
+        sent_message = service.users().messages().send(userId='me', body=messages).execute()
+        print("S", sent_message)
+
+    elif provider == 'microsoft':
+        sent_message = send_microsoft_email(user, email, subject, message)
+        print("Sm", sent_message)
+
+    else:
+        raise Exception("User is not logged in via Google or Microsoft.")
+
+
+
     # track_url = request.build_absolute_uri(reverse('track-email-open', args=[sent_email.uid]))
-    # track_url = f"https://dd8f-2405-201-2005-1965-5318-debe-64b7-fbd7.ngrok-free.app/generator/track-email/{sent_email.uid}/"
+    # # track_url = f"https://dd8f-2405-201-2005-1965-5318-debe-64b7-fbd7.ngrok-free.app/generator/track-email/{sent_email.uid}/"
     # message += f"<img src='{track_url}' width='1' height='1' style='display:none;' />"
     # email_msg = EmailMessage(
     #     subject,
@@ -45,24 +130,24 @@ def sendGeneratedEmail(request, user, target_audience, main_email):
 
 
 
-    messagesend = Mail(
-        from_email=Email(
-            user.email,
-            "Sales with AI"
-        ),
-        to_emails=To(email),
-        subject=subject,
-        html_content=Content("text/html", message)
-    )
-
-    # Set reply-to
-    messagesend.reply_to = ReplyTo(
-        user.email,
-        "Customer Support"
-    )
-    try:
-        sg = SendGridAPIClient(os.getenv("SENDGRID_API"))
-        response = sg.send(messagesend)
-        print(f"Email sent! Status Code: {response.status_code}")
-    except Exception as e:
-        print(f"Error sending email: {e}")
+    # messagesend = Mail(
+    #     from_email=Email(
+    #         user.email,
+    #         "Sales with AI"
+    #     ),
+    #     to_emails=To(email),
+    #     subject=subject,
+    #     html_content=Content("text/html", message)
+    # )
+    #
+    # # Set reply-to
+    # messagesend.reply_to = ReplyTo(
+    #     user.email,
+    #     "Customer Support"
+    # )
+    # try:
+    #     sg = SendGridAPIClient(os.getenv("SENDGRID_API"))
+    #     response = sg.send(messagesend)
+    #     print(f"Email sent! Status Code: {response.status_code}")
+    # except Exception as e:
+    #     print(f"Error sending email: {e}")
