@@ -1,5 +1,14 @@
 {% extends 'users/base.html' %}
 {% block content %}
+<style>
+    .chart-card {
+      height: 400px;
+    }
+    canvas {
+      width: 100% !important;
+      height: 300px !important;
+    }
+  </style>
             <!-- Sidebar -->
             <!-- <div class="col-md-3 sidebar">
                 <div class="sidebar-content">
@@ -440,4 +449,56 @@
                     </div>
                 </div>
             </div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const ctx1 = document.getElementById("performanceChart").getContext("2d");
+      new Chart(ctx1, {
+        type: "line",
+        data: {
+          labels: ["Jan 1", "Jan 8", "Jan 15", "Jan 22", "Jan 29", "Feb 5", "Feb 12"],
+          datasets: [{
+            label: "Emails Sent",
+            data: [120, 145, 167, 189, 201, 234, 267],
+            borderColor: "#6f42c1",
+            backgroundColor: "rgba(111, 66, 193, 0.1)",
+            tension: 0.4,
+            fill: true,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true },
+            x: {},
+          },
+        },
+      });
+
+      const ctx2 = document.getElementById("campaignTypesChart").getContext("2d");
+      new Chart(ctx2, {
+        type: "doughnut",
+        data: {
+          labels: ["AIDA", "PAS", "Before-After-Bridge", "STAR"],
+          datasets: [{
+            data: [45, 25, 20, 10],
+            backgroundColor: ["#6f42c1", "#198754", "#ffc107", "#dc3545"],
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: {
+                usePointStyle: true,
+              },
+            },
+          },
+        },
+      });
+    });
+  </script>
 {% endblock content %}

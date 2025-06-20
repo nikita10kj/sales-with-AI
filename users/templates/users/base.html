@@ -18,7 +18,7 @@
         <div class="container">
             <a class="navbar-brand" href="#">
                 <i class="fas fa-envelope-open-text me-2"></i>
-                Email Marketing Pro
+                Sell Smart
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -35,6 +35,12 @@
                 Generator
             </a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'view-emails' %}active{% endif %}" href="{% url 'view-emails' %}">
+                Emails
+            </a>
+        </li>
+
 
         <li class="nav-item dropdown">
     <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">
@@ -77,6 +83,7 @@
     <!-- <script src="{% static 'generate_email/js/script.js' %}"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{% static 'users/js/analytics-script.js' %}"></script>
+    <script src="{% static 'users/js/components/ui/chart.js' %}"></script>
     {% block js %}
     {% endblock js %}
 </body>

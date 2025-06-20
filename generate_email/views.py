@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin,UserPassesTestMixin
-from django.views.generic import FormView, View,TemplateView
+from django.views.generic import FormView, View,TemplateView,ListView,DetailView
 from django.http import JsonResponse
 from .genai_email import get_response
 from .models import TargetAudience, SentEmail
@@ -9,7 +9,7 @@ import json
 from django.http import HttpResponse
 
 from .utils import sendGeneratedEmail
-
+from django.shortcuts import get_object_or_404
 
 # Create your views here.
 class GenerateEmailView(LoginRequiredMixin, View):
@@ -149,3 +149,21 @@ def track_email_open(request, uid):
     return HttpResponse(pixel, content_type='image/png')
 
 
+class EmailListView(LoginRequiredMixin, ListView):
+    model = SentEmail
+    template_name = 'generate_email/email_list.html'
+    context_object_name = 'sent_emails'
+    paginate_by = 10  # Optional: for pagination
+
+    def get_queryset(self):
+        # Show only emails sent by the logged-in user, newest first
+        return SentEmail.objects.filter(user=self.request.user).select_related('target_audience').order_by('-created')
+    
+
+class EmailMessageView(DetailView):
+    model = SentEmail
+    template_name = 'generate_email/email_message.html'
+    context_object_name = 'email'
+
+    def get_object(self):
+        return get_object_or_404(SentEmail, uid=self.kwargs['uid'], user=self.request.user)

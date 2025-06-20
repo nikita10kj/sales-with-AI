@@ -25,6 +25,9 @@ from django.views.decorators.csrf import requires_csrf_token
 from django.http import HttpResponseForbidden
 from django.core.validators import URLValidator, EmailValidator
 from django.core.exceptions import ValidationError
+from collections import defaultdict
+import re
+
 
 @requires_csrf_token
 def csrf_failure(request, reason=""):
@@ -260,62 +263,74 @@ class UserDetailsView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     # Restrict access: users can only edit their own profile
     def test_func(self):
+        """
+        Restrict access to only the owner of the profile.
+        """
         user = get_object_or_404(CustomUser, pk=self.kwargs['pk'])
         return self.request.user == user
 
     # Handle unauthorized access attempts
     def handle_no_permission(self):
+        """
+        Custom response for unauthorized access.
+        """
         if not self.request.user.is_authenticated:
             return super().handle_no_permission()
         return HttpResponseForbidden("You do not have permission to access this page.")
 
     # Always return the current logged-in user for this view
     def get_object(self, queryset=None):
+        """
+        Always use the logged-in user as the object.
+        """
         return self.request.user
 
     # Add additional context variables to the template
     def get_context_data(self, **kwargs):
+        """
+        Add additional context like title and services to the template.
+        """
         context = super().get_context_data(**kwargs)
         context["title"] = self.title
         context["services"] = ProductService.objects.filter(user=self.request.user)
         return context
 
-    # Called when form is valid - also saves the ProductService entries
     def form_valid(self, form):
-        print("→ form_valid called!")  # Debug print
+        """
+        Handles successful form submission, updates services, and shows a success message.
+        """
         response = super().form_valid(form)
         user = self.request.user
 
-        # Clear existing ProductService entries for this user
+        # Clear existing services
         ProductService.objects.filter(user=user).delete()
 
-        # Loop through dynamic service fields and recreate entries
-        index = 0
-        while True:
-            service_name = self.request.POST.get(f'service_name_{index}')
-            product_url = self.request.POST.get(f'product_url_{index}')
-            product_usp = self.request.POST.get(f'product_usp_{index}')
+        # Collect new services using regex and defaultdict
+        services_data = defaultdict(dict)
+        service_pattern = re.compile(r'service_name_(\d+)')
 
-            # Stop if no more entries
-            if not service_name and not product_url and not product_usp:
-                break
+        for key, value in self.request.POST.items():
+            match = service_pattern.match(key)
+            if match:
+                idx = match.group(1)
+                services_data[idx]['service_name'] = value.strip()
+                services_data[idx]['product_url'] = self.normalize_url(self.request.POST.get(f'product_url_{idx}', ''))
+                services_data[idx]['product_usp'] = self.request.POST.get(f'product_usp_{idx}', '').strip()
 
-            # Only save if required fields are present
-            if service_name and product_url:
-                cleaned_url = self.normalize_url(product_url)
-                print(f"Service {index}: '{product_url}' → '{cleaned_url}'")  # Debug print
-
+        # Save valid services
+        for service in services_data.values():
+            if service.get('service_name') and service.get('product_url'):
                 ProductService.objects.create(
                     user=user,
-                    service_name=service_name.strip(),
-                    product_url=cleaned_url,
-                    product_usp=product_usp.strip() if product_usp else ''
+                    service_name=service['service_name'],
+                    product_url=service['product_url'],
+                    product_usp=service.get('product_usp', '')
                 )
 
-            index += 1
-
+        # Optional custom action and user feedback
         add_single_sender(user)
         messages.success(self.request, "Your details and services have been updated successfully.")
+
         return response
     
 class ProfileView(LoginRequiredMixin, View):
@@ -368,27 +383,52 @@ class ProfileView(LoginRequiredMixin, View):
         # Delete previous services
         ProductService.objects.filter(user=user).delete()
 
-        # Add new services from form
-        index = 0
-        while True:
-            name = request.POST.get(f'service_name_{index}')
-            url = request.POST.get(f'product_url_{index}')
-            usp = request.POST.get(f'product_usp_{index}')
+        # # Add new services from form
+        # index = 0
+        # while True:
+        #     name = request.POST.get(f'service_name_{index}')
+        #     url = request.POST.get(f'product_url_{index}')
+        #     usp = request.POST.get(f'product_usp_{index}')
 
-            # Stop loop if all fields are empty
-            if not name and not url and not usp:
-                break
+        #     # Stop loop if all fields are empty
+        #     if not name and not url and not usp:
+        #         break
 
-            # Save only if name and URL are provided
+        #     # Save only if name and URL are provided
+        #     if name and url:
+        #         normalized_url = self.normalize_url(url)
+        #         ProductService.objects.create(
+        #             user=user,
+        #             service_name=name.strip(),
+        #             product_url=normalized_url,
+        #             product_usp=usp.strip() if usp else ''
+        #         )
+
+        #     index += 1
+
+        # return redirect('profile')
+
+        # Group service fields by index using defaultdict
+        services_data = defaultdict(dict)
+        service_name_pattern = re.compile(r'service_name_(\d+)')
+        for key, value in request.POST.items():
+            match = service_name_pattern.match(key)
+            if match:
+                idx = match.group(1)
+                services_data[idx]['service_name'] = value.strip()
+                services_data[idx]['product_url'] = self.normalize_url(request.POST.get(f'product_url_{idx}', ''))
+                services_data[idx]['product_usp'] = request.POST.get(f'product_usp_{idx}', '').strip()
+
+        # Create new ProductService entries
+        for service in services_data.values():
+            name = service.get('service_name')
+            url = service.get('product_url')
             if name and url:
-                normalized_url = self.normalize_url(url)
                 ProductService.objects.create(
                     user=user,
-                    service_name=name.strip(),
-                    product_url=normalized_url,
-                    product_usp=usp.strip() if usp else ''
+                    service_name=name,
+                    product_url=url,
+                    product_usp=service.get('product_usp', '')
                 )
-
-            index += 1
 
         return redirect('profile')
