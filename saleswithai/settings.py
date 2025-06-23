@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ['SECRET']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['localhost','sellsmart-dvdhbme5h6eud4hz.centralindia-01.azurewebsites.net', 'sellsharp.co','20.192.98.161', '127.0.0.1']
 
@@ -113,7 +113,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'saleswithai.wsgi.application'
 
-CSRF_TRUSTED_ORIGINS = ['sellsmart-dvdhbme5h6eud4hz.centralindia-01.azurewebsites.net']
+CSRF_TRUSTED_ORIGINS = ['https://sellsmart-dvdhbme5h6eud4hz.centralindia-01.azurewebsites.net']
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Database
