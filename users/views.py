@@ -428,3 +428,5 @@ class ProfileView(LoginRequiredMixin, View):
                 )
 
         return redirect('profile')
+    
+
