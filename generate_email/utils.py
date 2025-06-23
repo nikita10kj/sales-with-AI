@@ -110,23 +110,19 @@ def sendGeneratedEmail(request, user, target_audience, main_email):
         print("Sm", sent_message)
 
     else:
-        raise Exception("User is not logged in via Google or Microsoft.")
+        track_url = request.build_absolute_uri(reverse('track-email-open', args=[sent_email.uid]))
+        # track_url = f"https://dd8f-2405-201-2005-1965-5318-debe-64b7-fbd7.ngrok-free.app/generator/track-email/{sent_email.uid}/"
+        message += f"<img src='{track_url}' width='1' height='1' style='display:none;' />"
+        email_msg = EmailMessage(
+            subject,
+            message,
+            to=[email],
+            reply_to=[user.email],
+            headers={'Message-ID': message_id}
+        )
+        email_msg.content_subtype = 'html'
 
-
-
-    # track_url = request.build_absolute_uri(reverse('track-email-open', args=[sent_email.uid]))
-    # # track_url = f"https://dd8f-2405-201-2005-1965-5318-debe-64b7-fbd7.ngrok-free.app/generator/track-email/{sent_email.uid}/"
-    # message += f"<img src='{track_url}' width='1' height='1' style='display:none;' />"
-    # email_msg = EmailMessage(
-    #     subject,
-    #     message,
-    #     from_email=user.email,
-    #     to=[email],
-    #     headers={'Message-ID': message_id}
-    # )
-    # email_msg.content_subtype = 'html'
-    #
-    # email_msg.send(fail_silently=False)
+        email_msg.send(fail_silently=False)
 
 
 
