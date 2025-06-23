@@ -19,54 +19,59 @@
         <div class="container">
             <a class="navbar-brand" href="#">
                 <i class="fas fa-envelope-open-text me-2"></i>
-                Sell Smart
+                Sell Sharp
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-    {% if user.is_authenticated %}
+    {% if user.is_authenticated and request.resolver_match.url_name != 'user-details' %}
     <ul class="navbar-nav ms-auto">
+        <!-- Dashboard -->
         <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">
                 Dashboard
             </a>
         </li>
+
+        <!-- Generator -->
         <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'generate_email' %}active{% endif %}" href="{% url 'generate_email' %}">
                 Generator
             </a>
         </li>
+
+        <!-- Emails -->
         <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'view-emails' %}active{% endif %}" href="{% url 'view-emails' %}">
                 Emails
             </a>
         </li>
 
-
+        <!-- Profile & Logout -->
         <li class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">
-        <i class="fas fa-user-circle"></i> Account
-    </a>
-    <ul class="dropdown-menu">
-        <li>
-            <a class="dropdown-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}">
-                <i class="fas fa-user me-2"></i>Profile
+            <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">
+                <i class="fas fa-user-circle"></i> Account
             </a>
-        </li>
-        <li>
-            <form action="{% url 'logout' %}" method="post">
-                {% csrf_token %}
-                <button type="submit" class="dropdown-item">
-                    <i class="fas fa-sign-out-alt me-2"></i> Log Out
-                </button>
-            </form>
+            <ul class="dropdown-menu">
+                <li>
+                    <a class="dropdown-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}">
+                        <i class="fas fa-user me-2"></i>Profile
+                    </a>
+                </li>
+                <li>
+                    <form action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item">
+                            <i class="fas fa-sign-out-alt me-2"></i> Log Out
+                        </button>
+                    </form>
+                </li>
+            </ul>
         </li>
     </ul>
-</li>
+{% endif %}
 
-    </ul>
-    {% endif %}
 </div>
 
         </div>
