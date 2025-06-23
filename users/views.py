@@ -187,6 +187,8 @@ class VerifyOTPView(FormView):
                 else:
                     redirect_url = reverse_lazy('user-details', kwargs={'pk': user.id})
 
+            user.backend = 'django.contrib.auth.backends.ModelBackend'  # or your actual backend path
+
             login(self.request, user)
             EmailOTP.objects.filter(email=email).delete()
 
