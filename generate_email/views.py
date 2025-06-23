@@ -3,13 +3,16 @@ from django.contrib.auth.mixins import LoginRequiredMixin,UserPassesTestMixin
 from django.views.generic import FormView, View,TemplateView,ListView,DetailView
 from django.http import JsonResponse
 from .genai_email import get_response
-from .models import TargetAudience, SentEmail
+from .models import TargetAudience, SentEmail, ReminderEmail
 from users.models import ProductService
 import json
 from django.http import HttpResponse
 
 from .utils import sendGeneratedEmail
 from django.shortcuts import get_object_or_404
+from email.utils import make_msgid
+from datetime import timedelta, date
+from django.utils import timezone
 
 # Create your views here.
 class GenerateEmailView(LoginRequiredMixin, View):
@@ -117,6 +120,15 @@ class GenerateEmailView(LoginRequiredMixin, View):
 
         return JsonResponse({'success': True,'emails': emails, 'targetId':target.id})
 
+import numpy as np
+
+def add_business_days_np(start_date, n_days):
+    # Convert to numpy datetime64
+    start_np = np.datetime64(start_date)
+    # Use numpy's busday_offset
+    result = np.busday_offset(start_np, n_days, roll='forward')
+    return result.astype('M8[D]').astype(object)
+
 class SendEmailView(LoginRequiredMixin, View):
     def get(self, request):
         return render(request, 'generate_email/email_generator.html', {'title': "Home"})
@@ -128,7 +140,27 @@ class SendEmailView(LoginRequiredMixin, View):
         targetId = data.get("targetId")
         target = TargetAudience.objects.get(id=targetId)
         main_email = emails["main_email"]
-        sendGeneratedEmail(request, request.user, target, main_email)
+        followup_emails = emails["follow_ups"]
+
+        sent_email = sendGeneratedEmail(request, request.user, target, main_email)
+        message_id = make_msgid(domain='localhost')
+        today = date.today()
+        days = [3, 5, 7, 10]
+        index = 0
+
+        for fe in followup_emails:
+            day = days[index]
+            ReminderEmail.objects.get_or_create(
+                user=request.user,
+                email=target.email,
+                sent_email=sent_email,
+                target_audience = target,
+                subject = fe["subject"],
+                message = fe["body"],
+                send_at = add_business_days_np(today, day),
+                message_id = message_id
+            )
+            index += 1
         return JsonResponse({'success': True})
 
 def track_email_open(request, uid):

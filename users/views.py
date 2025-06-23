@@ -45,40 +45,6 @@ class HomeView(LoginRequiredMixin, TemplateView):
 
         return context
 
-# class AnalyticsView(LoginRequiredMixin, TemplateView):
-#     template_name = 'users/dashboard.html'
-#     title = "Analytics"
-
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         context["title"] = self.title
-
-#         return context
-
-
-
-# class RegisterView(FormView):
-#     template_name = 'users/register.html'
-#     form_class = EmailForm
-#     title = "Sign Up"
-#
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         context["title"] = self.title
-#
-#         return context
-#
-#     def form_valid(self, form):
-#         email = form.cleaned_data['email'].lower()
-#         if CustomUser.objects.filter(email=email).exists():
-#             form.add_error('email', 'Email already registered. Try login.')
-#             return self.form_invalid(form)
-#
-#         sendOTP(email)
-#
-#         self.request.session['otp_email'] = email
-#         messages.success(self.request, 'OTP has been sent to your email.')
-#         return redirect('verify-otp')
 
 class RegisterView(FormView):
     template_name = 'users/register.html'
@@ -103,29 +69,6 @@ class RegisterView(FormView):
         messages.success(self.request, 'OTP has been sent to your email.')
         return redirect('verify-otp')
 
-# class LoginView(FormView):
-#     template_name = 'users/login.html'
-#     form_class = EmailForm
-#     title = "Sign In"
-#
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         context["title"] = self.title
-#
-#         return context
-#
-#     def form_valid(self, form):
-#         email = form.cleaned_data['email'].lower()
-#         if not CustomUser.objects.filter(email=email).exists():
-#             form.add_error('email', 'Email not registered. Try registering.')
-#             return self.form_invalid(form)
-#
-#         sendOTP(email)
-#         messages.success(self.request, "OTP has been sent to your email.")
-#
-#         self.request.session['otp_email'] = email
-#
-#         return redirect('verify-otp')
 
 class LoginView(FormView):
     template_name = 'users/login.html'

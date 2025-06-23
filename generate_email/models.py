@@ -20,6 +20,7 @@ class TargetAudience(models.Model):
     campaign_goal = models.CharField(max_length=255, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
 
+
 class SentEmail(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sent_email')
     target_audience = models.ForeignKey(TargetAudience, on_delete=models.CASCADE, related_name='sent_email')
@@ -30,3 +31,19 @@ class SentEmail(models.Model):
     message = models.TextField()
     opened = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
+
+class ReminderEmail(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='reminder_email')
+    target_audience = models.ForeignKey(TargetAudience, on_delete=models.CASCADE, related_name='reminder_email')
+    sent_email = models.ForeignKey(SentEmail, on_delete=models.CASCADE, related_name='reminder_email')
+    uid = models.UUIDField(default=uuid.uuid4, unique=True)
+    message_id = models.CharField(max_length=500, null=True)
+    email = models.EmailField(validators=[EmailValidator])
+    subject = models.CharField(max_length=500)
+    message = models.TextField()
+    opened = models.BooleanField(default=False)
+    sent = models.BooleanField(default=False)
+    send_at = models.DateField()
+
+    created = models.DateTimeField(auto_now_add=True)
+

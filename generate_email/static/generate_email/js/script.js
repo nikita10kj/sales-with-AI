@@ -38,6 +38,8 @@ class EmailMarketingApp {
     })
 
     document.getElementById("sendEmail").addEventListener("click", () => {
+          this.nextStep()
+
         this.sendEmail()
     })
 
