@@ -16,6 +16,7 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 import base64
 from email.mime.text import MIMEText
+from email.utils import formataddr
 
 def get_user_provider(user):
     try:
@@ -39,10 +40,12 @@ def get_gmail_service(user):
     return service
 
 
-def create_message(sender, to, subject, body):
+def create_message(sender_name, sender, to, subject, body):
     message = MIMEText(body, 'html')
     message['to'] = to
-    message['from'] = sender
+    from_field = formataddr((sender_name, sender))
+
+    message['from'] =  from_field
     message['subject'] = subject
     raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
     return {'raw': raw_message}
@@ -96,23 +99,23 @@ def sendGeneratedEmail(request, user, target_audience, main_email):
         message=message,
         message_id=message_id
     )
+    track_url = request.build_absolute_uri(reverse('track-email-open', args=[sent_email.uid]))
+    # track_url = f"https://dd8f-2405-201-2005-1965-5318-debe-64b7-fbd7.ngrok-free.app/generator/track-email/{sent_email.uid}/"
+    message += f"<img src='{track_url}' width='1' height='1' style='display:none;' />"
 
     provider = get_user_provider(user)
 
     if provider == 'google':
         service = get_gmail_service(user)
-        messages = create_message(user.email, email, subject, message)
-        sent_message = service.users().messages().send(userId='me', body=messages).execute()
-        print("S", sent_message)
+        user_name = user.full_name
+        messages = create_message(user_name, user.email, email, subject, message)
+        service.users().messages().send(userId='me', body=messages).execute()
 
     elif provider == 'microsoft':
-        sent_message = send_microsoft_email(user, email, subject, message)
-        print("Sm", sent_message)
+        send_microsoft_email(user, email, subject, message)
 
     else:
-        track_url = request.build_absolute_uri(reverse('track-email-open', args=[sent_email.uid]))
-        # track_url = f"https://dd8f-2405-201-2005-1965-5318-debe-64b7-fbd7.ngrok-free.app/generator/track-email/{sent_email.uid}/"
-        message += f"<img src='{track_url}' width='1' height='1' style='display:none;' />"
+
         email_msg = EmailMessage(
             subject,
             message,
@@ -123,6 +126,8 @@ def sendGeneratedEmail(request, user, target_audience, main_email):
         email_msg.content_subtype = 'html'
 
         email_msg.send(fail_silently=False)
+
+    return sent_email
 
 
 
