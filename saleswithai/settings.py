@@ -113,6 +113,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'saleswithai.wsgi.application'
 
+CSRF_TRUSTED_ORIGINS = ['sellsmart-dvdhbme5h6eud4hz.centralindia-01.azurewebsites.net']
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
