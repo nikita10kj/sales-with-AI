@@ -13,8 +13,16 @@ from django.shortcuts import get_object_or_404
 
 # Create your views here.
 class GenerateEmailView(LoginRequiredMixin, View):
+    def normalize_url(self, url):
+        """Ensure the URL starts with http:// or https://"""
+        if url and not url.startswith(('http://', 'https://')):
+            return f'https://{url.strip()}'
+        return url.strip() if url else ''
+
     def get(self, request):
-        return render(request, 'generate_email/email_generator.html', {'title': "Home"})
+         # Fetch the user's services for the dropdown
+        user_services = ProductService.objects.filter(user=request.user).values_list('service_name', flat=True).distinct()
+        return render(request, 'generate_email/email_generator.html', {'title': "Home",'user_services': user_services})
 
 
     def post(self, request, *args, **kwargs):
@@ -23,10 +31,10 @@ class GenerateEmailView(LoginRequiredMixin, View):
         email = data.get('email')
         receiver_first_name = data.get('receiver_first_name')
         receiver_last_name = data.get('receiver_last_name')
-        company_linkedin_url = data.get('company_linkedin_url')
-        receiver_linkedin_url = data.get('receiver_linkedin_url')
+        company_linkedin_url = self.normalize_url(data.get('company_linkedin_url', ''))
+        receiver_linkedin_url = self.normalize_url(data.get('receiver_linkedin_url', ''))
         selected_service = data.get('selected_service')
-        company_url = data.get('company_url')
+        company_url = self.normalize_url(data.get('company_url', ''))
         framework = data.get('framework')
         campaign_goal = data.get('campaign_goal')
 
@@ -115,7 +123,12 @@ class GenerateEmailView(LoginRequiredMixin, View):
         emails['main_email'][
             'body'] += f"<p>Best Regards,<br>{request.user.full_name}<br>{request.user.company_name}</p>"
 
-        return JsonResponse({'success': True,'emails': emails, 'targetId':target.id})
+        return JsonResponse({'success': True,'emails': emails, 'targetId':target.id,# Return normalized URLs to display in the UI
+            'normalized_urls': {
+                'company_url': company_url,
+                'company_linkedin_url': company_linkedin_url,
+                'receiver_linkedin_url': receiver_linkedin_url
+            }})
 
 class SendEmailView(LoginRequiredMixin, View):
     def get(self, request):
