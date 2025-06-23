@@ -50,7 +50,7 @@ class EmailMarketingApp {
       this.saveCurrentStepData()
       if (this.currentStep < this.totalSteps) {
         this.currentStep++
-        this.updateStepDisplay()
+//        this.updateStepDisplay()
       }
     }
   }
@@ -160,6 +160,7 @@ class EmailMarketingApp {
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
+      this.updateStepDisplay()
       const data = await response.json();
       this.generatedEmails = data.emails; // Assuming the response contains the generated emails
       this.targetId = data.targetId;
@@ -299,6 +300,8 @@ class EmailMarketingApp {
   }
 
   async sendEmail() {
+      this.showLoading(true, "Sending Email...");
+
         const emails = this.generatedEmails;
 
       try {
@@ -316,7 +319,9 @@ class EmailMarketingApp {
 
         const data = await response.json();
         if (data.success) {
-          alert("Email sent and saved successfully!");
+            this.showLoading(false)
+            this.updateStepDisplay()
+            this.showSuccessState()
         } else {
           alert("Failed to send email.");
         }
@@ -391,11 +396,7 @@ class EmailMarketingApp {
                 </div>
             </div>
 
-            <div class="text-center">
-                <button class="btn btn-success btn-lg" onclick="app.sendCampaign()" disabled id="sendCampaignBtn">
-                    <i class="fas fa-paper-plane me-2"></i>Send Campaign
-                </button>
-            </div>
+
         `
   }
 
@@ -407,37 +408,17 @@ class EmailMarketingApp {
     document.getElementById("sendCampaignBtn").disabled = this.selectedEmails.length === 0
   }
 
-  async sendCampaign() {
-    if (this.selectedEmails.length === 0) {
-      this.showAlert("Please select at least one email to send.", "warning")
-      return
-    }
-
-    this.showLoading(true, "Sending your campaign...")
-
-    try {
-      // Simulate sending emails
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      this.showSuccessState()
-      this.showAlert(`Campaign sent successfully! ${this.selectedEmails.length} emails delivered.`, "success")
-    } catch (error) {
-      this.showAlert("Error sending campaign. Please try again.", "danger")
-    } finally {
-      this.showLoading(false)
-    }
-  }
 
   showSuccessState() {
     const sendContainer = document.getElementById("sendCampaignContent")
     sendContainer.innerHTML = `
             <div class="success-state">
                 <i class="fas fa-check-circle"></i>
-                <h3>Campaign Sent Successfully!</h3>
-                <p class="text-muted">Your emails have been delivered to ${this.formData.targetEmail}</p>
+                <h3>Email Sent Successfully!</h3>
+                <p class="text-muted">Your email have been delivered to ${this.formData.email}</p>
                 <div class="mt-4">
                     <button class="btn btn-primary me-2" onclick="app.resetApp()">
-                        <i class="fas fa-plus me-2"></i>Create New Campaign
+                        <i class="fas fa-plus me-2"></i>Generate New Email
                     </button>
                     <button class="btn btn-outline-primary" onclick="app.viewAnalytics()">
                         <i class="fas fa-chart-bar me-2"></i>View Analytics

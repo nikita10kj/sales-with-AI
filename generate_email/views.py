@@ -62,68 +62,68 @@ class GenerateEmailView(LoginRequiredMixin, View):
             framework=framework,
             campaign_goal=campaign_goal
         )
-        # emails = json.loads(get_response(request.user, target, service))
-        emails = {
-            'main_email':
-                {
-                    'title': 'AIDA Framework Email',
-                    'subject': 'Transform Your Hiring Process with Our Expertise',
-                    'body': "<p>Hi Dhara Shah,</p><p>In today's competitive landscape, "
-                            "finding the right talent is more crucial than ever. At JMS Advisory,"
-                            " we specialize in streamlining the hiring process, ensuring "
-                            "that companies like KnowCraft Analytics can focus on what they do "
-                            "best—driving innovation and insights.</p><p>Our tailored recruitment "
-                            "services are designed to meet your specific needs, helping you attract "
-                            "top-tier candidates who align with your company culture and goals. "
-                            "With our extensive network and expertise, we can significantly reduce "
-                            "the time and resources spent on hiring.</p><p>Imagine having a dedicated "
-                            "partner who understands the nuances of your industry and can "
-                            "provide you with the best talent available. We have successfully assisted "
-                            "numerous companies in enhancing their recruitment strategies, and we would "
-                            "love to do the same for you.</p><p>Let’s discuss how we can collaborate to "
-                            "elevate your hiring process. Are you available for a brief call this week?</p>"
-                            "<p>Looking forward to your response!</p>"
-                },
-            'follow_ups':
-                [
-                    {
-                        'subject': 'Following Up on My Previous Email',
-                        'body': '<p>Hi Dhara Shah,</p><p>I wanted to follow up on my previous email '
-                                'regarding our recruitment services. I believe that JMS Advisory '
-                                'can add significant value to KnowCraft Analytics by optimizing your '
-                                'hiring process.</p><p>Have you had a chance to consider our'
-                                ' proposal? I would be happy to provide more details or answer any '
-                                'questions you might have.</p><p>Looking forward to hearing from you!</p>'
-                    },
-                    {
-                        'subject': 'Still Interested in Enhancing Your Hiring Process?',
-                        'body': '<p>Hi Dhara Shah,</p><p>I hope this message finds you well! '
-                                'I wanted to check in again regarding our recruitment services. '
-                                'Our clients have seen remarkable improvements in their hiring '
-                                'efficiency and candidate quality.</p><p>Would you be open to a '
-                                'quick chat to explore how we can assist KnowCraft Analytics in '
-                                'achieving similar results?</p><p>Thank you for considering!</p>'
-                    },
-                    {
-                        'subject': 'Last Chance to Optimize Your Recruitment Strategy',
-                        'body': "<p>Hi Dhara Shah,</p><p>This will be my final follow-up regarding our"
-                                " recruitment services. I truly believe that JMS Advisory can help"
-                                " KnowCraft Analytics streamline your hiring process and attract the "
-                                "right talent.</p><p>If you're interested, I would love to schedule a "
-                                "call to discuss this further. Please let me know a time that works for"
-                                " you!</p><p>Thank you for your time!</p>"
-                    },
-                    {
-                        'subject': "Final Reminder: Let's Connect!",
-                        'body': "<p>Hi Dhara Shah,</p><p>I wanted to reach out one last time to"
-                                " see if you would be interested in discussing how JMS Advisory"
-                                " can support KnowCraft Analytics in enhancing your hiring process.</p>"
-                                "<p>Even if now isn't the right time, I would appreciate any feedback"
-                                " or thoughts you may have.</p>"
-                                "<p>Thank you, and I hope to hear from you soon!</p>"
-                    }
-                ]
-        }
+        emails = json.loads(get_response(request.user, target, service))
+        # emails = {
+        #     'main_email':
+        #         {
+        #             'title': 'AIDA Framework Email',
+        #             'subject': 'Transform Your Hiring Process with Our Expertise',
+        #             'body': "<p>Hi Dhara Shah,</p><p>In today's competitive landscape, "
+        #                     "finding the right talent is more crucial than ever. At JMS Advisory,"
+        #                     " we specialize in streamlining the hiring process, ensuring "
+        #                     "that companies like KnowCraft Analytics can focus on what they do "
+        #                     "best—driving innovation and insights.</p><p>Our tailored recruitment "
+        #                     "services are designed to meet your specific needs, helping you attract "
+        #                     "top-tier candidates who align with your company culture and goals. "
+        #                     "With our extensive network and expertise, we can significantly reduce "
+        #                     "the time and resources spent on hiring.</p><p>Imagine having a dedicated "
+        #                     "partner who understands the nuances of your industry and can "
+        #                     "provide you with the best talent available. We have successfully assisted "
+        #                     "numerous companies in enhancing their recruitment strategies, and we would "
+        #                     "love to do the same for you.</p><p>Let’s discuss how we can collaborate to "
+        #                     "elevate your hiring process. Are you available for a brief call this week?</p>"
+        #                     "<p>Looking forward to your response!</p>"
+        #         },
+        #     'follow_ups':
+        #         [
+        #             {
+        #                 'subject': 'Following Up on My Previous Email',
+        #                 'body': '<p>Hi Dhara Shah,</p><p>I wanted to follow up on my previous email '
+        #                         'regarding our recruitment services. I believe that JMS Advisory '
+        #                         'can add significant value to KnowCraft Analytics by optimizing your '
+        #                         'hiring process.</p><p>Have you had a chance to consider our'
+        #                         ' proposal? I would be happy to provide more details or answer any '
+        #                         'questions you might have.</p><p>Looking forward to hearing from you!</p>'
+        #             },
+        #             {
+        #                 'subject': 'Still Interested in Enhancing Your Hiring Process?',
+        #                 'body': '<p>Hi Dhara Shah,</p><p>I hope this message finds you well! '
+        #                         'I wanted to check in again regarding our recruitment services. '
+        #                         'Our clients have seen remarkable improvements in their hiring '
+        #                         'efficiency and candidate quality.</p><p>Would you be open to a '
+        #                         'quick chat to explore how we can assist KnowCraft Analytics in '
+        #                         'achieving similar results?</p><p>Thank you for considering!</p>'
+        #             },
+        #             {
+        #                 'subject': 'Last Chance to Optimize Your Recruitment Strategy',
+        #                 'body': "<p>Hi Dhara Shah,</p><p>This will be my final follow-up regarding our"
+        #                         " recruitment services. I truly believe that JMS Advisory can help"
+        #                         " KnowCraft Analytics streamline your hiring process and attract the "
+        #                         "right talent.</p><p>If you're interested, I would love to schedule a "
+        #                         "call to discuss this further. Please let me know a time that works for"
+        #                         " you!</p><p>Thank you for your time!</p>"
+        #             },
+        #             {
+        #                 'subject': "Final Reminder: Let's Connect!",
+        #                 'body': "<p>Hi Dhara Shah,</p><p>I wanted to reach out one last time to"
+        #                         " see if you would be interested in discussing how JMS Advisory"
+        #                         " can support KnowCraft Analytics in enhancing your hiring process.</p>"
+        #                         "<p>Even if now isn't the right time, I would appreciate any feedback"
+        #                         " or thoughts you may have.</p>"
+        #                         "<p>Thank you, and I hope to hear from you soon!</p>"
+        #             }
+        #         ]
+        # }
         for email in emails['follow_ups']:
             email['body'] += f"<p>Best Regards,<br>{request.user.full_name}<br>{request.user.company_name}</p>"
         emails['main_email'][
