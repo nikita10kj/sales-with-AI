@@ -366,9 +366,9 @@ body {
 }
 
 .success-state i {
-  font-size: 4rem;
+  font-size: 2rem;
   color: var(--success-color);
-  margin-bottom: 1rem;
+ 
 }
 
 .success-state h3 {
