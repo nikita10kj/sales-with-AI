@@ -391,21 +391,7 @@ body {
 }
 
 /* Success States */
-.success-state {
-  text-align: center;
-  padding: 3rem 2rem;
-}
 
-.success-state i {
-  font-size: 4rem;
-  color: var(--success-color);
-  margin-bottom: 1rem;
-}
-
-.success-state h3 {
-  color: var(--success-color);
-  margin-bottom: 1rem;
-}
 
 /* Email Template Styles */
 .email-template {

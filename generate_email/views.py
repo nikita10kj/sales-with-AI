@@ -162,22 +162,35 @@ class SendEmailView(LoginRequiredMixin, View):
         message_id = make_msgid(domain='localhost')
         today = date.today()
         days = [3, 5, 7, 10]
+        reminders = []
         index = 0
 
         for fe in followup_emails:
             day = days[index]
-            ReminderEmail.objects.get_or_create(
+            send_date = add_business_days_np(today, day)
+            reminder, created = ReminderEmail.objects.get_or_create(
                 user=request.user,
                 email=target.email,
                 sent_email=sent_email,
-                target_audience = target,
-                subject = fe["subject"],
-                message = fe["body"],
-                send_at = add_business_days_np(today, day),
-                message_id = message_id
+                target_audience=target,
+                subject=fe["subject"],
+                message=fe["body"],
+                send_at=send_date,
+                message_id=message_id
             )
+            reminders.append({
+                'subject': fe["subject"],
+                'send_date': send_date.strftime("%B %d, %Y"),
+                'days_after': day
+            })
             index += 1
-        return JsonResponse({'success': True})
+            
+        return JsonResponse({
+            'success': True,
+            'reminders': reminders,
+            'main_email_sent': True,
+            'target_email': target.email
+        })
 
 def track_email_open(request, uid):
     # Log the open event (use a unique ID for each email)
@@ -229,9 +242,9 @@ class EmailMessageView(DetailView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Only fetch reminders that are marked as sent
+        sent_email = self.object  # already fetched by DetailView using get_object
         context['reminders'] = ReminderEmail.objects.filter(
-            sent_email=self.get_object(),
+            sent_email=sent_email,
             sent=True
         ).order_by('send_at')
         return context

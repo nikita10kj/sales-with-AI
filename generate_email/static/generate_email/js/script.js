@@ -300,37 +300,46 @@ class EmailMarketingApp {
   }
 
   async sendEmail() {
-      this.showLoading(true, "Sending Email...");
+    // Show loading indicator while sending
+    this.showLoading(true, "Sending Email...");
+    const emails = this.generatedEmails;
 
-        const emails = this.generatedEmails;
-
-      try {
+    try {
+        // Make POST request to send emails
         const response = await fetch("/generator/send_email/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": this.getCSRFToken(), // You should have this function already
-          },
-          body: JSON.stringify({
-            emails:emails,
-            targetId:this.targetId
-          }),
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": this.getCSRFToken(), // Include CSRF token for Django
+            },
+            body: JSON.stringify({
+                emails: emails,          // The generated email content
+                targetId: this.targetId  // ID of the target audience
+            }),
         });
 
+        // Parse JSON response from server
         const data = await response.json();
+        
         if (data.success) {
-            this.showLoading(false)
-            this.updateStepDisplay()
-            this.showSuccessState()
+            // On successful send:
+            this.showLoading(false);     // Hide loading indicator
+            this.updateStepDisplay();    // Update UI to show completion
+            // Display success state with reminders and target email
+            this.showSuccessState(data.reminders, data.target_email);
         } else {
-          alert("Failed to send email.");
+            // Show error if send failed
+            this.showAlert("Failed to send email.", "danger");
         }
-      } catch (error) {
+    } catch (error) {
+        // Handle network errors
         console.error("Error:", error);
-        alert("An error occurred while sending the email.");
-      }
-
-  }
+        this.showAlert("An error occurred while sending the email.", "danger");
+    } finally {
+        // Always hide loading indicator when done
+        this.showLoading(false);
+    }
+}
 
     getCSRFToken() {
         // Function to get CSRF token from cookies
@@ -409,24 +418,80 @@ class EmailMarketingApp {
   }
 
 
-  showSuccessState() {
-    const sendContainer = document.getElementById("sendCampaignContent")
+  showSuccessState(reminders, targetEmail) {
+    let remindersHtml = '';
+    
+    // Generate HTML for reminders if they exist
+    if (reminders && reminders.length > 0) {
+        remindersHtml = `
+            <div class="reminders-container mt-4">
+                <h5 class="text-dark fw-semibold mb-3">
+                    <i class="fas fa-clock me-2" style="font-size: 0.9rem;"></i>Scheduled Follow-ups
+                </h5>
+                <div class="row g-3">
+                    ${reminders.map((reminder, index) => `
+                        <div class="col-md-6 col-lg-6">
+                            <div class="card shadow-sm border-0 h-90">
+                                <div class="card-header bg-light border-0 py-2">
+                                    <span>Reminder ${index + 1}</span>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-2 text-muted">
+                                        <i class="fas fa-calendar-alt me-1" style="font-size: 0.85rem;"></i>
+                                        <strong>Date:</strong> ${reminder.send_date}
+                                        <span class="ms-2">(${reminder.days_after} days later)</span>
+                                    </p>
+                                    <p class="mb-0 text-dark">
+                                        <i class="fas fa-envelope me-1" style="font-size: 0.85rem;"></i>
+                                        <strong>Subject:</strong> ${reminder.subject}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // Get container element and set its HTML
+    const sendContainer = document.getElementById("sendCampaignContent");
     sendContainer.innerHTML = `
-            <div class="success-state">
-                <i class="fas fa-check-circle"></i>
-                <h3>Email Sent Successfully!</h3>
-                <p class="text-muted">Your email have been delivered to ${this.formData.email}</p>
-                <div class="mt-4">
-                    <button class="btn btn-primary me-2" onclick="app.resetApp()">
-                        <i class="fas fa-plus me-2"></i>Generate New Email
+        <div class="success-state text-center p-5 bg-light rounded shadow-sm">
+            <i class="fas fa-check-circle text-success mb-3" style="font-size: 2rem;"></i>
+            <h4 class="text-success mb-2">Email Sent Successfully!</h4>
+            <p class="text-muted mb-4">Your email has been delivered to <strong>${targetEmail}</strong>.</p>
+
+            ${remindersHtml}
+
+            <div class="mt-4">
+                <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
+                    <button class="btn btn-primary btn-lg px-4 py-2 d-flex align-items-center justify-content-center" id="newEmailBtn" style="min-width: 220px">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-plus me-2 text-white" ></i>
+                            <span>Generate New Email</span>
+                        </div>
                     </button>
-                    <button class="btn btn-outline-primary" onclick="app.viewAnalytics()">
-                        <i class="fas fa-chart-bar me-2"></i>View Analytics
+                    <button class="btn btn-primary btn-lg px-4 py-2 d-flex align-items-center justify-content-center" id="viewAnalyticsBtn" style="min-width: 220px">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-chart-bar me-2 text-white" ></i>
+                            <span>View Analytics</span>
+                        </div>
                     </button>
                 </div>
             </div>
-        `
-  }
+        </div>
+    `;
+
+    // Add click handlers for the action buttons
+    document.getElementById("newEmailBtn").addEventListener("click", () => {
+        window.location.href = "/generator/generate_email/";
+    });
+    
+    document.getElementById("viewAnalyticsBtn").addEventListener("click", () => {
+        window.location.href = "/";
+    });
+}
 
   resetApp() {
     this.currentStep = 1
