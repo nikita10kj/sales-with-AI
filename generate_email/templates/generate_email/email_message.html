@@ -1,6 +1,21 @@
 {% extends "users/base.html" %}
 {% block content %}
 <div class="col-md-10 offset-md-1 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{% url 'view-emails' %}" class="btn btn-primary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Email List
+    </a>
+    {% if reminders %}
+    <button type="button" class="btn btn-outline-primary" id="scroll-to-reminders-btn">
+        <i class="fas fa-arrow-down me-1"></i> Click here to see reminder emails
+    </button>
+    {% endif %}
+</div>
+
+
+    
+
+    <!-- Main Email Card -->
     <div class="card">
         <div class="card-header bg-primary text-white">
             <h4 class="mb-0"><i class="fas fa-envelope-open-text me-2"></i>Email Message</h4>
@@ -12,54 +27,91 @@
             <div class="border p-3 bg-light">
                 {{ email.message|safe }}
             </div>
-            <p class="mt-3 ">
-                <strong>Sent:</strong> <span class="utc-time" data-utc="{{ email.created|date:'c' }}"></span>
+            <p class="mt-3">
+                <strong>Sent:</strong>
+                <span class="utc-time" data-utc="{{ email.created|date:'c' }}"></span>
             </p>
-
-            <!-- Back Button -->
-            <a href="{% url 'view-emails' %}" class="btn btn-primary mt-3">
-                <i class="fas fa-arrow-left me-2"></i>Back to Email List
-            </a>
         </div>
     </div>
+
+    <!-- Reminder Emails Section -->
+    {% if reminders %}
+    <hr class="my-4">
+    <div id="reminder-section">
+        <h5 class="mb-3"><i class="fas fa-clock me-2"></i>Sent Reminder Emails</h5>
+
+        {% for reminder in reminders %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <p><strong>To:</strong> {{ reminder.email }}</p>
+                <p><strong>Subject:</strong> {{ reminder.subject }}</p>
+                <p><strong>Message:</strong></p>
+                <div class="border p-3 bg-light">
+                    {{ reminder.message|safe }}
+                </div>
+                <p class="mt-3">
+                    <strong>Sent:</strong>
+                    <span class="utc-time" data-utc="{{ reminder.send_at|date:'c' }}"></span>
+                </p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    
+
 </div>
+
+<!-- JS for Time Formatting and Smooth Scroll -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const el = document.querySelector('.utc-time');
-    if (!el) return;
+    // Convert UTC to Local Time
+    const elements = document.querySelectorAll('.utc-time');
+    elements.forEach(el => {
+        const utcDateStr = el.getAttribute('data-utc');
+        if (!utcDateStr) return;
 
-    const utcDateStr = el.getAttribute('data-utc');
-    const utcDate = new Date(utcDateStr);
-    const localDate = new Date(utcDate.getTime());
+        const utcDate = new Date(utcDateStr);
+        const localDate = new Date(utcDate.getTime());
 
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
 
-    const emailDate = new Date(localDate.getFullYear(), localDate.getMonth(), localDate.getDate());
+        const emailDate = new Date(localDate.getFullYear(), localDate.getMonth(), localDate.getDate());
 
-    let label;
-    if (emailDate.getTime() === today.getTime()) {
-        label = "Today";
-    } else if (emailDate.getTime() === tomorrow.getTime()) {
-        label = "Tomorrow";
-    } else {
-        label = localDate.toLocaleDateString(undefined, {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
+        let label;
+        if (emailDate.getTime() === today.getTime()) {
+            label = "Today";
+        } else if (emailDate.getTime() === tomorrow.getTime()) {
+            label = "Tomorrow";
+        } else {
+            label = localDate.toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        const timePart = localDate.toLocaleTimeString(undefined, {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
         });
-    }
 
-    const timePart = localDate.toLocaleTimeString(undefined, {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
+        el.textContent = `${label}, ${timePart}`;
     });
 
-    el.textContent = `${label}, ${timePart}`;
+    // Scroll to reminder section
+    const scrollBtn = document.getElementById('scroll-to-reminders-btn');
+    const reminderSection = document.getElementById('reminder-section');
+    if (scrollBtn && reminderSection) {
+        scrollBtn.addEventListener('click', function () {
+            reminderSection.scrollIntoView({ behavior: 'smooth' });
+        });
+    }
 });
 </script>
-
 {% endblock %}

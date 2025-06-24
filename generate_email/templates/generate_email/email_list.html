@@ -16,6 +16,8 @@
                                 <th scope="col">To</th>
                                 <th scope="col">Subject</th>
                                 <th scope="col">Delivery Time</th>
+                                <th scope="col">Upcoming Reminder</th>
+
                             </tr>
                         </thead>
                         <tbody>
@@ -30,6 +32,14 @@
                                 <td>
                                     <span class="utc-time" data-utc="{{ email.created|date:'c' }}"></span>
                                 </td>
+                                <td>
+                                    {% if email.next_reminder_date %}
+                                        {{ email.next_reminder_date|date:"M d, Y" }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+
 
                             </tr>
                             {% endfor %}

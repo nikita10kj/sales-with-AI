@@ -59,13 +59,13 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="targetWebsite" class="form-label">Target Company Website *</label>
-                                <input type="url" name="company_url" class="form-control" required id="targetWebsite" placeholder="https://target-company.com">
+                                <input type="text" name="company_url" class="form-control" required id="targetWebsite" placeholder="https://target-company.com">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="targetLinkedin" class="form-label">Target Company LinkedIn *</label>
-                                <input type="url" name="company_linkedin_url" class="form-control" required id="targetLinkedin" placeholder="https://linkedin.com/company/target">
+                                <input type="text" name="company_linkedin_url" class="form-control" required id="targetLinkedin" placeholder="https://linkedin.com/company/target">
                             </div>
                         </div>
                     </div>
@@ -87,12 +87,12 @@
                         <label for="id_service" class="form-label">Service *</label>
                         <select class="form-select" name="selected_service" id="id_service" required>
                             <option value="">Select Service</option>
-                            <option value="Hiring">Hiring</option>
-                            <option value="partnership">IT</option>
-                            <option value="product-demo">Education</option>
-
+                            {% for service in user_services %}
+                                <option value="{{ service }}">{{ service }}</option>
+                            {% endfor %}
                         </select>
                     </div>
+
 
 
 

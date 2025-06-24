@@ -13,11 +13,22 @@ from django.shortcuts import get_object_or_404
 from email.utils import make_msgid
 from datetime import timedelta, date
 from django.utils import timezone
+from django.db.models import OuterRef, Subquery, DateField
+from django.db.models.functions import Cast
+from django.utils.timezone import now
 
 # Create your views here.
 class GenerateEmailView(LoginRequiredMixin, View):
+    def normalize_url(self, url):
+        """Ensure the URL starts with http:// or https://"""
+        if url and not url.startswith(('http://', 'https://')):
+            return f'https://{url.strip()}'
+        return url.strip() if url else ''
+
     def get(self, request):
-        return render(request, 'generate_email/email_generator.html', {'title': "Home"})
+         # Fetch the user's services for the dropdown
+        user_services = ProductService.objects.filter(user=request.user).values_list('service_name', flat=True).distinct()
+        return render(request, 'generate_email/email_generator.html', {'title': "Home",'user_services': user_services})
 
 
     def post(self, request, *args, **kwargs):
@@ -26,10 +37,10 @@ class GenerateEmailView(LoginRequiredMixin, View):
         email = data.get('email')
         receiver_first_name = data.get('receiver_first_name')
         receiver_last_name = data.get('receiver_last_name')
-        company_linkedin_url = data.get('company_linkedin_url')
-        receiver_linkedin_url = data.get('receiver_linkedin_url')
+        company_linkedin_url = self.normalize_url(data.get('company_linkedin_url', ''))
+        receiver_linkedin_url = self.normalize_url(data.get('receiver_linkedin_url', ''))
         selected_service = data.get('selected_service')
-        company_url = data.get('company_url')
+        company_url = self.normalize_url(data.get('company_url', ''))
         framework = data.get('framework')
         campaign_goal = data.get('campaign_goal')
 
@@ -118,7 +129,12 @@ class GenerateEmailView(LoginRequiredMixin, View):
         emails['main_email'][
             'body'] += f"<p>Best Regards,<br>{request.user.full_name}<br>{request.user.company_name}</p>"
 
-        return JsonResponse({'success': True,'emails': emails, 'targetId':target.id})
+        return JsonResponse({'success': True,'emails': emails, 'targetId':target.id,# Return normalized URLs to display in the UI
+            'normalized_urls': {
+                'company_url': company_url,
+                'company_linkedin_url': company_linkedin_url,
+                'receiver_linkedin_url': receiver_linkedin_url
+            }})
 
 import numpy as np
 
@@ -185,11 +201,22 @@ class EmailListView(LoginRequiredMixin, ListView):
     model = SentEmail
     template_name = 'generate_email/email_list.html'
     context_object_name = 'sent_emails'
-    paginate_by = 10  # Optional: for pagination
+   
 
     def get_queryset(self):
+        next_reminder = ReminderEmail.objects.filter(
+            sent_email=OuterRef('pk'),
+            send_at__gte=now().date()
+        ).order_by('send_at').values('send_at')[:1]
+        
         # Show only emails sent by the logged-in user, newest first
-        return SentEmail.objects.filter(user=self.request.user).select_related('target_audience').order_by('-created')
+        return (
+            SentEmail.objects
+            .filter(user=self.request.user)
+            .select_related('target_audience')
+            .annotate(next_reminder_date=Subquery(next_reminder))
+            .order_by('-created')
+        )
     
 
 class EmailMessageView(DetailView):
@@ -199,3 +226,12 @@ class EmailMessageView(DetailView):
 
     def get_object(self):
         return get_object_or_404(SentEmail, uid=self.kwargs['uid'], user=self.request.user)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Only fetch reminders that are marked as sent
+        context['reminders'] = ReminderEmail.objects.filter(
+            sent_email=self.get_object(),
+            sent=True
+        ).order_by('send_at')
+        return context
