@@ -28,6 +28,10 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
         # Optional: stop further processing
         # raise ImmediateHttpResponse(self.respond_social_login_redirect(request, sociallogin))
 
+    def is_auto_signup_allowed(self, request, sociallogin):
+        # Allow auto-signup to skip the intermediate page
+        return True
+
 class CustomSocialAccountAdapter(DefaultAccountAdapter):
 
     def get_login_redirect_url(self, request):
