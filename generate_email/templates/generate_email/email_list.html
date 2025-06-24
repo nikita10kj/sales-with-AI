@@ -17,18 +17,19 @@
                                 <th scope="col">Subject</th>
                                 <th scope="col">Delivery Time</th>
                                 <th scope="col">Upcoming Reminder</th>
+                                <th scope="col">Stop Reminder</th>
 
                             </tr>
                         </thead>
                         <tbody>
                             {% for email in sent_emails %}
-                            <tr class="clickable-row" data-href="{% url 'view-email-message' email.uid %}" style="cursor: pointer;">
-                                <td>
+                            <tr>
+                                <td class="clickable-row" data-href="{% url 'view-email-message' email.uid %}" style="cursor: pointer;">
                                     {{ email.target_audience.receiver_first_name }}
                                     {{ email.target_audience.receiver_last_name }}
                                     <small class="text-muted">({{ email.email }})</small>
                                 </td>
-                                <td>{{ email.subject }}</td>
+                                <td class="clickable-row" data-href="{% url 'view-email-message' email.uid %}" style="cursor: pointer;">{{ email.subject }}</td>
                                 <td>
                                     <span class="utc-time" data-utc="{{ email.created|date:'c' }}"></span>
                                 </td>
@@ -39,9 +40,45 @@
                                         <span class="text-muted">—</span>
                                     {% endif %}
                                 </td>
+                                <td>
+                                    {% if email.next_reminder_date %}
+                                        <input
+                                            class="form-check-input reminder-toggle"
+                                            type="checkbox"
+                                            role="switch"
+                                            id="reminder-{{ email.id }}"
+                                            data-email-id="{{ email.id }}"
+                                            data-email-subject="{{ email.subject }}"
+                                            {% if email.stop_reminder %}
+                                                checked
+                                            {% endif %}
+                                        >
+                                        <label class="form-check-label fw-medium" for="reminder-{{ email.id }}">
+                                            {% if not email.stop_reminder %}Stop Reminders{% endif %}
+                                        </label>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
 
 
                             </tr>
+                            <div class="modal fade" id="reminderConfirmModal" tabindex="-1" aria-hidden="true">
+                              <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                  <div class="modal-header">
+                                    <h5 class="modal-title">Confirm Action</h5>
+                                  </div>
+                                  <div class="modal-body">
+                                    Are You Sure You Want to Stop Reminders?
+                                  </div>
+                                  <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" id="modalCancelBtn" data-bs-dismiss="modal">No</button>
+                                    <button type="button" class="btn btn-primary" id="modalConfirmBtn">Yes</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -133,6 +170,59 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
+
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    let selectedEmailId = null;
+    let checkboxRef = null;
+    let modalInstance = null; // 👈 new
+
+    const modalElement = document.getElementById('reminderConfirmModal');
+    modalInstance = new bootstrap.Modal(modalElement);
+
+    document.querySelectorAll('.reminder-toggle').forEach(function (toggle) {
+        toggle.addEventListener('change', function (e) {
+            e.preventDefault();
+
+            selectedEmailId = this.getAttribute('data-email-id');
+            checkboxRef = this;
+            const isChecked = this.checked;
+
+
+            // Revert change until confirmed
+            this.checked = !isChecked;
+
+            modalInstance.show();
+        });
+    });
+
+    document.getElementById('modalConfirmBtn').addEventListener('click', function () {
+        const isChecked = !checkboxRef.checked;
+
+        fetch("{% url 'view-emails' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify({
+                email_id: selectedEmailId,
+                stop_reminder: isChecked
+            })
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Request failed");
+            modalInstance.hide();
+            checkboxRef.checked = isChecked;
+        })
+        .catch(error => {
+            alert("Something went wrong");
+            console.error(error);
+        });
+    });
+});
+
 </script>
 
 
