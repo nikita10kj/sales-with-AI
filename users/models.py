@@ -75,3 +75,19 @@ class ProductService(models.Model):
     product_usp = models.TextField(null=True, blank=True)  
 
 
+class ActivityLog(models.Model):
+    ACTION_CHOICES = [
+        ('PROFILE_UPDATED', 'PROFILE_UPDATED'),
+        ('EMAIL_SENT', 'EMAIL_SENT'),
+        ('EMAIL_OPENED', 'EMAIL_OPENED'),
+        ('LOGIN', 'LOGIN'),
+        # add more as needed
+    ]
+
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='activity_log')
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    description = models.TextField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.action} at {self.timestamp}"

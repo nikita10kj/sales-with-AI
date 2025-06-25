@@ -42,23 +42,28 @@
                                 </td>
                                 <td>
                                     {% if email.next_reminder_date %}
+                                    <div class="form-check form-switch">
                                         <input
                                             class="form-check-input reminder-toggle"
                                             type="checkbox"
                                             role="switch"
                                             id="reminder-{{ email.id }}"
+                                            style="cursor: pointer;"
                                             data-email-id="{{ email.id }}"
                                             data-email-subject="{{ email.subject }}"
                                             {% if email.stop_reminder %}
                                                 checked
+                                                disabled
                                             {% endif %}
                                         >
-                                        <label class="form-check-label fw-medium" for="reminder-{{ email.id }}">
+                                        <label class="form-check-label fw-medium" style="cursor: pointer;"
+                                               for="reminder-{{ email.id }}">
                                             {% if not email.stop_reminder %}Stop Reminders{% endif %}
                                         </label>
                                     {% else %}
                                         <span class="text-muted">—</span>
                                     {% endif %}
+                                    </div>
                                 </td>
 
 
@@ -215,6 +220,12 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!response.ok) throw new Error("Request failed");
             modalInstance.hide();
             checkboxRef.checked = isChecked;
+            checkboxRef.disabled = true;
+            // ✅ Remove the label
+            const label = document.querySelector(`label[for="reminder-${selectedEmailId}"]`);
+            if (label) {
+                label.remove(); // or: label.textContent = '';
+            }
         })
         .catch(error => {
             alert("Something went wrong");
