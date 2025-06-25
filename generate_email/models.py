@@ -11,7 +11,6 @@ class TargetAudience(models.Model):
     email = models.EmailField(validators=[EmailValidator])
     receiver_first_name = models.CharField(max_length=500, blank=True, null=True)
     receiver_last_name = models.CharField(max_length=500, blank=True, null=True)
-    company_linkedin_url = models.URLField(blank=True, null=True)
     receiver_linkedin_url = models.URLField(blank=True, null=True)
     selected_service = models.CharField(max_length=255, null=True)
 
@@ -30,6 +29,7 @@ class SentEmail(models.Model):
     subject = models.CharField(max_length=500)
     message = models.TextField()
     opened = models.BooleanField(default=False)
+    stop_reminder = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
 
 class ReminderEmail(models.Model):

@@ -88,7 +88,7 @@ def sendGeneratedEmail(request, user, target_audience, main_email):
     message = main_email["body"]
     email = target_audience.email
 
-    message_id = make_msgid(domain='localhost')
+    message_id = make_msgid(domain='sellsharp.co')
 
     # Save the OTP
     sent_email = SentEmail.objects.create(

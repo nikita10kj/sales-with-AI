@@ -55,7 +55,6 @@ class GenerateEmailView(LoginRequiredMixin, View):
             email=email,
             receiver_first_name=receiver_first_name,
             receiver_last_name=receiver_last_name,
-            company_linkedin_url=company_linkedin_url,
             receiver_linkedin_url=receiver_linkedin_url,
             selected_service=selected_service,
             company_url=company_url,
@@ -159,7 +158,7 @@ class SendEmailView(LoginRequiredMixin, View):
         followup_emails = emails["follow_ups"]
 
         sent_email = sendGeneratedEmail(request, request.user, target, main_email)
-        message_id = make_msgid(domain='localhost')
+        message_id = make_msgid(domain='sellsharp.co')
         today = date.today()
         days = [3, 5, 7, 10]
         reminders = []
@@ -230,6 +229,15 @@ class EmailListView(LoginRequiredMixin, ListView):
             .annotate(next_reminder_date=Subquery(next_reminder))
             .order_by('-created')
         )
+
+    def post(self, request):
+        data = json.loads(request.body)
+
+        email_id = data.get("email_id")
+        email = SentEmail.objects.get(id=email_id)
+        email.stop_reminder = True
+        print("done")
+        return JsonResponse({'success': True})
     
 
 class EmailMessageView(DetailView):

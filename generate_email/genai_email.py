@@ -22,7 +22,7 @@ def get_response(user, target, selected_service):
                 {
                 "role": "user",
                 "content" :  f"You are {user.user_linkedin_url}, working at {user.company_url}, and you are pitching to "
-                            f"{target.receiver_linkedin_url}, who works at {target.company_url} (LinkedIn: {target.company_linkedin_url}).\n\n"
+                            f"{target.receiver_linkedin_url}, who works at {target.company_url}.\n\n"
                             f"The product or service being pitched is:\n"
                             f"Name: {selected_service.service_name}\n"
                             f"URL: {selected_service.product_url}\n"
@@ -59,6 +59,7 @@ def get_response(user, target, selected_service):
                             f"Align their needs with our strengths based on both companies’ LinkedIn and websites. Write a solution-driven, impactful email."
                             f"Do not include framework words(i.e. Attention, Interest, etc.) in email"
                             f"Do not include Signature in any email"
+                             f"Include target company name in subject instead of 'your'"
                              f"Include name {target.receiver_first_name} {target.receiver_last_name} in greeting"
                             f"Return the body in clean HTML. Do not include plain text formatting or line breaks like \\n"
                 }
@@ -66,14 +67,14 @@ def get_response(user, target, selected_service):
         temperature=0.3
     )
 
-    total_tokens = response.usage.total_tokens
-    prompt_tokens = response.usage.prompt_tokens
-    completion_tokens = response.usage.completion_tokens
+    # total_tokens = response.usage.total_tokens
+    # prompt_tokens = response.usage.prompt_tokens
+    # completion_tokens = response.usage.completion_tokens
     # # response = get_response(" ")
     # # print(response)
-    print("total : ", total_tokens)
-    print("prompt : ", prompt_tokens)
-    print("complete : ", completion_tokens)
+    # print("total : ", total_tokens)
+    # print("prompt : ", prompt_tokens)
+    # print("complete : ", completion_tokens)
 
 
     return response.choices[0].message.content
