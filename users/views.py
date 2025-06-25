@@ -172,6 +172,7 @@ class UserDetailsView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         'company_url',
         'company_linkedin_url',
         'user_linkedin_url',
+        'contact'
     ]
     template_name = 'users/user_details.html'
     success_url = reverse_lazy('home')
@@ -304,6 +305,7 @@ class ProfileView(LoginRequiredMixin, View):
 
         # Collect and normalize user fields
         user.full_name = request.POST.get('full_name', '').strip()
+        user.contact = request.POST.get('contact', '').strip()
         user.company_name = request.POST.get('company_name', '').strip()
         user.company_url = self.normalize_url(request.POST.get('company_url', ''))
         user.company_linkedin_url = self.normalize_url(request.POST.get('company_linkedin_url', ''))

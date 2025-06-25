@@ -21,8 +21,8 @@ def get_response(user, target, selected_service):
                 },
                 {
                 "role": "user",
-                "content" :  f"You are {user.user_linkedin_url}, working at {user.company_url}, and you are pitching to "
-                            f"{target.receiver_linkedin_url}, who works at {target.company_url}.\n\n"
+                "content" :  f"You are {user.user_linkedin_url}, working for {user.company_url}, and you are pitching to target customer"
+                            f"{target.receiver_linkedin_url}, who works for {target.company_url}.\n\n"
                             f"The product or service being pitched is:\n"
                             f"Name: {selected_service.service_name}\n"
                             f"URL: {selected_service.product_url}\n"

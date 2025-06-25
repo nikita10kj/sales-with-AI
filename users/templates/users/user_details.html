@@ -34,6 +34,19 @@
                             {% endfor %}
                         {% endif %}
                     </div>
+                    <div class="mb-3">
+                        <label for="id_contact_number" class="form-label">Your Contact Number</label>
+                        <input type="text" name="contact" id="id_contact_number"
+                               class="form-control"
+                               placeholder="+91652*******"
+                               value="{{ form.data.contact|default:user.contact|default_if_none:'' }}"
+                               required>
+                        {% if form.contact.errors %}
+                            {% for error in form.contact.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
 
                     <!-- Company Name -->
                     <div class="mb-3">

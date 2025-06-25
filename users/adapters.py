@@ -10,6 +10,10 @@ User = get_user_model()
 class MySocialAccountAdapter(DefaultSocialAccountAdapter):
     def pre_social_login(self, request, sociallogin):
         # If already logged in, nothing to do
+        import logging
+        logger = logging.getLogger(__name__)
+
+        logger.info(f"User: {request.user}, Authenticated: {request.user.is_authenticated}")
         if request.user.is_authenticated:
             return
 
