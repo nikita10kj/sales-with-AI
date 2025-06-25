@@ -23,7 +23,7 @@
                         </div>
                         <div class="nav-item" data-section="campaigns">
                             <i class="fas fa-envelope-open"></i>
-                            <span>Campaigns</span>
+                            <span>Campaigns</span>  
                         </div>
                         <div class="nav-item" data-section="performance">
                             <i class="fas fa-chart-line"></i>
@@ -59,30 +59,32 @@
 
                     <!-- Key Metrics Cards -->
                     <div class="row mb-4">
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <div class="metric-card">
                                 <div class="metric-icon bg-success">
                                     <i class="fas fa-paper-plane"></i>
                                 </div>
                                 <div class="metric-content">
-                                    <h3 id="totalSent">1,247</h3>
+                                    <h3 id="totalSent">{{ total_sent }}</h3>
                                     <p>Emails Sent</p>
-                                    <span class="metric-change positive">+12.5%</span>
+                                    <!-- Optional: calculate change elsewhere if needed -->
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <div class="metric-card">
                                 <div class="metric-icon bg-info">
                                     <i class="fas fa-envelope-open"></i>
                                 </div>
                                 <div class="metric-content">
-                                    <h3 id="openRate">24.8%</h3>
+                                    <h3 id="openRate">{{ open_rate }}%</h3>
                                     <p>Open Rate</p>
-                                    <span class="metric-change positive">+3.2%</span>
+                                    <!-- Optional: add change percentage -->
                                 </div>
                             </div>
                         </div>
+                    </div>
+
                         <!-- <div class="col-md-3">
                             <div class="metric-card">
                                 <div class="metric-icon bg-warning">
@@ -116,9 +118,9 @@
                                 <div class="chart-header">
                                     <h5><i class="fas fa-chart-line me-2"></i>Email Performance Trends</h5>
                                     <div class="chart-controls mt-3">
-                                        <button class="btn btn-sm btn-outline-secondary active" data-metric="sent">Sent</button>
+                                        <button class="btn btn-sm btn-outline-secondary active" data-metric="all">All</button>
+                                        <button class="btn btn-sm btn-outline-secondary" data-metric="sent">Sent</button>
                                         <button class="btn btn-sm btn-outline-secondary" data-metric="opened">Opened</button>
-                                        
                                     </div>
                                 </div>
                                 <canvas id="performanceChart" height="300"></canvas>
@@ -187,36 +189,23 @@
                                     <h5><i class="fas fa-trophy me-2"></i>Top Performing Campaigns</h5>
                                 </div>
                                 <div class="performers-list">
+                                    {% for campaign in top_campaigns %}
                                     <div class="performer-item">
-                                        <div class="performer-rank">1</div>
+                                        <div class="performer-rank">{{ campaign.rank }}</div>
                                         <div class="performer-content">
-                                            <h6>AIDA Framework - Tech Outreach</h6>
+                                            <h6>{{ campaign.framework }} - {{ campaign.service }}</h6>
                                             <div class="performer-stats">
-                                                <span class="stat">Open: 32.1%</span>
-                                                
+                                                <span class="stat">Open: {{ campaign.open_rate }}%</span>
                                             </div>
                                         </div>
                                     </div>
+                                    {% empty %}
                                     <div class="performer-item">
-                                        <div class="performer-rank">2</div>
                                         <div class="performer-content">
-                                            <h6>PAS Framework - Healthcare</h6>
-                                            <div class="performer-stats">
-                                                <span class="stat">Open: 28.9%</span>
-                                              
-                                            </div>
+                                            <h6>No campaign data available</h6>
                                         </div>
                                     </div>
-                                    <div class="performer-item">
-                                        <div class="performer-rank">3</div>
-                                        <div class="performer-content">
-                                            <h6>Before-After-Bridge - Finance</h6>
-                                            <div class="performer-stats">
-                                                <span class="stat">Open: 26.3%</span>
-                                              
-                                            </div>
-                                        </div>
-                                    </div>
+                                    {% endfor %}
                                 </div>
                             </div>
                         </div>
@@ -451,39 +440,95 @@
             </div>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
+      // Performance Chart
       const ctx1 = document.getElementById("performanceChart").getContext("2d");
-      new Chart(ctx1, {
+      const performanceChart = new Chart(ctx1, {
         type: "line",
         data: {
-          labels: ["Jan 1", "Jan 8", "Jan 15", "Jan 22", "Jan 29", "Feb 5", "Feb 12"],
-          datasets: [{
-            label: "Emails Sent",
-            data: [120, 145, 167, 189, 201, 234, 267],
-            borderColor: "#6f42c1",
-            backgroundColor: "rgba(111, 66, 193, 0.1)",
-            tension: 0.4,
-            fill: true,
-          }],
+          labels: {{ chart_labels|safe }},
+          datasets: [
+            {
+              label: "Emails Sent",
+              data: {{ sent_data|safe }},
+              borderColor: "#6f42c1",
+              backgroundColor: "rgba(111, 66, 193, 0.1)",
+              tension: 0.4,
+              fill: true,
+            },
+            {
+              label: "Emails Opened",
+              data: {{ opened_data|safe }},
+              borderColor: "#198754",
+              backgroundColor: "rgba(25, 135, 84, 0.1)",
+              tension: 0.4,
+              fill: true,
+            }
+          ],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
+          plugins: { 
+            legend: { 
+              position: 'top',
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+            }
+          },
           scales: {
-            y: { beginAtZero: true },
-            x: {},
+            y: { 
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Number of Emails'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Date'
+              }
+            },
           },
         },
       });
 
+      // Toggle between metrics
+      document.querySelectorAll('[data-metric]').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const metric = this.getAttribute('data-metric');
+          document.querySelectorAll('[data-metric]').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          
+          performanceChart.data.datasets.forEach(dataset => {
+            dataset.hidden = (metric === 'sent' && dataset.label.includes('Opened')) || 
+                            (metric === 'opened' && dataset.label.includes('Sent'));
+          });
+          performanceChart.update();
+        });
+      });
+
+      // Campaign Types Chart (keep your existing code)
+      // Campaign Types Chart - Updated with real data
       const ctx2 = document.getElementById("campaignTypesChart").getContext("2d");
       new Chart(ctx2, {
         type: "doughnut",
         data: {
-          labels: ["AIDA", "PAS", "Before-After-Bridge", "STAR"],
+          labels: {{ campaign_labels|safe }},
           datasets: [{
-            data: [45, 25, 20, 10],
-            backgroundColor: ["#6f42c1", "#198754", "#ffc107", "#dc3545"],
+            data: {{ campaign_counts|safe }},
+            backgroundColor: [
+              "#6f42c1", 
+              "#198754", 
+              "#ffc107", 
+              "#dc3545",
+              "#0dcaf0",
+              "#fd7e14",
+              "#20c997"
+            ],
+            borderWidth: 1,
           }],
         },
         options: {
@@ -494,11 +539,27 @@
               position: "bottom",
               labels: {
                 usePointStyle: true,
+                padding: 20,
+                font: {
+                  size: 12
+                }
               },
             },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.raw || 0;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = Math.round((value / total) * 100);
+                  return `${label}: ${value} (${percentage}%)`;
+                }
+              }
+            }
           },
+          cutout: '70%',
         },
       });
     });
-  </script>
+</script>
 {% endblock content %}

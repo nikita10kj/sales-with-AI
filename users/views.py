@@ -27,7 +27,11 @@ from django.core.validators import URLValidator, EmailValidator
 from django.core.exceptions import ValidationError
 from collections import defaultdict
 import re
-
+from generate_email.models import SentEmail,TargetAudience
+from datetime import datetime, timedelta
+from django.utils import timezone
+from django.db.models import Count, Q, F, FloatField, ExpressionWrapper
+from django.db.models.functions import Cast
 
 @requires_csrf_token
 def csrf_failure(request, reason=""):
@@ -42,6 +46,91 @@ class HomeView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["title"] = self.title
+        user = self.request.user
+
+        # Total sent emails
+        total_sent = SentEmail.objects.filter(user=user).count()
+
+        # Opened emails
+        opened_count = SentEmail.objects.filter(user=user, opened=True).count()
+
+        # Calculate open rate
+        open_rate = (opened_count / total_sent * 100) if total_sent > 0 else 0
+
+        # Get data for the last 7 days
+        today = timezone.now().date()
+        date_list = [today - timedelta(days=i) for i in range(6, -1, -1)]  # Last 7 days including today
+
+        sent_data = []
+        opened_data = []
+        labels = []
+
+        for date in date_list:
+            start_date = datetime.combine(date, datetime.min.time())
+            end_date = datetime.combine(date, datetime.max.time())
+            
+            sent_count = SentEmail.objects.filter(
+                user=user,
+                created__gte=start_date,
+                created__lte=end_date
+            ).count()
+            
+            opened_count = SentEmail.objects.filter(
+                user=user,
+                opened=True,
+                created__gte=start_date,
+                created__lte=end_date
+            ).count()
+            
+            sent_data.append(sent_count)
+            opened_data.append(opened_count)
+            labels.append(date.strftime("%b %d"))
+
+        # Get campaign types data
+        campaign_types = TargetAudience.objects.filter(user=user).exclude(framework__isnull=True).exclude(framework__exact='')
+        campaign_data = campaign_types.values('framework').annotate(count=Count('framework')).order_by('-count')
+
+        # Prepare data for chart
+        campaign_labels = []
+        campaign_counts = []
+        
+        for item in campaign_data:
+            campaign_labels.append(item['framework'])
+            campaign_counts.append(item['count'])
+
+        # Get top performing campaigns (by open rate)
+        top_campaigns = TargetAudience.objects.filter(user=user).exclude(framework__isnull=True).exclude(framework__exact='') \
+            .annotate(
+                total_sent=Count('sent_email'),
+                opened_count=Count('sent_email', filter=Q(sent_email__opened=True)),
+                open_rate=ExpressionWrapper(
+                    Cast(F('opened_count'), FloatField()) / Cast(F('total_sent'), FloatField()) * 100,
+                    output_field=FloatField()
+                )
+            ) \
+            .filter(total_sent__gt=0) \
+            .order_by('-open_rate')[:3]  # Get top 3
+
+        # Prepare top campaigns data
+        top_campaigns_data = []
+        for idx, campaign in enumerate(top_campaigns, start=1):
+            top_campaigns_data.append({
+                'rank': idx,
+                'framework': campaign.framework,
+                'service': campaign.selected_service or "General",
+                'open_rate': round(campaign.open_rate, 1)
+            })
+
+        context.update({
+            "total_sent": total_sent,
+            "open_rate": round(open_rate, 1),
+            "chart_labels": labels,
+            "sent_data": sent_data,
+            "opened_data": opened_data,
+            "campaign_labels": campaign_labels,
+            "campaign_counts": campaign_counts,
+            'top_campaigns': top_campaigns_data,
+        })
 
         return context
 
