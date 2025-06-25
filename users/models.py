@@ -51,6 +51,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     company_linkedin_url = models.URLField(null=True)
     user_linkedin_url = models.URLField(null=True)
     company_name = models.CharField(max_length=255, null=True)
+    contact = models.CharField(max_length=15, null=True, blank=True)
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)

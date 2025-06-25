@@ -124,9 +124,13 @@ class GenerateEmailView(LoginRequiredMixin, View):
         #         ]
         # }
         for email in emails['follow_ups']:
-            email['body'] += f"<p>Best Regards,<br>{request.user.full_name}<br>{request.user.company_name}</p>"
+            email['body'] += (f"<p>Best Regards,<br>{request.user.full_name}"
+                              f"{'<br>' + request.user.contact if request.user.contact else ''}"
+                              f"<br>{request.user.company_name}</p>")
         emails['main_email'][
-            'body'] += f"<p>Best Regards,<br>{request.user.full_name}<br>{request.user.company_name}</p>"
+            'body'] += (f"<p>Best Regards,<br>{request.user.full_name}"
+                        f"{'<br>' + request.user.contact if request.user.contact else ''}"
+                        f"<br>{request.user.company_name}</p>")
 
         return JsonResponse({'success': True,'emails': emails, 'targetId':target.id,# Return normalized URLs to display in the UI
             'normalized_urls': {

@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ['SECRET']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['localhost','sellsmart-dvdhbme5h6eud4hz.centralindia-01.azurewebsites.net','www.sellsharp.co', 'sellsharp.co','20.192.98.161', '127.0.0.1']
 
@@ -140,8 +140,7 @@ else:
             'PASSWORD': conn_str_params['password'],
         }
     }
-
-
+    ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -206,6 +205,9 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 )
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
