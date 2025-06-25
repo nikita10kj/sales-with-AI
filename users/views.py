@@ -376,4 +376,14 @@ class ProfileView(LoginRequiredMixin, View):
 
         return redirect('profile')
     
+class PrivacyPolicyView(View):
+    template_name='users/privacypolicy.html'
 
+    def get(self, request):
+        return render(request, self.template_name)
+    
+class TermsConditionsView(View):
+    template_name='users/termsconditions.html'
+
+    def get(self, request):
+        return render(request, self.template_name)
