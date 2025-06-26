@@ -4,7 +4,7 @@ from django.views.generic import FormView, View,TemplateView,ListView,DetailView
 from django.http import JsonResponse
 from .genai_email import get_response
 from .models import TargetAudience, SentEmail, ReminderEmail
-from users.models import ProductService
+from users.models import ProductService, ActivityLog
 import json
 from django.http import HttpResponse
 
@@ -162,6 +162,11 @@ class SendEmailView(LoginRequiredMixin, View):
         followup_emails = emails["follow_ups"]
 
         sent_email = sendGeneratedEmail(request, request.user, target, main_email)
+        ActivityLog.objects.get_or_create(
+            user=request.user,
+            action="EMAIL_SENT",
+            description=f"{target.framework} Email sent to {target.email}"
+        )
         message_id = make_msgid(domain='sellsharp.co')
         today = date.today()
         days = [3, 5, 7, 10]
@@ -199,8 +204,12 @@ def track_email_open(request, uid):
     # Log the open event (use a unique ID for each email)
     try:
         tracker = SentEmail.objects.get(uid=uid)
-        print("opened")
         tracker.opened = True
+        ActivityLog.objects.get_or_create(
+            user=tracker.user,
+            action="EMAIL_OPENED",
+            description=f"{tracker.target_audience.email} opened email"
+        )
         tracker.save()
     except SentEmail.DoesNotExist:
         pass
