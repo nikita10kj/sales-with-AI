@@ -80,7 +80,6 @@ class ActivityLog(models.Model):
         ('PROFILE_UPDATED', 'PROFILE_UPDATED'),
         ('EMAIL_SENT', 'EMAIL_SENT'),
         ('EMAIL_OPENED', 'EMAIL_OPENED'),
-        ('LOGIN', 'LOGIN'),
         # add more as needed
     ]
 

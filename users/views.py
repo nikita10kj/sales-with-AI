@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import FormView, View,TemplateView
 from django.contrib.auth import login, authenticate
 from django.contrib import messages
-from .models import EmailOTP, CustomUser,ProductService
+from .models import EmailOTP, CustomUser, ProductService, ActivityLog
 from .forms import EmailForm, OTPForm
 from .utils import sendOTP, add_single_sender
 from django.contrib.auth.views import PasswordResetView
@@ -383,22 +383,50 @@ class ProfileView(LoginRequiredMixin, View):
     def post(self, request):
         user = request.user
         errors = {}
+        changes = {}
 
         # Validate and update email
         email = request.POST.get('email', '').strip()
         try:
             EmailValidator()(email)
+            if user.email != email:
+                changes['email'] = {'old': user.email, 'new': email}
             user.email = email
         except ValidationError:
             errors['email'] = 'Invalid email format'
 
         # Collect and normalize user fields
-        user.full_name = request.POST.get('full_name', '').strip()
-        user.contact = request.POST.get('contact', '').strip()
-        user.company_name = request.POST.get('company_name', '').strip()
-        user.company_url = self.normalize_url(request.POST.get('company_url', ''))
-        user.company_linkedin_url = self.normalize_url(request.POST.get('company_linkedin_url', ''))
-        user.user_linkedin_url = self.normalize_url(request.POST.get('user_linkedin_url', ''))
+        full_name = request.POST.get('full_name', '').strip()
+
+        if user.full_name != full_name:
+            changes['full_name'] = {'old': user.full_name, 'new': full_name}
+        user.full_name = full_name
+        contact = request.POST.get('contact', '').strip()
+        if user.contact != contact:
+            changes['contact'] = {'old': user.contact, 'new': contact}
+        user.contact = contact
+        company_name = request.POST.get('company_name', '').strip()
+        if user.company_name != company_name:
+            changes['company_name'] = {'old': user.company_name, 'new': company_name}
+        user.company_name = company_name
+        company_url = self.normalize_url(request.POST.get('company_url', ''))
+        if user.company_url != company_url:
+            changes['company_url'] = {'old': user.company_url, 'new': company_url}
+        user.company_url = company_url
+        company_linkedin_url = self.normalize_url(request.POST.get('company_linkedin_url', ''))
+        if user.company_linkedin_url != company_linkedin_url:
+            changes['company_linkedin_url'] = {
+                'old': user.company_linkedin_url,
+                'new': company_linkedin_url
+            }
+        user.company_linkedin_url = company_linkedin_url
+        user_linkedin_url = self.normalize_url(request.POST.get('user_linkedin_url', ''))
+        if user.user_linkedin_url != user_linkedin_url:
+            changes['user_linkedin_url'] = {
+                'old': user.user_linkedin_url,
+                'new': user_linkedin_url
+            }
+        user.user_linkedin_url = user_linkedin_url
 
         # If any validation error occurred, re-render form with data and errors
         if errors:
@@ -411,6 +439,29 @@ class ProfileView(LoginRequiredMixin, View):
 
         # Save updated user data
         user.save()
+        if changes:
+            field_labels = {
+                'email': 'Email',
+                'full_name': 'Full Name',
+                'contact': 'Contact Number',
+                'company_name': 'Company Name',
+                'company_url': 'Company Website',
+                'company_linkedin_url': 'Company LinkedIn',
+                'user_linkedin_url': 'Your LinkedIn',
+            }
+
+            # Join changed fields into a sentence
+            changed_fields = [field_labels.get(field, field) for field in changes.keys()]
+            readable_fields = ' and '.join(
+                [', '.join(changed_fields[:-1]), changed_fields[-1]] if len(changed_fields) > 1 else changed_fields)
+
+            description = f"You updated your {readable_fields}"
+
+            ActivityLog.objects.get_or_create(
+                user=user,
+                action="PROFILE_UPDATED",
+                description=description
+            )
 
         # Delete previous services
         ProductService.objects.filter(user=user).delete()
