@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'users/img/logo_1.png' %}" />
     <title>Email Marketing Generator</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -12,72 +14,67 @@
     <link href="{% static 'users/css/analytics-styles.css' %}" rel="stylesheet">
     <link href="{% static 'users/css/styles.css' %}" rel="stylesheet">
 </head>
-<body>
+<body style="display: flex; flex-direction: column; min-height: 100vh;">
     <!-- Navigation -->
     
-    <nav class="navbar navbar-expand-lg navbar-dark bg-gradient-dark">
-        <div class="container">
-            <a class="navbar-brand" href="#">
-              <img src="{% static 'users/img/logo.png' %}" alt="SellSharp Logo" width="75%" height="auto" />
+    <nav class="navbar navbar-expand-lg" style="background-color: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.05); padding-top: 0.3rem; padding-bottom: 0.3rem;">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="#">
+            <img src="{% static 'users/img/logo.png' %}" alt="SellSharp Logo" width="80%" height="auto" />
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-<!--                <i class="fas fa-envelope-open-text me-2"></i>-->
-<!--                Sell Sharp-->
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-    {% if user.is_authenticated and request.resolver_match.url_name != 'user-details' %}
-    <ul class="navbar-nav ms-auto">
-        <!-- Dashboard -->
-        <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">
-                Dashboard
-            </a>
-        </li>
-
-        <!-- Generator -->
-        <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.url_name == 'generate_email' %}active{% endif %}" href="{% url 'generate_email' %}">
-                Generator
-            </a>
-        </li>
-
-        <!-- Emails -->
-        <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.url_name == 'view-emails' %}active{% endif %}" href="{% url 'view-emails' %}">
-                Emails
-            </a>
-        </li>
-
-        <!-- Profile & Logout -->
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">
-                <i class="fas fa-user-circle"></i> Account
-            </a>
-            <ul class="dropdown-menu">
-                <li>
-                    <a class="dropdown-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}">
-                        <i class="fas fa-user me-2"></i>Profile
+        <div class="collapse navbar-collapse" id="navbarNav">
+            {% if user.is_authenticated and request.resolver_match.url_name != 'user-details' %}
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'home' %}" 
+                       style="{% if request.resolver_match.url_name == 'home' %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; padding-left: 10px; padding-right: 10px;{% endif %}">
+                        Dashboard
                     </a>
                 </li>
-                <li>
-                    <form action="{% url 'logout' %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="dropdown-item">
-                            <i class="fas fa-sign-out-alt me-2"></i> Log Out
-                        </button>
-                    </form>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'generate_email' %}" 
+                       style="{% if request.resolver_match.url_name == 'generate_email' %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; padding-left: 10px; padding-right: 10px;{% endif %}">
+                        Generator
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'view-emails' %}" 
+                       style="{% if request.resolver_match.url_name == 'view-emails' %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; padding-left: 10px; padding-right: 10px;{% endif %}">
+                        Emails
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                       style="{% if request.resolver_match.url_name == 'profile' %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; padding-left: 10px; padding-right: 10px;{% endif %}">
+                        <i class="fas fa-user-circle"></i> Account
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="{% url 'profile' %}">
+                                <i class="fas fa-user me-2"></i>Profile
+                            </a>
+                        </li>
+                        <li>
+                            <form action="{% url 'logout' %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item">
+                                    <i class="fas fa-sign-out-alt me-2"></i> Log Out
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
                 </li>
             </ul>
-        </li>
-    </ul>
-{% endif %}
-
-</div>
-
+            {% endif %}
         </div>
-    </nav>
+    </div>
+</nav>
+
+
 
     <!-- Main Container -->
     <div class="container-fluid">
@@ -85,16 +82,19 @@
             {% block content %}
             {% endblock content %}
         </div>
-
     </div>
 
-<footer class="bg-dark text-white text-center py-4 mt-auto">
-  <div class="container">
-    <p class="mb-0">&copy; 2025 SellSharp.
-      <a href="{% url 'privacy-policy' %}" class="text-white text-decoration-underline" target="_blank">Privacy Policy</a>
-    </p>
-  </div>
-</footer>
+<!-- Sticky Footer -->
+    <footer style="background-color: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-top: auto;">
+        <div class="container text-center">
+            <p style="margin-bottom: 0;">
+                &copy; 2025 SellSharp.
+                <a href="{% url 'privacy-policy' %}" style="color: black; text-decoration: underline;" target="_blank">
+                    Privacy Policy
+                </a>
+            </p>
+        </div>
+    </footer>
 
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

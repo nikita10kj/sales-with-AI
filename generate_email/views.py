@@ -250,7 +250,7 @@ class EmailListView(LoginRequiredMixin, ListView):
         email = SentEmail.objects.get(id=email_id)
         email.stop_reminder = True
         email.save()
-        print("done")
+
         return JsonResponse({'success': True})
     
 

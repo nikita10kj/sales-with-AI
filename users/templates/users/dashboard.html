@@ -144,42 +144,50 @@
                                     <h5><i class="fas fa-clock me-2"></i>Recent Activity</h5>
                                 </div>
                                 <div class="activity-list">
-                                    <div class="activity-item">
-                                        <div class="activity-icon bg-success">
-                                            <i class="fas fa-paper-plane"></i>
+                                    {% for activity in recent_activities %}
+                                        <div class="activity-item">
+                                            {% if activity.action == 'EMAIL_SENT' %}
+                                                <div class="activity-icon bg-success">
+                                                    <i class="fas fa-paper-plane"></i>
+                                                </div>
+                                                <div class="activity-content">
+                                                    <p><strong>{{ activity.description|default:"Email sent" }}</strong></p>
+                                                    <small class="text-muted">{{ activity.timestamp|timesince }} ago</small>
+                                                </div>
+                                            {% elif activity.action == 'EMAIL_OPENED' %}
+                                                <div class="activity-icon bg-info">
+                                                    <i class="fas fa-envelope-open"></i>
+                                                </div>
+                                                <div class="activity-content">
+                                                    <p><strong>{{ activity.description|default:"Email opened" }}</strong></p>
+                                                    <small class="text-muted">{{ activity.timestamp|timesince }} ago</small>
+                                                </div>
+                                            {% elif activity.action == 'PROFILE_UPDATED' %}
+                                                <div class="activity-icon bg-primary">
+                                                    <i class="fas fa-user-edit"></i>
+                                                </div>
+                                                <div class="activity-content">
+                                                    <p><strong>{{ activity.description|default:"Profile updated" }}</strong></p>
+                                                    <small class="text-muted">{{ activity.timestamp|timesince }} ago</small>
+                                                </div>
+                                            {% else %}
+                                                <div class="activity-icon bg-secondary">
+                                                    <i class="fas fa-bell"></i>
+                                                </div>
+                                                <div class="activity-content">
+                                                    <p><strong>{{ activity.action }}</strong></p>
+                                                    <p>{{ activity.description|default:"" }}</p>
+                                                    <small class="text-muted">{{ activity.timestamp|timesince }} ago</small>
+                                                </div>
+                                            {% endif %}
                                         </div>
-                                        <div class="activity-content">
-                                            <p><strong>Campaign "Tech Outreach Q4"</strong> sent to 45 recipients</p>
-                                            <small class="text-muted">2 hours ago</small>
+                                    {% empty %}
+                                        <div class="activity-item">
+                                            <div class="activity-content">
+                                                <p>No recent activities found</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="activity-item">
-                                        <div class="activity-icon bg-info">
-                                            <i class="fas fa-envelope-open"></i>
-                                        </div>
-                                        <div class="activity-content">
-                                            <p><strong>12 emails opened</strong> from "Partnership Proposal" campaign</p>
-                                            <small class="text-muted">4 hours ago</small>
-                                        </div>
-                                    </div>
-                                    <div class="activity-item">
-                                        <div class="activity-icon bg-warning">
-                                            <i class="fas fa-reply"></i>
-                                        </div>
-                                        <div class="activity-content">
-                                            <p><strong>New response</strong> from john@techcorp.com</p>
-                                            <small class="text-muted">6 hours ago</small>
-                                        </div>
-                                    </div>
-                                    <div class="activity-item">
-                                        <div class="activity-icon bg-primary">
-                                            <i class="fas fa-plus"></i>
-                                        </div>
-                                        <div class="activity-content">
-                                            <p><strong>New campaign created:</strong> "Holiday Greetings 2024"</p>
-                                            <small class="text-muted">1 day ago</small>
-                                        </div>
-                                    </div>
+                                    {% endfor %}
                                 </div>
                             </div>
                         </div>
