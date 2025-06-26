@@ -45,44 +45,58 @@
             <div class="main-content-analytics">
                 <!-- Overview Section -->
                 <div class="analytics-section active" id="overview">
-                    <div class="section-header text-center">
-                        <h2><i class="fas fa-tachometer-alt me-2"></i>Analytics Overview</h2>
-                        <!-- <div class="date-filter">
-                            <select class="form-select" id="dateRange">
-                                <option value="7">Last 7 days</option>
-                                <option value="30" selected>Last 30 days</option>
-                                <option value="90">Last 90 days</option>
-                                <option value="365">Last year</option>
-                            </select>
-                        </div> -->
-                    </div>
+                    <!-- Section Header -->
+<!-- Section Header -->
+<div class="text-center mb-2 p-2 rounded-4 ">
+  <h2 class="mb-3 fw-bold" style="font-size: 2.5rem; color: #2c3e50;">
+    <i class="fas fa-tachometer-alt me-2" style="color: #6f42c1;"></i>Performance Analytics
+  </h2>
+  <p class="text-muted" style="font-size: 1rem;">Visualize key insights from your latest email campaigns</p>
+</div>
 
-                    <!-- Key Metrics Cards -->
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <div class="metric-card">
-                                <div class="metric-icon bg-success">
-                                    <i class="fas fa-paper-plane"></i>
-                                </div>
-                                <div class="metric-content">
-                                    <h3 id="totalSent">{{ total_sent }}</h3>
-                                    <p>Emails Sent</p>
-                                    <!-- Optional: calculate change elsewhere if needed -->
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="metric-card">
-                                <div class="metric-icon bg-info">
-                                    <i class="fas fa-envelope-open"></i>
-                                </div>
-                                <div class="metric-content">
-                                    <h3 id="openRate">{{ open_rate }}%</h3>
-                                    <p>Open Rate</p>
-                                    <!-- Optional: add change percentage -->
-                                </div>
-                            </div>
-                        </div>
+<!-- Key Metrics Cards -->
+<div class="row g-4 mb-2">
+  <!-- Emails Sent Card -->
+  <div class="col-md-6">
+    <div class="d-flex align-items-center p-4 rounded-4 shadow" 
+         style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 10px 30px rgba(16, 172, 132, 0.15); transition: transform 0.4s ease;" 
+         onmouseover="this.style.transform='scale(1.03)'" 
+         onmouseout="this.style.transform='scale(1)'">
+      <div class="d-flex align-items-center justify-content-center me-4" 
+           style="width: 80px; height: 80px; border-radius: 20px; background: linear-gradient(145deg, #00b894, #55efc4); box-shadow: 0 6px 15px rgba(0, 184, 148, 0.4);">
+        <i class="fas fa-paper-plane text-white" style="font-size: 2rem;"></i>
+      </div>
+      <div>
+        <h3 id="totalSent" class="mb-1 fw-bold" style="font-size: 2.5rem; color: #2c3e50;">{{ total_sent }}</h3>
+        <p class="text-muted mb-2" style="font-size: 0.95rem;">Emails Sent</p>
+        
+      </div>
+    </div>
+  </div>
+
+  <!-- Open Rate Card -->
+  <div class="col-md-6">
+    <div class="d-flex align-items-center p-4 rounded-4 shadow" 
+         style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 10px 30px rgba(41, 128, 185, 0.15); transition: transform 0.4s ease;" 
+         onmouseover="this.style.transform='scale(1.03)'" 
+         onmouseout="this.style.transform='scale(1)'">
+      <div class="d-flex align-items-center justify-content-center me-4" 
+           style="width: 80px; height: 80px; border-radius: 20px; background: linear-gradient(145deg, #0984e3, #74b9ff); box-shadow: 0 6px 15px rgba(9, 132, 227, 0.4);">
+        <i class="fas fa-envelope-open text-white" style="font-size: 2rem;"></i>
+      </div>
+      <div>
+        <h3 id="openRate" class="mb-1 fw-bold" style="font-size: 2.5rem; color: #2c3e50;">{{ open_rate }}%</h3>
+        <p class="text-muted mb-2" style="font-size: 0.95rem;">Open Rate</p>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+                    </div>
                     </div>
 
                         <!-- <div class="col-md-3">
