@@ -32,6 +32,8 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from django.db.models import Count, Q, F, FloatField, ExpressionWrapper
 from django.db.models.functions import Cast
+from django.core.mail import EmailMessage
+from .forms import SupportForm
 
 @requires_csrf_token
 def csrf_failure(request, reason=""):
@@ -533,3 +535,73 @@ class TermsConditionsView(View):
 
     def get(self, request):
         return render(request, self.template_name)
+
+# class SupportView(LoginRequiredMixin, View):
+#     def get(self, request):
+#         return render(request, 'users/support.html', {'user': request.user})
+
+#     def post(self, request):
+#         subject = request.POST.get('subject', '').strip()
+#         message = request.POST.get('message', '').strip()
+
+#         user = request.user
+#         user_email = user.email
+
+#         if subject and message:
+#             # Save request without needing email field in the model
+#             SupportRequest.objects.create(
+#                 user=user,
+#                 subject=subject,
+#                 message=message
+#             )
+
+#             # Email body and sending
+#             full_message = f"Support request from {user.get_full_name()} ({user_email}):\n\n{message}"
+#             try:
+#                 email_msg = EmailMessage(
+#                     subject=f"[Support] {subject}",
+#                     body=full_message,
+#                     from_email=settings.DEFAULT_FROM_EMAIL,
+#                     to=['jmsadvisory1@gmail.com'],
+#                     headers={'Reply-To': user_email}  # ✅ Reply goes to user
+#                 )
+#                 email_msg.send(fail_silently=False)
+
+#                 messages.success(request, "Support request submitted and emailed successfully.")
+#             except Exception as e:
+#                 messages.error(request, f"Failed to send email: {e}")
+
+#             return redirect('support')
+
+#         else:
+#             messages.error(request, "Please fill out all fields.")
+#             return render(request, 'users/support.html', {
+#                 'user': user,
+#                 'subject': subject,
+#                 'message': message
+#           })
+
+class SupportView(LoginRequiredMixin, FormView):    
+    template_name = "users/support.html"    
+    form_class = SupportForm    
+    def get_context_data(self, **kwargs):        
+        context = super().get_context_data(**kwargs)        
+        return context    
+    
+    def form_valid(self, form):        
+        email = form.cleaned_data["email"]        
+        subject = form.cleaned_data["subject"]        
+        message = form.cleaned_data["message"]        
+        email_msg = EmailMessage(            
+            subject=f"[Support] {subject}",            
+            body=message,            
+            to=["jmsadvisory1@gmail.com"],            
+            reply_to=[email],        
+            )        
+        email_msg.send(fail_silently=False)        
+        messages.success(self.request, "We have received your message!")        
+        return redirect('support')    
+    
+    def form_invalid(self, form):        
+        messages.error(self.request, "There was a problem with your submission.")        
+        return self.render_to_response(self.get_context_data(form=form))

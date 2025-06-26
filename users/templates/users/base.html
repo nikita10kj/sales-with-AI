@@ -2,6 +2,9 @@
 <html lang="en">
 {% load static %}
 <head>
+    <!-- Google tag (gtag.js) --> 
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5GPP01KCHJ"></script> 
+    <script> window.dataLayer = window.dataLayer || [];   function gtag(){dataLayer.push(arguments);}   gtag('js', new Date());   gtag('config', 'G-5GPP01KCHJ'); </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <!-- Favicon -->
@@ -59,6 +62,11 @@
                             </a>
                         </li>
                         <li>
+                            <a class="dropdown-item" href="{% url 'support' %}">
+                                <i class="fas fa-headset me-2"></i>Support
+                            </a>
+                        </li>
+                        <li>
                             <form action="{% url 'logout' %}" method="post">
                                 {% csrf_token %}
                                 <button type="submit" class="dropdown-item">
@@ -86,7 +94,7 @@
 
 <!-- Sticky Footer -->
     <footer style="background-color: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-top: auto;">
-        <div class="container text-center">
+        <div class="container text-center p-2">
             <p style="margin-bottom: 0;">
                 &copy; 2025 SellSharp.
                 <a href="{% url 'privacy-policy' %}" style="color: black; text-decoration: underline;" target="_blank">

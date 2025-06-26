@@ -63,6 +63,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+    
+    def get_full_name(self):
+        return self.full_name or self.email
 
     def save(self, *args, **kwargs):
         self.email = self.email.lower()  # Always save email as lowercase
@@ -90,3 +93,6 @@ class ActivityLog(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.action} at {self.timestamp}"
+    
+
+

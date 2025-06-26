@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (HomeView, LoginView, RegisterView, VerifyOTPView, ResendOTPView,
-                    UserDetailsView,ProfileView,PrivacyPolicyView,TermsConditionsView)
+                    UserDetailsView,ProfileView,PrivacyPolicyView,TermsConditionsView,SupportView)
 
 
 urlpatterns = [
@@ -14,5 +14,6 @@ urlpatterns = [
     path('user-details/<int:pk>/', UserDetailsView.as_view(), name='user-details'),
     path('profile/', ProfileView.as_view(), name='profile'),
     path('privacypolicy/',PrivacyPolicyView.as_view(),name='privacy-policy'),
-    path('termsconditions/',TermsConditionsView.as_view(),name='terms-conditions')
+    path('termsconditions/',TermsConditionsView.as_view(),name='terms-conditions'),
+    path('support/', SupportView.as_view(), name='support'),
 ]
