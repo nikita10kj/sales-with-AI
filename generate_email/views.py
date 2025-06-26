@@ -200,7 +200,11 @@ class SendEmailView(LoginRequiredMixin, View):
             'target_email': target.email
         })
 
+import logging
+logger = logging.getLogger(__name__)
 def track_email_open(request, uid):
+    logger.info(f"Pixel hit: UID={uid}, IP={request.META.get('REMOTE_ADDR')}, Auth={request.user.is_authenticated}, Source={request.GET.get('source')}")
+
     # Avoid tracking if user is logged in (e.g., reading from your own UI)
     if request.user.is_authenticated:
         pixel = (
