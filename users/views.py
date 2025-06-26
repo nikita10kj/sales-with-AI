@@ -121,6 +121,9 @@ class HomeView(LoginRequiredMixin, TemplateView):
                 'open_rate': round(campaign.open_rate, 1)
             })
 
+        # Get recent activities (last 5)
+        recent_activities = ActivityLog.objects.filter(user=user).order_by('-timestamp')[:5]
+
         context.update({
             "total_sent": total_sent,
             "open_rate": round(open_rate, 1),
@@ -130,6 +133,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
             "campaign_labels": campaign_labels,
             "campaign_counts": campaign_counts,
             'top_campaigns': top_campaigns_data,
+            'recent_activities': recent_activities,
         })
 
         return context
