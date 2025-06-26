@@ -29,7 +29,14 @@
                                     {{ email.target_audience.receiver_last_name }}
                                     <small class="text-muted">({{ email.email }})</small>
                                 </td>
-                                <td class="clickable-row" data-href="{% url 'view-email-message' email.uid %}" style="cursor: pointer;">{{ email.subject }}</td>
+                                <td class="clickable-row"
+                                    data-href="{% url 'view-email-message' email.uid %}"
+                                    style="cursor: pointer;">
+                                    {{ email.subject }}
+                                    {% if email.opened %}
+                                        <span class="badge bg-success">Opened</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <span class="utc-time" data-utc="{{ email.created|date:'c' }}"></span>
                                 </td>
