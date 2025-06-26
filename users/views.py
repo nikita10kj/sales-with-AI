@@ -518,6 +518,8 @@ class ProfileView(LoginRequiredMixin, View):
                     product_usp=service.get('product_usp', '')
                 )
 
+        messages.success(request, "Your profile has been updated successfully!")
+
         return redirect('profile')
     
 class PrivacyPolicyView(View):

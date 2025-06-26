@@ -100,6 +100,40 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{% static 'users/js/analytics-script.js' %}"></script>
     <script src="{% static 'users/js/components/ui/chart.js' %}"></script>
+    <!-- Add this script for handling messages -->
+    <script>
+        // Function to show alert (same as your existing function)
+        function showAlert(message, type = "info") {
+            // Create and show Bootstrap alert
+            const alertDiv = document.createElement("div")
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`
+            alertDiv.style.cssText = "top: 20px; right: 20px; z-index: 10000; min-width: 300px;"
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `
+
+            document.body.appendChild(alertDiv)
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove()
+                }
+            }, 5000)
+        }
+
+        // Check for Django messages on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if messages %}
+                {% for message in messages %}
+                    showAlert("{{ message }}", "{{ message.tags }}");
+                {% endfor %}
+            {% endif %}
+        });
+    </script>
+   
+
     {% block js %}
     {% endblock js %}
 </body>
