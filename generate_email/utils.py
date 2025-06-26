@@ -11,12 +11,19 @@ from sendgrid.helpers.mail import Mail, Email, To, Content, ReplyTo
 # Load environment variables (if using a .env file)
 from dotenv import load_dotenv
 import requests
-from allauth.socialaccount.models import SocialToken, SocialAccount
+from allauth.socialaccount.models import SocialToken, SocialAccount, SocialApp
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+from allauth.socialaccount.providers.oauth2.client import OAuth2Error
+from allauth.socialaccount.providers.oauth2.views import OAuth2Client
 import base64
 from email.mime.text import MIMEText
 from email.utils import formataddr
+from django.utils import timezone
+
+
+class MicrosoftEmailSendError(Exception):
+    pass
 
 def get_user_provider(user):
     try:
@@ -52,9 +59,57 @@ def create_message(sender_name, sender, to, subject, body):
 
 load_dotenv()  # Make sure you have python-dotenv installed
 
+
+def refresh_microsoft_token(user):
+    try:
+        token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
+        app = SocialApp.objects.get(provider='microsoft')
+
+        refresh_token = token.token_secret  # or token.token depending on storage
+        client_id = app.client_id
+        client_secret = app.secret
+        tenant = 'common'  # or your tenant ID if it's specific
+
+        token_url = f'https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token'
+
+        data = {
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'grant_type': 'refresh_token',
+            'refresh_token': refresh_token,
+            'scope': 'https://graph.microsoft.com/.default offline_access',
+        }
+
+        response = requests.post(token_url, data=data)
+        response.raise_for_status()
+
+        tokens = response.json()
+
+        # Update the existing token
+        token.token = tokens['access_token']
+        token.token_secret = tokens.get('refresh_token', token.token_secret)
+        token.expires_at = timezone.now() + timezone.timedelta(seconds=int(tokens['expires_in']))
+        token.save()
+
+        return token.token
+
+    except Exception as e:
+        print("Error refreshing Microsoft token:", e)
+        return None
+
+
 def send_microsoft_email(user, to_email, subject, html_body):
     token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
-    access_token = token.token
+
+    # Check if token is expired
+    if token.expires_at and token.expires_at <= timezone.now():
+        new_token = refresh_microsoft_token(user)
+        if not new_token:
+            raise MicrosoftEmailSendError("Microsoft token refresh failed")
+        access_token = new_token
+        print("new")
+    else:
+        access_token = token.token
 
     url = 'https://graph.microsoft.com/v1.0/me/sendMail'
     headers = {
@@ -112,7 +167,20 @@ def sendGeneratedEmail(request, user, target_audience, main_email):
         service.users().messages().send(userId='me', body=messages).execute()
 
     elif provider == 'microsoft':
-        send_microsoft_email(user, email, subject, message)
+        try:
+            send_microsoft_email(user, email, subject, message)
+        except MicrosoftEmailSendError as e:
+            print(f"Microsoft email send failed: {e}")
+            # Fallback to SMTP
+            email_msg = EmailMessage(
+                subject,
+                message,
+                to=[email],
+                reply_to=[user.email],
+                headers={'Message-ID': message_id}
+            )
+            email_msg.content_subtype = 'html'
+            email_msg.send(fail_silently=False)
 
     else:
 
