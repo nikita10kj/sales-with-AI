@@ -201,6 +201,15 @@ class SendEmailView(LoginRequiredMixin, View):
         })
 
 def track_email_open(request, uid):
+    # Avoid tracking if user is logged in (e.g., reading from your own UI)
+    if request.user.is_authenticated:
+        pixel = (
+            b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01'
+            b'\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89'
+            b'\x00\x00\x00\nIDATx\xdac\xf8\xff\xff?\x00\x05\xfe\x02'
+            b'\xfeA\xe2 \xa1\x00\x00\x00\x00IEND\xaeB`\x82'
+        )
+        return HttpResponse(pixel, content_type='image/png')
     # Log the open event (use a unique ID for each email)
     try:
         tracker = SentEmail.objects.get(uid=uid)
