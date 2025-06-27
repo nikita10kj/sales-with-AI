@@ -396,7 +396,10 @@ class ProfileView(LoginRequiredMixin, View):
         try:
             EmailValidator()(email)
             if user.email != email:
+                if CustomUser.objects.exclude(id=user.id).filter(email=email).exists():
+                    errors['email'] = "Email already exists"
                 changes['email'] = {'old': user.email, 'new': email}
+
             user.email = email
         except ValidationError:
             errors['email'] = 'Invalid email format'

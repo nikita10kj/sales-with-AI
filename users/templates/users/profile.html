@@ -11,9 +11,6 @@
                     <p class="mb-0 text-white-50">Update your personal and company details</p>
                 </div>
                 <div class="card-body">
-                    {% if errors.email %}
-                        <div class="alert alert-danger">{{ errors.email }}</div>
-                    {% endif %}
 
                     <form method="post" enctype="multipart/form-data" class="profile-form">
                         {% csrf_token %}
@@ -24,11 +21,19 @@
                                 <label for="email" class="form-label">Email *</label>
                                 <input type="email" class="form-control" id="email" name="email"
                                        value="{{ user.email }}" required>
+                            {% if errors.email %}
+                                    <div class="invalid-feedback d-block">{{ errors.email }}</div>
+                            {% endif %}
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="full_name" class="form-label">Full Name</label>
                                 <input type="text" class="form-control" id="full_name" name="full_name"
                                        value="{{ user.full_name }}">
+                            {% if form.full_name.errors %}
+                                {% for error in form.full_name.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
                             </div>
                         </div>
                         <div class="mb-3">
@@ -51,11 +56,17 @@
                                 <label for="company_name" class="form-label">Company Name</label>
                                 <input type="text" class="form-control" id="company_name" name="company_name"
                                        value="{{ user.company_name }}">
+
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="company_url" class="form-label">Company URL</label>
                                 <input type="text" class="form-control" id="company_url" name="company_url"
                                        value="{{ user.company_url }}" placeholder="https://yourcompany.com">
+                            {% if form.company_url.errors %}
+                                {% for error in form.company_url.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
                             </div>
                         </div>
 
@@ -65,11 +76,21 @@
                                 <label for="company_linkedin_url" class="form-label">Company LinkedIn URL</label>
                                 <input type="text" class="form-control" id="company_linkedin_url" name="company_linkedin_url"
                                        value="{{ user.company_linkedin_url }}" placeholder="https://linkedin.com/company/yourcompany">
+                            {% if form.company_linkedin_url.errors %}
+                                {% for error in form.company_linkedin_url.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="user_linkedin_url" class="form-label">Your LinkedIn URL</label>
                                 <input type="text" class="form-control" id="user_linkedin_url" name="user_linkedin_url"
                                        value="{{ user.user_linkedin_url }}" placeholder="https://linkedin.com/in/yourprofile">
+                            {% if form.user_linkedin_url.errors %}
+                                {% for error in form.user_linkedin_url.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
                             </div>
                         </div>
 

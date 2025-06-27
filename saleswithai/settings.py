@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from celery.schedules import crontab
+
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -26,7 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ['SECRET']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['localhost','sellsmart-dvdhbme5h6eud4hz.centralindia-01.azurewebsites.net','www.sellsharp.co', 'sellsharp.co','20.192.98.161', '127.0.0.1']
 
@@ -49,6 +51,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.microsoft',
+    'django_celery_beat'
 ]
 
 SOCIALACCOUNT_PROVIDERS = {
@@ -224,6 +227,23 @@ SOCIALACCOUNT_STORE_TOKENS = True
 ACCOUNT_ADAPTER = 'users.adapters.CustomSocialAccountAdapter'
 SOCIALACCOUNT_ADAPTER = 'users.adapters.MySocialAccountAdapter'
 SOCIALACCOUNT_LOGIN_ON_GET = True
+
+
+# Reminders
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_BEAT_SCHEDULE = {
+    'send-reminder-emails': {
+        'task': 'generate_email.tasks.send_reminders',
+        'schedule': crontab(minute=0, hour=11),   # every day at 12:00 PM (noon)
+        # 'schedule': crontab(minute='*')
+    },
+}
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'
+
+
 
 #log file
 if not DEBUG:
