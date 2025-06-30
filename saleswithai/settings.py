@@ -168,7 +168,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
@@ -233,10 +233,12 @@ CELERY_BROKER_URL = 'rediss://:4JPY7Oj7e46UQ6OhMOUCX9zIREi8FdXaoAzCaFrSqdI=@sale
 CELERY_BROKER_USE_SSL = True
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Kolkata'
+CELERY_ENABLE_UTC = True
 CELERY_BEAT_SCHEDULE = {
     'send-reminder-emails': {
         'task': 'generate_email.tasks.send_reminders',
-        'schedule': crontab(minute=59, hour=11),   # every day at 12:00 PM (noon)
+        'schedule': crontab(minute=13, hour=12),   # every day at 12:00 PM (noon)
         # 'schedule': crontab(minute='*')
     },
 }
