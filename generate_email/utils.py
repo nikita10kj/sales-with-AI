@@ -140,9 +140,12 @@ def send_microsoft_email(user, to_email, subject, html_body):
     }
 
     response = requests.post(url, headers=headers, json=message)
-    original_graph_id = response.json().get("id")  # Save this in DB
     response.raise_for_status()
-    return original_graph_id
+    original_graph_id = ""
+    if response.content:
+        original_graph_id = response.json().get("id")  # Save this in DB
+
+    return original_graph_id if original_graph_id else None
 
 def sendGeneratedEmail(request, user, target_audience, main_email):
     subject = main_email["subject"]
@@ -175,8 +178,9 @@ def sendGeneratedEmail(request, user, target_audience, main_email):
     elif provider == 'microsoft':
         try:
             original_id = send_microsoft_email(user, email, subject, message)
-            sent_email.message_id = original_id
-            sent_email.save()
+            if original_id:
+                sent_email.message_id = original_id
+                sent_email.save()
         except MicrosoftEmailSendError as e:
             print(f"Microsoft email send failed: {e}")
             # Fallback to SMTP
