@@ -229,7 +229,7 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 
 
 # Reminders
-CELERY_BROKER_URL = 'rediss://:4JPY7Oj7e46UQ6OhMOUCX9zIREi8FdXaoAzCaFrSqdI=@salesredis.redis.cache.windows.net:6380/0'
+CELERY_BROKER_URL = 'rediss://:4JPY7Oj7e46UQ6OhMOUCX9zIREi8FdXaoAzCaFrSqdI%3D@salesredis.redis.cache.windows.net:6380/0'
 # CELERY_BROKER_USE_SSL = True
 CELERY_BROKER_USE_SSL = {
     'ssl_cert_reqs': None
