@@ -236,7 +236,7 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_BEAT_SCHEDULE = {
     'send-reminder-emails': {
         'task': 'generate_email.tasks.send_reminders',
-        'schedule': crontab(minute=0, hour=11),   # every day at 12:00 PM (noon)
+        'schedule': crontab(minute=45, hour=11),   # every day at 12:00 PM (noon)
         # 'schedule': crontab(minute='*')
     },
 }
