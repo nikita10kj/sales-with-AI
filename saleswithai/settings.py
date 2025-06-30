@@ -230,15 +230,11 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 
 # Reminders
 CELERY_BROKER_URL = 'rediss://:4JPY7Oj7e46UQ6OhMOUCX9zIREi8FdXaoAzCaFrSqdI=@salesredis.redis.cache.windows.net:6380/0'
-# CELERY_BROKER_USE_SSL = True
+CELERY_BROKER_USE_SSL = True
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Kolkata'
 CELERY_ENABLE_UTC = True
-broker_use_ssl = {
-    'ssl_cert_reqs': None  # Accept self-signed Azure certs
-}
-CELERY_BROKER_USE_SSL = broker_use_ssl
 
 CELERY_BEAT_SCHEDULE = {
     'send-reminder-emails': {
