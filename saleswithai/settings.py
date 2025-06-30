@@ -229,14 +229,14 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 
 
 # Reminders
-CELERY_BROKER_URL = 'redis://:4JPY7Oj7e46UQ6OhMOUCX9zIREi8FdXaoAzCaFrSqdI=@salesredis.redis.cache.windows.net:6380/0'
+CELERY_BROKER_URL = 'rediss://:4JPY7Oj7e46UQ6OhMOUCX9zIREi8FdXaoAzCaFrSqdI=@salesredis.redis.cache.windows.net:6380/0'
 CELERY_BROKER_USE_SSL = True
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_BEAT_SCHEDULE = {
     'send-reminder-emails': {
         'task': 'generate_email.tasks.send_reminders',
-        'schedule': crontab(minute=45, hour=11),   # every day at 12:00 PM (noon)
+        'schedule': crontab(minute=55, hour=11),   # every day at 12:00 PM (noon)
         # 'schedule': crontab(minute='*')
     },
 }

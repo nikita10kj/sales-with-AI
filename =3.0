@@ -1,0 +1,2 @@
+Looking in indexes: https://pypi.org/simple, https://packagecloud.io/github/git-lfs/pypi/simple
+Requirement already satisfied: redis in /home/nikita/SalesAI/venv/lib/python3.12/site-packages (6.2.0)
