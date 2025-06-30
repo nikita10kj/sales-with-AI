@@ -22,11 +22,9 @@ def send_reminders():
     reminder_emails = ReminderEmail.objects.filter(send_at=today, sent=False)
 
     for er in reminder_emails:
-        print("email", er.email, er.user.email)
         if not er.sent_email.stop_reminder:
             sendReminderEmail(er)
             er.sent = True
-            print("sent")
             er.save()
 
 
