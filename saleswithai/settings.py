@@ -242,7 +242,7 @@ CELERY_ENABLE_UTC = True
 CELERY_BEAT_SCHEDULE = {
     'send-reminder-emails': {
         'task': 'generate_email.tasks.send_reminders',
-        'schedule': crontab(minute=13, hour=12),   # every day at 12:00 PM (noon)
+        'schedule': crontab(minute=55, hour=14),   # every day at 12:00 PM (noon)
         # 'schedule': crontab(minute='*')
     },
 }
