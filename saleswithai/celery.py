@@ -3,7 +3,7 @@ from celery import Celery
 from .settings import CELERY_BEAT_SCHEDULE
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'saleswithai.settings')
 
-app = Celery('saleswithai', broker='redis://127.0.0.1:6379/0')
+app = Celery('saleswithai')
 # Fix the worker_state_db error
 app.config_from_object('django.conf:settings', namespace='CELERY')
 # app.conf.beat_schedule = CELERY_BEAT_SCHEDULE
