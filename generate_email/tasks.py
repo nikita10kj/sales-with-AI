@@ -11,6 +11,8 @@ from .utils import sendReminderEmail
 from django.conf import settings
 from datetime import datetime, time
 import numpy as np
+from users.models import CustomUser
+from .models import TargetAudience
 
 
 @shared_task
@@ -27,6 +29,20 @@ def send_reminders():
             er.sent = True
             er.save()
 
+
+from .views import sendGeneratedEmail  # or move logic here if better
+
+@shared_task
+def send_scheduled_email(user_id, target_audience_id, main_email, request_data):
+    user = CustomUser.objects.get(id=user_id)
+    target = TargetAudience.objects.get(id=target_audience_id)
+
+    class DummyRequest:
+        def build_absolute_uri(self, path=''):
+            return request_data['base_url'] + path  # mimic request object
+
+    dummy_request = DummyRequest()
+    sendGeneratedEmail(dummy_request, user, target, main_email)
 
 
 

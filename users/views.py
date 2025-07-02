@@ -51,10 +51,22 @@ class HomeView(LoginRequiredMixin, TemplateView):
         user = self.request.user
 
         # Total sent emails
-        total_sent = SentEmail.objects.filter(user=user).count()
+        if user.is_superuser:
+            sent_emails = SentEmail.objects.all()
+            total_sent = SentEmail.objects.all().count()
+            opened_count = SentEmail.objects.filter(opened=True).count()
+            campaign_types = TargetAudience.objects.all().exclude(framework__isnull=True).exclude(
+                framework__exact='')
+            recent_activities = ActivityLog.objects.all().order_by('-timestamp')[:5]
 
-        # Opened emails
-        opened_count = SentEmail.objects.filter(user=user, opened=True).count()
+
+        else:
+            sent_emails = SentEmail.objects.filter(user=user)
+            total_sent = SentEmail.objects.filter(user=user).count()
+            opened_count = SentEmail.objects.filter(user=user, opened=True).count()
+            campaign_types = TargetAudience.objects.filter(user=user).exclude(framework__isnull=True).exclude(
+                framework__exact='')
+            recent_activities = ActivityLog.objects.filter(user=user).order_by('-timestamp')[:5]
 
         # Calculate open rate
         open_rate = (opened_count / total_sent * 100) if total_sent > 0 else 0
@@ -71,14 +83,12 @@ class HomeView(LoginRequiredMixin, TemplateView):
             start_date = datetime.combine(date, datetime.min.time())
             end_date = datetime.combine(date, datetime.max.time())
             
-            sent_count = SentEmail.objects.filter(
-                user=user,
+            sent_count = sent_emails.filter(
                 created__gte=start_date,
                 created__lte=end_date
             ).count()
             
-            opened_count = SentEmail.objects.filter(
-                user=user,
+            opened_count = sent_emails.filter(
                 opened=True,
                 created__gte=start_date,
                 created__lte=end_date
@@ -89,7 +99,6 @@ class HomeView(LoginRequiredMixin, TemplateView):
             labels.append(date.strftime("%b %d"))
 
         # Get campaign types data
-        campaign_types = TargetAudience.objects.filter(user=user).exclude(framework__isnull=True).exclude(framework__exact='')
         campaign_data = campaign_types.values('framework').annotate(count=Count('framework')).order_by('-count')
 
         # Prepare data for chart
@@ -101,7 +110,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
             campaign_counts.append(item['count'])
 
         # Get top performing campaigns (by open rate)
-        top_campaigns = TargetAudience.objects.filter(user=user).exclude(framework__isnull=True).exclude(framework__exact='') \
+        top_campaigns = campaign_types \
             .annotate(
                 total_sent=Count('sent_email'),
                 opened_count=Count('sent_email', filter=Q(sent_email__opened=True)),
@@ -123,8 +132,6 @@ class HomeView(LoginRequiredMixin, TemplateView):
                 'open_rate': round(campaign.open_rate, 1)
             })
 
-        # Get recent activities (last 5)
-        recent_activities = ActivityLog.objects.filter(user=user).order_by('-timestamp')[:5]
 
         context.update({
             "total_sent": total_sent,
