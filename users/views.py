@@ -49,6 +49,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         context["title"] = self.title
         user = self.request.user
+        all_users = None
 
         # Total sent emails
         if user.is_superuser:
@@ -58,6 +59,10 @@ class HomeView(LoginRequiredMixin, TemplateView):
             campaign_types = TargetAudience.objects.all().exclude(framework__isnull=True).exclude(
                 framework__exact='')
             recent_activities = ActivityLog.objects.all().order_by('-timestamp')[:5]
+            all_users = CustomUser.objects.annotate(
+                total_sent=Count('sent_email'),
+                opened_count=Count('sent_email', filter=Q(sent_email__opened=True))
+            )
 
 
         else:
@@ -143,6 +148,8 @@ class HomeView(LoginRequiredMixin, TemplateView):
             "campaign_counts": campaign_counts,
             'top_campaigns': top_campaigns_data,
             'recent_activities': recent_activities,
+            'all_users': all_users,
+            'sent_emails': sent_emails
         })
 
         return context
