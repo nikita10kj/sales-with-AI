@@ -265,7 +265,40 @@ class EmailListView(LoginRequiredMixin, ListView):
         email.save()
 
         return JsonResponse({'success': True})
-    
+
+
+class LeadListView(LoginRequiredMixin, ListView):
+    model = SentEmail
+    template_name = 'generate_email/lead_list.html'
+    context_object_name = 'target_audience'
+
+    def get_queryset(self):
+        target_audience = TargetAudience.objects.filter(user=self.request.user).order_by('-created')
+
+        # Show only emails sent by the logged-in user, newest first
+        return target_audience
+
+class LeadEmailListView(LoginRequiredMixin, ListView):
+    model = SentEmail
+    template_name = 'generate_email/leads_email_list.html'
+    context_object_name = 'target_audience_email'
+
+    def get_queryset(self):
+        pk = self.kwargs.get('pk')
+        self.target_audience = TargetAudience.objects.get(pk=pk)
+        next_reminder = ReminderEmail.objects.filter(
+            sent_email=OuterRef('pk'),
+            send_at__gte=now().date()
+        ).order_by('send_at').values('send_at')[:1]
+        # Show only emails sent by the logged-in user, newest first
+        return (self.target_audience.sent_email.
+                annotate(next_reminder_date=Subquery(next_reminder)).order_by('-created'))
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['target_audience'] = self.target_audience
+        return context
 
 class EmailMessageView(DetailView):
     model = SentEmail
