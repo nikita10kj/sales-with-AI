@@ -278,6 +278,51 @@ class LeadListView(LoginRequiredMixin, ListView):
         # Show only emails sent by the logged-in user, newest first
         return target_audience
 
+# views.py
+import csv
+from django.http import HttpResponse
+from .models import TargetAudience  # Update with your model name
+
+
+def escape_csv(value):
+    """
+    Escapes potentially dangerous values for CSV injection.
+    """
+    if isinstance(value, str) and value.startswith(('=', '+', '-', '@')):
+        return "'" + value  # Prepend with single quote to disable formula
+    return value
+
+def export_target_audience_csv(request):
+    response = HttpResponse(content_type='text/csv')
+    today = timezone.now().date()
+    filename = f"Lead-List-{today}.csv"
+    response['Content-Disposition'] = f'attachment; filename={filename}'
+
+    writer = csv.writer(response)
+    headers = [
+        'Name', 'Email', 'LinkedIn URL', 'For Service', 'Company Website',
+        'Framework', 'Goal of Campaign', 'Last Connected'
+    ]
+    writer.writerow([escape_csv(header) for header in headers])
+
+    target_audience = TargetAudience.objects.filter(user=request.user).order_by('-created')  # Add filters if needed
+
+    for ta in target_audience:
+        row = [
+            f"{ta.receiver_first_name} {ta.receiver_last_name}",
+            ta.email,
+            ta.receiver_linkedin_url,
+            ta.selected_service,
+            ta.company_url,
+            ta.framework,
+            ta.campaign_goal,
+            ta.created.strftime("%Y-%m-%d"),
+        ]
+        writer.writerow([escape_csv(cell) for cell in row])
+
+    return response
+
+
 class LeadEmailListView(LoginRequiredMixin, ListView):
     model = SentEmail
     template_name = 'generate_email/leads_email_list.html'

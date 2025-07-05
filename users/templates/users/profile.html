@@ -26,8 +26,8 @@
                             {% endif %}
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="full_name" class="form-label">Full Name</label>
-                                <input type="text" class="form-control" id="full_name" name="full_name"
+                                <label for="full_name" class="form-label">Full Name *</label>
+                                <input type="text" class="form-control" id="full_name" name="full_name" required
                                        value="{{ user.full_name }}">
                             {% if form.full_name.errors %}
                                 {% for error in form.full_name.errors %}
@@ -37,7 +37,7 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                        <label for="id_contact_number" class="form-label">Your Contact Number</label>
+                        <label for="id_contact_number" class="form-label">Your Contact Number *</label>
                         <input type="text" name="contact" id="id_contact_number"
                                class="form-control"
                                placeholder="+91652*******"
@@ -53,8 +53,8 @@
                         <!-- Company Name & URL -->
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="company_name" class="form-label">Company Name</label>
-                                <input type="text" class="form-control" id="company_name" name="company_name"
+                                <label for="company_name" class="form-label">Company Name *</label>
+                                <input type="text" class="form-control" id="company_name" name="company_name" required
                                        value="{{ user.company_name }}">
 
                             </div>
@@ -73,8 +73,9 @@
                         <!-- LinkedIn URLs -->
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="company_linkedin_url" class="form-label">Company LinkedIn URL</label>
-                                <input type="text" class="form-control" id="company_linkedin_url" name="company_linkedin_url"
+                                <label for="company_linkedin_url" class="form-label">Company LinkedIn URL *</label>
+                                <input type="text" class="form-control" id="company_linkedin_url"
+                                       name="company_linkedin_url" required
                                        value="{{ user.company_linkedin_url }}" placeholder="https://linkedin.com/company/yourcompany">
                             {% if form.company_linkedin_url.errors %}
                                 {% for error in form.company_linkedin_url.errors %}
@@ -100,12 +101,12 @@
                             {% for svc in services %}
                             <div class="service-block row mb-3 border p-3 rounded position-relative">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Service Name*</label>
+                                    <label class="form-label">Service Name *</label>
                                     <input type="text" name="service_name_{{ forloop.counter0 }}" class="form-control"
                                         placeholder="e.g. AI Content Analyzer" value="{{ svc.service_name }}" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Service URL*</label>
+                                    <label class="form-label">Service URL *</label>
                                     <input type="text" name="product_url_{{ forloop.counter0 }}" class="form-control"
                                         placeholder="https://yourproduct.com" value="{{ svc.product_url }}" required>
                                 </div>
