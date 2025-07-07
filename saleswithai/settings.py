@@ -75,6 +75,10 @@ SOCIALACCOUNT_PROVIDERS = {
             'User.Read',
             'Mail.Send',  # 👈 Needed to send email
             'offline_access',
+            'openid',
+            'profile',
+            'email',
+            'Mail.ReadWrite',
         ],
         'AUTH_PARAMS': {
             'response_type': 'code',
@@ -234,6 +238,7 @@ CELERY_BROKER_URL = 'rediss://:4JPY7Oj7e46UQ6OhMOUCX9zIREi8FdXaoAzCaFrSqdI%3D@sa
 CELERY_BROKER_USE_SSL = {
     'ssl_cert_reqs': None
 }
+# CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Kolkata'

@@ -25,6 +25,7 @@ def send_reminders():
 
     for er in reminder_emails:
         if not er.sent_email.stop_reminder:
+            print("email",er.email)
             sendReminderEmail(er)
             er.sent = True
             er.save()

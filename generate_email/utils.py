@@ -21,7 +21,6 @@ from email.mime.text import MIMEText
 from email.utils import formataddr
 from django.utils import timezone
 
-
 class MicrosoftEmailSendError(Exception):
     pass
 
@@ -34,7 +33,10 @@ def get_user_provider(user):
 
 def get_gmail_service(user):
     token = SocialToken.objects.get(account__user=user, account__provider='google')
-
+    if token.expires_at and token.expires_at <= timezone.now():
+        new_token = refresh_google_token(user)
+        if not new_token:
+            raise MicrosoftEmailSendError("Failed to refresh Google token")
     credentials = Credentials(
         token.token,
         refresh_token=token.token_secret,  # token_secret stores refresh_token if present
@@ -64,6 +66,32 @@ def create_message(sender_name, sender, to, subject, body, original_msg_id=None,
 
 load_dotenv()  # Make sure you have python-dotenv installed
 
+
+def refresh_google_token(user):
+    token = SocialToken.objects.get(account__user=user, account__provider='google')
+
+    refresh_token = token.token_secret  # token_secret contains the refresh token
+
+    data = {
+        'client_id': os.getenv('GOOGLE_CLIENT_ID'),
+        'client_secret': os.getenv('GOOGLE_CLIENT_SECRET'),
+        'refresh_token': refresh_token,
+        'grant_type': 'refresh_token'
+    }
+
+    response = requests.post('https://oauth2.googleapis.com/token', data=data)
+
+    if response.status_code == 200:
+        token_data = response.json()
+        token.token = token_data['access_token']
+        token.expires_at = timezone.now() + timezone.timedelta(seconds=token_data.get('expires_in', 3600))
+        token.save()
+
+        return token.token  # Return new access token
+
+    else:
+        print(f"Failed to refresh Google token: {response.text}")
+        return None
 
 def refresh_microsoft_token(user):
     try:
@@ -116,36 +144,41 @@ def send_microsoft_email(user, to_email, subject, html_body):
     else:
         access_token = token.token
 
-    url = 'https://graph.microsoft.com/v1.0/me/sendMail'
+    url = 'https://graph.microsoft.com/v1.0/me/messages'
     headers = {
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json'
     }
 
-    message = {
-        "message": {
-            "subject": subject,
-            "body": {
-                "contentType": "HTML",
-                "content": html_body
-            },
-            "toRecipients": [
-                {
-                    "emailAddress": {
-                        "address": to_email
-                    }
+    message_payload = {
+        "subject": subject,
+        "body": {
+            "contentType": "HTML",
+            "content": html_body
+        },
+        "toRecipients": [
+            {
+                "emailAddress": {
+                    "address": to_email
                 }
-            ]
-        }
+            }
+        ]
     }
+    draft_resp = requests.post(url, headers=headers, json=message_payload)
+    draft_resp.raise_for_status()
+    message_data = draft_resp.json()
+    graph_message_id = message_data['id']  # ✅ This is what you store
+    send_url = f"https://graph.microsoft.com/v1.0/me/messages/{graph_message_id}/send"
+    send_resp = requests.post(send_url, headers=headers)
+    send_resp.raise_for_status()
 
-    response = requests.post(url, headers=headers, json=message)
-    response.raise_for_status()
-    original_graph_id = ""
-    if response.content:
-        original_graph_id = response.json().get("id")  # Save this in DB
-
-    return original_graph_id if original_graph_id else None
+    user_email_resp = requests.get(
+        "https://graph.microsoft.com/v1.0/me",
+        headers={"Authorization": f"Bearer {access_token}"}
+    )
+    user_info = user_email_resp.json()
+    print("📤 Email was sent using Microsoft account:", user_info.get("mail") or user_info.get("userPrincipalName"))
+    return graph_message_id
 
 def sendGeneratedEmail(request, user, target_audience, main_email):
     subject = main_email["subject"]
@@ -170,10 +203,23 @@ def sendGeneratedEmail(request, user, target_audience, main_email):
     provider = get_user_provider(user)
 
     if provider == 'google':
-        service = get_gmail_service(user)
-        user_name = user.full_name
-        messages = create_message(user_name, user.email, email, subject, message)
-        service.users().messages().send(userId='me', body=messages).execute()
+        try:
+            service = get_gmail_service(user)
+            user_name = user.full_name
+            messages = create_message(user_name, user.email, email, subject, message,new_msg_id=message_id)
+            service.users().messages().send(userId='me', body=messages).execute()
+        except MicrosoftEmailSendError as e:
+            print(f"Google email send failed: {e}")
+            # Fallback to SMTP
+            email_msg = EmailMessage(
+                subject,
+                message,
+                to=[email],
+                reply_to=[user.email],
+                headers={'Message-ID': message_id}
+            )
+            email_msg.content_subtype = 'html'
+            email_msg.send(fail_silently=False)
 
     elif provider == 'microsoft':
         try:
@@ -233,10 +279,27 @@ def sendReminderEmail(reminder_email):
         provider = get_user_provider(reminder_email.user)
 
         if provider == 'google':
-            service = get_gmail_service(reminder_email.user)
-            user_name = reminder_email.user.full_name
-            messages = create_message(user_name, reminder_email.user.email, email, subject, message)
-            service.users().messages().send(userId='me', body=messages).execute()
+            try:
+                service = get_gmail_service(reminder_email.user)
+                user_name = reminder_email.user.full_name
+                messages = create_message(user_name, reminder_email.user.email, email, subject, message,original_msg_id=original_message_id, new_msg_id=message_id)
+                service.users().messages().send(userId='me', body=messages).execute()
+            except MicrosoftEmailSendError as e:
+                print(f"Google email send failed: {e}")
+                # Fallback to SMTP
+                email_msg = EmailMessage(
+                    subject,
+                    message,
+                    to=[email],
+                    reply_to=[reminder_email.user.email],
+                    headers={
+                        'Message-ID': message_id,
+                        'In-Reply-To': original_message_id,
+                        'References': original_message_id
+                    }
+                )
+                email_msg.content_subtype = 'html'
+                email_msg.send(fail_silently=False)
 
         elif provider == 'microsoft':
             try:
@@ -246,6 +309,7 @@ def sendReminderEmail(reminder_email):
                 if token.expires_at and token.expires_at <= timezone.now():
                     new_token = refresh_microsoft_token(reminder_email.user)
                     if not new_token:
+                        print("token not")
                         raise MicrosoftEmailSendError("Microsoft token refresh failed")
                     access_token = new_token
                 else:
@@ -255,13 +319,19 @@ def sendReminderEmail(reminder_email):
                     'Authorization': f'Bearer {access_token}',
                     'Content-Type': 'application/json'
                 }
-                reply_url = f"https://graph.microsoft.com/v1.0/me/messages/{original_message_id}/createReply"
+
+
+                reply_url = f"https://graph.microsoft.com/v1.0/me/messages/{original_message_id}/reply"
                 reply_resp = requests.post(reply_url, headers=headers)
+                print("original_message_id used for reply:", original_message_id)
+                print("Graph token is valid:", access_token[:10], "...")
+                print("Reply status code:", reply_resp.status_code, reply_resp.text)
                 if not reply_resp.ok:
                     raise MicrosoftEmailSendError("Failed to create reply email")
 
                 reply_data = reply_resp.json()
                 if 'id' not in reply_data:
+                    print("id not found")
                     raise MicrosoftEmailSendError(f"'id' not found in reply response: {reply_data}")
 
 
@@ -282,9 +352,11 @@ def sendReminderEmail(reminder_email):
                     }
                 }
 
-                send_url = f"https://graph.microsoft.com/v1.0/me/messages/{original_message_id}/send"
-                update_url = f"https://graph.microsoft.com/v1.0/me/messages/{reply_data['id']}"
-
+                # send_url = f"https://graph.microsoft.com/v1.0/me/messages/{original_message_id}/send"
+                # update_url = f"https://graph.microsoft.com/v1.0/me/messages/{reply_data['id']}"
+                reply_message_id = reply_data['id']
+                update_url = f"https://graph.microsoft.com/v1.0/me/messages/{reply_message_id}"
+                send_url = f"https://graph.microsoft.com/v1.0/me/messages/{reply_message_id}/send"
                 # Update the reply content
                 requests.patch(update_url, headers=headers, json=reply_body)
 
@@ -292,6 +364,7 @@ def sendReminderEmail(reminder_email):
                 requests.post(send_url, headers=headers)
 
             except MicrosoftEmailSendError as e:
+                print(f"Microsoft email send failed: {e}")
                 # Fallback to SMTP
                 email_msg = EmailMessage(
                     subject,

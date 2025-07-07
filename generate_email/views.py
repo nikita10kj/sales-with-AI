@@ -176,18 +176,19 @@ class SendEmailView(LoginRequiredMixin, View):
         for fe in followup_emails:
             day = days[index]
             send_date = add_business_days_np(today, day)
+            subject = f'Re:{main_email["subject"]}'
             reminder, created = ReminderEmail.objects.get_or_create(
                 user=request.user,
                 email=target.email,
                 sent_email=sent_email,
                 target_audience=target,
-                subject=fe["subject"],
+                subject=subject,
                 message=fe["body"],
                 send_at=send_date,
                 message_id=message_id
             )
             reminders.append({
-                'subject': fe["subject"],
+                'subject': subject,
                 'send_date': send_date.strftime("%B %d, %Y"),
                 'days_after': day
             })
