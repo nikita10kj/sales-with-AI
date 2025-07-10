@@ -59,8 +59,8 @@ def create_message(sender_name, sender, to, subject, body, original_msg_id=None,
     if new_msg_id:
         message['Message-ID'] = new_msg_id
     if original_msg_id:
-        message['In-Reply-To'] = original_msg_id
-        message['References'] = original_msg_id
+        message['In-Reply-To'] = f'<{original_msg_id}>'
+        message['References'] = f'<{original_msg_id}>'
     raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
     return {'raw': raw_message}
 
@@ -144,41 +144,53 @@ def send_microsoft_email(user, to_email, subject, html_body):
     else:
         access_token = token.token
 
-    url = 'https://graph.microsoft.com/v1.0/me/messages'
+    url = "https://graph.microsoft.com/v1.0/me/sendMail"
     headers = {
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json'
     }
 
     message_payload = {
-        "subject": subject,
-        "body": {
-            "contentType": "HTML",
-            "content": html_body
-        },
-        "toRecipients": [
-            {
-                "emailAddress": {
-                    "address": to_email
+        "message": {
+            "subject": subject,
+            "body": {
+                "contentType": "HTML",
+                "content": html_body
+            },
+            "toRecipients": [
+                {
+                    "emailAddress": {
+                        "address": to_email
+                    }
                 }
-            }
-        ]
-    }
-    draft_resp = requests.post(url, headers=headers, json=message_payload)
-    draft_resp.raise_for_status()
-    message_data = draft_resp.json()
-    graph_message_id = message_data['id']  # ✅ This is what you store
-    send_url = f"https://graph.microsoft.com/v1.0/me/messages/{graph_message_id}/send"
-    send_resp = requests.post(send_url, headers=headers)
-    send_resp.raise_for_status()
+            ],
 
-    user_email_resp = requests.get(
-        "https://graph.microsoft.com/v1.0/me",
-        headers={"Authorization": f"Bearer {access_token}"}
-    )
-    user_info = user_email_resp.json()
-    print("message id : ", graph_message_id)
-    return graph_message_id
+        }
+    }
+
+    send_resp = requests.post(url, headers=headers, json=message_payload)
+    send_resp.raise_for_status()
+    # if send_resp.content:
+    #     print("msg", send_resp.json())
+    # else:
+    #     print(f"Send response status: {send_resp.status_code}, no content returned.")
+
+    # filter_str = f"&$orderby=sentDateTime desc"
+    # url = f"https://graph.microsoft.com/v1.0/me/mailFolders/SentItems/messages?$top=1{filter_str}"
+    #
+    #
+    #
+    #     resp = requests.get(url, headers=headers)
+    #     data = resp.json()
+    #     print("Graph GET response:", resp.status_code, resp.text)
+    #     if not 'value' in data:
+    #         raise Exception("value.")
+    #     if not data['value']:
+    #         raise Exception("No sent message found.")
+    #
+    #     graph_message_id = data['value'][0]['id']
+    #     print("message id : ", graph_message_id)
+    return headers
 
 def sendGeneratedEmail(request, user, target_audience, main_email):
     subject = main_email["subject"]
@@ -223,9 +235,22 @@ def sendGeneratedEmail(request, user, target_audience, main_email):
 
     elif provider == 'microsoft':
         try:
-            original_id = send_microsoft_email(user, email, subject, message)
-            if original_id:
-                sent_email.message_id = original_id
+            headers = send_microsoft_email(user, email, subject, message)
+            filter_str = f"&$orderby=sentDateTime desc"
+            url = f"https://graph.microsoft.com/v1.0/me/mailFolders/SentItems/messages?$top=1{filter_str}"
+
+            resp = requests.get(url, headers=headers)
+            data = resp.json()
+            print("Graph GET response:", resp.status_code, resp.text)
+            if not 'value' in data:
+                raise Exception("value.")
+            if not data['value']:
+                raise Exception("No sent message found.")
+
+            graph_message_id = data['value'][0]['id']
+            print("message id : ", graph_message_id)
+            if graph_message_id:
+                sent_email.message_id = graph_message_id
                 sent_email.save()
         except MicrosoftEmailSendError as e:
             print(f"Microsoft email send failed: {e}")
@@ -319,34 +344,10 @@ def sendReminderEmail(reminder_email):
                     'Authorization': f'Bearer {access_token}',
                     'Content-Type': 'application/json'
                 }
-                # url = "https://graph.microsoft.com/v1.0/me/messages?$top=5"
-                # response = requests.get(url, headers=headers)
-                # response.raise_for_status()
-                #
-                # data = response.json()
-                # message_ids = [msg["id"] for msg in data.get("value", [])]
-                #
-                # print("📩 First 2 Sent Message IDs:")
-                # for i, mid in enumerate(message_ids, 1):
-                #     print(f"got: {i}. {mid}")
-                #     print("original message id :", original_message_id)
-                # check_url = f"https://graph.microsoft.com/v1.0/me/messages/{original_message_id}"
-                # check_resp = requests.get(check_url, headers=headers)
-                # if check_resp.status_code != 200:
-                #     raise Exception(
-                #         f"Message not found in Sent Items. Status: {check_resp.status_code}, Body: {check_resp.text}")
 
                 # Step 1: Create reply draft
-                create_reply_url = f"https://graph.microsoft.com/v1.0/me/messages/{original_message_id}/reply"
-                # draft_resp = requests.post(create_reply_url, headers=headers)
-                # draft_resp.raise_for_status()
-                #
-                # draft_data = draft_resp.json()
-                # draft_id = draft_data['id']
-                #
-                # # Step 2: Update the draft with your content
-                # update_url = f"https://graph.microsoft.com/v1.0/me/messages/{draft_id}"
-                # reply_url = f"https://graph.microsoft.com/v1.0/me/messages/{original_message_id}/reply"
+                create_reply_url = f"https://graph.microsoft.com/v1.0/me/messages/{original_message_id}/createReply"
+
                 reply_resp = requests.post(create_reply_url, headers=headers)
                 # print("original_message_id used for reply:", original_message_id)
                 # print("Graph token is valid:", access_token[:10], "...")
@@ -375,44 +376,9 @@ def sendReminderEmail(reminder_email):
                                 }
                             }
                         ]
-                }
-                # patch_resp = requests.patch(update_url, headers=headers, json=reply_body)
-                # patch_resp.raise_for_status()
-                #
-                # # Step 3: Send the message
-                # send_url = f"https://graph.microsoft.com/v1.0/me/messages/{draft_id}/send"
-                # send_resp = requests.post(send_url, headers=headers)
-                # send_resp.raise_for_status()
-                # messages = {
-                #     "body": {
-                #         "contentType": "HTML",
-                #         "content": message
-                #     },
-                #     "toRecipients": [
-                #         {
-                #             "emailAddress": {
-                #                 "address": email
-                #             }
-                #         }
-                #     ],
-                #     "internetMessageHeaders": [
-                #         {
-                #             "name": "In-Reply-To",
-                #             "value": original_message_id  # Use correct Message-ID with <>
-                #         },
-                #         {
-                #             "name": "References",
-                #             "value": original_message_id
-                #         }
-                #     ]
-                # }
 
-                # resp = requests.post(url, headers=headers, json=reply_body)
-                # print("Status Code:", resp.status_code)
-                # print("Response Text:", resp.text)
-                # resp.raise_for_status()
-                # send_url = f"https://graph.microsoft.com/v1.0/me/messages/{original_message_id}/send"
-                # update_url = f"https://graph.microsoft.com/v1.0/me/messages/{reply_data['id']}"
+                }
+
                 reply_message_id = reply_data['id']
                 update_url = f"https://graph.microsoft.com/v1.0/me/messages/{reply_message_id}"
                 send_url = f"https://graph.microsoft.com/v1.0/me/messages/{reply_message_id}/send"

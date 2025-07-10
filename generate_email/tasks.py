@@ -15,12 +15,14 @@ from users.models import CustomUser
 from .models import TargetAudience
 
 @shared_task
-def send_reminder_email_task(reminder_email_id):
-    er = ReminderEmail.objects.get(id=reminder_email_id)
-    if not er.sent and not er.sent_email.stop_reminder:
-        sendReminderEmail(er)
-        er.sent = True
-        er.save()
+def send_reminder_email_task(id):
+    er = ReminderEmail.objects.get(id=id)
+    print("email", er.email)
+    sendReminderEmail(er)
+    er.sent = True
+    er.save()
+    print("saved", er.sent)
+
 
 @shared_task
 def send_reminders():
@@ -33,10 +35,12 @@ def send_reminders():
 
     for index, er in enumerate(reminder_emails):
         delay_seconds = index * 120  # Stagger 2 minutes apart
-        send_reminder_email_task.apply_async(
-            args=[er.id],
-            countdown=delay_seconds
-        )
+        if not er.sent and not er.sent_email.stop_reminder:
+            print("www", er.sent)
+            send_reminder_email_task.apply_async(
+                args=[er.id],
+                countdown=delay_seconds
+            )
 
 # @shared_task
 # def send_reminders():
@@ -56,17 +60,17 @@ def send_reminders():
 
 from .views import sendGeneratedEmail  # or move logic here if better
 
-@shared_task
-def send_scheduled_email(user_id, target_audience_id, main_email, request_data):
-    user = CustomUser.objects.get(id=user_id)
-    target = TargetAudience.objects.get(id=target_audience_id)
-
-    class DummyRequest:
-        def build_absolute_uri(self, path=''):
-            return request_data['base_url'] + path  # mimic request object
-
-    dummy_request = DummyRequest()
-    sendGeneratedEmail(dummy_request, user, target, main_email)
+# @shared_task
+# def send_scheduled_email(user_id, target_audience_id, main_email, request_data):
+#     user = CustomUser.objects.get(id=user_id)
+#     target = TargetAudience.objects.get(id=target_audience_id)
+#
+#     class DummyRequest:
+#         def build_absolute_uri(self, path=''):
+#             return request_data['base_url'] + path  # mimic request object
+#
+#     dummy_request = DummyRequest()
+#     sendGeneratedEmail(dummy_request, user, target, main_email)
 
 
 
