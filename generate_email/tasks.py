@@ -14,21 +14,44 @@ import numpy as np
 from users.models import CustomUser
 from .models import TargetAudience
 
+@shared_task
+def send_reminder_email_task(reminder_email_id):
+    er = ReminderEmail.objects.get(id=reminder_email_id)
+    if not er.sent and not er.sent_email.stop_reminder:
+        sendReminderEmail(er)
+        er.sent = True
+        er.save()
 
 @shared_task
 def send_reminders():
     today = timezone.now().date()
+
     if not np.is_busday(today.strftime('%Y-%m-%d')):
-        return  # Exit the task, today is not a business day
-    # Days at which to send reminders
+        return
+
     reminder_emails = ReminderEmail.objects.filter(send_at=today, sent=False)
 
-    for er in reminder_emails:
-        if not er.sent_email.stop_reminder:
-            print("email",er.email)
-            sendReminderEmail(er)
-            er.sent = True
-            er.save()
+    for index, er in enumerate(reminder_emails):
+        delay_seconds = index * 120  # Stagger 2 minutes apart
+        send_reminder_email_task.apply_async(
+            args=[er.id],
+            countdown=delay_seconds
+        )
+
+# @shared_task
+# def send_reminders():
+#     today = timezone.now().date()
+#     if not np.is_busday(today.strftime('%Y-%m-%d')):
+#         return  # Exit the task, today is not a business day
+#     # Days at which to send reminders
+#     reminder_emails = ReminderEmail.objects.filter(send_at=today, sent=False)
+#
+#     for er in reminder_emails:
+#         if not er.sent_email.stop_reminder:
+#             print("email",er.email)
+#             sendReminderEmail(er)
+#             er.sent = True
+#             er.save()
 
 
 from .views import sendGeneratedEmail  # or move logic here if better
