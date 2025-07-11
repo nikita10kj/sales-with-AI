@@ -144,14 +144,14 @@ def send_microsoft_email(user, to_email, subject, html_body):
     else:
         access_token = token.token
 
-    url = "https://graph.microsoft.com/v1.0/me/sendMail"
+    url = "https://graph.microsoft.com/v1.0/me/messages"
     headers = {
         'Authorization': f'Bearer {access_token}',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        "Prefer": 'IdType="ImmutableId"'
     }
 
     message_payload = {
-        "message": {
             "subject": subject,
             "body": {
                 "contentType": "HTML",
@@ -166,31 +166,17 @@ def send_microsoft_email(user, to_email, subject, html_body):
             ],
 
         }
-    }
 
-    send_resp = requests.post(url, headers=headers, json=message_payload)
-    send_resp.raise_for_status()
-    # if send_resp.content:
-    #     print("msg", send_resp.json())
-    # else:
-    #     print(f"Send response status: {send_resp.status_code}, no content returned.")
+    response = requests.post(url, headers=headers, json=message_payload)
+    response.raise_for_status()
 
-    # filter_str = f"&$orderby=sentDateTime desc"
-    # url = f"https://graph.microsoft.com/v1.0/me/mailFolders/SentItems/messages?$top=1{filter_str}"
-    #
-    #
-    #
-    #     resp = requests.get(url, headers=headers)
-    #     data = resp.json()
-    #     print("Graph GET response:", resp.status_code, resp.text)
-    #     if not 'value' in data:
-    #         raise Exception("value.")
-    #     if not data['value']:
-    #         raise Exception("No sent message found.")
-    #
-    #     graph_message_id = data['value'][0]['id']
-    #     print("message id : ", graph_message_id)
-    return headers
+    draft = response.json()
+    graph_id = draft["id"]  # this is now the IMMUTABLE ID
+    send_url = f"https://graph.microsoft.com/v1.0/me/messages/{graph_id}/send"
+    send_response = requests.post(send_url, headers=headers)
+    send_response.raise_for_status()
+
+    return graph_id
 
 def sendGeneratedEmail(request, user, target_audience, main_email):
     subject = main_email["subject"]
@@ -235,19 +221,8 @@ def sendGeneratedEmail(request, user, target_audience, main_email):
 
     elif provider == 'microsoft':
         try:
-            headers = send_microsoft_email(user, email, subject, message)
-            filter_str = f"&$orderby=sentDateTime desc"
-            url = f"https://graph.microsoft.com/v1.0/me/mailFolders/SentItems/messages?$top=1{filter_str}"
+            graph_message_id = send_microsoft_email(user, email, subject, message)
 
-            resp = requests.get(url, headers=headers)
-            data = resp.json()
-            print("Graph GET response:", resp.status_code, resp.text)
-            if not 'value' in data:
-                raise Exception("value.")
-            if not data['value']:
-                raise Exception("No sent message found.")
-
-            graph_message_id = data['value'][0]['id']
             print("message id : ", graph_message_id)
             if graph_message_id:
                 sent_email.message_id = graph_message_id
@@ -389,21 +364,24 @@ def sendReminderEmail(reminder_email):
                 requests.post(send_url, headers=headers)
 
             except MicrosoftEmailSendError as e:
-                print(f"Microsoft email send failed: {e}")
-                # Fallback to SMTP
-                email_msg = EmailMessage(
-                    subject,
-                    message,
-                    to=[email],
-                    reply_to=[reminder_email.user.email],
-                    headers={
-                        'Message-ID': message_id,
-                        'In-Reply-To': original_message_id,
-                        'References': original_message_id
-                    }
-                )
-                email_msg.content_subtype = 'html'
-                email_msg.send(fail_silently=False)
+                try:
+                    print(f"Microsoft email send failed: {e}")
+                    send_microsoft_email(reminder_email.user, email, subject, message)
+                except MicrosoftEmailSendError as e:
+                    # Fallback to SMTP
+                    email_msg = EmailMessage(
+                        subject,
+                        message,
+                        to=[email],
+                        reply_to=[reminder_email.user.email],
+                        headers={
+                            'Message-ID': message_id,
+                            'In-Reply-To': original_message_id,
+                            'References': original_message_id
+                        }
+                    )
+                    email_msg.content_subtype = 'html'
+                    email_msg.send(fail_silently=False)
 
         else:
 

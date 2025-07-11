@@ -16,12 +16,12 @@ from .models import TargetAudience
 
 @shared_task
 def send_reminder_email_task(id):
+
     er = ReminderEmail.objects.get(id=id)
-    print("email", er.email)
+    # print("Sending email to:", er.email)
     sendReminderEmail(er)
     er.sent = True
     er.save()
-    print("saved", er.sent)
 
 
 @shared_task
@@ -36,7 +36,6 @@ def send_reminders():
     for index, er in enumerate(reminder_emails):
         delay_seconds = index * 120  # Stagger 2 minutes apart
         if not er.sent and not er.sent_email.stop_reminder:
-            print("www", er.sent)
             send_reminder_email_task.apply_async(
                 args=[er.id],
                 countdown=delay_seconds

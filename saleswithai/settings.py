@@ -28,7 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ['SECRET']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 ALLOWED_HOSTS = ['localhost','sellsmart-dvdhbme5h6eud4hz.centralindia-01.azurewebsites.net','www.sellsharp.co', 'sellsharp.co','20.192.98.161', '127.0.0.1']
 
 SITE_ID = 1
@@ -233,12 +233,12 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 
 
 # Reminders
-# CELERY_BROKER_URL = 'rediss://:4JPY7Oj7e46UQ6OhMOUCX9zIREi8FdXaoAzCaFrSqdI%3D@salesredis.redis.cache.windows.net:6380/0'
+CELERY_BROKER_URL = 'rediss://:4JPY7Oj7e46UQ6OhMOUCX9zIREi8FdXaoAzCaFrSqdI%3D@salesredis.redis.cache.windows.net:6380/0'
 # CELERY_BROKER_USE_SSL = True
-# CELERY_BROKER_USE_SSL = {
-#     'ssl_cert_reqs': None
-# }
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_BROKER_USE_SSL = {
+    'ssl_cert_reqs': None
+}
+# CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Kolkata'
@@ -247,8 +247,8 @@ CELERY_ENABLE_UTC = True
 CELERY_BEAT_SCHEDULE = {
     'send-reminder-emails': {
         'task': 'generate_email.tasks.send_reminders',
-        # 'schedule': crontab(minute=0, hour=12),   # every day at 12:00 PM (noon)
-        'schedule': crontab(minute='*')
+        'schedule': crontab(minute=0, hour=12),   # every day at 12:00 PM (noon)
+        # 'schedule': crontab(minute='*')
     },
 }
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'
