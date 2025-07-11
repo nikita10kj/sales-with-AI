@@ -176,7 +176,7 @@ class SendEmailView(LoginRequiredMixin, View):
         for fe in followup_emails:
             day = days[index]
             send_date = add_business_days_np(today, day)
-            subject = f'Re:{main_email["subject"]}'
+            subject = main_email["subject"]
             reminder, created = ReminderEmail.objects.get_or_create(
                 user=request.user,
                 email=target.email,

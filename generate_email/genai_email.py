@@ -39,19 +39,15 @@ def get_response(user, target, selected_service):
                                 }},
                                 "follow_ups": [
                                 {{
-                                  "subject": "string",
                                   "body": "HTML string (e.g., use <p>, <ul>, <b>, etc. for formatting)"
                                 }},
                                 {{
-                                  "subject": "string",
                                   "body": "HTML string (e.g., use <p>, <ul>, <b>, etc. for formatting)"
                                 }},
                                 {{
-                                  "subject": "string",
                                   "body": "HTML string (e.g., use <p>, <ul>, <b>, etc. for formatting)"
                                 }},
                                 {{
-                                  "subject": "string",
                                   "body": "HTML string (e.g., use <p>, <ul>, <b>, etc. for formatting)"
                                 }}
                                 ]

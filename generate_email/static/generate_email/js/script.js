@@ -217,7 +217,7 @@ class EmailMarketingApp {
   createEmailCard(email, count) {
     const card = document.createElement("div")
     card.className = "email-card"
-    card.dataset.emailId = "follow_up_${count-1}"; // <-- Assign emailId here
+    card.dataset.emailId = `follow_up_${count - 1}`; // <-- Assign emailId here
 
     card.innerHTML = `
             <div class="email-header">
@@ -231,9 +231,7 @@ class EmailMarketingApp {
                 </div>
             </div>
             <div class="email-body">
-                <div class="email-subject">
-                    <strong>Subject:</strong> ${email.subject}
-                </div>
+
                 <div class="email-content">
                     ${email.body}
                 </div>
@@ -242,24 +240,24 @@ class EmailMarketingApp {
     return card
   }
 
-  previewEmail(emailId) {
-    const email = this.generatedEmails.find((e) => e.id === emailId)
-    if (email) {
-      const modal = new bootstrap.Modal(document.getElementById("emailPreviewModal"))
-      document.getElementById("emailPreviewContent").innerHTML = `
-                <div class="email-template">
-                    <div class="subject-line">Subject: ${email.subject}</div>
-                    <div class="email-body">${email.body.replace(/\n/g, "<br>")}</div>
-                    <div class="signature">
-                        <p>Best regards,<br>
-                        ${this.formData.senderName}<br>
-                        ${this.formData.companyName}</p>
-                    </div>
-                </div>
-            `
-      modal.show()
-    }
-  }
+//  previewEmail(emailId) {
+//    const email = this.generatedEmails.find((e) => e.id === emailId)
+//    if (email) {
+//      const modal = new bootstrap.Modal(document.getElementById("emailPreviewModal"))
+//      document.getElementById("emailPreviewContent").innerHTML = `
+//                <div class="email-template">
+//                    <div class="subject-line">Subject: ${email.subject}</div>
+//                    <div class="email-body">${email.body.replace(/\n/g, "<br>")}</div>
+//                    <div class="signature">
+//                        <p>Best regards,<br>
+//                        ${this.formData.senderName}<br>
+//                        ${this.formData.companyName}</p>
+//                    </div>
+//                </div>
+//            `
+//      modal.show()
+//    }
+//  }
 
   editEmail(button) {
       const card = button.closest('.email-card');
@@ -268,35 +266,56 @@ class EmailMarketingApp {
       let email;
       if (emailKey === 'main_email') {
         email = this.generatedEmails.main_email;
+        if (email) {
+          const modal = new bootstrap.Modal(document.getElementById("emailPreviewModal"))
+          document.getElementById("emailPreviewContent").innerHTML = `
+                    <div class="mb-3">
+                        <label class="form-label">Subject Line</label>
+                        <input type="text" class="form-control" id="editSubject" value="${email.subject}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email Body</label>
+                         <div id="editBody" contenteditable="true" class="form-control" style="min-height: 200px; ">
+                           ${email.body}
+                         </div>
+                    </div>
+                `
+
+          document.getElementById("saveEmailChanges").onclick = () => {
+            email.subject = document.getElementById("editSubject").value
+            email.body = document.getElementById("editBody").innerHTML
+            this.displayGeneratedEmails()
+            modal.hide()
+            this.showAlert("Email updated successfully!", "success")
+          }
+
+          modal.show()
+        }
       } else if (emailKey.startsWith('follow_up_')) {
         const index = parseInt(emailKey.split('_')[2]); // e.g. 'follow_up_0'
         email = this.generatedEmails.follow_ups[index];
-      }
-    if (email) {
-      const modal = new bootstrap.Modal(document.getElementById("emailPreviewModal"))
-      document.getElementById("emailPreviewContent").innerHTML = `
-                <div class="mb-3">
-                    <label class="form-label">Subject Line</label>
-                    <input type="text" class="form-control" id="editSubject" value="${email.subject}">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Email Body</label>
-                     <div id="editBody" contenteditable="true" class="form-control" style="min-height: 200px; ">
-                       ${email.body}
-                     </div>
-                </div>
-            `
+        if (email) {
+          const modal = new bootstrap.Modal(document.getElementById("emailPreviewModal"))
+          document.getElementById("emailPreviewContent").innerHTML = `
+                    <div class="mb-3">
+                        <label class="form-label">Email Body</label>
+                         <div id="editBody" contenteditable="true" class="form-control" style="min-height: 200px; ">
+                           ${email.body}
+                         </div>
+                    </div>
+                `
 
-      document.getElementById("saveEmailChanges").onclick = () => {
-        email.subject = document.getElementById("editSubject").value
-        email.body = document.getElementById("editBody").innerHTML
-        this.displayGeneratedEmails()
-        modal.hide()
-        this.showAlert("Email updated successfully!", "success")
+          document.getElementById("saveEmailChanges").onclick = () => {
+            email.body = document.getElementById("editBody").innerHTML
+            this.displayGeneratedEmails()
+            modal.hide()
+            this.showAlert("Email updated successfully!", "success")
+          }
+
+          modal.show()
+        }
       }
 
-      modal.show()
-    }
   }
 
   async sendEmail() {

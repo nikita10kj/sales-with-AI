@@ -30,6 +30,7 @@ class SentEmail(models.Model):
     message = models.TextField()
     opened = models.BooleanField(default=False)
     stop_reminder = models.BooleanField(default=False)
+    threadId = models.CharField(max_length=255, null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
 
 class ReminderEmail(models.Model):

@@ -61,6 +61,8 @@ def create_message(sender_name, sender, to, subject, body, original_msg_id=None,
     if original_msg_id:
         message['In-Reply-To'] = f'<{original_msg_id}>'
         message['References'] = f'<{original_msg_id}>'
+
+
     raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
     return {'raw': raw_message}
 
@@ -205,7 +207,12 @@ def sendGeneratedEmail(request, user, target_audience, main_email):
             service = get_gmail_service(user)
             user_name = user.full_name
             messages = create_message(user_name, user.email, email, subject, message,new_msg_id=message_id)
-            service.users().messages().send(userId='me', body=messages).execute()
+            original_msg = service.users().messages().send(userId='me', body=messages).execute()
+
+            thread_id = original_msg.get('threadId')
+            sent_email.threadId = thread_id
+            sent_email.save()
+
         except MicrosoftEmailSendError as e:
             print(f"Google email send failed: {e}")
             # Fallback to SMTP
@@ -282,8 +289,18 @@ def sendReminderEmail(reminder_email):
             try:
                 service = get_gmail_service(reminder_email.user)
                 user_name = reminder_email.user.full_name
+                # thread_id=None
+                # if reminder_email.sent_email.threadId:
+                #     thread_id = reminder_email.sent_email.threadId
+
                 messages = create_message(user_name, reminder_email.user.email, email, subject, message,original_msg_id=original_message_id, new_msg_id=message_id)
-                service.users().messages().send(userId='me', body=messages).execute()
+                if reminder_email.sent_email.threadId:
+                    thread_id = reminder_email.sent_email.threadId
+                    messages['threadId'] = thread_id
+                    service.users().messages().send(userId='me', body=messages).execute()
+                else:
+                    service.users().messages().send(userId='me', body=messages).execute()
+
             except MicrosoftEmailSendError as e:
                 print(f"Google email send failed: {e}")
                 # Fallback to SMTP
