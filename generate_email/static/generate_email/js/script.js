@@ -157,11 +157,15 @@ class EmailMarketingApp {
         },
         body: JSON.stringify(this.formData),
       });
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
+      const data = await response.json();
+      if (!response.ok || data.success === false) {
+        // If the server returned a specific error message, show it
+        const errorMessage = data.errors || 'Error submitting details. Please try again.';
+        this.showAlert(errorMessage, 'danger');
+        return;
       }
       this.updateStepDisplay()
-      const data = await response.json();
+
       this.generatedEmails = data.emails; // Assuming the response contains the generated emails
       this.targetId = data.targetId;
       this.displayGeneratedEmails();
