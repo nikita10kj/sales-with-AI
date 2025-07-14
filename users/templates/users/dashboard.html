@@ -47,6 +47,35 @@
                 <div class="analytics-section active" id="overview">
                     <!-- Section Header -->
 <!-- Section Header -->
+{% if user.is_superuser %}
+<div class="user-email-summary" style="font-family: Arial, sans-serif; padding: 20px;">
+
+  <table style="width: 100%; border-collapse: collapse;">
+    <thead>
+      <tr style="background-color: #f2f2f2;">
+        <th style="text-align: left; padding: 10px; border-bottom: 2px solid #ddd;">Full Name</th>
+        <th style="text-align: left; padding: 10px; border-bottom: 2px solid #ddd;">Email</th>
+        <th style="text-align: center; padding: 10px; border-bottom: 2px solid #ddd;">Total Emails Sent</th>
+        <th style="text-align: center; padding: 10px; border-bottom: 2px solid #ddd;">Opened Emails</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in all_users %}
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ u.full_name }}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee;">{{ u.email }}</td>
+          <td style="text-align: center; padding: 10px; border-bottom: 1px solid #eee;">{{ u.total_sent }}</td>
+          <td style="text-align: center; padding: 10px; border-bottom: 1px solid #eee;">{{ u.opened_count }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+{% endif %}
+
+
+
 <div class="text-center mb-2 p-2 rounded-4 ">
   <h2 class="mb-3 fw-bold" style="font-size: 2.5rem; color: #2c3e50;">
     <i class="fas fa-tachometer-alt me-2" style="color: #6f42c1;"></i>Performance Analytics

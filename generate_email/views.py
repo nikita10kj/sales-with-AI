@@ -49,7 +49,13 @@ class GenerateEmailView(LoginRequiredMixin, View):
         else:
             service = ProductService.objects.filter(user=request.user).first()
 
-
+        # Only count SentEmails that do NOT have a corresponding ReminderEmail
+        if request.user.email.split('@')[-1] != "jmsadvisory.in":
+            sent_emails = SentEmail.objects.filter(user=request.user).exclude(
+                id__in=ReminderEmail.objects.filter(sent_email=OuterRef('pk')).values('sent_email')
+            )
+            if sent_emails.count() >= 50 :
+                return JsonResponse({'success': False, 'errors': "You have Exceeded limit of 50 emails."})
         target, _ = TargetAudience.objects.get_or_create(
             user=request.user,
             email=email,
@@ -62,67 +68,7 @@ class GenerateEmailView(LoginRequiredMixin, View):
             campaign_goal=campaign_goal
         )
         emails = json.loads(get_response(request.user, target, service))
-        # emails = {
-        #     'main_email':
-        #         {
-        #             'title': 'AIDA Framework Email',
-        #             'subject': 'Transform Your Hiring Process with Our Expertise',
-        #             'body': "<p>Hi Dhara Shah,</p><p>In today's competitive landscape, "
-        #                     "finding the right talent is more crucial than ever. At JMS Advisory,"
-        #                     " we specialize in streamlining the hiring process, ensuring "
-        #                     "that companies like KnowCraft Analytics can focus on what they do "
-        #                     "best—driving innovation and insights.</p><p>Our tailored recruitment "
-        #                     "services are designed to meet your specific needs, helping you attract "
-        #                     "top-tier candidates who align with your company culture and goals. "
-        #                     "With our extensive network and expertise, we can significantly reduce "
-        #                     "the time and resources spent on hiring.</p><p>Imagine having a dedicated "
-        #                     "partner who understands the nuances of your industry and can "
-        #                     "provide you with the best talent available. We have successfully assisted "
-        #                     "numerous companies in enhancing their recruitment strategies, and we would "
-        #                     "love to do the same for you.</p><p>Let’s discuss how we can collaborate to "
-        #                     "elevate your hiring process. Are you available for a brief call this week?</p>"
-        #                     "<p>Looking forward to your response!</p>"
-        #         },
-        #     'follow_ups':
-        #         [
-        #             {
-        #                 'subject': 'Following Up on My Previous Email',
-        #                 'body': '<p>Hi Dhara Shah,</p><p>I wanted to follow up on my previous email '
-        #                         'regarding our recruitment services. I believe that JMS Advisory '
-        #                         'can add significant value to KnowCraft Analytics by optimizing your '
-        #                         'hiring process.</p><p>Have you had a chance to consider our'
-        #                         ' proposal? I would be happy to provide more details or answer any '
-        #                         'questions you might have.</p><p>Looking forward to hearing from you!</p>'
-        #             },
-        #             {
-        #                 'subject': 'Still Interested in Enhancing Your Hiring Process?',
-        #                 'body': '<p>Hi Dhara Shah,</p><p>I hope this message finds you well! '
-        #                         'I wanted to check in again regarding our recruitment services. '
-        #                         'Our clients have seen remarkable improvements in their hiring '
-        #                         'efficiency and candidate quality.</p><p>Would you be open to a '
-        #                         'quick chat to explore how we can assist KnowCraft Analytics in '
-        #                         'achieving similar results?</p><p>Thank you for considering!</p>'
-        #             },
-        #             {
-        #                 'subject': 'Last Chance to Optimize Your Recruitment Strategy',
-        #                 'body': "<p>Hi Dhara Shah,</p><p>This will be my final follow-up regarding our"
-        #                         " recruitment services. I truly believe that JMS Advisory can help"
-        #                         " KnowCraft Analytics streamline your hiring process and attract the "
-        #                         "right talent.</p><p>If you're interested, I would love to schedule a "
-        #                         "call to discuss this further. Please let me know a time that works for"
-        #                         " you!</p><p>Thank you for your time!</p>"
-        #             },
-        #             {
-        #                 'subject': "Final Reminder: Let's Connect!",
-        #                 'body': "<p>Hi Dhara Shah,</p><p>I wanted to reach out one last time to"
-        #                         " see if you would be interested in discussing how JMS Advisory"
-        #                         " can support KnowCraft Analytics in enhancing your hiring process.</p>"
-        #                         "<p>Even if now isn't the right time, I would appreciate any feedback"
-        #                         " or thoughts you may have.</p>"
-        #                         "<p>Thank you, and I hope to hear from you soon!</p>"
-        #             }
-        #         ]
-        # }
+
         for email in emails['follow_ups']:
             email['body'] += (f"<p>Best Regards,<br>{request.user.full_name}"
                               f"{'<br>' + request.user.contact if request.user.contact else ''}"
@@ -176,18 +122,19 @@ class SendEmailView(LoginRequiredMixin, View):
         for fe in followup_emails:
             day = days[index]
             send_date = add_business_days_np(today, day)
+            subject = main_email["subject"]
             reminder, created = ReminderEmail.objects.get_or_create(
                 user=request.user,
                 email=target.email,
                 sent_email=sent_email,
                 target_audience=target,
-                subject=fe["subject"],
+                subject=subject,
                 message=fe["body"],
                 send_at=send_date,
                 message_id=message_id
             )
             reminders.append({
-                'subject': fe["subject"],
+                'subject': subject,
                 'send_date': send_date.strftime("%B %d, %Y"),
                 'days_after': day
             })
@@ -265,7 +212,85 @@ class EmailListView(LoginRequiredMixin, ListView):
         email.save()
 
         return JsonResponse({'success': True})
-    
+
+
+class LeadListView(LoginRequiredMixin, ListView):
+    model = SentEmail
+    template_name = 'generate_email/lead_list.html'
+    context_object_name = 'target_audience'
+
+    def get_queryset(self):
+        target_audience = TargetAudience.objects.filter(user=self.request.user).order_by('-created')
+
+        # Show only emails sent by the logged-in user, newest first
+        return target_audience
+
+# views.py
+import csv
+from django.http import HttpResponse
+from .models import TargetAudience  # Update with your model name
+
+
+def escape_csv(value):
+    """
+    Escapes potentially dangerous values for CSV injection.
+    """
+    if isinstance(value, str) and value.startswith(('=', '+', '-', '@')):
+        return "'" + value  # Prepend with single quote to disable formula
+    return value
+
+def export_target_audience_csv(request):
+    response = HttpResponse(content_type='text/csv')
+    today = timezone.now().date()
+    filename = f"Lead-List-{today}.csv"
+    response['Content-Disposition'] = f'attachment; filename={filename}'
+
+    writer = csv.writer(response)
+    headers = [
+        'Name', 'Email', 'LinkedIn URL', 'For Service', 'Company Website',
+        'Framework', 'Goal of Campaign', 'Last Connected'
+    ]
+    writer.writerow([escape_csv(header) for header in headers])
+
+    target_audience = TargetAudience.objects.filter(user=request.user).order_by('-created')  # Add filters if needed
+
+    for ta in target_audience:
+        row = [
+            f"{ta.receiver_first_name} {ta.receiver_last_name}",
+            ta.email,
+            ta.receiver_linkedin_url,
+            ta.selected_service,
+            ta.company_url,
+            ta.framework,
+            ta.campaign_goal,
+            ta.created.strftime("%Y-%m-%d"),
+        ]
+        writer.writerow([escape_csv(cell) for cell in row])
+
+    return response
+
+
+class LeadEmailListView(LoginRequiredMixin, ListView):
+    model = SentEmail
+    template_name = 'generate_email/leads_email_list.html'
+    context_object_name = 'target_audience_email'
+
+    def get_queryset(self):
+        pk = self.kwargs.get('pk')
+        self.target_audience = TargetAudience.objects.get(pk=pk)
+        next_reminder = ReminderEmail.objects.filter(
+            sent_email=OuterRef('pk'),
+            send_at__gte=now().date()
+        ).order_by('send_at').values('send_at')[:1]
+        # Show only emails sent by the logged-in user, newest first
+        return (self.target_audience.sent_email.
+                annotate(next_reminder_date=Subquery(next_reminder)).order_by('-created'))
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['target_audience'] = self.target_audience
+        return context
 
 class EmailMessageView(DetailView):
     model = SentEmail

@@ -50,6 +50,12 @@
                         Emails
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'view-leads' %}"
+                       style="{% if request.resolver_match.url_name == 'view-leads' %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; padding-left: 10px; padding-right: 10px;{% endif %}">
+                        Leads
+                    </a>
+                </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                        style="{% if request.resolver_match.url_name == 'profile' %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; padding-left: 10px; padding-right: 10px;{% endif %}">

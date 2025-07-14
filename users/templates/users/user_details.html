@@ -22,7 +22,7 @@
                     
                     <!-- Full Name -->
                     <div class="mb-3">
-                        <label for="id_full_name" class="form-label">Full Name*</label>
+                        <label for="id_full_name" class="form-label">Full Name *</label>
                         <input type="text" name="full_name" id="id_full_name"
                                class="form-control"
                                placeholder="Full Name"
@@ -35,7 +35,7 @@
                         {% endif %}
                     </div>
                     <div class="mb-3">
-                        <label for="id_contact_number" class="form-label">Your Contact Number</label>
+                        <label for="id_contact_number" class="form-label">Your Contact Number *</label>
                         <input type="text" name="contact" id="id_contact_number"
                                class="form-control"
                                placeholder="+91652*******"
@@ -50,7 +50,7 @@
 
                     <!-- Company Name -->
                     <div class="mb-3">
-                        <label for="id_company_name" class="form-label">Company Name*</label>
+                        <label for="id_company_name" class="form-label">Company Name *</label>
                         <input type="text" name="company_name" id="id_company_name"
                                class="form-control"
                                placeholder="Company Name"
@@ -80,7 +80,7 @@
 
                     <!-- Company LinkedIn URL -->
                     <div class="mb-3">
-                        <label for="id_company_linkedin_url" class="form-label">Company LinkedIn URL*</label>
+                        <label for="id_company_linkedin_url" class="form-label">Company LinkedIn URL *</label>
                         <input type="text" name="company_linkedin_url" id="id_company_linkedin_url"
                                class="form-control"
                                placeholder="https://example.com"
@@ -95,12 +95,12 @@
 
                     <!-- User LinkedIn URL -->
                     <div class="mb-3">
-                        <label for="id_user_linkedin_url" class="form-label">Your LinkedIn URL*</label>
+                        <label for="id_user_linkedin_url" class="form-label">Your LinkedIn URL</label>
                         <input type="text" name="user_linkedin_url" id="id_user_linkedin_url"
                                class="form-control"
                                placeholder="https://example.com"
                                value="{{ form.data.user_linkedin_url|default:user.user_linkedin_url|default_if_none:'' }}"
-                               required>
+                               >
                         {% if form.user_linkedin_url.errors %}
                             {% for error in form.user_linkedin_url.errors %}
                                 <div class="invalid-feedback d-block">{{ error }}</div>
@@ -115,12 +115,12 @@
                         <!-- First service -->
                         <div class="service-block row mb-3 border p-3 rounded">
                             <div class="col-md-6">
-                                <label class="form-label">Service Name*</label>
+                                <label class="form-label">Service Name *</label>
                                 <input type="text" name="service_name_0" class="form-control"
                                       placeholder="e.g., Lead Generation Tool" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Service URL*</label>
+                                <label class="form-label">Service URL *</label>
                                 <input type="text" name="product_url_0" class="form-control"
                                       placeholder="https://yourservice.com" required>
                             </div>

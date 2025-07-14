@@ -17,7 +17,7 @@ def get_response(user, target, selected_service):
         },
         messages=[{
                   "role": "system",
-                  "content": "You are an expert email copywriter. Output JSON-formatted marketing emails for given details."
+                  "content": "You are an expert email copywriter. The tone of the email must change as per the designation of the target person, geography of the target person. Output JSON-formatted marketing emails for given details."
                 },
                 {
                 "role": "user",
@@ -39,25 +39,22 @@ def get_response(user, target, selected_service):
                                 }},
                                 "follow_ups": [
                                 {{
-                                  "subject": "string",
                                   "body": "HTML string (e.g., use <p>, <ul>, <b>, etc. for formatting)"
                                 }},
                                 {{
-                                  "subject": "string",
                                   "body": "HTML string (e.g., use <p>, <ul>, <b>, etc. for formatting)"
                                 }},
                                 {{
-                                  "subject": "string",
                                   "body": "HTML string (e.g., use <p>, <ul>, <b>, etc. for formatting)"
                                 }},
                                 {{
-                                  "subject": "string",
                                   "body": "HTML string (e.g., use <p>, <ul>, <b>, etc. for formatting)"
                                 }}
                                 ]
                             }}'''
                             f"Align their needs with our strengths based on both companies’ LinkedIn and websites. Write a solution-driven, impactful email."
-                            f"Do not include framework words(i.e. Attention, Interest, etc.) in email"
+                            f"Do not include framework words(i.e. Attention, Interest, Situation etc.) in email "
+                             f"persistent industry challenges of the target company and how our solution will make them ahead of competition"
                             f"Do not include Signature in any email"
                              f"Include target company name in subject instead of 'your'"
                              f"Include name {target.receiver_first_name} {target.receiver_last_name} in greeting"
