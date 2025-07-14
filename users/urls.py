@@ -1,12 +1,13 @@
 from django.urls import path
-from .views import (HomeView, LoginView, RegisterView, VerifyOTPView, ResendOTPView,
+from .views import (HomeView, LoginView,LandingPageView, RegisterView, VerifyOTPView, ResendOTPView,
                     UserDetailsView,ProfileView,PrivacyPolicyView,TermsConditionsView,SupportView)
 
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
-    path('', HomeView.as_view(), name='home'),
+    path('dashboard/', HomeView.as_view(), name='home'),
     # path('analytics/', AnalyticsView.as_view(), name='analytics'),
+    path('',LandingPageView.as_view(),name='landing'),
 
     path('register/', RegisterView.as_view(), name='register'),
     path('verify/', VerifyOTPView.as_view(), name='verify-otp'),

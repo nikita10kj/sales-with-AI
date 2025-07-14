@@ -41,6 +41,16 @@ def csrf_failure(request, reason=""):
     messages.error(request, "Invalid session. Please log in again.")
     return redirect('login')
 
+class LandingPageView(TemplateView):
+    template_name = 'users/landingpage.html'
+    title = "SellSharp"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = self.title
+        return context
+       
+
 class HomeView(LoginRequiredMixin, TemplateView):
     template_name = 'users/dashboard.html'
     title = "Home"
