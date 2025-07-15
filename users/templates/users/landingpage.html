@@ -91,16 +91,26 @@
         <div class="d-flex justify-content-center gap-3 mt-4">
           <a
             href="{% url 'login' %}"
-            class="btn btn-outline-secondary btn-lg px-4 rounded-pill"
-            >Start Free Trial</a
-          >
-          <a
-            href="#"
-            class="btn btn-lg text-white px-4 rounded-pill"
+            class="btn text-white rounded-pill mt-3 px-4 py-2"
             style="
               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
               transition: background 0.3s ease;
             "
+          >
+            Start Free Trial
+          </a>
+          <!-- <a
+            href="{% url 'login' %}"
+            class="btn btn-outline-secondary btn-lg px-4 rounded-pill"
+          >
+            Schedule Demo
+          </a> -->
+          <a
+            href="#"
+            class="btn btn-outline-dark rounded-pill mt-3 px-4 py-2"
+            style="transition: all 0.3s ease"
+            onmouseover="this.classList.remove('btn-outline-dark'); this.classList.add('btn-dark'); this.style.color='white';"
+            onmouseout="this.classList.remove('btn-dark'); this.classList.add('btn-outline-dark'); this.style.color='black';"
           >
             Schedule Demo
           </a>
@@ -118,105 +128,123 @@
     <!-- Connect with google and microsoft -->
     <section class="py-5 bg-white">
       <div class="container text-center">
-        <div
-          class="d-flex justify-content-center align-items-center flex-wrap mb-3"
-          style="gap: 80px"
-        >
-          <img
-            src="{% static 'users/img/Untitled-design-10-1-scaled-e1750936356425-1536x572.webp' %}"
-            alt="Microsoft"
-            style="height: 60px; object-fit: contain"
-          />
-          <img
-            src="{% static 'users/img/4-2-e1750935420584.webp' %}"
-            alt="Google"
-            style="height: 60px; object-fit: contain"
-          />
-        </div>
+       <h5 class="fw-bold mb-4">Connect Mail Box</h5>
+    <div class="d-flex justify-content-center align-items-center flex-wrap gap-5 mb-3">
+      <img
+        src="{% static 'users/img/Untitled-design-10-1-scaled-e1750936356425-1536x572.webp' %}"
+        alt="Google"
+        style="height: 50px; object-fit: contain; filter: grayscale(0.2); transition: transform 0.3s ease;"
+        onmouseover="this.style.transform='scale(1.1)'"
+        onmouseout="this.style.transform='scale(1)'"
+      />
+      <img
+        src="{% static 'users/img/4-2-e1750935420584.webp' %}"
+        alt="Microsoft"
+        style="height: 50px; object-fit: contain; filter: grayscale(0.2); transition: transform 0.3s ease;"
+        onmouseover="this.style.transform='scale(1.1)'"
+        onmouseout="this.style.transform='scale(1)'"
+      />
+    </div>
+    <p class="text-muted small">Securely authenticate and sync with your preferred email provider.</p>
 
-        <div class="d-flex justify-content-center flex-wrap gap-4">
+
+        <!-- <div class="d-flex justify-content-center flex-wrap gap-4">
           <a
             href="#"
-            class="btn btn-outline-dark px-4 py-2 d-flex align-items-center gap-2"
+            class="btn btn-outline-dark d-flex align-items-center gap-3 px-4 py-2 rounded-pill shadow-sm"
+            style="transition: all 0.3s ease"
           >
-            <i class="fab fa-google"></i> Continue with Google
+            <span>Sign in with</span>
+            <img
+              src="{% static 'users/img/Untitled-design-10-1-scaled-e1750936356425-1536x572.webp' %}"
+              alt="Google"
+              style="height: 28px; width: auto; object-fit: contain"
+            />
           </a>
+
           <a
             href="#"
-            class="btn btn-outline-primary px-4 py-2 d-flex align-items-center gap-2"
+            class="btn btn-outline-dark d-flex align-items-center gap-3 px-4 py-2 rounded-pill shadow-sm"
+            style="transition: all 0.3s ease"
           >
-            <i class="fab fa-microsoft"></i> Continue with Microsoft
+            <span>Sign in with</span>
+            <img
+              src="{% static 'users/img/4-2-e1750935420584.webp' %}"
+              alt="Microsoft"
+              style="height: 28px; width: auto; object-fit: contain"
+            />
           </a>
-        </div>
+        </div> -->
       </div>
     </section>
 
     <!-- Services -->
-    <section class="py-5 text-center">
-      <div class="container">
+    <section class="py-5" style="background: rgb(238, 238, 238)">
+      <div class="container text-center">
         <h2 class="fw-bold mb-3">What We Offer</h2>
         <p class="text-muted mb-5">
-          Supercharge your sales outreach with AI-crafted emails, smarter
-          targeting, and scalable personalization.
+          Supercharge your sales outreach with AI-crafted emails, predictive
+          targeting, and intelligent automation.
         </p>
-        <div class="row g-4">
+
+        <div class="row g-4 py-4">
           <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100 p-4">
+            <div class="card h-100 border-0 shadow-sm p-4 rounded-4">
               <i class="fas fa-robot fa-2x text-primary mb-3"></i>
-              <h5>AI Email Generator</h5>
-              <p>
-                Generate high-converting emails in seconds using real-time AI
-                trained on top-performing templates.
+              <h5 class="fw-semibold">AI Email Generator</h5>
+              <p class="text-muted small">
+                Create persuasive emails instantly with trained AI that mimics
+                top sales performers.
               </p>
             </div>
           </div>
           <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100 p-4">
+            <div class="card h-100 border-0 shadow-sm p-4 rounded-4">
               <i class="fas fa-user-tag fa-2x text-primary mb-3"></i>
-              <h5>Smart Personalization</h5>
-              <p>
-                Dynamically insert names, companies, industries, and goals into
-                every message automatically.
+              <h5 class="fw-semibold">Smart Personalization</h5>
+              <p class="text-muted small">
+                Auto-inserts for names, roles, industries, and intents help
+                boost relevance and reply rates.
               </p>
             </div>
           </div>
           <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100 p-4">
+            <div class="card h-100 border-0 shadow-sm p-4 rounded-4">
               <i class="fas fa-comments fa-2x text-primary mb-3"></i>
-              <h5>Tone & Style Control</h5>
-              <p>
-                Adjust tone, sentence structure, and call-to-actions to match
-                each stage of your sales pipeline.
+              <h5 class="fw-semibold">Tone & Style Control</h5>
+              <p class="text-muted small">
+                Choose between friendly, persuasive, or direct tones for each
+                stage of your sales funnel.
               </p>
             </div>
           </div>
           <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100 p-4">
+            <div class="card h-100 border-0 shadow-sm p-4 rounded-4">
+              <i class="fas fa-bolt fa-2x text-primary mb-3"></i>
+              <h5 class="fw-semibold">1-Click Campaigns</h5>
+              <p class="text-muted small">
+                Launch entire sequences with one click—great for product
+                announcements or follow-ups.
+              </p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm p-4 rounded-4">
               <i class="fas fa-chart-line fa-2x text-primary mb-3"></i>
-              <h5>Performance Analytics</h5>
-              <p>
-                Track open rates, replies, and engagement to continuously refine
+              <h5 class="fw-semibold">Performance Analytics</h5>
+              <p class="text-muted small">
+                Track opens, clicks, and conversions to continuously improve
                 what works.
               </p>
             </div>
           </div>
           <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100 p-4">
-              <i class="fas fa-bolt fa-2x text-primary mb-3"></i>
-              <h5>1-Click Campaigns</h5>
-              <p>
-                Launch complete outbound campaigns with a single click using
-                saved email flows.
-              </p>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100 p-4">
-              <i class="fas fa-plug fa-2x text-primary mb-3"></i>
-              <h5>CRM Integration</h5>
-              <p>
-                Seamlessly connect with your CRM to sync contacts, templates,
-                and results in real time.
+            <div class="card h-100 border-0 shadow-sm p-4 rounded-4">
+              <i class="fas fa-star-half-alt fa-2x text-primary mb-3"></i>
+              <h5 class="fw-semibold">Lead Scoring AI</h5>
+              <p class="text-muted small">
+                Identify hot prospects with AI that scores leads based on
+                behavior and engagement history.
               </p>
             </div>
           </div>
@@ -240,9 +268,13 @@
             </p>
             <a
               href="{% url 'login' %}"
-              class="btn btn-primary rounded-pill mt-3 px-4 py-2"
-              >Get Started Today</a
+              class="btn btn-outline-dark rounded-pill mt-3 px-4 py-2"
+              style="transition: all 0.3s ease"
+              onmouseover="this.classList.remove('btn-outline-dark'); this.classList.add('btn-dark'); this.style.color='white';"
+              onmouseout="this.classList.remove('btn-dark'); this.classList.add('btn-outline-dark'); this.style.color='black';"
             >
+              Get Started Today →
+            </a>
           </div>
           <div class="col-md-6 text-center">
             <img
@@ -346,7 +378,7 @@
               alt="Sales"
               class="rounded-3 shadow"
               width="70%"
-              height="300px"
+              height="250px"
             />
           </div>
         </div>
@@ -367,7 +399,7 @@
               alt="Agency"
               class="rounded-3 shadow"
               width="70%"
-              height="300px"
+              height="250px"
             />
           </div>
         </div>
@@ -388,7 +420,7 @@
               alt="SaaS"
               class="rounded-3 shadow"
               width="70%"
-              height="300px"
+              height="250px"
             />
           </div>
         </div>
@@ -409,7 +441,7 @@
               alt="E-Commerce"
               class="rounded-3 shadow"
               width="70%"
-              height="300px"
+              height="250px"
             />
           </div>
         </div>
@@ -429,7 +461,7 @@
               alt="Enterprise"
               class="rounded-3 shadow"
               width="70%"
-              height="300px"
+              height="250px"
             />
           </div>
         </div>
@@ -446,9 +478,9 @@
             <img
               src="{% static 'users/img/freelancer-working-laptop-her-house_1150-35054.avif' %}"
               alt="Freelancers"
-              class="rounded-3 shadow"
+              class="rounded-3"
               width="70%"
-              height="300px"
+              height="auto"
             />
           </div>
         </div>
@@ -456,45 +488,109 @@
     </section>
 
     <!-- Final CTA -->
-    <section class="text-center py-5 bg-primary text-white">
+    <section
+      class="text-center py-5 text-white"
+      style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+    >
       <div class="container">
-        <h6 class="text-uppercase mb-2">Start Your Journey</h6>
-        <h2 class="fw-bold mb-3">Transform Your Sales Outreach with AI</h2>
-        <p class="lead">
-          Say goodbye to generic emails and hello to smart, personalized
-          messaging that drives results.
+        <h6 class="text-uppercase fw-semibold mb-2" style="letter-spacing: 1px">
+          Start Your Journey
+        </h6>
+        <h2 class="fw-bold mb-3 display-5">
+          Transform Your Sales Outreach with AI
+        </h2>
+        <p class="lead mb-4">
+          Say goodbye to generic emails and hello to intelligent, personalized
+          messaging that converts.
         </p>
-        <div class="d-flex justify-content-center gap-3 mt-4">
-          <a href="{% url 'login' %}" class="btn btn-light">Get Started Now</a>
-          <a href="#" class="btn btn-outline-light">Request a Demo</a>
+        <div class="d-flex justify-content-center flex-wrap gap-3">
+          <a
+            href="{% url 'login' %}"
+            class="btn btn-outline-dark rounded-pill mt-3 px-4 py-2 text-white border-white"
+            style="transition: all 0.3s ease"
+            onmouseover="this.classList.remove('btn-outline-dark'); this.classList.add('btn-dark'); this.style.color='white';"
+            onmouseout="this.classList.remove('btn-dark'); this.classList.add('btn-outline-dark'); this.style.color='black';"
+          >
+            Get Started Now
+          </a>
+          <a
+            href="#"
+            class="btn btn-outline-dark rounded-pill mt-3 px-4 py-2 text-white border-white"
+            style="transition: all 0.3s ease"
+            onmouseover="this.classList.remove('btn-outline-dark'); this.classList.add('btn-dark'); this.style.color='white';"
+            onmouseout="this.classList.remove('btn-dark'); this.classList.add('btn-outline-dark'); this.style.color='black';"
+          >
+            Request a demo
+          </a>
         </div>
       </div>
     </section>
 
     <!-- Footer -->
-    <footer class="bg-dark text-white text-center py-4">
-      <div class="container">
-        <img
-          src="{% static 'users/img/logo_2.webp' %}"
-          height="auto"
-          width="10%"
-          alt="SellSharp Logo"
-          class="mb-2"
-        />
-        <p class="small mb-2">
-          &copy; 2025 | JMS Advisory |
-          <a
-            href="{% url 'privacy-policy' %}"
-            target="_blank"
-            class="text-white text-decoration-underline"
-            >Privacy Policy</a
-          >
-        </p>
-        <div class="d-flex justify-content-center gap-3">
-          <a href="#" class="text-white"><i class="fab fa-facebook-f"></i></a>
-          <a href="#" class="text-white"><i class="fab fa-twitter"></i></a>
-          <a href="#" class="text-white"><i class="fab fa-linkedin-in"></i></a>
-          <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
+    <footer class="bg-dark text-white pt-5 pb-4">
+      <div class="container text-center text-md-start">
+        <div class="row g-4 align-items-start">
+          <!-- Logo & About -->
+          <div class="col-md-5">
+            <img
+              src="{% static 'users/img/logo_2.webp' %}"
+              alt="SellSharp Logo"
+              width="140"
+              class="mb-3"
+            />
+            <p class="mb-0 text-white-50 small">
+              SellSharp helps you write smarter, faster emails powered by AI.
+              From cold outreach to follow-ups — we help sales teams convert
+              better.
+            </p>
+          </div>
+
+          <!-- Contact Info -->
+          <div class="col-md-4">
+            <h6 class="fw-bold mb-3">Contact Us</h6>
+
+            <p class="mb-1 small">
+              <i class="fas fa-phone me-2 text-primary"></i> +91 98765 43210
+            </p>
+            <p class="small mb-0">
+              <i class="fas fa-map-marker-alt me-2 text-primary"></i> Ahmedabad,
+              Gujarat, India
+            </p>
+          </div>
+
+          <!-- Social Links -->
+          <div class="col-md-3 text-center text-md-start">
+            <h6 class="fw-bold mb-3">Connect With Us</h6>
+            <div
+              class="d-flex gap-3 justify-content-center justify-content-md-start"
+            >
+              <a href="#" class="text-white-50 fs-5"
+                ><i class="fab fa-facebook-f"></i
+              ></a>
+              <a href="#" class="text-white-50 fs-5"
+                ><i class="fab fa-twitter"></i
+              ></a>
+              <a href="#" class="text-white-50 fs-5"
+                ><i class="fab fa-linkedin-in"></i
+              ></a>
+              <a href="#" class="text-white-50 fs-5"
+                ><i class="fab fa-instagram"></i
+              ></a>
+            </div>
+          </div>
+        </div>
+
+        <hr class="border-secondary mt-4" />
+        <div class="text-center">
+          <p class="small text-white-50 mb-0">
+            &copy; 2025 SellSharp — Built with ❤️ by JMS Advisory |
+            <a
+              target="_blank"
+              href="{% url 'privacy-policy' %}"
+              class="text-white text-decoration-underline"
+              >Privacy Policy</a
+            >
+          </p>
         </div>
       </div>
     </footer>
