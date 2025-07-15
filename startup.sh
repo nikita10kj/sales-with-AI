@@ -7,6 +7,8 @@ source ./venv/bin/activate
 python manage.py migrate
 python manage.py collectstatic --noinput
 
+# Kill all running celery processes
+pkill -f 'celery'
 # Start Celery Worker (background)
 celery -A saleswithai worker --loglevel=info &
 
