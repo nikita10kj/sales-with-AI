@@ -31,23 +31,21 @@
 
     <!-- Typewriter Effect CSS -->
     <style>
-.typewriter {
-  display: inline-block;
-  overflow: hidden;
-  white-space: nowrap;
-  animation: typing 4s linear forwards;
-}
+      .typewriter {
+        display: inline-block;
+        overflow: hidden;
+        white-space: nowrap;
+        animation: typing 4s linear forwards;
+      }
 
-@keyframes typing {
-  from {
-    width: 0;
-  }
-  to {
-    width: 100%;
-  }
-}
-
-
+      @keyframes typing {
+        from {
+          width: 0;
+        }
+        to {
+          width: 100%;
+        }
+      }
     </style>
   </head>
 
@@ -86,7 +84,7 @@
         <h1 class="display-4 fw-bold mb-3 typewriter">
           AI‑Powered Emails That Close Deals
         </h1>
-        <p class="lead text-muted mx-auto " style="max-width: 700px">
+        <p class="lead text-muted mx-auto" style="max-width: 700px">
           SellSharp helps sales teams write smarter, faster, and more
           personalized emails that turn leads into customers — at scale.
         </p>
@@ -117,43 +115,38 @@
       </div>
     </section>
 
-    <!-- Trusted By Logos -->
+    <!-- Connect with google and microsoft -->
     <section class="py-5 bg-white">
       <div class="container text-center">
         <div
-          class="d-flex justify-content-center align-items-center flex-wrap"
-          style="gap: 50px"
+          class="d-flex justify-content-center align-items-center flex-wrap mb-3"
+          style="gap: 80px"
         >
           <img
-            src="{% static 'users/img/4-2-e1750935420584.webp' %}"
-            height="60"
-            alt="Microsoft"
-            class=""
-          />
-          <img
             src="{% static 'users/img/Untitled-design-10-1-scaled-e1750936356425-1536x572.webp' %}"
-            height="60"
+            alt="Microsoft"
+            style="height: 60px; object-fit: contain"
+          />
+          <img
+            src="{% static 'users/img/4-2-e1750935420584.webp' %}"
             alt="Google"
-            class=""
+            style="height: 60px; object-fit: contain"
           />
-          <img
-            src="{% static 'users/img/5-2-e1750936467331.webp' %}"
-            height="60"
-            alt="NASSCOM"
-            class=""
-          />
-          <img
-            src="{% static 'users/img/25-e1750936423555.webp' %}"
-            height="60"
-            alt="GS1"
-            class=""
-          />
-          <img
-            src="{% static 'users/img/26-e1750936514221.webp' %}"
-            height="60"
-            alt="ISF"
-            class=""
-          />
+        </div>
+
+        <div class="d-flex justify-content-center flex-wrap gap-4">
+          <a
+            href="#"
+            class="btn btn-outline-dark px-4 py-2 d-flex align-items-center gap-2"
+          >
+            <i class="fab fa-google"></i> Continue with Google
+          </a>
+          <a
+            href="#"
+            class="btn btn-outline-primary px-4 py-2 d-flex align-items-center gap-2"
+          >
+            <i class="fab fa-microsoft"></i> Continue with Microsoft
+          </a>
         </div>
       </div>
     </section>
@@ -331,15 +324,17 @@
       <div class="container">
         <div class="text-center mb-5">
           <h4 class="text-primary text-uppercase">Our Work</h4>
-          <h2 class="fw-bold">Solutions Designed to Deliver Results</h2>
+          <h1 class="fw-bold">Solutions Designed to Deliver Results</h1>
           <p class="text-muted">
             SellSharp adapts to every business model — see how it fits yours.
           </p>
         </div>
 
-        <div class="row g-5 align-items-center mb-4">
+        <div
+          class="row g-5 align-items-center mb-4 border-bottom border-2 pb-4"
+        >
           <div class="col-md-6 text-md-end">
-            <h5 class="fw-semibold">For Sales Teams</h5>
+            <h3 class="fw-semibold">For Sales Teams</h3>
             <p class="text-muted small typewriter">
               Accelerate outreach with AI-generated, context-aware emails at
               scale.
@@ -356,9 +351,11 @@
           </div>
         </div>
 
-        <div class="row g-5 align-items-center flex-md-row-reverse mb-4">
+        <div
+          class="row g-5 align-items-center flex-md-row-reverse mb-4 border-bottom border-2 pb-4"
+        >
           <div class="col-md-6 text-md-start">
-            <h5 class="fw-semibold">For Agencies</h5>
+            <h3 class="fw-semibold">For Agencies</h3>
             <p class="text-muted small typewriter">
               Customize client communication workflows with zero manual
               repetition.
@@ -375,9 +372,11 @@
           </div>
         </div>
 
-        <div class="row g-5 align-items-center mb-4">
+        <div
+          class="row g-5 align-items-center mb-4 border-bottom border-2 pb-4"
+        >
           <div class="col-md-6 text-md-end">
-            <h5 class="fw-semibold">For SaaS Products</h5>
+            <h3 class="fw-semibold">For SaaS Products</h3>
             <p class="text-muted small typewriter">
               Support onboarding, feature announcements, and retention —
               automatically.
@@ -394,9 +393,11 @@
           </div>
         </div>
 
-        <div class="row g-5 align-items-center flex-md-row-reverse mb-4">
+        <div
+          class="row g-5 align-items-center flex-md-row-reverse mb-4 border-bottom border-2 pb-4"
+        >
           <div class="col-md-6 text-md-start">
-            <h5 class="fw-semibold">For E-Commerce Brands</h5>
+            <h3 class="fw-semibold">For E-Commerce Brands</h3>
             <p class="text-muted small typewriter">
               Recover carts, upsell users, and drive loyalty with AI-generated
               flows.
@@ -404,7 +405,7 @@
           </div>
           <div class="col-md-6 text-md-end">
             <img
-              src="{% static 'users/img/e-commerce-background-design_23-2147650066.avif' %}"
+              src="{% static 'users/img/black-friday-elements-assortment_23-2149074076.avif' %}"
               alt="E-Commerce"
               class="rounded-3 shadow"
               width="70%"
@@ -413,9 +414,11 @@
           </div>
         </div>
 
-        <div class="row g-5 align-items-center mb-4">
+        <div
+          class="row g-5 align-items-center mb-4 border-bottom border-2 pb-4"
+        >
           <div class="col-md-6 text-md-end">
-            <h5 class="fw-semibold">For Enterprise Ops</h5>
+            <h3 class="fw-semibold">For Enterprise Ops</h3>
             <p class="text-muted small typewriter">
               Manage compliance while scaling personalized messaging globally.
             </p>
@@ -433,7 +436,7 @@
 
         <div class="row g-5 align-items-center flex-md-row-reverse">
           <div class="col-md-6 text-md-start">
-            <h5 class="fw-semibold">For Freelancers</h5>
+            <h3 class="fw-semibold">For Freelancers</h3>
             <p class="text-muted small typewriter">
               Win leads and keep clients engaged — all from one unified AI
               inbox.
@@ -497,6 +500,5 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
   </body>
 </html>
