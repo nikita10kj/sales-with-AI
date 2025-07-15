@@ -7,13 +7,27 @@ source ./venv/bin/activate
 python manage.py migrate
 python manage.py collectstatic --noinput
 
-# Kill all running celery processes
-pkill -f 'celery'
+# Define PID files
+CELERY_WORKER_PID="/tmp/celery_worker.pid"
+CELERY_BEAT_PID="/tmp/celery_beat.pid"
+
+# Kill old Celery Worker if running
+if [ -f "$CELERY_WORKER_PID" ]; then
+    kill -9 $(cat "$CELERY_WORKER_PID") || true
+    rm "$CELERY_WORKER_PID"
+fi
+
+# Kill old Celery Beat if running
+if [ -f "$CELERY_BEAT_PID" ]; then
+    kill -9 $(cat "$CELERY_BEAT_PID") || true
+    rm "$CELERY_BEAT_PID"
+fi
+
 # Start Celery Worker (background)
-celery -A saleswithai worker --loglevel=info &
+celery -A saleswithai worker --loglevel=info --pidfile="$CELERY_WORKER_PID" &
 
 # Start Celery Beat (background)
-celery -A saleswithai beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler &
+celery -A saleswithai beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler --pidfile="$CELERY_BEAT_PID" &
 
 # Start Gunicorn server
 exec gunicorn saleswithai.wsgi --bind=0.0.0.0:8000
