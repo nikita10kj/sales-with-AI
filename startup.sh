@@ -1,5 +1,13 @@
 #!/bin/bash
 
+LOCK_FILE="/tmp/saleswithai_startup.lock"
+
+# Acquire lock, wait if already locked
+exec 9>"$LOCK_FILE"
+flock -n 9 || {
+    echo "Startup script already running. Exiting..."
+    exit 1
+}
 # Activate virtualenv
 source ./venv/bin/activate
 
