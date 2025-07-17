@@ -21,7 +21,7 @@ from django.contrib.auth import views as auth_views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),  # this line enables allauth
-     path('', include('users.urls')),  # default landing page
+     path('users/', include('users.urls')),  # default landing page
     path('', include('frontend.urls')),  # frontend app for the main site
     path('generator/', include('generate_email.urls')),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
