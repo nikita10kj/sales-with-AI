@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.microsoft',
-    'django_celery_beat'
+    'django_celery_beat',
+    'frontend'
 ]
 
 SOCIALACCOUNT_PROVIDERS = {
