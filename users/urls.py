@@ -5,7 +5,7 @@ from .views import (HomeView, LoginView,LandingPageView, RegisterView, VerifyOTP
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
-    path('dashboard/', HomeView.as_view(), name='home'),
+    path('', HomeView.as_view(), name='home'),
     # path('analytics/', AnalyticsView.as_view(), name='analytics'),
     # path('',LandingPageView.as_view(),name='landing'),
 
