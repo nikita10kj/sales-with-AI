@@ -529,7 +529,7 @@
             >
               <img
                 src="{% static 'users/img/25-e1750936423555.webp' %}"
-                alt="Google"
+                alt="Gesia"
                 style="
                   height: 100px;
                   object-fit: contain;
@@ -541,7 +541,7 @@
               />
               <img
                 src="{% static 'users/img/Nasscom-logo-svg.svg.png' %}"
-                alt="Microsoft"
+                alt="nasscom"
                 style="
                   margin: 0 100px;
                   height: 65px;
@@ -555,7 +555,7 @@
 
               <img
                 src="{% static 'users/img/26-e1750936514221.webp' %}"
-                alt="Microsoft"
+                alt="isf"
                 style="
                   height: 100px;
                   object-fit: contain;
@@ -612,54 +612,53 @@
 
         <!-- Footer -->
         <footer class="bg-dark text-white pt-5 pb-4">
-          <div class="container text-center text-md-start">
-            <div class="row g-4 align-items-start">
-              <!-- Logo & About -->
-              <div class="col-md-5">
+          <div class="container">
+            <div class="row align-items-center justify-content-between gy-4">
+              <!-- Logo and About -->
+              <div class="col-md-7 text-center text-md-start">
                 <img
                   src="{% static 'users/img/logo_2.webp' %}"
                   alt="SellSharp Logo"
-                  width="140"
+                  width="160"
                   class="mb-3"
                 />
-                <p class="mb-0 text-white-50 small">
-                  SellSharp helps you write smarter, faster emails powered by
-                  AI. From cold outreach to follow-ups — we help sales teams
-                  convert better.
+                <p class="text-white-50 small mb-2">
+                  <i class="fas fa-bolt me-2 text-primary"></i>
+                  SellSharp empowers sales teams to craft personalized,
+                  AI-driven emails that convert.
+                </p>
+                <p class="text-white-50 small mb-2">
+                  <i class="fas fa-brain me-2 text-primary"></i>
+                  Our AI adapts and improves continuously from every sales
+                  interaction.
+                </p>
+                <p class="text-white-50 small">
+                  <i class="fas fa-envelope-open-text me-2 text-primary"></i>
+                  Automate outreach, boost conversions, and drive efficiency at
+                  scale.
                 </p>
               </div>
 
-              <!-- Contact Info -->
-              <div class="col-md-4">
-                <h6 class="fw-bold mb-3">Contact Us</h6>
-
-                <p class="mb-1 small">
-                  <i class="fas fa-phone me-2 text-primary"></i> +91 98765 43210
-                </p>
-                <p class="small mb-0">
-                  <i class="fas fa-map-marker-alt me-2 text-primary"></i>
-                  Ahmedabad, Gujarat, India
-                </p>
-              </div>
-
-              <!-- Social Links -->
-              <div class="col-md-3 text-center text-md-start">
-                <h6 class="fw-bold mb-3">Connect With Us</h6>
+              <!-- Partner Logos -->
+              <div class="col-md-4 text-center text-md-end">
                 <div
-                  class="d-flex gap-3 justify-content-center justify-content-md-start"
+                  class="d-flex justify-content-center justify-content-md-end align-items-center gap-4"
                 >
-                  <a href="#" class="text-white-50 fs-5"
-                    ><i class="fab fa-facebook-f"></i
-                  ></a>
-                  <a href="#" class="text-white-50 fs-5"
-                    ><i class="fab fa-twitter"></i
-                  ></a>
-                  <a href="#" class="text-white-50 fs-5"
-                    ><i class="fab fa-linkedin-in"></i
-                  ></a>
-                  <a href="#" class="text-white-50 fs-5"
-                    ><i class="fab fa-instagram"></i
-                  ></a>
+                  <img
+                    src="{% static 'users/img/25-e1750936423555.webp' %}"
+                    alt="Gesia"
+                    style="height: 60px; object-fit: contain"
+                  />
+                  <img
+                    src="{% static 'users/img/Nasscom-logo-svg.svg.png' %}"
+                    alt="Nasscom"
+                    style="height: 30px;object-fit: contain"
+                  />
+                  <img  
+                    src="{% static 'users/img/26-e1750936514221.webp' %}"
+                    alt="ISF"
+                    style="height: 60px; object-fit: contain"
+                  />
                 </div>
               </div>
             </div>
@@ -669,7 +668,6 @@
               <p class="small text-white-50 mb-0">
                 &copy; 2025 SellSharp — Built with ❤️ by JMS Advisory |
                 <a
-                  target="_blank"
                   href="{% url 'privacy-policy' %}"
                   class="text-white text-decoration-underline"
                   >Privacy Policy</a
