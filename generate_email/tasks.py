@@ -1,25 +1,59 @@
 # tasks.py
-from celery import shared_task
-from django.utils import timezone
-from datetime import timedelta
-from django.core.mail import send_mail
+# from celery import shared_task
+# from django.utils import timezone
+# from datetime import timedelta
+# from django.core.mail import send_mail
 from .models import ReminderEmail, SentEmail
 from saleswithai.settings import EMAIL_HOST_USER
-from django.db.models import Q
-from django.urls import reverse
+# from django.db.models import Q
+# from django.urls import reverse
 from .utils import sendReminderEmail
-from django.conf import settings
-from datetime import datetime, time
-import numpy as np
+# from django.conf import settings
+# from datetime import datetime, time
+# import numpy as np
 from users.models import CustomUser
-from .models import TargetAudience
-import redis
+# from .models import TargetAudience
+# import redis
+
+import os
+import django
+import numpy as np
+from django.utils import timezone
+from datetime import timedelta
+import time
+# Setup Django environment
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "saleswithai.settings")
+django.setup()
+
+def send_reminder_email(er):
+    print("Sending email to:", er.email)
+    sendReminderEmail(er)
+    er.sent = True
+    er.save()
+
+def send_reminders():
+    today = timezone.now().date()
+
+    # Only send if it's a business day
+    if not np.is_busday(today.strftime('%Y-%m-%d')):
+        print("Not a business day. Exiting.")
+        return
+
+    reminders = ReminderEmail.objects.filter(send_at=today, sent=False)
+
+    for er in reminders:
+        if not er.sent and not er.sent_email.stop_reminder:
+            send_reminder_email(er)
+            time.sleep(90)
+
+if __name__ == "__main__":
+    send_reminders()
 
 # @shared_task
 # def send_reminder_email_task(id):
 #
 #     er = ReminderEmail.objects.get(id=id)
-#     # print("Sending email to:", er.email)
+#     print("Sending email to:", er.email)
 #     sendReminderEmail(er)
 #     er.sent = True
 #     er.save()
