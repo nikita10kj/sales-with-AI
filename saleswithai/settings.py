@@ -28,9 +28,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ['SECRET']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
-ALLOWED_HOSTS = ['localhost','sellsmart-dvdhbme5h6eud4hz.centralindia-01.azurewebsites.net','www.sellsharp.co', 'sellsharp.co','20.192.98.161', '127.0.0.1']
-
+DEBUG = True
+ALLOWED_HOSTS = ['fairly-whole-hawk.ngrok-free.app','localhost','sellsmart-dvdhbme5h6eud4hz.centralindia-01.azurewebsites.net','www.sellsharp.co', 'sellsharp.co','20.192.98.161', '127.0.0.1']
+MS_GRAPH_CLIENT_STATE = "superSecret123jms"
 SITE_ID = 1
 # Application definition
 

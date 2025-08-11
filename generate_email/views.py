@@ -1,14 +1,16 @@
+from allauth.socialaccount.models import SocialToken
 from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin,UserPassesTestMixin
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import FormView, View,TemplateView,ListView,DetailView
 from django.http import JsonResponse
 from .genai_email import get_response
-from .models import TargetAudience, SentEmail, ReminderEmail
+from .models import TargetAudience, SentEmail, ReminderEmail, EmailSubscription
 from users.models import ProductService, ActivityLog
 import json
 from django.http import HttpResponse
 
-from .utils import sendGeneratedEmail
+from .utils import sendGeneratedEmail, create_subscription, refresh_microsoft_token, MicrosoftEmailSendError
 from django.shortcuts import get_object_or_404
 from email.utils import make_msgid
 from datetime import timedelta, date
@@ -139,7 +141,8 @@ class SendEmailView(LoginRequiredMixin, View):
                 'days_after': day
             })
             index += 1
-            
+
+        create_subscription(request)
         return JsonResponse({
             'success': True,
             'reminders': reminders,
@@ -189,6 +192,7 @@ class EmailListView(LoginRequiredMixin, ListView):
    
 
     def get_queryset(self):
+        create_subscription(self.request)
         next_reminder = ReminderEmail.objects.filter(
             sent_email=OuterRef('pk'),
             send_at__gte=now().date()
@@ -308,3 +312,89 @@ class EmailMessageView(DetailView):
             sent=True
         ).order_by('send_at')
         return context
+
+from saleswithai import settings
+
+@csrf_exempt
+def msgraph_webhook(request):
+    # Step 1: Handle validation (GET or POST with validationToken)
+    validation_token = request.GET.get("validationToken")
+    if not validation_token and request.method == "POST":
+        # In POST validation, token is sent in the query string too
+        validation_token = request.GET.get("validationToken")
+    if validation_token:
+        return HttpResponse(validation_token, content_type="text/plain", status=200)
+
+    # Step 2: Handle actual notifications
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body.decode('utf-8') or '{}')
+            for change in data.get('value', []):
+                # validate clientState matches
+                if change.get('clientState') != settings.MS_GRAPH_CLIENT_STATE:
+                    continue
+                # resource e.g. "users/{id}/messages/{msgId}"
+
+                try:
+                    msg_id = change.get('resourceData', {}).get('id')
+                    sub_id = change.get("subscriptionId")
+                    sub = EmailSubscription.objects.get(subscription_id=sub_id)
+                    user = sub.user
+                    message_data = get_message_details(user, msg_id)
+                    print("mes", message_data)
+
+                    in_reply_to = message_data.get("id")
+                    print("in_r", in_reply_to)
+                    if in_reply_to and SentEmail.objects.filter(user=user, message_id=in_reply_to).exists():
+                        print("detected!")
+                        # sent_email = SentEmail.objects.get(user=user, message_id=in_reply_to)
+                        # sent_email.stop_reminder = True
+                        # sent_email.save()
+                except EmailSubscription.DoesNotExist:
+                    continue  # unknown subscription
+
+
+        except json.JSONDecodeError:
+            return HttpResponse(status=400)
+
+        print("Notification received:", data)
+        # TODO: Check if message is a reply, update DB, etc.
+
+        return HttpResponse(status=202)
+
+    return HttpResponse(status=405)
+
+import requests
+from urllib.parse import quote, unquote
+def get_message_details(user, msg_id):
+    token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
+
+    # Check if token is expired
+    if token.expires_at and token.expires_at <= timezone.now():
+        new_token = refresh_microsoft_token(user)
+        if not new_token:
+            raise MicrosoftEmailSendError("Microsoft token refresh failed")
+        access_token = new_token
+        print("new")
+    else:
+        access_token = token.token
+    url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}?$select=conversationId"
+
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+    resp = requests.get(url, headers=headers)
+    resp.raise_for_status()
+    conversationId = resp.json().get("conversationId")
+    base_url = "https://graph.microsoft.com/v1.0/me/messages"
+    params = {
+        "$filter": f"conversationId eq '{conversationId}'",
+        "$orderby": "receivedDateTime"
+    }
+    resp1 = requests.get(base_url, headers=headers, params=params)
+    resp1.raise_for_status()
+    messages = resp1.json().get("value", [])
+    # get_url = f"https://graph.microsoft.com/v1.0/me/messages?$filter=conversationId eq '{conversationId}'&$orderby=receivedDateTime"
+    # resp1 = requests.get(get_url, headers=headers)
+    # resp1.raise_for_status()
+    return resp1.json()
+

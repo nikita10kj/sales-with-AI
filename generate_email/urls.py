@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (GenerateEmailView, SendEmailView, EmailListView,EmailMessageView,track_email_open,
-                    LeadListView, LeadEmailListView, export_target_audience_csv)
+                    LeadListView, LeadEmailListView, export_target_audience_csv, msgraph_webhook)
 
 urlpatterns = [
     path("generate_email/", GenerateEmailView.as_view(), name="generate_email"),
@@ -10,6 +10,6 @@ urlpatterns = [
     path('leads/', LeadListView.as_view(), name='view-leads'),
     path('leads_email/<int:pk>', LeadEmailListView.as_view(), name='view-leads-email'),
     path('export-leads/', export_target_audience_csv, name='export-leads'),
-
+    path('webhook/msgraph/', msgraph_webhook, name='msggraph_webhook'),
     path('emailmessage/<uuid:uid>/', EmailMessageView.as_view(), name='view-email-message'),
 ]
