@@ -322,15 +322,12 @@ def msgraph_webhook(request):
     # Step 1: Handle validation (GET or POST with validationToken)
     validation_token = request.GET.get("validationToken")
     if not validation_token and request.method == "POST":
-        print("Validation token received, responding instantly. Time taken:", time.time() - start_time)
 
         # In POST validation, token is sent in the query string too
         validation_token = request.GET.get("validationToken")
     if validation_token:
-        print("returning validation token", validation_token)
-        token = unquote(validation_token)
-        print("token", token)
-        return HttpResponse(token, content_type="text/plain", status=200)
+
+        return HttpResponse(validation_token, content_type="text/plain", status=200)
 
     # Step 2: Handle actual notifications
     if request.method == "POST":
@@ -374,7 +371,6 @@ def msgraph_webhook(request):
         # TODO: Check if message is a reply, update DB, etc.
         return HttpResponse(status=202)
 
-    print("Non-validation notification received. Time taken:", time.time() - start_time)
 
     return HttpResponse(status=405)
 
