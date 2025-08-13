@@ -462,8 +462,8 @@ def create_subscription(user):
 
     subscription_payload = {
         "changeType": "created",
-        # "notificationUrl": "https://sellsharp.co/generator/webhook/msgraph/",
-        "notificationUrl": "https://fairly-whole-hawk.ngrok-free.app/generator/webhook/msgraph/",
+        "notificationUrl": "https://sellsharp.co/generator/webhook/msgraph/",
+        # "notificationUrl": "https://fairly-whole-hawk.ngrok-free.app/generator/webhook/msgraph/",
         "resource": "/me/mailFolders('inbox')/messages",
         "expirationDateTime": expiration,
         "clientState": "superSecret123jms"
