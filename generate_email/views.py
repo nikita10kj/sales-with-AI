@@ -315,6 +315,8 @@ class EmailMessageView(DetailView):
 from saleswithai import settings
 import time
 from urllib.parse import quote, unquote
+from saleswithai.settings import validation_received
+from django.core.cache import cache
 @csrf_exempt
 def msgraph_webhook(request):
     start_time = time.time()
@@ -326,7 +328,8 @@ def msgraph_webhook(request):
         # In POST validation, token is sent in the query string too
         validation_token = request.GET.get("validationToken")
     if validation_token:
-
+        # validation_received = True
+        cache.set("msgraph_validated", True, timeout=120)  # expires in 60s
         return HttpResponse(validation_token, content_type="text/plain", status=200)
 
     # Step 2: Handle actual notifications

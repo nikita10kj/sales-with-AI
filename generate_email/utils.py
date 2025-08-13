@@ -445,7 +445,9 @@ def sendReminderEmail(reminder_email):
 import requests
 from datetime import datetime, timedelta
 import pytz
-
+from saleswithai.settings import validation_received
+import time
+from django.core.cache import cache
 def create_subscription(user):
     token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
 
@@ -468,6 +470,8 @@ def create_subscription(user):
         "expirationDateTime": expiration,
         "clientState": "superSecret123jms"
     }
+    # Clear previous flag
+    cache.delete("msgraph_validated")
 
     response = requests.post(
         "https://graph.microsoft.com/v1.0/subscriptions",
@@ -477,6 +481,15 @@ def create_subscription(user):
         },
         json=subscription_payload
     )
+    # Wait for webhook validation
+    for _ in range(10):  # wait up to 10 seconds
+        if cache.get("msgraph_validated"):
+            print("Webhook validation received")
+            break
+        print("Waiting for webhook validation...")
+        time.sleep(5)
+    else:
+        print("Validation never received in time")
 
     if response.status_code == 201:
         sub = response.json()
