@@ -314,6 +314,7 @@ class EmailMessageView(DetailView):
 
 from saleswithai import settings
 import time
+from urllib.parse import quote, unquote
 @csrf_exempt
 def msgraph_webhook(request):
     start_time = time.time()
@@ -326,8 +327,10 @@ def msgraph_webhook(request):
         # In POST validation, token is sent in the query string too
         validation_token = request.GET.get("validationToken")
     if validation_token:
-        print("returning validation token")
-        return HttpResponse(validation_token, content_type="text/plain", status=200)
+        print("returning validation token", validation_token)
+        token = unquote(validation_token)
+        print("token", token)
+        return HttpResponse(token, content_type="text/plain", status=200)
 
     # Step 2: Handle actual notifications
     if request.method == "POST":
@@ -376,7 +379,7 @@ def msgraph_webhook(request):
     return HttpResponse(status=405)
 
 import requests
-from urllib.parse import quote, unquote
+
 def get_message_details(user, msg_id):
 
     token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
