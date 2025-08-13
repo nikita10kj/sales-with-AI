@@ -313,12 +313,16 @@ class EmailMessageView(DetailView):
         return context
 
 from saleswithai import settings
-
+import time
 @csrf_exempt
 def msgraph_webhook(request):
+    start_time = time.time()
+    print("MS Graph request arrived at", timezone.now(), "method:", request.method)
     # Step 1: Handle validation (GET or POST with validationToken)
     validation_token = request.GET.get("validationToken")
     if not validation_token and request.method == "POST":
+        print("Validation token received, responding instantly. Time taken:", time.time() - start_time)
+
         # In POST validation, token is sent in the query string too
         validation_token = request.GET.get("validationToken")
     if validation_token:
@@ -364,8 +368,9 @@ def msgraph_webhook(request):
             return HttpResponse(status=400)
 
         # TODO: Check if message is a reply, update DB, etc.
-
         return HttpResponse(status=202)
+
+    print("Non-validation notification received. Time taken:", time.time() - start_time)
 
     return HttpResponse(status=405)
 
