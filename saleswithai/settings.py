@@ -232,13 +232,6 @@ ACCOUNT_ADAPTER = 'users.adapters.CustomSocialAccountAdapter'
 SOCIALACCOUNT_ADAPTER = 'users.adapters.MySocialAccountAdapter'
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
-validation_received = False
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'cache_table',
-    }
-}
 # Reminders
 # CELERY_BROKER_URL = 'rediss://:4JPY7Oj7e46UQ6OhMOUCX9zIREi8FdXaoAzCaFrSqdI%3D@salesredis.redis.cache.windows.net:6380/0'
 # CELERY_BROKER_USE_SSL = True
