@@ -142,7 +142,6 @@ class SendEmailView(LoginRequiredMixin, View):
             })
             index += 1
 
-        create_subscription(request)
         return JsonResponse({
             'success': True,
             'reminders': reminders,
@@ -192,7 +191,7 @@ class EmailListView(LoginRequiredMixin, ListView):
    
 
     def get_queryset(self):
-        create_subscription(self.request)
+
         next_reminder = ReminderEmail.objects.filter(
             sent_email=OuterRef('pk'),
             send_at__gte=now().date()
@@ -336,20 +335,27 @@ def msgraph_webhook(request):
                 # resource e.g. "users/{id}/messages/{msgId}"
 
                 try:
+
                     msg_id = change.get('resourceData', {}).get('id')
                     sub_id = change.get("subscriptionId")
                     sub = EmailSubscription.objects.get(subscription_id=sub_id)
                     user = sub.user
                     message_data = get_message_details(user, msg_id)
-                    print("mes", message_data)
 
-                    in_reply_to = message_data.get("id")
-                    print("in_r", in_reply_to)
-                    if in_reply_to and SentEmail.objects.filter(user=user, message_id=in_reply_to).exists():
-                        print("detected!")
-                        # sent_email = SentEmail.objects.get(user=user, message_id=in_reply_to)
-                        # sent_email.stop_reminder = True
-                        # sent_email.save()
+                    in_reply_to = message_data.get('value',[])[0]["conversationId"]
+
+                    for email in SentEmail.objects.filter(user=user):
+                        reminder_qs = email.reminder_email.all()
+                        if reminder_qs.exists():
+
+                            sent_msg_id = email.message_id
+                            if sent_msg_id.startswith("AA"):
+                                conversation_id = get_conversation_id(user, sent_msg_id)
+
+                                if conversation_id == in_reply_to:
+
+                                    email.stop_reminder = True
+                                    email.save()
                 except EmailSubscription.DoesNotExist:
                     continue  # unknown subscription
 
@@ -357,7 +363,6 @@ def msgraph_webhook(request):
         except json.JSONDecodeError:
             return HttpResponse(status=400)
 
-        print("Notification received:", data)
         # TODO: Check if message is a reply, update DB, etc.
 
         return HttpResponse(status=202)
@@ -367,6 +372,7 @@ def msgraph_webhook(request):
 import requests
 from urllib.parse import quote, unquote
 def get_message_details(user, msg_id):
+
     token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
 
     # Check if token is expired
@@ -378,23 +384,73 @@ def get_message_details(user, msg_id):
         print("new")
     else:
         access_token = token.token
-    url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}?$select=conversationId"
-
-
+    # msg_id = "AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0AMZFau0IUOUmcRpqAeOGh6wABWFX3OQAA"
+    url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}?$select=internetMessageHeaders"
+    # url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}"
+    # print("access", access_token)
     headers = {"Authorization": f"Bearer {access_token}"}
     resp = requests.get(url, headers=headers)
     resp.raise_for_status()
-    conversationId = resp.json().get("conversationId")
-    base_url = "https://graph.microsoft.com/v1.0/me/messages"
-    params = {
-        "$filter": f"conversationId eq '{conversationId}'",
-        "$orderby": "receivedDateTime"
-    }
-    resp1 = requests.get(base_url, headers=headers, params=params)
+    # conversationId = resp.json().get("conversationId")
+    # conversationId = quote(conversationId)
+    data = resp.json()
+    # print("data :", data)
+
+    # Extract headers
+    in_reply_to = ""
+    for header in data.get("internetMessageHeaders", []):
+        if header["name"].lower() in ["in-reply-to", "references"]:
+            in_reply_to = header['value']
+            # print(f"{header['name']}: {header['value']}")
+    # print("con", conversationId)
+    base_url = f"https://graph.microsoft.com/v1.0/me/messages?$filter=internetMessageId eq '{in_reply_to}'"
+    # # params = {
+    # #     "$filter": f"conversationId eq '{conversationId}'",
+    # #     "$orderby": "receivedDateTime"
+    # # }
+    resp1 = requests.get(base_url, headers=headers)
     resp1.raise_for_status()
-    messages = resp1.json().get("value", [])
+    # messages = resp1.json().get("value", [])
     # get_url = f"https://graph.microsoft.com/v1.0/me/messages?$filter=conversationId eq '{conversationId}'&$orderby=receivedDateTime"
     # resp1 = requests.get(get_url, headers=headers)
     # resp1.raise_for_status()
     return resp1.json()
 
+# AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0AMZFau0IUOUmcRpqAeOGh6wABWFX3OQAA
+
+# 'conversationId': 'AAQkAGRiNDg0OTg1LWIwZmUtNGIzMi1hOGM1LTk5MWE1ODU3ZjA0ZgAQALuRXNnrgZNNuXTkW2wsHEw='
+
+def get_conversation_id(user, msg_id):
+
+    token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
+
+    # Check if token is expired
+    if token.expires_at and token.expires_at <= timezone.now():
+        new_token = refresh_microsoft_token(user)
+        if not new_token:
+            raise MicrosoftEmailSendError("Microsoft token refresh failed")
+        access_token = new_token
+        print("new")
+    else:
+        access_token = token.token
+    # msg_id = "AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0AMZFau0IUOUmcRpqAeOGh6wABWFX3OQAA"
+    # url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}?$select=internetMessageHeaders"
+    url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}"
+    # print("access", access_token)
+    headers = {"Authorization": f"Bearer {access_token}"}
+    resp = requests.get(url, headers=headers)
+    if resp.status_code == 404:
+        # Message not found — skip / handle gracefully
+        print(f"Message {msg_id} not found, skipping.")
+        return None
+    resp.raise_for_status()
+    # conversationId = resp.json().get("conversationId")
+    # conversationId = quote(conversationId)
+    data = resp.json()
+    if "conversationId" in data:
+        return data["conversationId"]
+
+        # If response is paginated or wrapped in 'value'
+    if "value" in data and data["value"]:
+        return data["value"][0].get("conversationId")
+    return None

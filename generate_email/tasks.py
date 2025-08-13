@@ -3,11 +3,11 @@
 # from django.utils import timezone
 # from datetime import timedelta
 # from django.core.mail import send_mail
-from .models import ReminderEmail, SentEmail
+from .models import ReminderEmail, SentEmail, EmailSubscription
 from saleswithai.settings import EMAIL_HOST_USER
 # from django.db.models import Q
 # from django.urls import reverse
-from .utils import sendReminderEmail
+from .utils import sendReminderEmail, create_subscription
 # from django.conf import settings
 # from datetime import datetime, time
 # import numpy as np
@@ -42,7 +42,12 @@ def send_reminders():
     reminders = ReminderEmail.objects.filter(send_at=today, sent=False)
 
     for er in reminders:
+        if EmailSubscription.objects.filter(user=er.user).exists():
+            for sub in EmailSubscription.objects.filter(user=er.user):
+                if sub.expires_at <= timezone.now() + timedelta(days=1):
+                    create_subscription(er.user)
         if not er.sent and not er.sent_email.stop_reminder:
+
             send_reminder_email(er)
             time.sleep(90)
 

@@ -446,12 +446,12 @@ import requests
 from datetime import datetime, timedelta
 import pytz
 
-def create_subscription(request):
-    token = SocialToken.objects.get(account__user=request.user, account__provider='microsoft')
+def create_subscription(user):
+    token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
 
     # Check if token is expired
     if token.expires_at and token.expires_at <= timezone.now():
-        new_token = refresh_microsoft_token(request.user)
+        new_token = refresh_microsoft_token(user)
         if not new_token:
             raise MicrosoftEmailSendError("Microsoft token refresh failed")
         access_token = new_token
@@ -479,9 +479,15 @@ def create_subscription(request):
 
     if response.status_code == 201:
         sub = response.json()
-        EmailSubscription.objects.get_or_create( user=request.user, defaults={
-                                                    "subscription_id": sub["id"]
-                                                })
+        # Delete old subscription for the user (if exists)
+        EmailSubscription.objects.filter(user=user).delete()
+
+        # Create a new subscription
+        EmailSubscription.objects.create(
+            user=user,
+            subscription_id=sub["id"],
+            expires_at=sub["expirationDateTime"]  # save expiry
+        )
         # Store subscription ID and expiration in DB so you can renew it later
         print("Subscription created:", sub["id"])
     else:
