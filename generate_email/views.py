@@ -326,6 +326,7 @@ def msgraph_webhook(request):
         # In POST validation, token is sent in the query string too
         validation_token = request.GET.get("validationToken")
     if validation_token:
+        print("returning validation token")
         return HttpResponse(validation_token, content_type="text/plain", status=200)
 
     # Step 2: Handle actual notifications
