@@ -394,32 +394,37 @@ def get_message_details(user, msg_id):
     # url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}"
     # print("access", access_token)
     headers = {"Authorization": f"Bearer {access_token}"}
-    resp = requests.get(url, headers=headers)
-    resp.raise_for_status()
-    # conversationId = resp.json().get("conversationId")
-    # conversationId = quote(conversationId)
-    data = resp.json()
-    # print("data :", data)
+    try:
+        resp = requests.get(url, headers=headers)
+        resp.raise_for_status()
+        # conversationId = resp.json().get("conversationId")
+        # conversationId = quote(conversationId)
+        data = resp.json()
+        # print("data :", data)
 
-    # Extract headers
-    in_reply_to = ""
-    for header in data.get("internetMessageHeaders", []):
-        if header["name"].lower() in ["in-reply-to", "references"]:
-            in_reply_to = header['value']
-            # print(f"{header['name']}: {header['value']}")
-    # print("con", conversationId)
-    base_url = f"https://graph.microsoft.com/v1.0/me/messages?$filter=internetMessageId eq '{in_reply_to}'"
-    # # params = {
-    # #     "$filter": f"conversationId eq '{conversationId}'",
-    # #     "$orderby": "receivedDateTime"
-    # # }
-    resp1 = requests.get(base_url, headers=headers)
-    resp1.raise_for_status()
+        # Extract headers
+        in_reply_to = ""
+        for header in data.get("internetMessageHeaders", []):
+            if header["name"].lower() in ["in-reply-to", "references"]:
+                in_reply_to = header['value']
+                # print(f"{header['name']}: {header['value']}")
+        # print("con", conversationId)
+        base_url = f"https://graph.microsoft.com/v1.0/me/messages?$filter=internetMessageId eq '{in_reply_to}'"
+        # # params = {
+        # #     "$filter": f"conversationId eq '{conversationId}'",
+        # #     "$orderby": "receivedDateTime"
+        # # }
+        resp1 = requests.get(base_url, headers=headers)
+        resp1.raise_for_status()
+        return resp1.json()
+    except requests.HTTPError as e:
+        if e.response.status_code == 404:
+            return None
     # messages = resp1.json().get("value", [])
     # get_url = f"https://graph.microsoft.com/v1.0/me/messages?$filter=conversationId eq '{conversationId}'&$orderby=receivedDateTime"
     # resp1 = requests.get(get_url, headers=headers)
     # resp1.raise_for_status()
-    return resp1.json()
+
 
 # AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0AMZFau0IUOUmcRpqAeOGh6wABWFX3OQAA
 
@@ -452,6 +457,7 @@ def get_conversation_id(user, msg_id):
     # conversationId = resp.json().get("conversationId")
     # conversationId = quote(conversationId)
     data = resp.json()
+    # print("conversation ", data)
     if "conversationId" in data:
         return data["conversationId"]
 
@@ -459,3 +465,39 @@ def get_conversation_id(user, msg_id):
     if "value" in data and data["value"]:
         return data["value"][0].get("conversationId")
     return None
+
+def get_message_data(user, conversationId):
+
+    token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
+
+    # Check if token is expired
+    if token.expires_at and token.expires_at <= timezone.now():
+        new_token = refresh_microsoft_token(user)
+        if not new_token:
+            raise MicrosoftEmailSendError("Microsoft token refresh failed")
+        access_token = new_token
+        print("new")
+    else:
+        access_token = token.token
+    # msg_id = "AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0AMZFau0IUOUmcRpqAeOGh6wABWFX3OQAA"
+    # url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}?$select=internetMessageHeaders"
+    url = f"https://graph.microsoft.com/v1.0/me/messages?$filter=conversationId eq '{conversationId}'"
+    # print("access", access_token)
+    headers = {"Authorization": f"Bearer {access_token}"}
+    resp = requests.get(url, headers=headers)
+    if resp.status_code == 404:
+        # Message not found — skip / handle gracefully
+        print(f"Message {conversationId} not found, skipping.")
+        return None
+    resp.raise_for_status()
+    # conversationId = resp.json().get("conversationId")
+    # conversationId = quote(conversationId)
+    data = resp.json()
+    # print("conversation messages ", data)
+    # if "conversationId" in data:
+    #     return data["conversationId"]
+    #
+    #     # If response is paginated or wrapped in 'value'
+    # if "value" in data and data["value"]:
+    #     return data["value"][0].get("conversationId")
+    return data
