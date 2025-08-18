@@ -37,10 +37,6 @@ from .forms import SupportForm
 from generate_email.models import EmailSubscription
 from generate_email.utils import create_subscription
 
-from generate_email.views import get_conversation_id, get_message_details, get_message_data
-
-
-
 @requires_csrf_token
 def csrf_failure(request, reason=""):
     # Redirect to login page with error message
@@ -85,26 +81,6 @@ class HomeView(LoginRequiredMixin, TemplateView):
                 total_sent=Count('sent_email'),
                 opened_count=Count('sent_email', filter=Q(sent_email__opened=True))
             )
-
-            # set stop reminders
-            for email in sent_emails:
-
-                reminder_qs = email.reminder_email.all()
-                if reminder_qs.exists():
-                    if not email.stop_reminder:
-
-                        sent_msg_id = email.message_id
-                        if sent_msg_id.startswith("AA"):
-                            conversation_id = get_conversation_id(email.user, sent_msg_id)
-                            if conversation_id:
-                                message_data = get_message_data(email.user, conversation_id)
-                                for msg in message_data.get("value", []):
-                                    sender = msg.get("from", {}).get("emailAddress", {}).get("address", "").lower()
-
-                                    if sender and sender == email.email.lower():
-                                        email.stop_reminder = True
-                                        email.save()
-
 
         else:
             sent_emails = SentEmail.objects.filter(user=user)
