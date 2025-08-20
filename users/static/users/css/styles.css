@@ -140,18 +140,21 @@ body {
 .card-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  border-radius: 15px 15px 0 0 !important;
+  border-radius: 5px 5px 0 0 !important;
   padding: 1.5rem;
-  border: none;
+
 }
 
 .card-header h4 {
-  margin: 0;
+  margin: 10px 0;
+  color: white;
   font-weight: 600;
 }
 
 .card-body {
   padding: 2rem;
+  border: 1px solid #764ba2 ;
+border-top: none;
 }
 
 /* Form Styles */
@@ -253,7 +256,7 @@ body {
   padding: 0.75rem;
   border-radius: 8px;
   margin-bottom: 1rem;
-  border-left: 4px solid var(--primary-color);
+  border: 2px solid var(--primary-color);
 }
 
 .email-content {
@@ -447,3 +450,239 @@ body {
   font-style: italic;
   color: #666;
 }
+
+.metric-card-custom {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  background: #fff;
+  padding: 1.2rem 1.4rem;
+}
+
+.metric-card-custom:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(102, 126, 234, 0.25);
+  background-color: #f0f4ff;
+}
+
+.metric-icon {
+  width: 55px;
+  height: 55px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+/* Gradients */
+.bg-gradient-emails {
+  background: linear-gradient(135deg, #00b894, #55efc4);
+}
+
+.bg-gradient-opens {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+/* Typography */
+.metric-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.metric-label {
+  font-size: 0.95rem;
+  color: #6c757d;
+}
+
+/* Center Icon Styling */
+.center-icon-box {
+  font-size: 2.5rem;
+  color: #000000;
+  background: rgb(216, 216, 216);
+  padding: 0.8rem 1rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.analytics-light-section {
+  color: #1e1e1e;
+  border-radius: 1.5rem;
+}
+
+.section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.section-subtitle {
+  font-size: 1.125rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #444;
+}
+
+.section-text {
+  font-size: 1rem;
+  color: #555;
+}
+
+.bg-icon-gradient {
+  background: rgb(216, 216, 216);
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.video-frame-light {
+  border-radius: 1rem;
+  overflow: hidden;
+
+  background: #f7f7f7;
+}
+
+
+/* chart Section */
+
+.chart-card-custom {
+  background: #ffffff;
+  border: 1px solid rgba(102, 126, 234, 0.5);
+  transition: 0.3s ease all;
+}
+
+/* .chart-card-custom:hover {
+  box-shadow: 0 12px 30px rgba(102, 126, 234, 0.25);
+  transform: translateY(-4px);
+} */
+
+.text-theme {
+  color: #667eea;
+}
+
+.chart-controls .btn {
+  border-radius: 20px;
+  padding: 0.3rem 0.9rem;
+  font-size: 0.85rem;
+  transition: 0.3s ease;
+}
+
+.chart-controls .btn.active,
+.chart-controls .btn:hover {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* Chart Legend */
+/* Card base */
+.glass-card {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(102, 126, 234, 0.4);
+  backdrop-filter: blur(14px);
+  transition: 0.3s ease;
+  
+ 
+}
+
+.glass-card:hover {
+  transform: translateY(-7px);
+
+}
+
+.section-heading {
+
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* Icon Circle */
+.icon-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+/* Color Gradients */
+.bg-gradient-success {
+  background: linear-gradient(135deg, #00b894, #55efc4);
+}
+
+.bg-gradient-info {
+  background: linear-gradient(135deg, #0984e3, #74b9ff);
+}
+
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.bg-gradient-muted {
+  background: linear-gradient(135deg, #95a5a6, #bdc3c7);
+}
+
+/* Rank Badge */
+.rank-badge {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Typography */
+.activity-entry p,
+.performer-entry h6 {
+  margin-bottom: 0.3rem;
+}
+
+.activity-entry small,
+.performer-entry span.badge {
+  font-size: 0.85rem;
+}
+
+
+  /* Make chart cards consistent */
+  .chart-card-custom {
+    background: #fff;
+    border: 1px solid #e9ecef;
+  }
+
+  /* Cohesive filter group look */
+  .chart-controls-group .btn,
+  .chart-controls-group .form-select {
+    border-radius: 0;
+  }
+  .chart-controls-group .form-select {
+    min-width: 140px;
+  }
+  .chart-controls-group .btn:first-of-type,
+  .chart-controls-group .form-select:first-of-type {
+    border-top-left-radius: 0.25rem;
+    border-bottom-left-radius: 0.25rem;
+  }
+  .chart-controls-group .btn:last-of-type {
+    border-top-right-radius: 0.25rem;
+    border-bottom-right-radius: 0.25rem;
+  }
+
+  /* Active button highlight */
+  .chart-controls-group .btn.active {
+    background-color: #0d6efd;
+    color: #fff;
+    border-color: #0d6efd;
+  }

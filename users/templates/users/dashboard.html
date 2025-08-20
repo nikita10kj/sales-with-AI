@@ -1,5 +1,6 @@
 {% extends 'users/base.html' %}
 {% block content %}
+{% load static %}
 <style>
     .chart-card {
       height: 400px;
@@ -49,8 +50,8 @@
 <!-- Section Header -->
 {% if user.is_superuser %}
 <div class="container my-5">
-  <div class="card shadow-sm border-0 rounded-4">
-    <div class="card-header bg-primary text-white rounded-top-4">
+  <div class="card  border-0 rounded-4">
+    <div class="card-header  text-white py-4 rounded-top-4">
       <h5 class="mb-0 fw-bold">User Email Summary</h5>
     </div>
     <div class="table-responsive">
@@ -81,52 +82,78 @@
 
 
 
+<!-- performance analytics -->
+<section class="container my-5">
+  <div class="row align-items-center p-4 p-md-5  analytics-light-section">
 
-<div class="text-center mb-2 p-2 rounded-4 ">
-  <h2 class="mb-3 fw-bold" style="font-size: 2.5rem; color: #2c3e50;">
-    <i class="fas fa-tachometer-alt me-2" style="color: #6f42c1;"></i>Performance Analytics
-  </h2>
-  <p class="text-muted" style="font-size: 1rem;">Visualize key insights from your latest email campaigns</p>
-</div>
-
-<!-- Key Metrics Cards -->
-<div class="row g-4 mb-2">
-  <!-- Emails Sent Card -->
-  <div class="col-md-6">
-    <div class="d-flex align-items-center p-4 rounded-4 shadow" 
-         style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 10px 30px rgba(16, 172, 132, 0.15); transition: transform 0.4s ease;" 
-         onmouseover="this.style.transform='scale(1.03)'" 
-         onmouseout="this.style.transform='scale(1)'">
-      <div class="d-flex align-items-center justify-content-center me-4" 
-           style="width: 80px; height: 80px; border-radius: 20px; background: linear-gradient(145deg, #00b894, #55efc4); box-shadow: 0 6px 15px rgba(0, 184, 148, 0.4);">
-        <i class="fas fa-paper-plane text-white" style="font-size: 2rem;"></i>
+    <!-- Left: Text + Icon -->
+    <div class="col-md-6 text-section mb-4 mb-md-0">
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <i class="ri-dashboard-3-fill display-5 text-black bg-icon-gradient"></i>
+        <h2 class="section-title mb-0">Performance Analytics</h2>
       </div>
-      <div>
-        <h3 id="totalSent" class="mb-1 fw-bold" style="font-size: 2.5rem; color: #2c3e50;">{{ total_sent }}</h3>
-        <p class="text-muted mb-2" style="font-size: 0.95rem;">Emails Sent</p>
-        
+      <p class="section-subtitle">Visualize key insights from your latest email campaigns to measure engagement, track conversions, and optimize future results.</p>
+      <p class="section-text">Understand open rates, click-through trends, and user behavior—all in one dashboard.</p>
+    </div>
+
+    <!-- Right: Video -->
+    <div class="col-md-6">
+      <div class="video-frame-light">
+        <video
+          src="{% static 'users/img/205691-927672681_small.mp4' %}"
+          autoplay
+          muted
+          loop
+          playsinline
+          class="w-100 h-auto"
+        ></video>
       </div>
     </div>
-  </div>
 
-  <!-- Open Rate Card -->
-  <div class="col-md-6">
-    <div class="d-flex align-items-center p-4 rounded-4 shadow" 
-         style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 10px 30px rgba(41, 128, 185, 0.15); transition: transform 0.4s ease;" 
-         onmouseover="this.style.transform='scale(1.03)'" 
-         onmouseout="this.style.transform='scale(1)'">
-      <div class="d-flex align-items-center justify-content-center me-4" 
-           style="width: 80px; height: 80px; border-radius: 20px; background: linear-gradient(145deg, #0984e3, #74b9ff); box-shadow: 0 6px 15px rgba(9, 132, 227, 0.4);">
-        <i class="fas fa-envelope-open text-white" style="font-size: 2rem;"></i>
-      </div>
-      <div>
-        <h3 id="openRate" class="mb-1 fw-bold" style="font-size: 2.5rem; color: #2c3e50;">{{ open_rate }}%</h3>
-        <p class="text-muted mb-2" style="font-size: 0.95rem;">Open Rate</p>
-        
+  </div>
+</section>
+
+
+
+<!-- Key Metrics Section -->
+<section class="container my-5">
+  <div class="row g-4 align-items-center justify-content-sm-evenly">
+
+    <!-- Emails Sent -->
+    <div class="col-12 col-sm-6 col-lg-4">
+      <div class="metric-card-custom p-3 d-flex align-items-center gap-3 shadow-sm rounded-4 emails-card">
+        <div class="metric-icon bg-gradient-emails">
+          <i class="ri-send-plane-fill"></i>
+        </div>
+        <div>
+          <h4 class="metric-value mb-1" id="totalSent">{{ total_sent }}</h4>
+          <p class="metric-label mb-0">Emails Sent</p>
+        </div>
       </div>
     </div>
+
+    <!-- Center Icon -->
+    <div class="col-auto d-none d-lg-block">
+      <div class="center-icon-box">
+        <i class="ri-arrow-left-right-line"></i>
+      </div>
+    </div>
+
+    <!-- Open Rate -->
+    <div class="col-12 col-sm-6 col-lg-4">
+      <div class="metric-card-custom p-3 d-flex align-items-center gap-3 shadow-sm rounded-4 openrate-card">
+        <div class="metric-icon bg-gradient-opens">
+          <i class="ri-mail-open-line"></i>
+        </div>
+        <div>
+          <h4 class="metric-value mb-1" id="openRate">{{ open_rate }}%</h4>
+          <p class="metric-label mb-0">Open Rate</p>
+        </div>
+      </div>
+    </div>
+
   </div>
-</div>
+</section>
 
 
 
@@ -160,113 +187,119 @@
                         </div> -->
                     </div>
 
-                    <!-- Charts Row -->
-                    <div class="row mb-4">
-                        <div class="col-md-8">
-                            <div class="chart-card">
-                                <div class="chart-header">
-                                    <h5><i class="fas fa-chart-line me-2"></i>Email Performance Trends</h5>
-                                    <div class="chart-controls mt-3">
-                                        <button class="btn btn-sm btn-outline-secondary active" data-metric="all">All</button>
-                                        <button class="btn btn-sm btn-outline-secondary" data-metric="sent">Sent</button>
-                                        <button class="btn btn-sm btn-outline-secondary" data-metric="opened">Opened</button>
-                                    </div>
-                                </div>
-                                <canvas id="performanceChart" height="300"></canvas>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="chart-card">
-                                <div class="chart-header">
-                                    <h5><i class="fas fa-chart-pie me-2"></i>Framework Types</h5>
-                                </div>
-                                <canvas id="campaignTypesChart" height="300"></canvas>
-                            </div>
-                        </div>
-                    </div>
+<!-- Charts Row -->
+<section class="container my-5">
+  <div class="row g-4">
 
-                    <!-- Recent Activity -->
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="activity-card">
-                                <div class="card-header">
-                                    <h5><i class="fas fa-clock me-2"></i>Recent Activity</h5>
-                                </div>
-                                <div class="activity-list">
-                                    {% for activity in recent_activities %}
-                                        <div class="activity-item">
-                                            {% if activity.action == 'EMAIL_SENT' %}
-                                                <div class="activity-icon bg-success">
-                                                    <i class="fas fa-paper-plane"></i>
-                                                </div>
-                                                <div class="activity-content">
-                                                    <p><strong>{{ activity.description|default:"Email sent" }}</strong></p>
-                                                    <small class="text-muted">{{ activity.timestamp|timesince }} ago</small>
-                                                </div>
-                                            {% elif activity.action == 'EMAIL_OPENED' %}
-                                                <div class="activity-icon bg-info">
-                                                    <i class="fas fa-envelope-open"></i>
-                                                </div>
-                                                <div class="activity-content">
-                                                    <p><strong>{{ activity.description|default:"Email opened" }}</strong></p>
-                                                    <small class="text-muted">{{ activity.timestamp|timesince }} ago</small>
-                                                </div>
-                                            {% elif activity.action == 'PROFILE_UPDATED' %}
-                                                <div class="activity-icon bg-primary">
-                                                    <i class="fas fa-user-edit"></i>
-                                                </div>
-                                                <div class="activity-content">
-                                                    <p><strong>{{ activity.description|default:"Profile updated" }}</strong></p>
-                                                    <small class="text-muted">{{ activity.timestamp|timesince }} ago</small>
-                                                </div>
-                                            {% else %}
-                                                <div class="activity-icon bg-secondary">
-                                                    <i class="fas fa-bell"></i>
-                                                </div>
-                                                <div class="activity-content">
-                                                    <p><strong>{{ activity.action }}</strong></p>
-                                                    <p>{{ activity.description|default:"" }}</p>
-                                                    <small class="text-muted">{{ activity.timestamp|timesince }} ago</small>
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                    {% empty %}
-                                        <div class="activity-item">
-                                            <div class="activity-content">
-                                                <p>No recent activities found</p>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="top-performers-card">
-                                <div class="card-header">
-                                    <h5><i class="fas fa-trophy me-2"></i>Top Performing Frameworks</h5>
-                                </div>
-                                <div class="performers-list">
-                                    {% for campaign in top_campaigns %}
-                                    <div class="performer-item">
-                                        <div class="performer-rank">{{ campaign.rank }}</div>
-                                        <div class="performer-content">
-                                            <h6>{{ campaign.framework }} - {{ campaign.service }}</h6>
-                                            <div class="performer-stats">
-                                                <span class="stat">Open: {{ campaign.open_rate }}%</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% empty %}
-                                    <div class="performer-item">
-                                        <div class="performer-content">
-                                            <h6>No campaign data available</h6>
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    <!-- Email Performance Chart -->
+    <div class="col-md-8">
+      <div class="chart-card-custom shadow-sm rounded-4 p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+          <h5 class="fw-semibold text-theme m-0">
+            <i class="ri-line-chart-line me-2"></i> Email Performance Trends
+          </h5>
+
+          <!-- Unified Filter Controls -->
+          <div class="input-group input-group-sm chart-controls-group w-auto">
+            <!-- Date Range Dropdown -->
+            <select class="form-select" aria-label="Date Range">
+              <option value="all" selected>All Time</option>
+              <option value="7">Last 7 Days</option>
+              <option value="15">Last 15 Days</option>
+              <option value="30">Last 1 Month</option>
+              <option value="180">Last 6 Months</option>
+            </select>
+
+            <!-- Metric Buttons -->
+            <button class="btn btn-outline-primary active" data-metric="all">All</button>
+            <button class="btn btn-outline-primary" data-metric="sent">Sent</button>
+            <button class="btn btn-outline-primary" data-metric="opened">Opened</button>
+          </div>
+        </div>
+
+        <canvas id="performanceChart" height="300"></canvas>
+      </div>
+    </div>
+
+    <!-- Framework Types Pie Chart -->
+    <div class="col-md-4">
+      <div class="chart-card-custom shadow-sm rounded-4 p-4">
+        <h5 class="fw-semibold text-theme mb-3">
+          <i class="ri-pie-chart-2-fill me-2"></i> Framework Types
+        </h5>
+        <canvas id="campaignTypesChart" height="300"></canvas>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Recent Activity and Top Campaigns -->
+<section class="container my-5">
+  <div class="row g-4">
+
+    <!-- Recent Activity -->
+    <div class="col-lg-6">
+      <div class="glass-card h-100 p-4 rounded-4">
+        <h5 class="section-heading mb-4">
+          <i class="ri-history-line me-2"></i>Recent Activity
+        </h5>
+        <div class="activity-list">
+          {% for activity in recent_activities %}
+            <div class="d-flex gap-3 align-items-start mb-4 activity-entry">
+              <div class="icon-circle {% if activity.action == 'EMAIL_SENT' %}bg-gradient-success
+                {% elif activity.action == 'EMAIL_OPENED' %}bg-gradient-info
+                {% elif activity.action == 'PROFILE_UPDATED' %}bg-gradient-primary
+                {% else %}bg-gradient-muted{% endif %}">
+                {% if activity.action == 'EMAIL_SENT' %}
+                  <i class="ri-send-plane-fill"></i>
+                {% elif activity.action == 'EMAIL_OPENED' %}
+                  <i class="ri-mail-open-fill"></i>
+                {% elif activity.action == 'PROFILE_UPDATED' %}
+                  <i class="ri-user-settings-fill"></i>
+                {% else %}
+                  <i class="ri-notification-3-line"></i>
+                {% endif %}
+              </div>
+              <div class="flex-grow-1">
+                <p class="fw-medium mb-1 text-dark">
+                  {{ activity.description|default:activity.action }}
+                </p>
+                <small class="text-muted">{{ activity.timestamp|timesince }} ago</small>
+              </div>
+            </div>
+          {% empty %}
+            <p class="text-muted">No recent activities available.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Performing Frameworks -->
+    <div class="col-lg-6">
+      <div class="glass-card h-100 p-4 rounded-4">
+        <h5 class="section-heading mb-4">
+          <i class="ri-trophy-fill me-2"></i>Top Performing Frameworks
+        </h5>
+        <div class="performers-list">
+          {% for campaign in top_campaigns %}
+            <div class="d-flex align-items-start gap-3 mb-4 performer-entry">
+              <span class="rank-badge">{{ campaign.rank }}</span>
+              <div class="flex-grow-1">
+                <h6 class="mb-1 fw-semibold">{{ campaign.framework }} - {{ campaign.service }}</h6>
+                <span class="badge bg-light text-dark fw-medium">Open Rate: {{ campaign.open_rate }}%</span>
+              </div>
+            </div>
+          {% empty %}
+            <p class="text-muted">No campaign data available.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
                 </div>
 
                 <!-- Campaigns Section -->
