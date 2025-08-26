@@ -2,7 +2,7 @@ from saleswithai.settings import EMAIL_HOST_USER
 import random
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
-from .models import SentEmail
+from .models import SentEmail, EmailSubscription
 from email.utils import make_msgid
 from django.urls import reverse
 import os
@@ -20,6 +20,7 @@ import base64
 from email.mime.text import MIMEText
 from email.utils import formataddr
 from django.utils import timezone
+from django.http import HttpResponse
 
 class MicrosoftEmailSendError(Exception):
     pass
@@ -440,3 +441,63 @@ def sendReminderEmail(reminder_email):
     #     print(f"Email sent! Status Code: {response.status_code}")
     # except Exception as e:
     #     print(f"Error sending email: {e}")
+
+import requests
+from datetime import datetime, timedelta
+import pytz
+
+import time
+
+def create_subscription(user):
+    provider = get_user_provider(user)
+
+    if provider == 'microsoft':
+        token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
+
+        # Check if token is expired
+        if token.expires_at and token.expires_at <= timezone.now():
+            new_token = refresh_microsoft_token(user)
+            if not new_token:
+                raise MicrosoftEmailSendError("Microsoft token refresh failed")
+            access_token = new_token
+            print("new")
+        else:
+            access_token = token.token
+        expiration = (datetime.utcnow() + timedelta(minutes=4230)).replace(tzinfo=pytz.UTC).isoformat()
+
+        subscription_payload = {
+            "changeType": "created",
+            "notificationUrl": "https://sellsharp.co/generator/webhook/msgraph/",
+            # "notificationUrl": "https://fairly-whole-hawk.ngrok-free.app/generator/webhook/msgraph/",
+            "resource": "/me/mailFolders('inbox')/messages",
+            "expirationDateTime": expiration,
+            "clientState": "superSecret123jms"
+        }
+
+
+        response = requests.post(
+            "https://graph.microsoft.com/v1.0/subscriptions",
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json"
+            },
+            json=subscription_payload
+        )
+
+        if response.status_code == 201:
+            sub = response.json()
+            # Delete old subscription for the user (if exists)
+            EmailSubscription.objects.filter(user=user).delete()
+
+            # Create a new subscription
+            EmailSubscription.objects.create(
+                user=user,
+                subscription_id=sub["id"],
+                expires_at=sub["expirationDateTime"]  # save expiry
+            )
+            # Store subscription ID and expiration in DB so you can renew it later
+            print("Subscription created:", sub["id"])
+        else:
+            print("Error creating subscription:", response.text)
+
+        return HttpResponse("Subscription Created")

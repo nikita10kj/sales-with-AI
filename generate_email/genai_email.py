@@ -57,7 +57,9 @@ def get_response(user, target, selected_service):
                              f"persistent industry challenges of the target company and how our solution will make them ahead of competition"
                             f"Do not include Signature in any email"
                              f"Include target company name in subject instead of 'your'"
+                             f"keep the email short, professional and impactful"
                              f"Include name {target.receiver_first_name} {target.receiver_last_name} in greeting"
+                             f"generate emails which has high response rate"
                             f"Return the body in clean HTML. Do not include plain text formatting or line breaks like \\n"
                 }
                 ],

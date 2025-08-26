@@ -34,6 +34,8 @@ from django.db.models import Count, Q, F, FloatField, ExpressionWrapper
 from django.db.models.functions import Cast
 from django.core.mail import EmailMessage
 from .forms import SupportForm
+from generate_email.models import EmailSubscription
+from generate_email.utils import create_subscription
 
 @requires_csrf_token
 def csrf_failure(request, reason=""):
@@ -49,7 +51,7 @@ class LandingPageView(TemplateView):
         context = super().get_context_data(**kwargs)
         context["title"] = self.title
         return context
-       
+
 
 class HomeView(LoginRequiredMixin, TemplateView):
     template_name = 'users/dashboard.html'
@@ -60,6 +62,12 @@ class HomeView(LoginRequiredMixin, TemplateView):
         context["title"] = self.title
         user = self.request.user
         all_users = None
+        if EmailSubscription.objects.filter(user=user).exists():
+            for sub in EmailSubscription.objects.filter(user=user):
+                if sub.expires_at and sub.expires_at <= timezone.now():
+                    create_subscription(user)
+        else:
+            create_subscription(user)
 
         # Total sent emails
         if user.is_superuser:
@@ -73,7 +81,6 @@ class HomeView(LoginRequiredMixin, TemplateView):
                 total_sent=Count('sent_email'),
                 opened_count=Count('sent_email', filter=Q(sent_email__opened=True))
             )
-
 
         else:
             sent_emails = SentEmail.objects.filter(user=user)

@@ -1,14 +1,16 @@
+from allauth.socialaccount.models import SocialToken
 from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin,UserPassesTestMixin
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import FormView, View,TemplateView,ListView,DetailView
 from django.http import JsonResponse
 from .genai_email import get_response
-from .models import TargetAudience, SentEmail, ReminderEmail
+from .models import TargetAudience, SentEmail, ReminderEmail, EmailSubscription
 from users.models import ProductService, ActivityLog
 import json
 from django.http import HttpResponse
 
-from .utils import sendGeneratedEmail
+from .utils import sendGeneratedEmail, create_subscription, refresh_microsoft_token, MicrosoftEmailSendError
 from django.shortcuts import get_object_or_404
 from email.utils import make_msgid
 from datetime import timedelta, date
@@ -139,7 +141,7 @@ class SendEmailView(LoginRequiredMixin, View):
                 'days_after': day
             })
             index += 1
-            
+
         return JsonResponse({
             'success': True,
             'reminders': reminders,
@@ -189,6 +191,7 @@ class EmailListView(LoginRequiredMixin, ListView):
    
 
     def get_queryset(self):
+
         next_reminder = ReminderEmail.objects.filter(
             sent_email=OuterRef('pk'),
             send_at__gte=now().date()
@@ -308,3 +311,158 @@ class EmailMessageView(DetailView):
             sent=True
         ).order_by('send_at')
         return context
+
+from saleswithai import settings
+import time
+from urllib.parse import quote, unquote
+
+@csrf_exempt
+def msgraph_webhook(request):
+    start_time = time.time()
+    print("MS Graph request arrived at", timezone.now(), "method:", request.method)
+    # Step 1: Handle validation (GET or POST with validationToken)
+    validation_token = request.GET.get("validationToken")
+    if not validation_token and request.method == "POST":
+
+        # In POST validation, token is sent in the query string too
+        validation_token = request.GET.get("validationToken")
+    if validation_token:
+        return HttpResponse(validation_token, content_type="text/plain", status=200)
+
+    # Step 2: Handle actual notifications
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body.decode('utf-8') or '{}')
+            for change in data.get('value', []):
+                # validate clientState matches
+                if change.get('clientState') != settings.MS_GRAPH_CLIENT_STATE:
+                    continue
+                # resource e.g. "users/{id}/messages/{msgId}"
+
+                try:
+
+                    msg_id = change.get('resourceData', {}).get('id')
+                    sub_id = change.get("subscriptionId")
+                    sub = EmailSubscription.objects.get(subscription_id=sub_id)
+                    user = sub.user
+                    message_data = get_message_details(user, msg_id)
+
+                    in_reply_to = message_data.get('value',[])[0]["conversationId"]
+
+                    for email in SentEmail.objects.filter(user=user):
+                        reminder_qs = email.reminder_email.all()
+                        if reminder_qs.exists():
+
+                            sent_msg_id = email.message_id
+                            if sent_msg_id.startswith("AA"):
+                                conversation_id = get_conversation_id(user, sent_msg_id)
+
+                                if conversation_id == in_reply_to:
+
+                                    email.stop_reminder = True
+                                    email.save()
+                except EmailSubscription.DoesNotExist:
+                    continue  # unknown subscription
+
+
+        except json.JSONDecodeError:
+            return HttpResponse(status=400)
+
+        # TODO: Check if message is a reply, update DB, etc.
+        return HttpResponse(status=202)
+
+
+    return HttpResponse(status=405)
+
+import requests
+
+def get_message_details(user, msg_id):
+
+    token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
+
+    # Check if token is expired
+    if token.expires_at and token.expires_at <= timezone.now():
+        new_token = refresh_microsoft_token(user)
+        if not new_token:
+            raise MicrosoftEmailSendError("Microsoft token refresh failed")
+        access_token = new_token
+        print("new")
+    else:
+        access_token = token.token
+    # msg_id = "AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0AMZFau0IUOUmcRpqAeOGh6wABWFX3OQAA"
+    url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}?$select=internetMessageHeaders"
+    # url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}"
+    # print("access", access_token)
+    headers = {"Authorization": f"Bearer {access_token}"}
+    try:
+        resp = requests.get(url, headers=headers)
+        resp.raise_for_status()
+        # conversationId = resp.json().get("conversationId")
+        # conversationId = quote(conversationId)
+        data = resp.json()
+        # print("data :", data)
+
+        # Extract headers
+        in_reply_to = ""
+        for header in data.get("internetMessageHeaders", []):
+            if header["name"].lower() in ["in-reply-to", "references"]:
+                in_reply_to = header['value']
+                # print(f"{header['name']}: {header['value']}")
+        # print("con", conversationId)
+        base_url = f"https://graph.microsoft.com/v1.0/me/messages?$filter=internetMessageId eq '{in_reply_to}'"
+        # # params = {
+        # #     "$filter": f"conversationId eq '{conversationId}'",
+        # #     "$orderby": "receivedDateTime"
+        # # }
+        resp1 = requests.get(base_url, headers=headers)
+        resp1.raise_for_status()
+        return resp1.json()
+    except requests.HTTPError as e:
+        if e.response.status_code == 404:
+            return None
+    # messages = resp1.json().get("value", [])
+    # get_url = f"https://graph.microsoft.com/v1.0/me/messages?$filter=conversationId eq '{conversationId}'&$orderby=receivedDateTime"
+    # resp1 = requests.get(get_url, headers=headers)
+    # resp1.raise_for_status()
+
+
+# AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0AMZFau0IUOUmcRpqAeOGh6wABWFX3OQAA
+
+# 'conversationId': 'AAQkAGRiNDg0OTg1LWIwZmUtNGIzMi1hOGM1LTk5MWE1ODU3ZjA0ZgAQALuRXNnrgZNNuXTkW2wsHEw='
+
+def get_conversation_id(user, msg_id):
+
+    token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
+
+    # Check if token is expired
+    if token.expires_at and token.expires_at <= timezone.now():
+        new_token = refresh_microsoft_token(user)
+        if not new_token:
+            raise MicrosoftEmailSendError("Microsoft token refresh failed")
+        access_token = new_token
+        print("new")
+    else:
+        access_token = token.token
+    # msg_id = "AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0AMZFau0IUOUmcRpqAeOGh6wABWFX3OQAA"
+    # url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}?$select=internetMessageHeaders"
+    url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}"
+    # print("access", access_token)
+    headers = {"Authorization": f"Bearer {access_token}"}
+    resp = requests.get(url, headers=headers)
+    if resp.status_code == 404:
+        # Message not found — skip / handle gracefully
+        print(f"Message {msg_id} not found, skipping.")
+        return None
+    resp.raise_for_status()
+    # conversationId = resp.json().get("conversationId")
+    # conversationId = quote(conversationId)
+    data = resp.json()
+    # print("conversation ", data)
+    if "conversationId" in data:
+        return data["conversationId"]
+
+        # If response is paginated or wrapped in 'value'
+    if "value" in data and data["value"]:
+        return data["value"][0].get("conversationId")
+    return None
+
