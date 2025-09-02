@@ -347,7 +347,16 @@ def msgraph_webhook(request):
                     user = sub.user
                     message_data = get_message_details(user, msg_id)
 
-                    in_reply_to = message_data.get('value',[])[0]["conversationId"]
+                    # in_reply_to = message_data.get('value',[])[0]["conversationId"]
+                    value_list = message_data.get('value', [])
+
+                    if not value_list:
+                        # Handle gracefully, e.g., skip or log the event
+                        logger.warning("MS Graph webhook received empty 'value' list: %s", message_data)
+                        return JsonResponse({"status": "ignored"}, status=200)
+
+                    in_reply_to = value_list[0].get("conversationId")
+
 
                     for email in SentEmail.objects.filter(user=user):
                         reminder_qs = email.reminder_email.all()
