@@ -347,6 +347,10 @@ def msgraph_webhook(request):
                     user = sub.user
                     message_data = get_message_details(user, msg_id)
 
+                    if not message_data or not isinstance(message_data, dict):
+                        logger.warning("MS Graph webhook returned no message data for msg_id=%s", msg_id)
+                        continue
+
                     # in_reply_to = message_data.get('value',[])[0]["conversationId"]
                     value_list = message_data.get('value', [])
 
