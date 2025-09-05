@@ -77,10 +77,22 @@ class HomeView(LoginRequiredMixin, TemplateView):
             campaign_types = TargetAudience.objects.all().exclude(framework__isnull=True).exclude(
                 framework__exact='')
             recent_activities = ActivityLog.objects.all().order_by('-timestamp')[:5]
+
+            today = now().date()
+
             all_users = CustomUser.objects.annotate(
                 total_sent=Count('sent_email'),
-                opened_count=Count('sent_email', filter=Q(sent_email__opened=True))
+                opened_count=Count('sent_email', filter=Q(sent_email__opened=True)),
+                today_sent=Count(
+                    'sent_email',
+                    filter=Q(sent_email__created__date=today)
+                ),
+                today_opened=Count(
+                    'sent_email',
+                    filter=Q(sent_email__created__date=today, sent_email__opened=True)
+                ),
             )
+            
 
         else:
             sent_emails = SentEmail.objects.filter(user=user)
@@ -166,7 +178,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
             'top_campaigns': top_campaigns_data,
             'recent_activities': recent_activities,
             'all_users': all_users,
-            'sent_emails': sent_emails
+            'sent_emails': sent_emails,
         })
 
         return context

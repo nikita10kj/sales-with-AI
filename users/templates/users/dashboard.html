@@ -61,6 +61,8 @@
             <th>Email</th>
             <th class="text-center">Total Emails Sent</th>
             <th class="text-center">Opened Emails</th>
+            <th class="text-center text-success">Today's Sent</th>
+            <th class="text-center text-success">Today's Opened</th>
           </tr>
         </thead>
         <tbody>
@@ -70,6 +72,8 @@
             <td>{{ u.email }}</td>
             <td class="text-center">{{ u.total_sent }}</td>
             <td class="text-center">{{ u.opened_count }}</td>
+            <td class="text-center">{{ u.today_sent }}</td>
+            <td class="text-center">{{ u.today_opened }}</td>
           </tr>
           {% endfor %}
         </tbody>
