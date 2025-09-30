@@ -25,12 +25,23 @@ from django.http import HttpResponse
 class MicrosoftEmailSendError(Exception):
     pass
 
+# def get_user_provider(user):
+#     try:
+#         account = SocialAccount.objects.get(user=user)
+#         return account.provider  # returns 'google' or 'microsoft'
+#     except SocialAccount.DoesNotExist:
+#         return None
+
 def get_user_provider(user):
-    try:
-        account = SocialAccount.objects.get(user=user)
-        return account.provider  # returns 'google' or 'microsoft'
-    except SocialAccount.DoesNotExist:
+    accounts = SocialAccount.objects.filter(user=user)
+    if not accounts.exists():
         return None
+    # prioritize Microsoft if exists
+    ms_account = accounts.filter(provider='microsoft').first()
+    if ms_account:
+        return 'microsoft'
+    # otherwise just return first provider
+    return accounts.first().provider
 
 def get_gmail_service(user):
     token = SocialToken.objects.get(account__user=user, account__provider='google')
