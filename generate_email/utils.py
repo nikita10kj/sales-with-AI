@@ -109,7 +109,9 @@ def refresh_google_token(user):
 
 def refresh_microsoft_token(user):
     try:
-        token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
+        # token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
+        token = SocialToken.objects.filter(account__user=user, account__provider='microsoft').order_by('-expires_at').first()
+
         app = SocialApp.objects.get(provider='microsoft')
 
         refresh_token = token.token_secret  # or token.token depending on storage
@@ -145,8 +147,67 @@ def refresh_microsoft_token(user):
         return None
 
 
+
+
+
+# def send_microsoft_email(user, to_email, subject, html_body):
+#     token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
+
+#     # Check if token is expired
+#     if token.expires_at and token.expires_at <= timezone.now():
+#         new_token = refresh_microsoft_token(user)
+#         if not new_token:
+#             raise MicrosoftEmailSendError("Microsoft token refresh failed")
+#         access_token = new_token
+#         print("new")
+#     else:
+#         access_token = token.token
+
+#     url = "https://graph.microsoft.com/v1.0/me/messages"
+#     headers = {
+#         'Authorization': f'Bearer {access_token}',
+#         'Content-Type': 'application/json',
+#         "Prefer": 'IdType="ImmutableId"'
+#     }
+
+#     message_payload = {
+#             "subject": subject,
+#             "body": {
+#                 "contentType": "HTML",
+#                 "content": html_body
+#             },
+#             "toRecipients": [
+#                 {
+#                     "emailAddress": {
+#                         "address": to_email
+#                     }
+#                 }
+#             ],
+
+#         }
+
+#     response = requests.post(url, headers=headers, json=message_payload)
+#     response.raise_for_status()
+
+#     draft = response.json()
+#     graph_id = draft["id"]  # this is now the IMMUTABLE ID
+#     send_url = f"https://graph.microsoft.com/v1.0/me/messages/{graph_id}/send"
+#     send_response = requests.post(send_url, headers=headers)
+#     send_response.raise_for_status()
+
+#     return graph_id
+
 def send_microsoft_email(user, to_email, subject, html_body):
-    token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
+    # Fetch all Microsoft tokens for the user
+    tokens = SocialToken.objects.filter(
+        account__user=user, account__provider='microsoft'
+    ).order_by('-expires_at')
+
+    if not tokens.exists():
+        raise MicrosoftEmailSendError("No Microsoft token found for user")
+
+    # Use the latest valid token
+    token = tokens.first()
 
     # Check if token is expired
     if token.expires_at and token.expires_at <= timezone.now():
@@ -154,7 +215,7 @@ def send_microsoft_email(user, to_email, subject, html_body):
         if not new_token:
             raise MicrosoftEmailSendError("Microsoft token refresh failed")
         access_token = new_token
-        print("new")
+        print("new token refreshed")
     else:
         access_token = token.token
 
@@ -166,31 +227,31 @@ def send_microsoft_email(user, to_email, subject, html_body):
     }
 
     message_payload = {
-            "subject": subject,
-            "body": {
-                "contentType": "HTML",
-                "content": html_body
-            },
-            "toRecipients": [
-                {
-                    "emailAddress": {
-                        "address": to_email
-                    }
+        "subject": subject,
+        "body": {
+            "contentType": "HTML",
+            "content": html_body
+        },
+        "toRecipients": [
+            {
+                "emailAddress": {
+                    "address": to_email
                 }
-            ],
-
-        }
+            }
+        ],
+    }
 
     response = requests.post(url, headers=headers, json=message_payload)
     response.raise_for_status()
 
     draft = response.json()
-    graph_id = draft["id"]  # this is now the IMMUTABLE ID
+    graph_id = draft["id"]  # immutable ID
     send_url = f"https://graph.microsoft.com/v1.0/me/messages/{graph_id}/send"
     send_response = requests.post(send_url, headers=headers)
     send_response.raise_for_status()
 
     return graph_id
+
 
 def sendGeneratedEmail(request, user, target_audience, main_email):
     subject = main_email["subject"]
@@ -332,7 +393,9 @@ def sendReminderEmail(reminder_email):
 
         elif provider == 'microsoft':
             try:
-                token = SocialToken.objects.get(account__user=reminder_email.user, account__provider='microsoft')
+                # token = SocialToken.objects.get(account__user=reminder_email.user, account__provider='microsoft')
+                token = SocialToken.objects.filter(account__user=reminder_email.user, account__provider='microsoft').order_by('-expires_at').first()
+
 
                 # Check if token is expired
                 if token.expires_at and token.expires_at <= timezone.now():
@@ -512,6 +575,8 @@ import time
 #             print("Error creating subscription:", response.text)
 
 #         return HttpResponse("Subscription Created")
+
+
 def create_subscription(user):
     provider = get_user_provider(user)
     if provider != 'microsoft':
@@ -570,4 +635,3 @@ def create_subscription(user):
         print("Subscription created:", sub["id"])
     else:
         print("Error creating subscription:", response.text)
-
