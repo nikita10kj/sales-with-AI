@@ -62,12 +62,28 @@ class HomeView(LoginRequiredMixin, TemplateView):
         context["title"] = self.title
         user = self.request.user
         all_users = None
+
+        # --- Subscription validation ---
         if EmailSubscription.objects.filter(user=user).exists():
             for sub in EmailSubscription.objects.filter(user=user):
                 if sub.expires_at and sub.expires_at <= timezone.now():
                     create_subscription(user)
         else:
             create_subscription(user)
+
+        # --- Email sending limit logic ---
+        organization_domain = "jmsadvisory"
+        user_email = (user.email or "").lower()
+        email_limit = None
+        remaining_emails = None
+
+        # Only apply the 500-email limit to external users
+        if organization_domain not in user_email:
+            total_sent_user = SentEmail.objects.filter(user=user).count()
+            email_limit = 500
+            remaining_emails = max(email_limit - total_sent_user, 0)
+        else:
+            total_sent_user = SentEmail.objects.filter(user=user).count()
 
         # Total sent emails
         if user.is_superuser:
@@ -179,6 +195,9 @@ class HomeView(LoginRequiredMixin, TemplateView):
             'recent_activities': recent_activities,
             'all_users': all_users,
             'sent_emails': sent_emails,
+            'email_limit': email_limit,
+            'remaining_emails': remaining_emails,
+            'total_sent_user': total_sent_user,
         })
 
         return context

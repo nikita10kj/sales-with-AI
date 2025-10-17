@@ -25,12 +25,23 @@ from django.http import HttpResponse
 class MicrosoftEmailSendError(Exception):
     pass
 
+# def get_user_provider(user):
+#     try:
+#         account = SocialAccount.objects.get(user=user)
+#         return account.provider  # returns 'google' or 'microsoft'
+#     except SocialAccount.DoesNotExist:
+#         return None
+
 def get_user_provider(user):
-    try:
-        account = SocialAccount.objects.get(user=user)
-        return account.provider  # returns 'google' or 'microsoft'
-    except SocialAccount.DoesNotExist:
+    accounts = SocialAccount.objects.filter(user=user)
+    if not accounts.exists():
         return None
+    # prioritize Microsoft if exists
+    ms_account = accounts.filter(provider='microsoft').first()
+    if ms_account:
+        return 'microsoft'
+    # otherwise just return first provider
+    return accounts.first().provider
 
 def get_gmail_service(user):
     token = SocialToken.objects.get(account__user=user, account__provider='google')
@@ -98,7 +109,9 @@ def refresh_google_token(user):
 
 def refresh_microsoft_token(user):
     try:
-        token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
+        # token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
+        token = SocialToken.objects.filter(account__user=user, account__provider='microsoft').order_by('-expires_at').first()
+
         app = SocialApp.objects.get(provider='microsoft')
 
         refresh_token = token.token_secret  # or token.token depending on storage
@@ -134,8 +147,67 @@ def refresh_microsoft_token(user):
         return None
 
 
+
+
+
+# def send_microsoft_email(user, to_email, subject, html_body):
+#     token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
+
+#     # Check if token is expired
+#     if token.expires_at and token.expires_at <= timezone.now():
+#         new_token = refresh_microsoft_token(user)
+#         if not new_token:
+#             raise MicrosoftEmailSendError("Microsoft token refresh failed")
+#         access_token = new_token
+#         print("new")
+#     else:
+#         access_token = token.token
+
+#     url = "https://graph.microsoft.com/v1.0/me/messages"
+#     headers = {
+#         'Authorization': f'Bearer {access_token}',
+#         'Content-Type': 'application/json',
+#         "Prefer": 'IdType="ImmutableId"'
+#     }
+
+#     message_payload = {
+#             "subject": subject,
+#             "body": {
+#                 "contentType": "HTML",
+#                 "content": html_body
+#             },
+#             "toRecipients": [
+#                 {
+#                     "emailAddress": {
+#                         "address": to_email
+#                     }
+#                 }
+#             ],
+
+#         }
+
+#     response = requests.post(url, headers=headers, json=message_payload)
+#     response.raise_for_status()
+
+#     draft = response.json()
+#     graph_id = draft["id"]  # this is now the IMMUTABLE ID
+#     send_url = f"https://graph.microsoft.com/v1.0/me/messages/{graph_id}/send"
+#     send_response = requests.post(send_url, headers=headers)
+#     send_response.raise_for_status()
+
+#     return graph_id
+
 def send_microsoft_email(user, to_email, subject, html_body):
-    token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
+    # Fetch all Microsoft tokens for the user
+    tokens = SocialToken.objects.filter(
+        account__user=user, account__provider='microsoft'
+    ).order_by('-expires_at')
+
+    if not tokens.exists():
+        raise MicrosoftEmailSendError("No Microsoft token found for user")
+
+    # Use the latest valid token
+    token = tokens.first()
 
     # Check if token is expired
     if token.expires_at and token.expires_at <= timezone.now():
@@ -143,7 +215,7 @@ def send_microsoft_email(user, to_email, subject, html_body):
         if not new_token:
             raise MicrosoftEmailSendError("Microsoft token refresh failed")
         access_token = new_token
-        print("new")
+        print("new token refreshed")
     else:
         access_token = token.token
 
@@ -155,31 +227,31 @@ def send_microsoft_email(user, to_email, subject, html_body):
     }
 
     message_payload = {
-            "subject": subject,
-            "body": {
-                "contentType": "HTML",
-                "content": html_body
-            },
-            "toRecipients": [
-                {
-                    "emailAddress": {
-                        "address": to_email
-                    }
+        "subject": subject,
+        "body": {
+            "contentType": "HTML",
+            "content": html_body
+        },
+        "toRecipients": [
+            {
+                "emailAddress": {
+                    "address": to_email
                 }
-            ],
-
-        }
+            }
+        ],
+    }
 
     response = requests.post(url, headers=headers, json=message_payload)
     response.raise_for_status()
 
     draft = response.json()
-    graph_id = draft["id"]  # this is now the IMMUTABLE ID
+    graph_id = draft["id"]  # immutable ID
     send_url = f"https://graph.microsoft.com/v1.0/me/messages/{graph_id}/send"
     send_response = requests.post(send_url, headers=headers)
     send_response.raise_for_status()
 
     return graph_id
+
 
 def sendGeneratedEmail(request, user, target_audience, main_email):
     subject = main_email["subject"]
@@ -321,7 +393,9 @@ def sendReminderEmail(reminder_email):
 
         elif provider == 'microsoft':
             try:
-                token = SocialToken.objects.get(account__user=reminder_email.user, account__provider='microsoft')
+                # token = SocialToken.objects.get(account__user=reminder_email.user, account__provider='microsoft')
+                token = SocialToken.objects.filter(account__user=reminder_email.user, account__provider='microsoft').order_by('-expires_at').first()
+
 
                 # Check if token is expired
                 if token.expires_at and token.expires_at <= timezone.now():
@@ -448,56 +522,116 @@ import pytz
 
 import time
 
+# def create_subscription(user):
+#     provider = get_user_provider(user)
+
+#     if provider == 'microsoft':
+#         token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
+
+#         # Check if token is expired
+#         if token.expires_at and token.expires_at <= timezone.now():
+#             new_token = refresh_microsoft_token(user)
+#             if not new_token:
+#                 raise MicrosoftEmailSendError("Microsoft token refresh failed")
+#             access_token = new_token
+#             print("new")
+#         else:
+#             access_token = token.token
+#         expiration = (datetime.utcnow() + timedelta(minutes=4230)).replace(tzinfo=pytz.UTC).isoformat()
+
+#         subscription_payload = {
+#             "changeType": "created",
+#             "notificationUrl": "https://sellsharp.co/generator/webhook/msgraph/",
+#             # "notificationUrl": "https://fairly-whole-hawk.ngrok-free.app/generator/webhook/msgraph/",
+#             "resource": "/me/mailFolders('inbox')/messages",
+#             "expirationDateTime": expiration,
+#             "clientState": "superSecret123jms"
+#         }
+
+
+#         response = requests.post(
+#             "https://graph.microsoft.com/v1.0/subscriptions",
+#             headers={
+#                 "Authorization": f"Bearer {access_token}",
+#                 "Content-Type": "application/json"
+#             },
+#             json=subscription_payload
+#         )
+
+#         if response.status_code == 201:
+#             sub = response.json()
+#             # Delete old subscription for the user (if exists)
+#             EmailSubscription.objects.filter(user=user).delete()
+
+#             # Create a new subscription
+#             EmailSubscription.objects.create(
+#                 user=user,
+#                 subscription_id=sub["id"],
+#                 expires_at=sub["expirationDateTime"]  # save expiry
+#             )
+#             # Store subscription ID and expiration in DB so you can renew it later
+#             print("Subscription created:", sub["id"])
+#         else:
+#             print("Error creating subscription:", response.text)
+
+#         return HttpResponse("Subscription Created")
+
+
 def create_subscription(user):
     provider = get_user_provider(user)
+    if provider != 'microsoft':
+        return  # nothing to do
 
-    if provider == 'microsoft':
-        token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
+    # Get all Microsoft tokens for this user
+    tokens = SocialToken.objects.filter(account__user=user, account__provider='microsoft').order_by('-expires_at')
 
-        # Check if token is expired
-        if token.expires_at and token.expires_at <= timezone.now():
-            new_token = refresh_microsoft_token(user)
-            if not new_token:
-                raise MicrosoftEmailSendError("Microsoft token refresh failed")
-            access_token = new_token
-            print("new")
-        else:
-            access_token = token.token
-        expiration = (datetime.utcnow() + timedelta(minutes=4230)).replace(tzinfo=pytz.UTC).isoformat()
+    if not tokens.exists():
+        print("No Microsoft token found for user")
+        return
 
-        subscription_payload = {
-            "changeType": "created",
-            "notificationUrl": "https://sellsharp.co/generator/webhook/msgraph/",
-            # "notificationUrl": "https://fairly-whole-hawk.ngrok-free.app/generator/webhook/msgraph/",
-            "resource": "/me/mailFolders('inbox')/messages",
-            "expirationDateTime": expiration,
-            "clientState": "superSecret123jms"
-        }
+    # Pick the latest token (or the first one)
+    token = tokens.first()
 
+    # Check if token is expired
+    if token.expires_at and token.expires_at <= timezone.now():
+        new_token = refresh_microsoft_token(user)
+        if not new_token:
+            raise MicrosoftEmailSendError("Microsoft token refresh failed")
+        access_token = new_token
+        print("new token refreshed")
+    else:
+        access_token = token.token
 
-        response = requests.post(
-            "https://graph.microsoft.com/v1.0/subscriptions",
-            headers={
-                "Authorization": f"Bearer {access_token}",
-                "Content-Type": "application/json"
-            },
-            json=subscription_payload
+    expiration = (datetime.utcnow() + timedelta(minutes=4230)).replace(tzinfo=pytz.UTC).isoformat()
+
+    subscription_payload = {
+        "changeType": "created",
+        "notificationUrl": "https://sellsharp.co/generator/webhook/msgraph/",
+        "resource": "/me/mailFolders('inbox')/messages",
+        "expirationDateTime": expiration,
+        "clientState": "superSecret123jms"
+    }
+
+    response = requests.post(
+        "https://graph.microsoft.com/v1.0/subscriptions",
+        headers={
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        },
+        json=subscription_payload
+    )
+
+    if response.status_code == 201:
+        sub = response.json()
+        # Delete old subscription for the user (if exists)
+        EmailSubscription.objects.filter(user=user).delete()
+
+        # Create a new subscription
+        EmailSubscription.objects.create(
+            user=user,
+            subscription_id=sub["id"],
+            expires_at=sub["expirationDateTime"]  # save expiry
         )
-
-        if response.status_code == 201:
-            sub = response.json()
-            # Delete old subscription for the user (if exists)
-            EmailSubscription.objects.filter(user=user).delete()
-
-            # Create a new subscription
-            EmailSubscription.objects.create(
-                user=user,
-                subscription_id=sub["id"],
-                expires_at=sub["expirationDateTime"]  # save expiry
-            )
-            # Store subscription ID and expiration in DB so you can renew it later
-            print("Subscription created:", sub["id"])
-        else:
-            print("Error creating subscription:", response.text)
-
-        return HttpResponse("Subscription Created")
+        print("Subscription created:", sub["id"])
+    else:
+        print("Error creating subscription:", response.text)

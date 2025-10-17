@@ -108,6 +108,13 @@
       <div>
         <h3 id="totalSent" class="mb-1 fw-bold" style="font-size: 2.5rem; color: #2c3e50;">{{ total_sent }}</h3>
         <p class="text-muted mb-2" style="font-size: 0.95rem;">Emails Sent</p>
+        {% if email_limit %}
+            <div class="fw-semibold" 
+                style="font-size: 0.9rem; color: {% if remaining_emails <= 50 %}#dc3545{% else %}#00b894{% endif %};">
+            {{ remaining_emails }} left out of {{ email_limit }}
+            <small>(You’ve already sent {{ total_sent_user }} emails.)</small>
+            </div>
+        {% endif %}
         
       </div>
     </div>

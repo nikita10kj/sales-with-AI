@@ -219,30 +219,43 @@ class EmailMarketingApp {
   }
 
   createEmailCard(email, count) {
-    const card = document.createElement("div")
-    card.className = "email-card"
-    card.dataset.emailId = `follow_up_${count - 1}`; // <-- Assign emailId here
+  const defaultDays = [3, 5, 7, 10];
+  const defaultDay = defaultDays[count - 1] || 3; // default if more than 4 follow-ups
 
-    card.innerHTML = `
-            <div class="email-header">
-                <h5 class="email-title">Follow Up Email - ${count}</h5>
-                <div class="email-actions">
+  const card = document.createElement("div");
+  card.className = "email-card";
+  card.dataset.emailId = `follow_up_${count - 1}`;
 
-                    <button class="btn btn-sm btn-outline-primary" onclick="app.editEmail(this)">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-
-                </div>
-            </div>
-            <div class="email-body">
-
-                <div class="email-content">
-                    ${email.body}
-                </div>
-            </div>
-        `
-    return card
+  // Build dropdown options for 1–60 days
+  let optionsHtml = "";
+  for (let i = 1; i <= 60; i++) {
+    optionsHtml += `<option value="${i}" ${i === defaultDay ? "selected" : ""}>${i} days</option>`;
   }
+
+  card.innerHTML = `
+    <div class="email-header d-flex justify-content-between align-items-center">
+        <h5 class="email-title">Follow Up Email - ${count}</h5>
+        <div class="email-actions">
+            <button class="btn btn-sm btn-outline-primary" onclick="app.editEmail(this)">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+        </div>
+    </div>
+    <div class="email-body">
+        <div class="mb-3">
+            <label class="form-label">Send Reminder After:</label>
+            <select class="form-select reminder-day-select" data-index="${count - 1}">
+                ${optionsHtml}
+            </select>
+        </div>
+        <div class="email-content">
+            ${email.body}
+        </div>
+    </div>
+  `;
+  return card;
+}
+
 
 //  previewEmail(emailId) {
 //    const email = this.generatedEmails.find((e) => e.id === emailId)
@@ -326,6 +339,16 @@ class EmailMarketingApp {
     // Show loading indicator while sending
     this.showLoading(true, "Sending Email...");
     const emails = this.generatedEmails;
+
+    // collect selected days from dropdowns
+    const daySelects = document.querySelectorAll(".reminder-day-select");
+    daySelects.forEach(select => {
+      const index = parseInt(select.dataset.index);
+      const selectedDay = parseInt(select.value);
+      if (emails.follow_ups[index]) {
+        emails.follow_ups[index].day = selectedDay;  // attach day to each follow-up
+      }
+    });
 
     try {
         // Make POST request to send emails
