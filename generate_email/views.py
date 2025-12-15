@@ -102,11 +102,11 @@ class GenerateEmailView(LoginRequiredMixin, View):
         emails = json.loads(get_response(request.user, target, service))
 
         for email in emails['follow_ups']:
-            email['body'] += (f"<p>Best Regards,<br>{request.user.full_name}"
+            email['body'] += (f"<p>Best,<br>{request.user.full_name}"
                               f"{'<br>' + request.user.contact if request.user.contact else ''}"
                               f"<br>{request.user.company_name}</p>")
         emails['main_email'][
-            'body'] += (f"<p>Best Regards,<br>{request.user.full_name}"
+            'body'] += (f"<p>Best,<br>{request.user.full_name}"
                         f"{'<br>' + request.user.contact if request.user.contact else ''}"
                         f"<br>{request.user.company_name}</p>")
 
