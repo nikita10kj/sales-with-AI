@@ -21,34 +21,59 @@ from django.utils.timezone import now
 from allauth.socialaccount.models import SocialToken
 from django.utils import timezone
 
+# def get_latest_microsoft_token(user):
+#     """
+#     Safely returns the most recent Microsoft SocialToken for a user.
+#     Deletes older duplicates automatically.
+#     """
+#     tokens = SocialToken.objects.filter(
+#         account__user=user,
+#         account__provider='microsoft'
+#     ).order_by('-expires_at')
+
+#     if not tokens.exists():
+#         return None
+
+#     latest = tokens.first()
+
+#     # Optionally clean up duplicates
+#     tokens.exclude(id=latest.id).delete()
+
+#     # If token expired — try refreshing
+#     if latest.expires_at and latest.expires_at <= timezone.now():
+#         from .utils import refresh_microsoft_token
+#         new_token = refresh_microsoft_token(user)
+#         if not new_token:
+#             raise Exception("Microsoft token refresh failed")
+#         return new_token
+
+#     return latest.token
 def get_latest_microsoft_token(user):
-    """
-    Safely returns the most recent Microsoft SocialToken for a user.
-    Deletes older duplicates automatically.
-    """
-    tokens = SocialToken.objects.filter(
-        account__user=user,
-        account__provider='microsoft'
-    ).order_by('-expires_at')
+    try:
+        token = SocialToken.objects.filter(
+            account__user=user,
+            account__provider="microsoft"
+        ).first()
 
-    if not tokens.exists():
+        if not token:
+            return None
+
+        if token.expires_at and token.expires_at <= timezone.now():
+            new_token = refresh_microsoft_token(user)
+            if not new_token:
+                logger.warning(
+                    "Microsoft token refresh failed for user_id=%s",
+                    user.id
+                )
+                return None
+            return new_token
+
+        return token.token
+
+    except Exception:
+        logger.exception("Microsoft token lookup failed")
         return None
-
-    latest = tokens.first()
-
-    # Optionally clean up duplicates
-    tokens.exclude(id=latest.id).delete()
-
-    # If token expired — try refreshing
-    if latest.expires_at and latest.expires_at <= timezone.now():
-        from .utils import refresh_microsoft_token
-        new_token = refresh_microsoft_token(user)
-        if not new_token:
-            raise Exception("Microsoft token refresh failed")
-        return new_token
-
-    return latest.token
-
+        
 # Create your views here.
 class GenerateEmailView(LoginRequiredMixin, View):
     def normalize_url(self, url):
@@ -392,7 +417,13 @@ def msgraph_webhook(request):
                     sub_id = change.get("subscriptionId")
                     sub = EmailSubscription.objects.get(subscription_id=sub_id)
                     user = sub.user
-                    message_data = get_message_details(user, msg_id)
+                    # message_data = get_message_details(user, msg_id)
+                    try:
+                        message_data = get_message_details(user, msg_id)
+                    except Exception:
+                        logger.exception("Webhook-safe Graph failure")
+                        continue
+
 
                     if not message_data or not isinstance(message_data, dict):
                         logger.warning("MS Graph webhook returned no message data for msg_id=%s", msg_id)
@@ -485,9 +516,18 @@ def get_message_details(user, msg_id):
     from .utils import MicrosoftEmailSendError
     import requests
 
+    # access_token = get_latest_microsoft_token(user)
+    # if not access_token:
+    #     raise MicrosoftEmailSendError("No Microsoft token found for this user")
     access_token = get_latest_microsoft_token(user)
+
     if not access_token:
-        raise MicrosoftEmailSendError("No Microsoft token found for this user")
+        logger.warning(
+            "MS Graph webhook: no access token for user_id=%s",
+            user.id
+        )
+        return None
+
 
     url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}?$select=internetMessageHeaders"
     headers = {"Authorization": f"Bearer {access_token}"}
