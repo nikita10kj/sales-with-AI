@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sell Sharp Learning Hub</title>
+
+  <style>
+    :root {
+      --primary:  #6f42c1
+      --bg: #f5f7fb;
+      --card-bg: #ffffff;
+      --text: #1a1a1a;
+      --muted: #666;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; font-family: Inter, Arial, sans-serif; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      padding: 3rem 1.5rem;
+      text-align: center;
+      background: linear-gradient(135deg, #6a6fdc, #7b5fdc);
+      color: white;
+    }
+
+    header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    header p { max-width: 700px; margin: auto; opacity: 0.95; }
+
+    .container {
+      max-width: 1200px;
+      margin: 3rem auto;
+      padding: 0 1.5rem;
+    }
+
+    .section-title {
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 1.8rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+      outline: none;
+      border: 2px solid transparent;
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.1);
+    }
+
+    .card:focus-visible{
+      border-color: rgba(31,111,255,0.5);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.1);
+    }
+
+    .card h3 { margin-top: 0; font-size: 1.2rem; }
+    .card p { color: var(--muted); font-size: 0.95rem; }
+
+    .tag {
+      display: inline-block;
+      background: rgba(31,111,255,0.1);
+      color: var(--primary);
+      padding: 0.3rem 0.7rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      margin-bottom: 0.8rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    /* =========================
+       MODAL + ACCORDION (NEW)
+       ========================= */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 999;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      width: min(900px, 100%);
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 30px 90px rgba(0,0,0,0.25);
+      overflow: hidden;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .modal-title {
+      margin: 0;
+      font-size: 1.15rem;
+      line-height: 1.2;
+    }
+
+    .modal-close {
+      border: none;
+      background: rgba(0,0,0,0.06);
+      padding: 0.5rem 0.75rem;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .modal-close:hover { background: rgba(0,0,0,0.10); }
+
+    .modal-body {
+      padding: 1rem 1.25rem 1.25rem;
+      overflow: auto;
+    }
+
+    .accordion {
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .acc-item {
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .acc-btn {
+      width: 100%;
+      text-align: left;
+      padding: 0.95rem 1rem;
+      border: none;
+      background: #fff;
+      cursor: pointer;
+      font-weight: 650;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .acc-btn:hover {
+      background: rgba(31,111,255,0.05);
+    }
+
+    .acc-icon {
+      flex: 0 0 auto;
+      width: 26px;
+      height: 26px;
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      background: rgba(31,111,255,0.10);
+      color: var(--primary);
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .acc-panel {
+      padding: 0 1rem 1rem;
+      color: var(--muted);
+      display: none;
+    }
+
+    .acc-panel.open { display: block; }
+
+    .empty-state {
+      padding: 1rem;
+      border-radius: 14px;
+      background: rgba(31,111,255,0.06);
+      color: #2b3a55;
+      border: 1px dashed rgba(31,111,255,0.35);
+    }
+  </style>
+</head>
+<body>
+  
+<header>
+  <h1>Sell Sharp Learning Hub</h1>
+  <p>Learn how to write high-converting sales emails using proven frameworks, AI-powered personalization, and real-world use cases.</p>
+</header>
+
+<div class="container">
+
+  <h2 class="section-title">Foundation</h2>
+  <div class="card-grid">
+    <div class="card" tabindex="0" data-topic="cold_email">
+      <span class="tag">Cold Email Basics</span>
+      <h3>Cold Email Basics</h3>
+      <p>For beginners who want to understand cold emailing clearly.</p>
+    </div>
+
+    <div class="card" tabindex="0" data-topic="write">
+      <span class="tag">write and send</span>
+      <h3>Writing & Sending Cold Emails</h3>
+      <p>Teaches how to actually write and send emails.</p>
+    </div>
+
+    <div class="card" tabindex="0" data-topic="strategy">
+      <span class="tag">Advanced</span>
+      <h3>Advanced Strategy & Best Practices</h3>
+      <p>For users who want better reply rates and scale outreach.</p>
+    </div>
+    </div>
+
+
+  <h2 class="section-title">Learning by Use Case</h2>
+  <div class="card-grid">
+    <div class="card" tabindex="0" data-topic="startup_founders">
+      <span class="tag">Founders</span>
+      <h3>Startup Founders</h3>
+      <p>Learn how founders can generate effective sales emails without sales experience and focus on scaling their startup.</p>
+    </div>
+
+    <div class="card" tabindex="0" data-topic="small_sales_teams">
+      <span class="tag">Sales Teams</span>
+      <h3>Small & Growing Sales Teams</h3>
+      <p>Standardize outreach, reduce onboarding time, and improve follow-ups across your sales team.</p>
+    </div>
+
+    <div class="card" tabindex="0" data-topic="msme_owners">
+      <span class="tag">MSME</span>
+      <h3>MSME Owners & Business Leaders</h3>
+      <p>Build a professional sales process in-house and avoid common outreach mistakes.</p>
+    </div>
+
+    <div class="card" tabindex="0" data-topic="agencies">
+      <span class="tag">Agencies</span>
+      <h3>Agencies & Service Providers</h3>
+      <p>Scale client campaigns with consistent, brand-aligned sales messaging.</p>
+    </div>
+
+    <div class="card" tabindex="0" data-topic="solo_consultants">
+      <span class="tag">Consultants</span>
+      <h3>Solo Consultants & Professionals</h3>
+      <p>Automate follow-ups and maintain polished communication while working solo.</p>
+    </div>
+  </div>
+
+  <h2 class="section-title" style="margin-top:4rem">Frameworks & Features</h2>
+  <div class="card-grid">
+    <div class="card" tabindex="0" data-topic="AIDA">
+      <span class="tag">Framework</span>
+      <h3>AIDA Framework</h3>
+      <p><strong>Best for:</strong> cold outreach, short sales emails, fast replies.<br>
+        (Attention → Interest → Desire → Action)
+      </p>
+    </div>
+
+    <div class="card" tabindex="0" data-topic="PAS">
+      <span class="tag">Framework</span>
+      <h3>PAS Framework</h3>
+      <p><strong>Best for:</strong> pain-point driven sales, SaaS, service offers.
+        (Problem → Agitate → Solution)
+      </p>
+        
+
+
+    </div>
+
+    <div class="card" tabindex="0" data-topic="BAB">
+      <span class="tag">Framework</span>
+      <h3>Before–After–Bridge Framework</h3>
+      <p><strong>Best for:</strong> transformation-focused messaging.<br>
+       (Current State → Desired State → Solution)
+      </p>
+    </div>
+
+    <div class="card" tabindex="0" data-topic="STAR">
+      <span class="tag">Framework</span>
+      <h3>STAR Framework</h3>
+      <p><strong>Best for:</strong> case studies, proof-based selling.<br>
+       (Situation → Task → Action → Result)
+      </p>
+    </div>
+
+    <div class="card" tabindex="0" data-topic="Magic">
+      <span class="tag">Framework</span>
+      <h3>Magic Framework</h3>
+      <p><strong>Best for:</strong> differentiation, attention-grabbing emails.
+        (Unique Hook → Curiosity → Outcome)
+      </p>
+    </div>
+
+    <div class="card" tabindex="0" data-topic="ACCA">
+      <span class="tag">Framework</span>
+      <h3>ACCA Framework</h3>
+      <p><strong>Best for:</strong> long sales cycles, education-based outreach.
+        (Awareness → Comprehension → Conviction → Action)
+      </p>
+    </div>
+    <div class="card" tabindex="0" data-topic="product">
+      <span class="tag">Framework</span>
+      <h3>Product Features</h3>
+      <p><strong>Best for:</strong> long sales cycles, education-based outreach.
+        (Awareness → Comprehension → Conviction → Action)
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<!-- =========================
+     MODAL (NEW) - add once
+     ========================= -->
+<div class="modal-overlay" id="qaModalOverlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="qaModalTitle">
+    <div class="modal-header">
+      <h3 class="modal-title" id="qaModalTitle">Questions</h3>
+      <button class="modal-close" id="qaModalClose" type="button" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="qaAccordion" class="accordion"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  © 2026 Sell Sharp · Learning Hub
+</footer>
+
+<script>
+  /* =========================
+     1) Put your Q&A here
+     ========================= */
+  const qaData = {
+    startup_founders: {
+      title: "Startup Founders — Common Questions",
+      items: [
+        {
+          q: " Do I need sales experience to use Sell Sharp?",
+          a: "No. Structured formats make outreach simple for first-time founders."
+
+        },
+        {
+          q: "Can Sell Sharp help if I’m doing sales alone?",
+          a: "Yes. It acts as a personal sales assistant, automating follow-ups and keeping outreach consistent."
+        },
+        {
+          q: "Will my emails sound too salesy?",
+          a: "No. Sell Sharp focuses on clarity, relevance, and a human tone."
+        },
+        {
+          q: "How quickly can I start seeing results?",
+          a: "Most founders see improved engagement in their first few campaigns."
+        },
+        {
+          q: "How do I write my first cold email quickly?",
+          a: "1. Know the prospect and their problem\n2. Keep the opening personal\n3. Focus on one problem + one solution\n4. Use short, simple language\n5. End with one clear CTA"
+        },
+        
+      ]
+    },
+
+    small_sales_teams: {
+      title: "Small & Growing Sales Teams — Common Questions",
+      items: [
+        { q: "Can multiple team members use Sell Sharp?", a: "It maintains consistent messaging across all reps." },
+        { q: "Does it help junior or new sales reps?", a: "Yes. Ready-to-use structures reduce learning time." },
+        { q: " Can we customize emails for different prospects?", a: "Absolutely. Emails can be personalized for role, company, and context." },
+        { q: " How often should sales teams follow up?", a: "2–3 follow-ups over 10–14 days; consistency beats aggression." },
+        { q: "Can Sell Sharp measure if emails are working?", a: "Yes. Track reply rates, time saved, and conversation quality." },
+
+
+      ]
+    },
+
+    msme_owners: {
+      title: "MSME Owners & Business Leaders — Common Questions",
+      items: [
+        { q: " Is Sell Sharp suitable for traditional or local businesses?", a: "Yes. Tone and language adapt to any industry." },
+        { q: " Do I need technical knowledge?", a: "No. It’s simple and non-technical." },
+        { q: " Can it reduce dependency on agencies?", a: "Yes. Many MSMEs handle outreach in-house using Sell Sharp." },
+        { q: " Can it improve reply rates?", a: "Yes. Personalized, clear emails drive better engagement." },
+        { q: " What common email mistakes should MSMEs avoid?", a: "* Long intros \n * Using generic templates\n* Sending only one email\n* Sounding desperate" }
+      ]
+    },
+
+    agencies: {
+      title: "Agencies & Service Providers — Common Questions",
+      items: [
+        { q: "Can Sell Sharp handle multiple client accounts?", a: "Yes. Messaging can be tailored per client and industry." },
+        { q: "Can we adjust tone per client?", a: "Yes. Formal, casual, or persuasive tones can be applied easily." },
+        { q: "Will it improve campaign efficiency?", a: "Yes. Less time writing, more consistent output." },
+        { q: "Can agencies white-label the output?", a: "Yes. Emails are fully editable and client-ready." },
+        { q: "How to personalize emails quickly for multiple clients?", a: "Use dynamic fields for prospect name, company, and industry pain points. Sell Sharp automates this." }
+      ]
+    },
+
+    solo_consultants: {
+      title: "Solo Consultants & Professionals — Common Questions",
+      items: [
+        { q: "Is Sell Sharp useful if I send only a few emails?", a: "Yes. Even low-volume outreach benefits from structured, professional emails." },
+        { q: "Can I edit emails before sending?", a: "Yes. Every email is fully editable." },
+        { q: "Does it help with follow-ups?", a: "Yes. Follow-up sequences are automated." },
+        { q: "Will emails feel personal to prospects?", a: "Yes. Personalization ensures a human, relevant touch." },
+        { q: "How do I get started quickly?", a: "1. Input prospect details \n2. Select tone and sequence\n3. Generate email\n4. Review & send" }
+      ]
+    },
+
+    AIDA: {
+      title: "AIDA Framework",
+      items: [
+        { q: "How can Sell Sharp help me write better sales emails quickly?", a: "Sell Sharp’s AI generates clear, structured emails instantly, following the Email Structure Framework. This ensures your messages are concise, professional, and engaging, even if you don’t have sales experience." },
+        { q: "How does Sell Sharp improve reply rates?", a: "By combining personalization, structured emails, and follow-up sequences, Sell Sharp increases engagement. These principles are part of the Email Structure + Follow-Up Frameworks." },
+        { q: "How can I use AIDA in my emails?", a: "Start with a hook to grab attention, highlight a relevant problem to spark interest, show benefits to create desire, and end with a clear call-to-action (CTA) for action." },
+        { q: "Is AIDA suitable for cold outreach?", a: "Yes! It’s perfect for cold emails, helping prospects quickly understand why your product or service matters and prompting them to act." },
+        { q: "Can I combine multiple frameworks in one email?", a: "Yes! For instance, PAS to highlight the problem, then AIDA to create desire and action. Mix frameworks thoughtfully to maximize engagement." }
+      ]
+    },
+
+    PAS: {
+      title: "Personalization Framework — Common Questions",
+      items: [
+        { q: "When should I use the PAS framework?", a: "Use PAS when your prospect has a clear pain point. Highlight the problem, agitate the pain to make it urgent, then present your solution clearly." },
+        { q: "Can PAS be combined with other frameworks?", a: "Yes! For example, start with PAS to highlight a problem and solution, then use AIDA to create desire and action." },
+        {q: "Can Sell Sharp help me segment my prospects for better targeting?", a: "Absolutely! Use the Personalization + Quick Start Templates Frameworks to categorize prospects and tailor messages for each segment." },
+        { q: "Can I use Sell Sharp for both B2B and B2C outreach?", a: "Yes. The Multi-Industry/Client Framework ensures messages are adaptable to different audiences while maintaining relevance and tone." },
+      ]
+    },
+
+    BAB: {
+      title: "Tone & Style Framework — Common Questions",
+      items: [
+        { q: "How does Before-After-Bridge work in emails?", a: "Describe the prospect’s current situation (Before), show the improved outcome (After), and bridge the gap with your product or service. Keep it short and impactful." },
+        { q: "Can it be used for service-based businesses?", a: "Absolutely! It’s perfect for consulting, SaaS, or any service where demonstrating transformation is key." }
+      ]
+    },
+
+    STAR: {
+      title: "Follow-Up Sequence Framework — Common Questions",
+      items: [
+        { q: "How can STAR be applied in outreach emails?", a: "Share a quick success story: explain the Situation, the Task at hand, the Action you took, and the Result. It builds credibility and trust quickly." },
+        { q: "Is STAR good for case studies?", a: "Yes! It’s ideal for presenting client or project successes in a structured, persuasive way." }
+      ]
+    },
+
+    Magic: {
+      title: "Engagement & Analytics — Common Questions",
+      items: [
+        { q: "What is the Magic framework?", a: "Magic focuses on highlighting a unique, surprising, or “aha” aspect of your product or service that grabs attention and curiosity." },
+        { q: "HHow do I use Magic without sounding gimmicky?", a: "Emphasize real, tangible benefits or unique methods. Keep it authentic and tie it to a clear outcome." }
+      ]
+    },
+
+    ACCA: {
+      title: "ACCA Framework",
+      items: [
+        { q: "How does ACCA work in email campaigns?", a: "Guide your prospect through: Awareness of the problem/solution, Comprehension of benefits, Conviction that your solution works, and finally, prompt Action." },
+        { q: "Can ACCA be used for nurturing campaigns?", a: "Yes! ACCA is ideal for longer campaigns, gradually educating and persuading prospects before asking them to take action." }
+      ]
+    },
+    product: {
+      title: "Product Features - FAQs",
+      items: [
+        { q: "Can my emails feel personal to each recipient?", a: "Yes! Using dynamic fields like prospect name, company, and industry, Sell Sharp personalizes every email. The Personalization Framework ensures your outreach connects genuinely with leads." },
+        { q: "How do I adjust the tone for different audiences?", a: "Sell Sharp lets you switch between formal, casual, or persuasive tones. The Tone & Style Framework guides your messaging so it resonates with each prospect or client." },
+        { q: " How can I manage follow-ups efficiently?", a: "With the Follow-Up Sequence Framework, you can create multi-step automated follow-ups that stay personalized. This ensures timely engagement and reduces manual effort." },
+        { q: "Can my team or agency collaborate on campaigns?", a: "Absolutely. Sell Sharp’s Collaboration Framework allows sharing of templates, sequences, and campaign tracking so teams or agencies stay aligned and productive." },
+        { q: " Can Sell Sharp scale outreach across multiple clients or industries?", a: "Yes. The Multi-Industry/Client Framework lets you maintain personalization and quality across different clients or sectors, perfect for agencies or service providers." },
+        { q: "Can Sell Sharp integrate with other services or expand my offerings?", a: "Yes! Using the Service Expansion Framework, you can combine Sell Sharp with other JMS products or consulting services to run multi-channel outreach campaigns and offer expanded services." },
+        {q: "How do I track the success of my campaigns?", a: "The Engagement & Analytics Framework gives insights into open rates, reply rates, and engagement. This helps you optimize campaigns and make data-driven decisions." },
+        {q: "Are there templates or guides for beginners?", a: "Yes! The Quick Start Templates Framework provides ready-made email templates for cold outreach, follow-ups, and personalization, helping beginners get started immediately." },
+        {q: "How does Sell Sharp improve reply rates?", a: "By combining personalization, structured emails, and follow-up sequences, Sell Sharp increases engagement. These principles are part of the Email Structure + Follow-Up Frameworks." },
+        {q: "Can I use Sell Sharp for both B2B and B2C outreach?", a: "Yes. The Multi-Industry/Client Framework ensures messages are adaptable to different audiences while maintaining relevance and tone." },
+        {q: "How can Sell Sharp save time for busy teams or individuals?", a: "Automated sequences, ready-to-use templates, and AI-generated emails reduce drafting time drastically, as guided by the Email Structure + Quick Start Frameworks." },
+        {q: "How does Sell Sharp help me maintain brand consistency across emails?", a: "With the Tone & Style + Collaboration Frameworks, you can ensure all emails—from individuals or teams—reflect your brand voice consistently." },
+        {q: "Can Sell Sharp suggest improvements to my existing emails?", a: "Yes! Using the Email Structure Framework, it reviews and suggests edits for clarity, engagement, and personalization." },
+        {q: "How does Sell Sharp handle outreach for multiple campaigns at the same time?", a: "The Multi-Industry/Client + Follow-Up Sequence Frameworks allow you to run simultaneous campaigns without losing personalization or timing. "},
+        {q: "Can Sell Sharp help me segment my prospects for better targeting?", a: "Absolutely! Use the Personalization + Quick Start Templates Frameworks to categorize prospects and tailor messages for each segment." },
+        {q: "How do I collaborate efficiently with my team using Sell Sharp?", a: "The Collaboration Framework allows team members to share templates, sequences, and track engagement in real-time." },
+        {q: "Can Sell Sharp be used for long-term nurturing campaigns?", a: "Yes. The Follow-Up Sequence Framework ensures prospects are engaged over time with automated, personalized touchpoints." },
+        {q: "Does Sell Sharp provide insights to optimize my email strategy?", a: "Yes! The Engagement & Analytics Framework gives actionable metrics on opens, replies, and campaign effectiveness, helping you improve future campaigns." },
+        {q: "How quickly can I get started if I’m new to sales outreach?", a: "Using the Quick Start Templates Framework, beginners can launch campaigns in minutes with ready-made, proven email structures." },
+        {q: "Can Sell Sharp integrate with my CRM or other sales tools?", a: "Yes! It complements existing tools, allowing seamless integration and better workflow efficiency, aligning with the Service Expansion Framework." },
+        {q: "Can I adapt Sell Sharp emails for social media or LinkedIn outreach?", a: "Yes. The Multi-Industry/Client + Email Structure Frameworks guide you in adjusting messages for different platforms while keeping them engaging." },
+      ]
+    },
+    cold_email: {
+      title: "ACCA Framework",
+      items: [
+        {
+  q: "What is a cold email?",
+  a: "A cold email is an email sent to someone who has not interacted with your business before. Its goal is to start a conversation, not to sell aggressively. A good cold email is relevant, personalized, and focused on solving a real problem for the recipient."
+},
+{
+  q: "Is cold emailing legal in India?",
+  a: "Yes, cold emailing is legal in India when done responsibly. Emails should be relevant, non-spammy, clearly identify the sender, and include an easy way for recipients to opt out."
+},
+{
+  q: "What makes a cold email effective?",
+  a: "An effective cold email is short, personalized, value-driven, and written using proven frameworks like AIDA or PAS. It focuses on the recipient’s problem rather than promoting the product."
+},
+{
+  q: "How long should a cold email be?",
+  a: "Ideally, a cold email should be between 50–120 words. Busy decision-makers prefer concise emails that communicate value quickly."
+},
+{
+  q: "Why do most cold emails fail?",
+  a: "Most cold emails fail because they are generic, overly sales-focused, poorly structured, or do not address a real problem the recipient cares about."
+},
+{
+  q: "Can startups and MSMEs succeed with cold emails?",
+  a: "Yes. Cold emails are one of the most cost-effective ways for startups and MSMEs to reach decision-makers without large marketing budgets."
+},
+{
+  q: "Does Sell Sharp help with cold emails?",
+  a: "Yes. Sell Sharp helps users write effective cold emails using proven frameworks, clear messaging, and personalization, even without prior sales experience."
+},
+{
+  q: "What is the difference between a cold email and spam?",
+  a: "Spam is mass-sent and irrelevant. Cold emails are targeted, thoughtful, and sent to recipients who are likely to benefit from the offering."
+},
+{
+  q: "Do cold emails still work in 2026?",
+  a: "Yes. When done correctly, personalized and problem-focused cold emails consistently outperform generic mass outreach."
+},
+{
+  q: "What is the goal of a cold email?",
+  a: "The goal of a cold email is not to close a deal immediately, but to start a relevant conversation, gauge interest, and earn a reply."
+}
+
+      ]
+    },
+    write: {
+      title: "ACCA Framework",
+      items: [
+  {
+    "q": "How many cold emails should I send per day?",
+    "a": "Quality matters more than volume. For individuals and MSMEs, sending 20–50 well-researched cold emails per day works better than mass blasting."
+  },
+  {
+    "q": "Should I pitch my product in the first email?",
+    "a": "No. The first email should focus on the prospect’s problem or situation. Sell Sharp structures emails so value comes before pitching."
+  },
+  {
+    "q": "Do cold emails work without follow-ups?",
+    "a": "Rarely. Most replies come from follow-ups. A structured sequence of 2–3 follow-ups significantly increases reply rates."
+  },
+  {
+    "q": "What is a follow-up email?",
+    "a": "A follow-up email is a polite reminder or value-add message sent after no response. It should add context and value, not pressure."
+  },
+  {
+    "q": "How many follow-ups are too many?",
+    "a": "Typically, 2–3 follow-ups over 10–14 days are ideal. Sending more than that may sound pushy."
+  },
+  {
+    "q": "Why do people open emails but don’t reply?",
+    "a": "Common reasons include unclear value, weak CTA, generic messaging, or timing issues. Better structure and clarity help improve replies."
+  },
+  {
+    "q": "What is a good CTA in a cold email?",
+    "a": "A good CTA is low-pressure and specific, such as “Worth a quick chat?” or “Should I share more details?”"
+  },
+  {
+    "q": "Can non-sales people write good cold emails?",
+    "a": "Yes. With the right structure and guidance, founders, consultants, and business owners can write effective cold emails without sales experience."
+  },
+  {
+    "q": "What industries can use cold emailing?",
+    "a": "Almost any B2B industry can use cold emailing, including IT services, SaaS, consulting, agencies, manufacturing, logistics, education, and professional services."
+  },
+  {
+    "q": "How do I avoid sounding desperate in emails?",
+    "a": "Focus on clarity and relevance. Avoid over-selling, emotional language, and excessive follow-ups."
+  },
+  {
+    "q": "Should I personalize every cold email?",
+    "a": "Yes. Personalization does not require deep research—adding even one relevant line about the prospect improves reply rates."
+  },
+  {
+    "q": "What is email personalization?",
+    "a": "Email personalization means tailoring messages based on the recipient’s role, company, or problem, not just using their name."
+  }
+]
+
+    },
+    strategy: {
+      title: "ACCA Framework",
+      items:[
+  {
+    "q": "Can cold emails help generate leads consistently?",
+    "a": "Yes. When done systematically using proven frameworks, cold emails become a predictable and repeatable lead-generation channel."
+  },
+  {
+    "q": "What mistakes should beginners avoid in cold emailing?",
+    "a": "Beginners should avoid writing long emails, talking only about their product, skipping follow-ups, using generic templates, and sending emails without a clear call to action."
+  },
+  {
+    "q": "Is cold emailing better than social media outreach?",
+    "a": "Cold emails are more direct and scalable for outreach. Social media works best when combined with email rather than used alone."
+  },
+  {
+    "q": "Do decision-makers still read emails?",
+    "a": "Yes. Email remains the most preferred professional communication channel for decision-makers."
+  },
+  {
+    "q": "Can I use AI for writing sales emails?",
+    "a": "Yes, but only when AI follows proven frameworks and maintains a human tone. Poor AI usage often results in generic and ineffective messaging."
+  },
+  {
+    "q": "How does Sell Sharp improve email quality?",
+    "a": "Sell Sharp improves email quality by applying structured frameworks, personalization logic, and clarity checks to ensure emails sound professional and human."
+  },
+  {
+    "q": "What’s the difference between templates and frameworks?",
+    "a": "Templates are static and one-size-fits-all. Frameworks adapt messaging based on context, recipient problems, and campaign intent, making emails more effective."
+  },
+  {
+    "q": "How quickly can someone learn cold emailing?",
+    "a": "With guided frameworks and structured learning, most users understand and begin sending effective cold emails within hours."
+  }
+]
+
+    },
+
+  };
+
+  const overlay = document.getElementById("qaModalOverlay");
+  const closeBtn = document.getElementById("qaModalClose");
+  const titleEl = document.getElementById("qaModalTitle");
+  const accEl = document.getElementById("qaAccordion");
+
+  function openModal(topicKey, fallbackTitle) {
+    const topic = qaData[topicKey];
+    const modalTitle = topic?.title || (fallbackTitle ? `${fallbackTitle} — Questions` : "Questions");
+    const items = topic?.items || [];
+
+    titleEl.textContent = modalTitle;
+    accEl.innerHTML = "";
+
+    if (!items.length) {
+      accEl.innerHTML = `<div class="empty-state">No Q&A added yet for this card. Add questions inside <b>qaData</b> in the script.</div>`;
+    } else {
+      items.forEach((item, idx) => {
+        const itemId = `acc_${topicKey}_${idx}`;
+        const panelId = `${itemId}_panel`;
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "acc-item";
+
+        wrapper.innerHTML = `
+          <button class="acc-btn" type="button"
+                  aria-expanded="false"
+                  aria-controls="${panelId}"
+                  id="${itemId}">
+            <span>${item.q}</span>
+            <span class="acc-icon">+</span>
+          </button>
+          <div class="acc-panel" id="${panelId}" role="region" aria-labelledby="${itemId}">
+            ${item.a}
+          </div>
+        `;
+
+        accEl.appendChild(wrapper);
+      });
+    }
+
+    overlay.classList.add("open");
+    overlay.setAttribute("aria-hidden", "false");
+
+    // focus first accordion button for accessibility
+    const firstBtn = accEl.querySelector(".acc-btn");
+    if (firstBtn) firstBtn.focus();
+  }
+
+  function closeModal() {
+    overlay.classList.remove("open");
+    overlay.setAttribute("aria-hidden", "true");
+  }
+
+  // Card click
+  document.querySelectorAll(".card").forEach((card) => {
+    card.addEventListener("click", () => {
+      const key = card.dataset.topic;
+      const h3 = card.querySelector("h3")?.textContent?.trim();
+      openModal(key, h3);
+    });
+
+    // keyboard open (Enter/Space)
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        card.click();
+      }
+    });
+  });
+
+  // Accordion toggle (event delegation)
+  accEl.addEventListener("click", (e) => {
+    const btn = e.target.closest(".acc-btn");
+    if (!btn) return;
+
+    const panel = document.getElementById(btn.getAttribute("aria-controls"));
+    const isOpen = btn.getAttribute("aria-expanded") === "true";
+
+    // OPTIONAL: close others (keep only one open)
+    accEl.querySelectorAll(".acc-btn").forEach(b => {
+      if (b !== btn) b.setAttribute("aria-expanded", "false");
+    });
+    accEl.querySelectorAll(".acc-panel").forEach(p => {
+      if (p !== panel) p.classList.remove("open");
+    });
+    accEl.querySelectorAll(".acc-icon").forEach(i => { i.textContent = "+"; });
+
+    // toggle current
+    btn.setAttribute("aria-expanded", String(!isOpen));
+    panel.classList.toggle("open", !isOpen);
+    btn.querySelector(".acc-icon").textContent = !isOpen ? "–" : "+";
+  });
+
+  // Close controls
+  closeBtn.addEventListener("click", closeModal);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) closeModal(); // click outside modal
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && overlay.classList.contains("open")) closeModal();
+  });
+</script>
+
+</body>
+</html>

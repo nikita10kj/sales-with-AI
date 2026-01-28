@@ -9,116 +9,55 @@
       height: 300px !important;
     }
   </style>
-            <!-- Sidebar -->
-            <!-- <div class="col-md-3 sidebar">
-                <div class="sidebar-content">
-                    <h5 class="sidebar-title">
-                        <i class="fas fa-chart-bar me-2"></i>
-                        Analytics Dashboard
-                    </h5>
-                    <div class="analytics-nav">
-                        <div class="nav-item active" data-section="overview">
-                            <i class="fas fa-tachometer-alt"></i>
-                            <span>Overview</span>
-                        </div>
-                        <div class="nav-item" data-section="campaigns">
-                            <i class="fas fa-envelope-open"></i>
-                            <span>Campaigns</span>  
-                        </div>
-                        <div class="nav-item" data-section="performance">
-                            <i class="fas fa-chart-line"></i>
-                            <span>Performance</span>
-                        </div>
-                        <div class="nav-item" data-section="audience">
-                            <i class="fas fa-users"></i>
-                            <span>Audience</span>
-                        </div>
-                        <div class="nav-item" data-section="reports">
-                            <i class="fas fa-file-alt"></i>
-                            <span>Reports</span>
-                        </div>
-                    </div>
-                </div>
-            </div> -->
-
+        
             <!-- Main Content -->
             <div class="main-content-analytics">
                 <!-- Overview Section -->
                 <div class="analytics-section active" id="overview">
-                    <!-- Section Header -->
-<!-- Section Header -->
-{% if user.is_superuser %}
-<div class="container my-5">
-  <div class="card shadow-sm border-0 rounded-4">
-    <div class="card-header bg-primary text-white rounded-top-4">
-      <h5 class="mb-0 fw-bold">User Email Summary</h5>
-    </div>
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Full Name</th>
-            <th>Email</th>
-            <th class="text-center">Total Emails Sent</th>
-            <th class="text-center">Opened Emails</th>
-            <th class="text-center text-success">Today's Sent</th>
-            <th class="text-center text-success">Today's Opened</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for u in all_users %}
-          <tr>
-            <td>{{ u.full_name }}</td>
-            <td>{{ u.email }}</td>
-            <td class="text-center">{{ u.total_sent }}</td>
-            <td class="text-center">{{ u.opened_count }}</td>
-            <td class="text-center">{{ u.today_sent }}</td>
-            <td class="text-center">{{ u.today_opened }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-{% endif %}
 
 
+                    <!-- Key Metrics Cards -->
+                <div class="row g-4 mb-2">
+                <!-- Emails Sent Card -->
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center p-4 rounded-4 shadow" 
+                        style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 10px 30px rgba(16, 172, 132, 0.15); transition: transform 0.4s ease;" 
+                        onmouseover="this.style.transform='scale(1.03)'" 
+                        onmouseout="this.style.transform='scale(1)'">
+                    <div class="d-flex align-items-center justify-content-center me-4" 
+                        style="width: 80px; height: 80px; border-radius: 20px; background: linear-gradient(145deg, #00b894, #55efc4); box-shadow: 0 6px 15px rgba(0, 184, 148, 0.4);">
+                        <i class="fas fa-paper-plane text-white" style="font-size: 2rem;"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                    <!-- Total Sent -->
+                    <h3 class="mb-1 fw-bold" style="font-size: 2.4rem; color: #2c3e50;">
+                    {{ total_sent }}
+                    </h3>
+                    <p class="text-muted mb-2" style="font-size: 0.95rem;">Total Emails Sent</p>
 
+                    <!-- Breakdown -->
+                    <div class=" mt-3 small text-muted" style="font-size: 0.85rem;">
+                        <div class="d-flex gap-4 mb-1">
+                        <div>📅 <strong>Today:</strong> {{ today_sent }}</div>
+                        <div>⏪ <strong>Yesterday:</strong> {{ yesterday_sent }}</div>
+                    </div>
 
-<div class="text-center mb-2 p-2 rounded-4 ">
-  <h2 class="mb-3 fw-bold" style="font-size: 2.5rem; color: #2c3e50;">
-    <i class="fas fa-tachometer-alt me-2" style="color: #6f42c1;"></i>Performance Analytics
-  </h2>
-  <p class="text-muted" style="font-size: 1rem;">Visualize key insights from your latest email campaigns</p>
-</div>
+                    <div class="d-flex gap-4">
+                        <div>📊 <strong>Last Week:</strong> {{ last_week_sent }}</div>
+                        <div>🗓️ <strong>Last Month:</strong> {{ last_month_sent }}</div>
+                    </div>
+                    </div>
 
-<!-- Key Metrics Cards -->
-<div class="row g-4 mb-2">
-  <!-- Emails Sent Card -->
-  <div class="col-md-6">
-    <div class="d-flex align-items-center p-4 rounded-4 shadow" 
-         style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 10px 30px rgba(16, 172, 132, 0.15); transition: transform 0.4s ease;" 
-         onmouseover="this.style.transform='scale(1.03)'" 
-         onmouseout="this.style.transform='scale(1)'">
-      <div class="d-flex align-items-center justify-content-center me-4" 
-           style="width: 80px; height: 80px; border-radius: 20px; background: linear-gradient(145deg, #00b894, #55efc4); box-shadow: 0 6px 15px rgba(0, 184, 148, 0.4);">
-        <i class="fas fa-paper-plane text-white" style="font-size: 2rem;"></i>
-      </div>
-      <div>
-        <h3 id="totalSent" class="mb-1 fw-bold" style="font-size: 2.5rem; color: #2c3e50;">{{ total_sent }}</h3>
-        <p class="text-muted mb-2" style="font-size: 0.95rem;">Emails Sent</p>
-        {% if email_limit %}
-            <div class="fw-semibold" 
-                style="font-size: 0.9rem; color: {% if remaining_emails <= 50 %}#dc3545{% else %}#00b894{% endif %};">
-            {{ remaining_emails }} left out of {{ email_limit }}
-            <small>(You’ve already sent {{ total_sent_user }} emails.)</small>
+                    {% if email_limit %}
+                    <div class="mt-2 fw-semibold"
+                        style="font-size: 0.75rem;
+                                color: {% if remaining_emails <= 50 %}#dc3545{% else %}#00b894{% endif %};">
+                    {{ remaining_emails }} left out of {{ email_limit }}
+                    </div>
+                    {% endif %}
+                </div>
             </div>
-        {% endif %}
-        
-      </div>
-    </div>
-  </div>
+        </div>
 
   <!-- Open Rate Card -->
   <div class="col-md-6">
@@ -132,48 +71,32 @@
       </div>
       <div>
         <h3 id="openRate" class="mb-1 fw-bold" style="font-size: 2.5rem; color: #2c3e50;">{{ open_rate }}%</h3>
-        <p class="text-muted mb-2" style="font-size: 0.95rem;">Open Rate</p>
-        
+        <p class="text-muted mb-3" style="font-size: 0.95rem;">Open Rate</p>
+        <div class="d-flex flex-column gap-1 mt-2" style="font-size: 0.85rem;">
+            <span>
+                <strong>Today:</strong> {{ today_opened}}
+                <span class="text-danger">({{ unread_percentage }}%)</span>
+            </span>
+            <span>
+                <strong>Read:</strong> {{ read_emails }}
+                <span class="text-success">({{ read_percentage }}%)</span>
+            </span>
+            <span>
+                <strong>Unread:</strong> {{ unread_emails }}
+                <span class="text-danger">({{ unread_percentage }}%)</span>
+            </span>
+        </div>
       </div>
     </div>
   </div>
 </div>
-
-
-
-
-                    </div>
-                    </div>
-
-                        <!-- <div class="col-md-3">
-                            <div class="metric-card">
-                                <div class="metric-icon bg-warning">
-                                    <i class="fas fa-mouse-pointer"></i>
-                                </div>
-                                <div class="metric-content">
-                                    <h3 id="clickRate">4.7%</h3>
-                                    <p>Click Rate</p>
-                                    <span class="metric-change negative">-1.1%</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="metric-card">
-                                <div class="metric-icon bg-danger">
-                                    <i class="fas fa-reply"></i>
-                                </div>
-                                <div class="metric-content">
-                                    <h3 id="responseRate">8.3%</h3>
-                                    <p>Response Rate</p>
-                                    <span class="metric-change positive">+2.1%</span>
-                                </div>
-                            </div>
-                        </div> -->
-                    </div>
+</div>
+</div>                    
+</div>
 
                     <!-- Charts Row -->
                     <div class="row mb-4">
-                        <div class="col-md-8">
+                        <div class="col-md-12">
                             <div class="chart-card">
                                 <div class="chart-header">
                                     <h5><i class="fas fa-chart-line me-2"></i>Email Performance Trends</h5>
@@ -184,14 +107,6 @@
                                     </div>
                                 </div>
                                 <canvas id="performanceChart" height="300"></canvas>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="chart-card">
-                                <div class="chart-header">
-                                    <h5><i class="fas fa-chart-pie me-2"></i>Framework Types</h5>
-                                </div>
-                                <canvas id="campaignTypesChart" height="300"></canvas>
                             </div>
                         </div>
                     </div>
@@ -316,7 +231,7 @@
                                         <th>Response Rate</th>
                                         <th>Status</th>
                                         <th>Actions</th>
-                                    </tr>
+                                    </tr>``
                                 </thead>
                                 <tbody id="campaignsTableBody">
                                     <!-- Campaign rows will be populated by JavaScript -->
@@ -506,6 +421,8 @@
                     </div>
                 </div>
             </div>
+
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
       // Performance Chart
@@ -578,7 +495,6 @@
         });
       });
 
-      // Campaign Types Chart (keep your existing code)
       // Campaign Types Chart - Updated with real data
       const ctx2 = document.getElementById("campaignTypesChart").getContext("2d");
       new Chart(ctx2, {
@@ -629,5 +545,26 @@
         },
       });
     });
+
 </script>
+
+<script>
+function loadEmailStats() {
+    fetch("{% url 'dashboard' %}")
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("openRate").innerText = data.open_rate + "%";
+            document.getElementById("todayOpened").innerText = data.today_opened;
+            document.getElementById("readEmails").innerText = data.opened;
+            document.getElementById("unreadEmails").innerText = data.unopened;
+        });
+}
+
+// First load
+loadEmailStats();
+
+// Auto refresh every 10 seconds
+setInterval(loadEmailStats, 10000);
+</script>
+
 {% endblock content %}

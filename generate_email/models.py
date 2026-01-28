@@ -13,7 +13,6 @@ class TargetAudience(models.Model):
     receiver_last_name = models.CharField(max_length=500, blank=True, null=True)
     receiver_linkedin_url = models.URLField(blank=True, null=True)
     selected_service = models.CharField(max_length=255, null=True)
-
     company_url = models.URLField(blank=True, null=True)
     framework = models.CharField(max_length=255, blank=True, null=True)
     campaign_goal = models.CharField(max_length=255, blank=True, null=True)
@@ -29,9 +28,11 @@ class SentEmail(models.Model):
     subject = models.CharField(max_length=500)
     message = models.TextField()
     opened = models.BooleanField(default=False)
+    opened_at = models.DateTimeField(null=True, blank=True)
     stop_reminder = models.BooleanField(default=False)
     threadId = models.CharField(max_length=255, null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
+    opened_count = models.PositiveIntegerField(default=0)
 
 class ReminderEmail(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='reminder_email')

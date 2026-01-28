@@ -1,41 +1,38 @@
-from django.shortcuts import render
-
-# Create your views here.
 from django.contrib.auth.decorators import login_required
 from django.views.generic import FormView, View,TemplateView
 from django.contrib.auth import login, authenticate
 from django.contrib import messages
-from .models import EmailOTP, CustomUser, ProductService, ActivityLog
-from .forms import EmailForm, OTPForm
+from .models import EmailOTP, CustomUser, ProductService, ActivityLog,Signature
+from .forms import EmailForm, OTPForm,SupportForm
 from .utils import sendOTP, add_single_sender
 from django.contrib.auth.views import PasswordResetView
-
 from django.utils.timezone import now
 from datetime import timedelta
 from django.contrib.auth.mixins import LoginRequiredMixin,UserPassesTestMixin
 from django.views.generic.edit import UpdateView
-
 from django.urls import reverse_lazy
-import os, json
-
+import os, json,re
 from django.conf import settings
 from django.shortcuts import redirect, get_object_or_404
-
 from django.views.decorators.csrf import requires_csrf_token
 from django.http import HttpResponseForbidden
 from django.core.validators import URLValidator, EmailValidator
 from django.core.exceptions import ValidationError
 from collections import defaultdict
-import re
 from generate_email.models import SentEmail,TargetAudience
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.db.models import Count, Q, F, FloatField, ExpressionWrapper
 from django.db.models.functions import Cast
 from django.core.mail import EmailMessage
-from .forms import SupportForm
 from generate_email.models import EmailSubscription
 from generate_email.utils import create_subscription
+from allauth.socialaccount.models import SocialAccount
+from django.views import View
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.http import JsonResponse
+
 
 @requires_csrf_token
 def csrf_failure(request, reason=""):
@@ -88,8 +85,6 @@ class HomeView(LoginRequiredMixin, TemplateView):
         # Total sent emails
         if user.is_superuser:
             sent_emails = SentEmail.objects.all()
-            total_sent = SentEmail.objects.all().count()
-            opened_count = SentEmail.objects.filter(opened=True).count()
             campaign_types = TargetAudience.objects.all().exclude(framework__isnull=True).exclude(
                 framework__exact='')
             recent_activities = ActivityLog.objects.all().order_by('-timestamp')[:5]
@@ -112,17 +107,64 @@ class HomeView(LoginRequiredMixin, TemplateView):
 
         else:
             sent_emails = SentEmail.objects.filter(user=user)
-            total_sent = SentEmail.objects.filter(user=user).count()
-            opened_count = SentEmail.objects.filter(user=user, opened=True).count()
+            # total_sent = SentEmail.objects.filter(user=user).count()
+            # opened_count = SentEmail.objects.filter(user=user, opened=True).count()
             campaign_types = TargetAudience.objects.filter(user=user).exclude(framework__isnull=True).exclude(
                 framework__exact='')
             recent_activities = ActivityLog.objects.filter(user=user).order_by('-timestamp')[:5]
 
         # Calculate open rate
-        open_rate = (opened_count / total_sent * 100) if total_sent > 0 else 0
+        total_sent=sent_emails.count()
+        total_opened_emails = sent_emails.filter(opened=True).count()
+
+        read_emails = total_opened_emails
+        unread_emails = total_sent - total_opened_emails
+
+        open_rate = (total_opened_emails / total_sent * 100) if total_sent > 0 else 0
+
+        read_percentage = open_rate
+        unread_percentage = 100 - open_rate if total_sent > 0 else 0
 
         # Get data for the last 7 days
         today = timezone.now().date()
+        this_month_start = today.replace(day=1)
+        yesterday = today - timedelta(days=1)
+
+        today_sent = sent_emails.filter(
+            created__date=today
+        ).count()
+        yesterday_sent = sent_emails.filter(created__date=yesterday).count()
+
+        this_week_start = today - timedelta(days=today.weekday())  # Monday
+        this_week_end = this_week_start + timedelta(days=6)
+
+        last_week_start = this_week_start - timedelta(days=7)
+        last_week_end = this_week_start - timedelta(days=1)
+
+        last_month_end = this_month_start - timedelta(days=1)
+        last_month_start = last_month_end.replace(day=1)
+
+        # Counts
+        this_week_sent = sent_emails.filter(
+            created__date__gte=this_week_start,
+            created__date__lte=this_week_end
+        ).count()
+
+        last_week_sent = sent_emails.filter(
+            created__date__gte=last_week_start,
+            created__date__lte=last_week_end
+        ).count()
+
+        this_month_sent = sent_emails.filter(
+            created__date__gte=this_month_start
+        ).count()
+
+        last_month_sent = sent_emails.filter(
+            created__date__gte=last_month_start,
+            created__date__lte=last_month_end
+        ).count()
+
+
         date_list = [today - timedelta(days=i) for i in range(6, -1, -1)]  # Last 7 days including today
 
         sent_data = []
@@ -138,14 +180,28 @@ class HomeView(LoginRequiredMixin, TemplateView):
                 created__lte=end_date
             ).count()
             
-            opened_count = sent_emails.filter(
+            opened_count_day = sent_emails.filter(
                 opened=True,
                 created__gte=start_date,
                 created__lte=end_date
             ).count()
             
-            sent_data.append(sent_count)
-            opened_data.append(opened_count)
+            # sent_data.append(sent_count)
+            sent_data.append(
+                sent_emails.filter(created__range=(start_date, end_date)).count()
+    )
+            # opened_data.append(opened_count_day)
+            opened_data.append(
+                sent_emails.filter(
+                opened=True,
+                created__range=(start_date, end_date)
+        ).count()
+            )
+
+            today_opened = sent_emails.filter(
+            opened=True,
+            opened_at__date=today
+        ).count()
             labels.append(date.strftime("%b %d"))
 
         # Get campaign types data
@@ -170,7 +226,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
                 )
             ) \
             .filter(total_sent__gt=0) \
-            .order_by('-open_rate')[:3]  # Get top 3
+            .order_by('-open_rate')[:4]  # Get top 4
 
         # Prepare top campaigns data
         top_campaigns_data = []
@@ -185,7 +241,18 @@ class HomeView(LoginRequiredMixin, TemplateView):
 
         context.update({
             "total_sent": total_sent,
+            "today_sent": today_sent,
+            "yesterday_sent": yesterday_sent,
+            "this_week_sent": this_week_sent,
+            "last_week_sent": last_week_sent,
+            "this_month_sent": this_month_sent,
+            "last_month_sent": last_month_sent,
             "open_rate": round(open_rate, 1),
+            "today_opened": today_opened,
+            "read_emails": read_emails,
+            "unread_emails": unread_emails,
+            "read_percentage": round(read_percentage, 1),
+            "unread_percentage": round(unread_percentage, 1),
             "chart_labels": labels,
             "sent_data": sent_data,
             "opened_data": opened_data,
@@ -431,220 +498,189 @@ class UserDetailsView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         messages.success(self.request, "Your details and services have been updated successfully.")
 
         return response
-    
+
+
 class ProfileView(LoginRequiredMixin, View):
 
     def normalize_url(self, url):
-        """Prepends https:// if the URL does not start with http:// or https://"""
         if url and not url.startswith(('http://', 'https://')):
             return f'https://{url.strip()}'
         return url.strip() if url else ''
 
     def get(self, request):
-        # Fetch services for the logged-in user
-        services = ProductService.objects.filter(user=request.user).order_by('id')
+        google_accounts = SocialAccount.objects.filter(
+            user=request.user,
+            provider="google"
+        )
+
+        services = ProductService.objects.filter(
+            user=request.user
+        ).order_by('id')
+
+        signatures = Signature.objects.filter(
+        user=request.user
+        ).order_by('id')
+
         return render(request, 'users/profile.html', {
             'user': request.user,
             'services': services,
+            "signatures": signatures,
+            "google_accounts": google_accounts
+
         })
 
+    
     def post(self, request):
         user = request.user
-        errors = {}
-        changes = {}
+        if 'personal_submit' in request.POST:
 
-        # Validate and update email
-        email = request.POST.get('email', '').strip()
-        try:
-            EmailValidator()(email)
-            if user.email != email:
-                if CustomUser.objects.exclude(id=user.id).filter(email=email).exists():
-                    errors['email'] = "Email already exists"
-                changes['email'] = {'old': user.email, 'new': email}
+            errors = {}
+            changes = {}
 
-            user.email = email
-        except ValidationError:
-            errors['email'] = 'Invalid email format'
+            # Email
+            email = request.POST.get('email', '').strip()
+            try:
+                EmailValidator()(email)
+                if user.email != email:
+                    if CustomUser.objects.exclude(id=user.id).filter(email=email).exists():
+                        errors['email'] = "Email already exists"
+                    changes['email'] = {'old': user.email, 'new': email}
+                user.email = email
+            except ValidationError:
+                errors['email'] = 'Invalid email format'
 
-        # Collect and normalize user fields
-        full_name = request.POST.get('full_name', '').strip()
+            # Full Name
+            full_name = request.POST.get('full_name', '').strip()
+            if user.full_name != full_name:
+                changes['full_name'] = {'old': user.full_name, 'new': full_name}
+            user.full_name = full_name
 
-        if user.full_name != full_name:
-            changes['full_name'] = {'old': user.full_name, 'new': full_name}
-        user.full_name = full_name
-        contact = request.POST.get('contact', '').strip()
-        if user.contact != contact:
-            changes['contact'] = {'old': user.contact, 'new': contact}
-        user.contact = contact
-        company_name = request.POST.get('company_name', '').strip()
-        if user.company_name != company_name:
-            changes['company_name'] = {'old': user.company_name, 'new': company_name}
-        user.company_name = company_name
-        company_url = self.normalize_url(request.POST.get('company_url', ''))
-        if user.company_url != company_url:
-            changes['company_url'] = {'old': user.company_url, 'new': company_url}
-        user.company_url = company_url
-        company_linkedin_url = self.normalize_url(request.POST.get('company_linkedin_url', ''))
-        if user.company_linkedin_url != company_linkedin_url:
-            changes['company_linkedin_url'] = {
-                'old': user.company_linkedin_url,
-                'new': company_linkedin_url
-            }
-        user.company_linkedin_url = company_linkedin_url
-        user_linkedin_url = self.normalize_url(request.POST.get('user_linkedin_url', ''))
-        if user.user_linkedin_url != user_linkedin_url:
-            changes['user_linkedin_url'] = {
-                'old': user.user_linkedin_url,
-                'new': user_linkedin_url
-            }
-        user.user_linkedin_url = user_linkedin_url
+            # Contact
+            contact = request.POST.get('contact', '').strip()
+            if user.contact != contact:
+                changes['contact'] = {'old': user.contact, 'new': contact}
+            user.contact = contact
 
-        # If any validation error occurred, re-render form with data and errors
-        if errors:
-            services = ProductService.objects.filter(user=user)
-            return render(request, 'users/profile.html', {
-                'user': user,
-                'services': services,
-                'errors': errors
-            })
+            # Company Name
+            company_name = request.POST.get('company_name', '').strip()
+            if user.company_name != company_name:
+                changes['company_name'] = {'old': user.company_name, 'new': company_name}
+            user.company_name = company_name
 
-        # Save updated user data
-        user.save()
-        if changes:
-            field_labels = {
-                'email': 'Email',
-                'full_name': 'Full Name',
-                'contact': 'Contact Number',
-                'company_name': 'Company Name',
-                'company_url': 'Company Website',
-                'company_linkedin_url': 'Company LinkedIn',
-                'user_linkedin_url': 'Your LinkedIn',
-            }
+            # Company URL
+            company_url = self.normalize_url(request.POST.get('company_url', ''))
+            if user.company_url != company_url:
+                changes['company_url'] = {'old': user.company_url, 'new': company_url}
+            user.company_url = company_url
 
-            # Join changed fields into a sentence
-            changed_fields = [field_labels.get(field, field) for field in changes.keys()]
-            readable_fields = ' and '.join(
-                [', '.join(changed_fields[:-1]), changed_fields[-1]] if len(changed_fields) > 1 else changed_fields)
-
-            description = f"You updated your {readable_fields}"
-
-            ActivityLog.objects.get_or_create(
-                user=user,
-                action="PROFILE_UPDATED",
-                description=description
+            # Company LinkedIn
+            company_linkedin_url = self.normalize_url(
+                request.POST.get('company_linkedin_url', '')
             )
+            if user.company_linkedin_url != company_linkedin_url:
+                changes['company_linkedin_url'] = {
+                    'old': user.company_linkedin_url,
+                    'new': company_linkedin_url
+                }
+            user.company_linkedin_url = company_linkedin_url
 
-        # Delete previous services
-        ProductService.objects.filter(user=user).delete()
+            # User LinkedIn
+            user_linkedin_url = self.normalize_url(
+                request.POST.get('user_linkedin_url', '')
+            )
+            if user.user_linkedin_url != user_linkedin_url:
+                changes['user_linkedin_url'] = {
+                    'old': user.user_linkedin_url,
+                    'new': user_linkedin_url
+                }
+            user.user_linkedin_url = user_linkedin_url
 
-        # # Add new services from form
-        # index = 0
-        # while True:
-        #     name = request.POST.get(f'service_name_{index}')
-        #     url = request.POST.get(f'product_url_{index}')
-        #     usp = request.POST.get(f'product_usp_{index}')
+            # Errors → return page
+            if errors:
+                services = ProductService.objects.filter(user=user)
+                return render(request, 'users/profile.html', {
+                    'user': user,
+                    'services': services,
+                    'errors': errors
+                })
 
-        #     # Stop loop if all fields are empty
-        #     if not name and not url and not usp:
-        #         break
+            user.save()
 
-        #     # Save only if name and URL are provided
-        #     if name and url:
-        #         normalized_url = self.normalize_url(url)
-        #         ProductService.objects.create(
-        #             user=user,
-        #             service_name=name.strip(),
-        #             product_url=normalized_url,
-        #             product_usp=usp.strip() if usp else ''
-        #         )
-
-        #     index += 1
-
-        # return redirect('profile')
-
-        # Group service fields by index using defaultdict
-        services_data = defaultdict(dict)
-        service_name_pattern = re.compile(r'service_name_(\d+)')
-        for key, value in request.POST.items():
-            match = service_name_pattern.match(key)
-            if match:
-                idx = match.group(1)
-                services_data[idx]['service_name'] = value.strip()
-                services_data[idx]['product_url'] = self.normalize_url(request.POST.get(f'product_url_{idx}', ''))
-                services_data[idx]['product_usp'] = request.POST.get(f'product_usp_{idx}', '').strip()
-
-        # Create new ProductService entries
-        for service in services_data.values():
-            name = service.get('service_name')
-            url = service.get('product_url')
-            if name and url:
-                ProductService.objects.create(
+            if changes:
+                ActivityLog.objects.get_or_create(
                     user=user,
-                    service_name=name,
-                    product_url=url,
-                    product_usp=service.get('product_usp', '')
+                    action="PROFILE_UPDATED",
+                    description="Profile updated"
                 )
 
-        messages.success(request, "Your profile has been updated successfully!")
+            messages.success(request, "Personal information updated successfully!")
+            return redirect('profile')
+
+        
+        elif 'knowledge_submit' in request.POST:
+            ProductService.objects.filter(user=user).delete()
+            services_data = defaultdict(dict)
+            pattern = re.compile(r'service_name_(\d+)')
+
+            for key, value in request.POST.items():
+                match = pattern.match(key)
+                if match:
+                    idx = match.group(1)
+                    services_data[idx]['service_name'] = value.strip()
+                    services_data[idx]['product_url'] = self.normalize_url(
+                        request.POST.get(f'product_url_{idx}', '')
+                    )
+                    services_data[idx]['product_usp'] = request.POST.get(
+                        f'product_usp_{idx}', ''
+                    ).strip()
+
+            for service in services_data.values():
+                if service.get('service_name') and service.get('product_url'):
+                    ProductService.objects.create(
+                        user=user,
+                        service_name=service['service_name'],
+                        product_url=service['product_url'],
+                        product_usp=service.get('product_usp', '')
+                    )
+
+            messages.success(request, "Knowledge Base saved successfully!")
+            return redirect('profile')
+        
+        elif 'signature_submit' in request.POST:
+            Signature.objects.filter(user=user).delete()
+
+            for key, value in request.POST.items():
+                if key.startswith('signature_') and value.strip():
+                    idx = key.split('_')[1]
+                    photo = request.FILES.get(f'signature_photo_{idx}')
+
+                    Signature.objects.create(
+                            user=user,
+                            signature=value.strip(),
+                            photo=photo
+                    )
+            
+            messages.success(request, "Signatures saved successfully!")
+            return redirect('profile')
 
         return redirect('profile')
-    
+        
 class PrivacyPolicyView(View):
     template_name='users/privacypolicy.html'
 
     def get(self, request):
         return render(request, self.template_name)
-    
+
+class LearningHubView(View):
+    template_name='users/learninghub.html'
+
+    def get(self, request):
+        return render(request, self.template_name)
 class TermsConditionsView(View):
     template_name='users/termsconditions.html'
 
     def get(self, request):
         return render(request, self.template_name)
-
-# class SupportView(LoginRequiredMixin, View):
-#     def get(self, request):
-#         return render(request, 'users/support.html', {'user': request.user})
-
-#     def post(self, request):
-#         subject = request.POST.get('subject', '').strip()
-#         message = request.POST.get('message', '').strip()
-
-#         user = request.user
-#         user_email = user.email
-
-#         if subject and message:
-#             # Save request without needing email field in the model
-#             SupportRequest.objects.create(
-#                 user=user,
-#                 subject=subject,
-#                 message=message
-#             )
-
-#             # Email body and sending
-#             full_message = f"Support request from {user.get_full_name()} ({user_email}):\n\n{message}"
-#             try:
-#                 email_msg = EmailMessage(
-#                     subject=f"[Support] {subject}",
-#                     body=full_message,
-#                     from_email=settings.DEFAULT_FROM_EMAIL,
-#                     to=['jmsadvisory1@gmail.com'],
-#                     headers={'Reply-To': user_email}  # ✅ Reply goes to user
-#                 )
-#                 email_msg.send(fail_silently=False)
-
-#                 messages.success(request, "Support request submitted and emailed successfully.")
-#             except Exception as e:
-#                 messages.error(request, f"Failed to send email: {e}")
-
-#             return redirect('support')
-
-#         else:
-#             messages.error(request, "Please fill out all fields.")
-#             return render(request, 'users/support.html', {
-#                 'user': user,
-#                 'subject': subject,
-#                 'message': message
-#           })
 
 class SupportView(LoginRequiredMixin, FormView):    
     template_name = "users/support.html"    
@@ -670,3 +706,32 @@ class SupportView(LoginRequiredMixin, FormView):
     def form_invalid(self, form):        
         messages.error(self.request, "There was a problem with your submission.")        
         return self.render_to_response(self.get_context_data(form=form))
+
+@login_required
+def thirdparty_redirect(request):
+    """
+    Override allauth 3rdparty page
+    Always redirect to profile
+    """
+    return redirect('login')
+
+@login_required
+def dashboard(request):
+    user = request.user
+
+    total_emails = SentEmail.objects.filter(user=user).count()
+    opened_emails = SentEmail.objects.filter(user=user, opened=True).count()
+    unread_emails = SentEmail.objects.filter(user=user, opened=False).count()
+
+    open_rate = 0
+    if total_emails > 0:
+        open_rate = round((opened_emails / total_emails) * 100, 2)
+
+    context = {
+        "total_emails": total_emails,
+        "opened_emails": opened_emails,
+        "unread_emails": unread_emails,
+        "open_rate": open_rate,
+    }
+
+    return render(request, "users/dashboard.html", context)

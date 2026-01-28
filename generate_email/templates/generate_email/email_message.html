@@ -18,9 +18,6 @@
     {% endif %}
 </div>
 
-
-    
-
     <!-- Main Email Card -->
     <div class="card">
         <div class="card-header bg-primary text-white">
@@ -37,6 +34,20 @@
                 <strong>Sent:</strong>
                 <span class="utc-time" data-utc="{{ email.created|date:'c' }}"></span>
             </p>
+            <p>
+                <img src="{{ settings.SITE_URL }}/email/open/{{ email.uid }}/"
+                    width="1"
+                    height="1"
+                    style="display:none;" />
+
+                    {% if debug %}
+                    <a href="{% url 'email/open/<uuid:uid>/' email.uid %}" target="_blank">
+                        Debug: open tracking pixel
+                    </a>
+                    {% endif %}
+
+            </p>
+
         </div>
     </div>
 
@@ -64,9 +75,6 @@
         {% endfor %}
     </div>
     {% endif %}
-
-    
-
 </div>
 
 <!-- JS for Time Formatting and Smooth Scroll -->

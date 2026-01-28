@@ -4,15 +4,63 @@
 
 <div class="col-md-12 mt-3">
     <div class="card mb-4 mx-5">  {# Adds horizontal margin around the card #}
-        <div class="card-header bg-primary text-white">
+        <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
             <h4 class="mb-0"><i class="fas fa-users me-2"></i> Leads</h4>
+            <form method="get" class="d-flex" onsubmit="return false;">
+            <div class="position-relative">
+                <input type="text"
+                       class="form-control form-control-sm ps-4"
+                       placeholder="Search leads..."
+                       name="search"
+                       id="search"
+                       value="{{ request.GET.search|default:'' }}"
+                       style="width: 220px;">
+                <i class="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-2 text-muted"></i>
+            </div>
         </div>
-        <div class="d-flex justify-content-end mx-4 mt-2">
-            <a href="{% url 'export-leads' %}" class="btn btn-primary">
-                <i class="fas fa-file-export me-1"></i> Export to CSV
-            </a>
-        </div>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mx-4 mt-2">
 
+  <!-- LEFT: Filters -->
+  <div class="d-flex flex-wrap gap-2 align-items-center">
+
+    <select id="serviceFilter" class="form-select form-select-sm" style="width: 170px;">
+      <option value="">All Services</option>
+      {% for s in service_options %}
+        <option value="{{ s }}">{{ s }}</option>
+      {% endfor %}
+    </select>
+
+    <select id="frameworkFilter" class="form-select form-select-sm" style="width: 150px;">
+      <option value="">All Frameworks</option>
+      {% for f in framework_options %}
+        <option value="{{ f }}">{{ f }}</option>
+      {% endfor %}
+    </select>
+
+    <select id="goalFilter" class="form-select form-select-sm" style="width: 180px;">
+      <option value="">All Goals</option>
+      {% for g in goal_options %}
+        <option value="{{ g }}">{{ g }}</option>
+      {% endfor %}
+    </select>
+
+    <select id="lastConnectedFilter" class="form-select form-select-sm" style="width: 170px;">
+      <option value="">Any Date</option>
+      <option value="7">Last 7 days</option>
+      <option value="30">Last 30 days</option>
+      <option value="90">Last 90 days</option>
+    </select>
+
+    <button type="button" id="clearFilters" class="btn btn-outline-secondary btn-sm">
+      Clear
+    </button>
+  </div>
+
+  <!-- RIGHT: Export -->
+  <a href="{% url 'export-leads' %}" class="btn btn-primary btn-sm">
+    <i class="fas fa-file-export me-1"></i> Export to CSV
+  </a>
+    </div>
         <div class="card-body px-4 py-3">  {# Adds inner padding left/right and top/bottom #}
             {% if target_audience %}
                 <div class="table-responsive">  {# Ensures table scrolls on small screens #}
@@ -26,10 +74,9 @@
                                 <th scope="col">Framework</th>
                                 <th scope="col">Goal of Campaign</th>
                                 <th scope="col">Last Connected</th>
-
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="lead-table-body">
                             {% for ta in target_audience %}
                             <tr>
                                 <td class="clickable-row" data-href="{% url 'view-leads-email' pk=ta.id %}" style="cursor: pointer;">
@@ -56,9 +103,6 @@
                                 <td>
                                     {{ ta.created|date }}
                                 </td>
-
-
-
                             </tr>
 
                             {% endfor %}
@@ -116,12 +160,111 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+document.addEventListener('DOMContentLoaded', function () {
 
+    const searchInput = document.getElementById('search');
+    const tableBody = document.getElementById('lead-table-body');
+    const serviceFilter = document.getElementById('serviceFilter');
+    const frameworkFilter = document.getElementById('frameworkFilter');
+    const goalFilter = document.getElementById('goalFilter');
+    const lastConnectedFilter = document.getElementById('lastConnectedFilter');
+    const clearBtn = document.getElementById('clearFilters');
 
+    let debounceTimer = null;
 
+    // ✅ Clickable rows (works for initial + ajax rows)
+    tableBody.addEventListener('click', function (e) {
+        const cell = e.target.closest('.clickable-row');
+        if (cell) {
+            const href = cell.getAttribute('data-href');
+            if (href) window.location.href = href;
+        }
+    });
+
+    function buildUrl() {
+        const params = new URLSearchParams();
+        params.set('ajax', '1');
+
+        const q = (searchInput?.value || '').trim();
+        params.set('search', q); // ✅ always send search (even empty)
+
+        if (serviceFilter?.value) params.set('service', serviceFilter.value);
+        if (frameworkFilter?.value) params.set('framework', frameworkFilter.value);
+        if (goalFilter?.value) params.set('goal', goalFilter.value);
+        if (lastConnectedFilter?.value) params.set('last_days', lastConnectedFilter.value);
+
+        return `?${params.toString()}`;
+    }
+
+    function renderRows(data) {
+        tableBody.innerHTML = '';
+
+        if (!data || data.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">
+                        No matching leads found.
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        data.forEach(lead => {
+            const rowHtml = `
+                <tr>
+                    <td class="clickable-row" data-href="${lead.view_url}" style="cursor: pointer;">
+                        ${lead.first_name} ${lead.last_name}
+                        <small class="text-muted">(${lead.email})</small>
+                    </td>
+                    <td>
+                        <a href="${lead.linkedin_url}" target="_blank">${lead.linkedin_url}</a>
+                    </td>
+                    <td>${lead.selected_service || ''}</td>
+                    <td>
+                        <a href="${lead.company_url}" target="_blank">${lead.company_url}</a>
+                    </td>
+                    <td>${lead.framework || ''}</td>
+                    <td>${lead.campaign_goal || ''}</td>
+                    <td>${lead.created || ''}</td>
+                </tr>
+            `;
+            tableBody.insertAdjacentHTML('beforeend', rowHtml);
+        });
+    }
+
+    function fetchLeads() {
+        fetch(buildUrl())
+            .then(res => res.json())
+            .then(renderRows)
+            .catch(err => console.error('Filter/Search error:', err));
+    }
+
+    // ✅ Search debounce
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(fetchLeads, 300);
+        });
+    } else {
+        console.error("Search input with id='search' not found.");
+    }
+
+    // ✅ Dropdown filters
+    [serviceFilter, frameworkFilter, goalFilter, lastConnectedFilter].forEach(el => {
+        if (el) el.addEventListener('change', fetchLeads);
+    });
+
+    // ✅ Clear button
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            if (searchInput) searchInput.value = '';
+            if (serviceFilter) serviceFilter.value = '';
+            if (frameworkFilter) frameworkFilter.value = '';
+            if (goalFilter) goalFilter.value = '';
+            if (lastConnectedFilter) lastConnectedFilter.value = '';
+            fetchLeads();
+        });
+    }
+});
 </script>
-
-
-
-
 {% endblock content %}
