@@ -4,13 +4,25 @@
 
 <div class="col-md-12 mt-3">
     <div class="card mb-4 mx-5">  {# Adds horizontal margin around the card #}
-        <div class="card-header bg-primary text-white">
+        <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">  
             <h4 class="mb-0"><i class="fas fa-envelope me-2"></i> Sent Emails</h4>
+            <form class="d-flex" method="get" onsubmit="return false;">
+            <div class="position-relative">
+            <input type="text"
+               class="form-control form-control-sm ps-4"
+               name="search"
+               id="search"
+               value="{{ request.GET.search }}"
+               placeholder="Search emails..."
+               style="width: 220px;">
+        <i class="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-2 text-muted"></i>
+    </div>
+    </form>
         </div>
         <div class="card-body px-4 py-3">  {# Adds inner padding left/right and top/bottom #}
             {% if sent_emails %}
                 <div class="table-responsive">  {# Ensures table scrolls on small screens #}
-                    <table class="table table-striped table-hover mb-0">
+                    <table class="table table-striped table-hover mb-0" id="emails-table">
                         <thead class="table-light">
                             <tr>
                                 <th scope="col">To</th>
@@ -18,10 +30,9 @@
                                 <th scope="col">Delivery Time</th>
                                 <th scope="col">Upcoming Reminder</th>
                                 <th scope="col">Stop Reminder</th>
-
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="emails-tbody">
                             {% for email in sent_emails %}
                             <tr>
                                 <td class="clickable-row" data-href="{% url 'view-email-message' email.uid %}" style="cursor: pointer;">
@@ -59,7 +70,7 @@
                                             data-email-id="{{ email.id }}"
                                             data-email-subject="{{ email.subject }}"
                                             {% if email.stop_reminder %}
-                                                checked
+                                                checked``
                                                 disabled
                                             {% endif %}
                                         >
@@ -72,8 +83,6 @@
                                     {% endif %}
                                     </div>
                                 </td>
-
-
                             </tr>
                             <div class="modal fade" id="reminderConfirmModal" tabindex="-1" aria-hidden="true">
                               <div class="modal-dialog modal-dialog-centered">
@@ -132,6 +141,7 @@
     </div>
     {% endif %}
 </div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // Convert UTC to local time
@@ -182,8 +192,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
-
-
 
 document.addEventListener('DOMContentLoaded', function () {
     let selectedEmailId = null;
@@ -241,9 +249,90 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+function bindReminderToggles() {
+    document.querySelectorAll('.reminder-toggle').forEach(toggle => {
+        toggle.addEventListener('change', function (e) {
+            e.preventDefault();
+
+            window.selectedEmailId = this.dataset.emailId;
+            window.checkboxRef = this;
+
+            // revert until confirmed
+            this.checked = !this.checked;
+
+            const modal = new bootstrap.Modal(
+                document.getElementById('reminderConfirmModal')
+            );
+            modal.show();
+        });
+    });
+}
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('search');
+    const tableBody = document.getElementById('emails-tbody');
+
+    let debounceTimer = null;
+
+    searchInput.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        const query = this.value.trim();
+
+        debounceTimer = setTimeout(() => {
+            fetch(`?search=${encodeURIComponent(query)}&ajax=1`)
+                .then(response => response.json())
+                .then(data => {
+                    tableBody.innerHTML = '';
+
+                    if (data.length === 0) {
+                        tableBody.innerHTML = `
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">
+                                    No matching emails
+                                </td>
+                            </tr>`;
+                        return;
+                    }
+
+                     data.forEach(email => {
+    const toggleHtml = email.next_reminder_date ? `
+        <div class="form-check form-switch">
+            <input
+                class="form-check-input reminder-toggle"
+                type="checkbox"
+                role="switch"
+                id="reminder-${email.id}"
+                
+                data-email-id="${email.id}"
+                ${email.stop_reminder ? 'checked disabled' : ''}
+            >
+            ${!email.stop_reminder ? `
+                <label class="form-check-label fw-medium"
+                       for="reminder-${email.id}">
+                    Stop Reminders
+                </label>` : ''}
+        </div>
+    ` : '—';
+
+    tableBody.innerHTML += `
+        <tr>
+            <td>
+                ${email.name}
+                <small class="text-muted">(${email.email})</small>
+            </td>
+            <td>${email.subject}</td>
+            <td>${email.created}</td>
+            <td>${email.next_reminder_date ?? '—'}</td>
+            <td>${toggleHtml}</td>
+        </tr>
+    `;
+});
+        bindReminderToggles();
+           })
+                .catch(err => console.error(err));
+        }, 300); // debounce
+    });
+});
 </script>
-
-
-
-
 {% endblock content %}

@@ -32,6 +32,9 @@ DEBUG =  False
 ALLOWED_HOSTS = ['fairly-whole-hawk.ngrok-free.app','localhost','sellsmart-dvdhbme5h6eud4hz.centralindia-01.azurewebsites.net','www.sellsharp.co', 'sellsharp.co','20.192.98.161', '127.0.0.1']
 MS_GRAPH_CLIENT_STATE = "superSecret123jms"
 SITE_ID = 1
+
+SITE_URL = "https://sellsharp.co"
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -117,6 +120,9 @@ TEMPLATES = [
         },
     },
 ]
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 WSGI_APPLICATION = 'saleswithai.wsgi.application'
 
@@ -216,7 +222,7 @@ AUTHENTICATION_BACKENDS = (
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
-LOGIN_REDIRECT_URL = 'home'
+LOGIN_REDIRECT_URL = '/users/profile/'
 LOGOUT_REDIRECT_URL = 'login'
 LOGIN_URL = 'login'
 ACCOUNT_LOGOUT_REDIRECT_URL = 'login'  # Redirect URL after logout

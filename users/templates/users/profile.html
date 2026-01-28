@@ -2,134 +2,338 @@
 {% load static %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center mt-3">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0"><i class="fas fa-user-edit me-2"></i>Profile Information</h4>
-                    <p class="mb-0 text-white-50">Update your personal and company details</p>
-                </div>
-                <div class="card-body">
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+<style>
 
+.profile-layout {
+    display: flex;
+    min-height: 100vh;  
+    align-items: stretch;
+    background: #f5f7fb;
+}
+
+/* Sidebar */
+.profile-sidebar {
+    width: 260px;
+    background: linear-gradient(180deg, #6a6fdc, #7b5fdc);
+    padding: 20px;
+    color: white;
+}
+
+.sidebar-item {
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.3s;
+}
+
+.sidebar-item:hover {
+    background: rgba(255,255,255,0.15);
+}
+
+.sidebar-item.active {
+    background: white;
+    color: #6a6fdc;
+}
+
+/* Content */
+.profile-content {
+    flex: 1;
+    padding: 30px;
+    width: 100%;
+}
+
+.profile-content .card {
+    width: 100%;
+    max-width: none;
+}
+
+/* Tabs */
+.tab-section {
+    display: none;
+    height: 100%;
+}
+
+.tab-section.active {
+    display: block;
+    
+}
+
+</style>
+<div class="profile-layout">
+
+    <!-- Sidebar -->
+    <div class="profile-sidebar">
+        <div class="sidebar-item active" onclick="showTab('personal')">
+            <i class="fas fa-user me-2"></i> Personal Information
+        </div>
+        <div class="sidebar-item" onclick="showTab('knowledge')">
+            <i class="fas fa-database me-2"></i> Knowledge Base
+        </div>
+        <div class="sidebar-item" onclick="showTab('signature')">
+            <i class="fas fa-signature me-2"></i> Signature
+        </div>
+        <div class="sidebar-item" onclick="showTab('account')">
+            <i class="fas fa-envelope me-2"></i> Add Email
+        </div>
+    </div>
+
+     <div class="profile-content">
+
+    <!-- ================= PERSONAL INFORMATION ================= -->
+     <div id="personal" class="tab-section active">
+    <div class="row mt-3 gx-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+
+                <!-- Header -->
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-edit me-2"></i>Personal Information
+                    </h4>
+                    <p class="mb-0 text-white-50">
+                        Update your personal and company details
+                    </p>
+                </div>
+
+                <!-- Body -->
+                <div class="card-body">
                     <form method="post" enctype="multipart/form-data" class="profile-form">
                         {% csrf_token %}
 
-                        <!-- Email & Full Name -->
+                        <!-- Email & Name -->
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="email" class="form-label">Email *</label>
-                                <input type="email" class="form-control" id="email" name="email"
+                                <label class="form-label">Email *</label>
+                                <input type="email" class="form-control" name="email"
                                        value="{{ user.email }}" required>
-                            {% if errors.email %}
+                                {% if errors.email %}
                                     <div class="invalid-feedback d-block">{{ errors.email }}</div>
-                            {% endif %}
+                                {% endif %}
                             </div>
+
                             <div class="col-md-6 mb-3">
-                                <label for="full_name" class="form-label">Full Name *</label>
-                                <input type="text" class="form-control" id="full_name" name="full_name" required
-                                       value="{{ user.full_name }}">
-                            {% if form.full_name.errors %}
+                                <label class="form-label">Full Name *</label>
+                                <input type="text" class="form-control" name="full_name"
+                                       value="{{ user.full_name }}" required>
                                 {% for error in form.full_name.errors %}
                                     <div class="invalid-feedback d-block">{{ error }}</div>
                                 {% endfor %}
-                            {% endif %}
                             </div>
                         </div>
+
+                        <!-- Contact -->
                         <div class="mb-3">
-                        <label for="id_contact_number" class="form-label">Your Contact Number *</label>
-                        <input type="text" name="contact" id="id_contact_number"
-                               class="form-control"
-                               placeholder="+91652*******"
-                               value="{{ form.data.contact|default:user.contact|default_if_none:'' }}"
-                               required>
-                        {% if form.contact.errors %}
+                            <label class="form-label">Contact Number *</label>
+                            <input type="text" class="form-control" name="contact"
+                                   value="{{ form.data.contact|default:user.contact|default_if_none:'' }}"
+                                   required>
                             {% for error in form.contact.errors %}
                                 <div class="invalid-feedback d-block">{{ error }}</div>
                             {% endfor %}
-                        {% endif %}
-                    </div>
+                        </div>
 
-                        <!-- Company Name & URL -->
+                        <!-- Company -->
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="company_name" class="form-label">Company Name *</label>
-                                <input type="text" class="form-control" id="company_name" name="company_name" required
-                                       value="{{ user.company_name }}">
-
+                                <label class="form-label">Company Name *</label>
+                                <input type="text" class="form-control" name="company_name"
+                                       value="{{ user.company_name }}" required>
                             </div>
+
                             <div class="col-md-6 mb-3">
-                                <label for="company_url" class="form-label">Company URL</label>
-                                <input type="text" class="form-control" id="company_url" name="company_url"
-                                       value="{{ user.company_url }}" placeholder="https://yourcompany.com">
-                            {% if form.company_url.errors %}
-                                {% for error in form.company_url.errors %}
-                                    <div class="invalid-feedback d-block">{{ error }}</div>
-                                {% endfor %}
-                            {% endif %}
+                                <label class="form-label">Company URL</label>
+                                <input type="text" class="form-control" name="company_url"
+                                       value="{{ user.company_url }}">
                             </div>
                         </div>
 
-                        <!-- LinkedIn URLs -->
+                        <!-- LinkedIn -->
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="company_linkedin_url" class="form-label">Company LinkedIn URL *</label>
-                                <input type="text" class="form-control" id="company_linkedin_url"
-                                       name="company_linkedin_url" required
-                                       value="{{ user.company_linkedin_url }}" placeholder="https://linkedin.com/company/yourcompany">
-                            {% if form.company_linkedin_url.errors %}
-                                {% for error in form.company_linkedin_url.errors %}
-                                    <div class="invalid-feedback d-block">{{ error }}</div>
-                                {% endfor %}
-                            {% endif %}
+                                <label class="form-label">Company LinkedIn URL</label>
+                                <input type="text" class="form-control" name="company_linkedin_url"
+                                       value="{{ user.company_linkedin_url }}">
                             </div>
+
                             <div class="col-md-6 mb-3">
-                                <label for="user_linkedin_url" class="form-label">Your LinkedIn URL</label>
-                                <input type="text" class="form-control" id="user_linkedin_url" name="user_linkedin_url"
-                                       value="{{ user.user_linkedin_url }}" placeholder="https://linkedin.com/in/yourprofile">
-                            {% if form.user_linkedin_url.errors %}
-                                {% for error in form.user_linkedin_url.errors %}
-                                    <div class="invalid-feedback d-block">{{ error }}</div>
-                                {% endfor %}
-                            {% endif %}
+                                <label class="form-label">Your LinkedIn URL</label>
+                                <input type="text" class="form-control" name="user_linkedin_url"
+                                       value="{{ user.user_linkedin_url }}">
                             </div>
                         </div>
 
-                        <!-- Product Services Section -->
-                        <h5 class="mt-4 mb-3">Your Services</h5>
+                        <!-- Submit -->
+                        <div class="text-end">
+                            <button type="submit" name="personal_submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-2"></i>Save Personal Info
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        
+        </div>
+    </div>
+    </div>
+
+    <!-- ================= KNOWLEDGE BASE ================= -->
+     <div id="knowledge" class="tab-section">
+    <div class="row mt-3 gx-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+
+                <!-- Header -->
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-database me-2"></i>Knowledge Base
+                    </h4>
+                    <p class="mb-0 text-white-50">
+                        Manage your products & services for outreach and content generation
+                    </p>
+                </div>
+
+                <!-- Body -->
+                <div class="card-body">
+                    <form method="post" class="profile-form">
+                        {% csrf_token %}
+
+                        <h5 class="mb-3">Your Products / Services</h5>
+
                         <div id="services-container">
                             {% for svc in services %}
-                            <div class="service-block row mb-3 border p-3 rounded position-relative">
+                            <div class="service-block row mb-3 border p-3 rounded">
+
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Service Name *</label>
-                                    <input type="text" name="service_name_{{ forloop.counter0 }}" class="form-control"
-                                        placeholder="e.g. AI Content Analyzer" value="{{ svc.service_name }}" required>
+                                    <input type="text"
+                                           name="service_name_{{ forloop.counter0 }}"
+                                           class="form-control"
+                                           value="{{ svc.service_name }}"
+                                           required>
                                 </div>
+
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Service URL *</label>
-                                    <input type="text" name="product_url_{{ forloop.counter0 }}" class="form-control"
-                                        placeholder="https://yourproduct.com" value="{{ svc.product_url }}" required>
+                                    <input type="text"
+                                           name="product_url_{{ forloop.counter0 }}"
+                                           class="form-control"
+                                           value="{{ svc.product_url }}"
+                                           required>
                                 </div>
+
                                 <div class="col-md-12 mb-3">
                                     <label class="form-label">3–5 Unique Benefits (USP)</label>
-                                    <textarea name="product_usp_{{ forloop.counter0 }}" class="form-control" rows="3"
-                                            placeholder="Highlight key benefits">{{ svc.product_usp }}</textarea>
+                                    <textarea name="product_usp_{{ forloop.counter0 }}"
+                                              class="form-control"
+                                              rows="3">{{ svc.product_usp }}</textarea>
                                 </div>
+
                             </div>
+                            {% empty %}
+                                <p class="text-muted">No services added yet.</p>
                             {% endfor %}
                         </div>
 
-                        <!-- Add Another Service Button -->
-                        <button type="button" class="btn btn-sm btn-primary mb-4" id="add-service-btn">
+                        <!-- Add Service -->
+                        <button type="button"
+                                class="btn btn-sm btn-outline-primary mb-4"
+                                id="add-service-btn">
                             <i class="fas fa-plus"></i> Add Another Service
                         </button>
-
-                        <!-- Submit Button -->
-                        <div class="d-flex justify-content-end mt-4">
-                            <button type="submit" class="btn btn-primary px-4">
-                                <i class="fas fa-save me-2"></i>Update Profile
+                        <!-- Submit -->
+                        <div class="text-end">
+                            <button type="submit"
+                                    name="knowledge_submit"
+                                    class="btn btn-success px-4">
+                                <i class="fas fa-save me-2"></i>Save Knowledge Base
                             </button>
                         </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+
+    <!-- ================= SIGNATURE ================= -->
+    <div id="signature" class="tab-section">
+    <div class="row mt-3 gx-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+
+                <!-- Header -->
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-signature me-2"></i>Email Signatures
+                    </h4>
+                    <p class="mb-0 text-white-50">
+                        Add multiple email signatures
+                    </p>
+                </div>
+
+                <!-- Body -->
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div id="signature-container">
+                            {% for sig in signatures %}
+                            <div class="signature-block border p-3 rounded mb-3 position-relative">
+
+                                <button type="button"
+                                        class="btn-close position-absolute top-0 end-0 mt-2 me-2 remove-signature-btn">
+                                </button>
+
+                                <label class="form-label">Signature *</label>
+                                <textarea name="signature_{{ forloop.counter0 }}"
+                                          class="form-control"
+                                          rows="4"
+                                          required>{{ sig.signature }}</textarea>
+                                <label class="form-label mt-2">Signature Photo (optional)</label>
+                                <input type="file"
+                                    name="signature_photo_{{ forloop.counter0 }}"
+                                    class="form-control"
+                                    accept="image/*">
+
+                                {% if sig.photo %}
+                                    <img src="{{ sig.photo.url }}"
+                                        class="mt-2 rounded"
+                                        style="max-height:80px;">
+                                {% endif %}
+                            </div>
+                            {% empty %}
+                                <p class="text-muted">No signatures added yet.</p>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Add Signature -->
+                        <button type="button"
+                                class="btn btn-sm btn-outline-primary mb-4"
+                                id="add-signature-btn">
+                            <i class="fas fa-plus"></i> Add Another Signature
+                        </button>
+
+                        <!-- Submit -->
+                        <div class="text-end">
+                            <button type="submit"
+                                    name="signature_submit"
+                                    class="btn btn-dark px-4">
+                                <i class="fas fa-save me-2"></i>Save Signatures
+                            </button>
+                        </div>
+
                     </form>
                 </div>
             </div>
@@ -137,7 +341,53 @@
     </div>
 </div>
 
-<!-- JS for dynamic service blocks -->
+
+    <!-- ================= ADD ACCOUNT ================= -->
+                    <div id="account" class="tab-section">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-info text-white">
+                                <h4><i class="fas fa-envelope me-2"></i>Email Accounts</h4>
+                                <p class="mb-0 text-white-50">
+                                    Connect Google accounts used for sending emails
+                                </p>
+                            </div>
+
+                            <div class="card-body">
+
+                                <!-- Connected Google Accounts -->
+                                <ul class="list-group mb-3">
+                                    {% for acc in google_accounts %}
+                                        <li class="list-group-item">
+                                            {{ acc.extra_data.email }}
+                                        </li>
+                                    {% empty %}
+                                        <li class="list-group-item text-muted">
+                                            No Google accounts connected
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+
+                                <!-- Add Google Account -->
+                                {% load socialaccount %}
+                                    <a href="/accounts/google/login/?process=connect"
+                                    class="btn btn-primary px-4">
+                                        <i class="fab fa-go ogle"></i> Add Another Account
+                                    </a>
+                            </div>
+                        </div>
+                    </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    </div>
+</div>
+
+
+    <!-- JS for dynamic service blocks -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     let index = {{ services|length|default:0 }};
@@ -177,6 +427,75 @@ document.addEventListener('DOMContentLoaded', function () {
             e.target.closest('.service-block').remove();
         }
     });
+});
+document.addEventListener('DOMContentLoaded', function () {
+    let sigIndex = {{ signatures|length|default:0 }};
+    const sigContainer = document.getElementById('signature-container');
+    const sigAddBtn = document.getElementById('add-signature-btn');
+
+    if (!sigAddBtn) return;
+
+    sigAddBtn.addEventListener('click', function () {
+        const block = document.createElement('div');
+        block.className = 'signature-block border p-3 rounded mb-3 position-relative';
+
+        block.innerHTML = `
+            <button type="button"
+                    class="btn-close position-absolute top-0 end-0 mt-2 me-2 remove-signature-btn">
+            </button>
+
+            <label class="form-label">Signature *</label>
+            <textarea name="signature_${sigIndex}"
+                      class="form-control"
+                      rows="4"
+                      placeholder="Best regards,
+Your Name"
+                      required></textarea>
+                      <label class="form-label mt-2">Signature Photo (optional)</label>
+                        <input type="file"
+                        name="signature_photo_${sigIndex}"
+                        class="form-control"
+                        accept="image/*">
+        `;
+
+        sigContainer.appendChild(block);
+        sigIndex++;
+    });
+
+    sigContainer.addEventListener('click', function (e) {
+        if (e.target.classList.contains('remove-signature-btn')) {
+            e.target.closest('.signature-block').remove();
+        }
+    });
+});
+
+function showTab(tabId) {
+    document.querySelectorAll('.tab-section').forEach(tab => {
+        tab.classList.remove('active');
+    });
+
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.classList.remove('active');
+    });
+
+    document.getElementById(tabId).classList.add('active');
+    event.target.classList.add('active');
+
+    localStorage.setItem('activeProfileTab', tabId);
+}
+
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const savedTab = localStorage.getItem('activeProfileTab');
+
+    if (savedTab) {
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            if (item.getAttribute('onclick')?.includes(savedTab)) {
+                item.click();
+            }
+        });
+    }
 });
 </script>
 {% endblock %}

@@ -9,8 +9,6 @@
             Email Generator
         </h5>
         <div class="progress-steps">
-
-
             <div class="step" data-step="1">
                 <i class="fas fa-bullseye"></i>
                 <span>Target & Framework</span>
@@ -88,9 +86,6 @@
                         </select>
                     </div>
 
-
-
-
                     <div class="mb-3">
                         <label class="form-label">Email Framework *</label>
                         <div class="framework-options">
@@ -129,6 +124,13 @@
                                     <small class="d-block text-muted">Let us define framework</small>
                                 </label>
                             </div>
+                            <div class="form-check framework-card">
+                                <input class="form-check-input" type="radio" name="framework" id="acca" value="ACCA">
+                                <label class="form-check-label" for="acca">
+                                    <strong>ACCA Framework</strong>
+                                    <small class="d-block text-muted">Awareness → Comprehension → Conviction → Action</small>
+                                </label>
+                            </div>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -136,13 +138,39 @@
                         <select class="form-select" name="campaign_goal" id="campaignGoal" required>
                             <option value="">Select Goal</option>
                             <option value="lead-generation">Lead Generation</option>
-                            <option value="partnership">Partnership Opportunity</option>
                             <option value="product-demo">Product Demo</option>
                             <option value="meeting-request">Meeting Request</option>
-                            <option value="service-inquiry">Service Inquiry</option>
                             <option value="collaboration">Collaboration</option>
                         </select>
                     </div>
+                    <div class="mb-3">
+                        <label for="id_signature" class="form-label">
+                            Choose Email Signature
+                        </label>
+                        <select class="form-select" name="signature_id" id="id_signature">
+                            <option value="">No Signature</option>
+
+                            {% for sig in signatures %}
+                                <option value="{{ sig.id }}">
+                                    {{ sig.signature|truncatechars:40 }}
+                                </option>
+                            {% empty %}
+                                <option disabled>No signatures added yet</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Sent From</label>
+                        <select name="sent_from" class="form-select" required>
+                            {% for acc in google_accounts %}
+                                <option value="{{ acc.id }}">
+                                    {{ acc.extra_data.email }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
                     <button class="btn btn-primary" type="submit">
                     <i class="fas fa-magic me-2"></i>Generate Emails
                 </button>
@@ -191,16 +219,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Navigation Buttons -->
-<!--    <div class="step-navigation">-->
-<!--        <button class="btn btn-secondary" id="prevBtn" style="display: none;">-->
-<!--            <i class="fas fa-arrow-left me-2"></i>Previous-->
-<!--        </button>-->
-<!--        <button class="btn btn-primary" id="nextBtn">-->
-<!--            Next<i class="fas fa-arrow-right ms-2"></i>-->
-<!--        </button>-->
-<!--    </div>-->
 </div>
 
         <!-- Email Preview Modal -->
@@ -231,6 +249,77 @@
     <p class="mt-3">Generating your personalized emails...</p>
 </div>
 </div>
+
+<!-- Email Exists Modal -->
+<div class="modal fade" id="emailExistsModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Email Already Sent</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="emailExistsBody"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">
+          No
+        </button>
+        <button class="btn btn-primary" id="confirmGenerate">
+          Continue
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    const emailInput = document.getElementById("targetEmail");
+    const websiteInput = document.getElementById("targetWebsite");
+
+    const publicDomains = ["gmail", "yahoo", "outlook", "hotmail", "icloud"];
+
+    let autoFilled = false;
+
+    // Detect manual edit
+    websiteInput.addEventListener("input", function () {
+        autoFilled = false;
+    });
+
+    emailInput.addEventListener("input", function () {
+        const email = emailInput.value.trim();
+
+        const match = email.match(/@([^\.@]+)\.(.+)$/);
+        if (!match) {
+            if (autoFilled) {
+                websiteInput.value = "";
+                autoFilled = false;
+            }
+            return;
+        }
+
+        const companyName = match[1].toLowerCase();
+        const domainExt = match[2].toLowerCase();
+
+        // Ignore public email providers
+        if (publicDomains.includes(companyName)) {
+            if (autoFilled) {
+                websiteInput.value = "";
+                autoFilled = false;
+            }
+            return;
+        }
+
+        // Update only if previously auto-filled OR empty
+        if (!websiteInput.value || autoFilled) {
+            websiteInput.value = `https://${companyName}.${domainExt}`;
+            autoFilled = true;
+        }
+    });
+});
+
+
+</script>
 {% endblock content %}
 {% block js %}
 <script src="{% static 'generate_email/js/script.js' %}"></script>

@@ -77,6 +77,15 @@ class ProductService(models.Model):
     product_url = models.URLField(null=True)
     product_usp = models.TextField(null=True, blank=True)  
 
+class Signature(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    signature = models.TextField()
+    photo = models.ImageField(
+        upload_to='signatures/',
+        null=True,
+        blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
 
 class ActivityLog(models.Model):
     ACTION_CHOICES = [

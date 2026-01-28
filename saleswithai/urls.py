@@ -17,13 +17,20 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
+from django.views.generic import RedirectView
+from django.conf import settings
+from django.conf.urls.static import static
+from users.views import thirdparty_redirect
+
 
 urlpatterns = [
+    # path('', RedirectView.as_view(url='/users/',permanent=False)),
     path('admin/', admin.site.urls),
+    path("accounts/3rdparty/", thirdparty_redirect, name="account_connections_override"),
     path('accounts/', include('allauth.urls')),  # this line enables allauth
-     path('users/', include('users.urls')),  # default landing page
-    path('', include('frontend.urls')),  # frontend app for the main site
+    path('users/', include('users.urls')),  # default landing page
     path('generator/', include('generate_email.urls')),
+    path('', include('frontend.urls')), 
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
-]
+]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

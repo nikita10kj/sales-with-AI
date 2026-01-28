@@ -1,7 +1,6 @@
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.urls import reverse
 from allauth.account.adapter import DefaultAccountAdapter
-from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.exceptions import ImmediateHttpResponse
 from django.contrib.auth import get_user_model
 
@@ -29,8 +28,14 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
         # If user exists but doesn't have this social account, link it
         sociallogin.connect(request, existing_user)
 
-        # Optional: stop further processing
-        # raise ImmediateHttpResponse(self.respond_social_login_redirect(request, sociallogin))
+    def get_connect_redirect_url(self, request, socialaccount):
+        """
+        ✅ THIS is the missing piece
+        After connecting a new Google account,
+        redirect back to profile page
+        """
+        return reverse('profile')
+    
 
     def is_auto_signup_allowed(self, request, sociallogin):
         # Allow auto-signup to skip the intermediate page
@@ -46,5 +51,3 @@ class CustomSocialAccountAdapter(DefaultAccountAdapter):
         print('signup')
         user_id = request.user.id
         return reverse('user-details', kwargs={'pk': user_id}) # first-time social login
-
-

@@ -1,4 +1,8 @@
-from allauth.socialaccount.models import SocialToken
+import base64
+import datetime
+from multiprocessing import context
+from urllib import request
+from django.urls import reverse
 from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin,UserPassesTestMixin
 from django.views.decorators.csrf import csrf_exempt
@@ -6,46 +10,27 @@ from django.views.generic import FormView, View,TemplateView,ListView,DetailView
 from django.http import JsonResponse
 from .genai_email import get_response
 from .models import TargetAudience, SentEmail, ReminderEmail, EmailSubscription
-from users.models import ProductService, ActivityLog
+from users.models import ProductService, ActivityLog,Signature
 import json
 from django.http import HttpResponse
-
+from django.db.models import Q
 from .utils import sendGeneratedEmail, create_subscription, refresh_microsoft_token, MicrosoftEmailSendError
 from django.shortcuts import get_object_or_404
 from email.utils import make_msgid
-from datetime import timedelta, date
+from datetime import timedelta, date,datetime
 from django.utils import timezone
 from django.db.models import OuterRef, Subquery, DateField
 from django.db.models.functions import Cast
 from django.utils.timezone import now
-from allauth.socialaccount.models import SocialToken
-from django.utils import timezone
-
-# def get_latest_microsoft_token(user):
-#     """
-#     Safely returns the most recent Microsoft SocialToken for a user.
-#     Deletes older duplicates automatically.
-#     """
-#     tokens = SocialToken.objects.filter(
-#         account__user=user,
-#         account__provider='microsoft'
-#     ).order_by('-expires_at')
-
-#     if not tokens.exists():
-#         return None
-
-#     latest = tokens.first()
-
-#     # Optionally clean up duplicates
-#     tokens.exclude(id=latest.id).delete()
-
-#     # If token expired — try refreshing
-#     if latest.expires_at and latest.expires_at <= timezone.now():
-#         from .utils import refresh_microsoft_token
-#         new_token = refresh_microsoft_token(user)
-#         if not new_token:
-#             raise Exception("Microsoft token refresh failed")
-#         return new_token
+import calendar
+from allauth.socialaccount.models import SocialAccount, SocialToken
+from .utils import send_email  # your updated email sending function
+from saleswithai import settings
+import time
+from urllib.parse import quote, unquote
+import numpy as np
+import csv
+import requests
 
 #     return latest.token
 def get_latest_microsoft_token(user):
@@ -81,11 +66,93 @@ class GenerateEmailView(LoginRequiredMixin, View):
         if url and not url.startswith(('http://', 'https://')):
             return f'https://{url.strip()}'
         return url.strip() if url else ''
+    
+    def format_signature(self, signature_obj, user):
+        if not signature_obj or not signature_obj.signature:
+            return ""
+        raw_text= signature_obj.signature.strip()
+        lines = [
+            line.strip()
+            for line in raw_text.splitlines()
+            if line.strip()
+        ]
+        closing_phrases = {
+            "best",
+            "best regards",
+            "kind regards",
+            "regards",
+            "thanks",
+            "thank you",
+            "sincerely"
+        }
+        if len(lines) == 1 and lines[0].lower().rstrip(',') in closing_phrases:
+            lines[0] = lines[0].rstrip(',') + ","
+            lines.extend([
+                user.full_name,
+                user.contact or "",
+                user.company_name or ""
+            ])
+        html = "<p>" + "<br>".join(lines) + "</p>"
+
+        if signature_obj.photo:
+            html += f"""
+                <p>
+                    <img src="{signature_obj.photo.url}"
+                        alt="Signature Photo"
+                        style="max-width:420px;margin-top:8px;width:100%;height:auto;display:block;">
+                </p>
+            """
+        return html
 
     def get(self, request):
          # Fetch the user's services for the dropdown
         user_services = ProductService.objects.filter(user=request.user).values_list('service_name', flat=True).distinct()
-        return render(request, 'generate_email/email_generator.html', {'title': "Home",'user_services': user_services})
+        signatures = Signature.objects.filter(user=request.user)
+        google_accounts = SocialAccount.objects.filter(
+            user=request.user,
+            provider="google"
+        )
+        user = request.user
+
+        total_sent = SentEmail.objects.filter(user=user).count()
+
+        read_emails = SentEmail.objects.filter(
+            user=user,
+            opened=True
+        ).count()
+
+        unread_emails = SentEmail.objects.filter(
+            user=user,
+            opened=False
+        ).count()
+
+        today = timezone.now().date()
+
+        today_opened = SentEmail.objects.filter(
+            user=user,
+            opened=True,
+            opened_at__date=today
+        ).count()
+
+        # Percentages
+        open_rate = round((read_emails / total_sent) * 100, 2) if total_sent else 0
+        read_percentage = open_rate
+        unread_percentage = round(100 - open_rate, 2) if total_sent else 0
+
+        context = {
+            "google_accounts": google_accounts,
+            "user_services": user_services,
+            "signatures": signatures,
+            "title": "Home",
+            "open_rate": open_rate,
+            "today_opened": today_opened,
+            "read_emails": read_emails,
+            "unread_emails": unread_emails,
+            "read_percentage": read_percentage,
+            "unread_percentage": unread_percentage,
+        }
+
+        return render(request, 'generate_email/email_generator.html', context)
 
 
     def post(self, request, *args, **kwargs):
@@ -100,6 +167,28 @@ class GenerateEmailView(LoginRequiredMixin, View):
         company_url = self.normalize_url(data.get('company_url', ''))
         framework = data.get('framework')
         campaign_goal = data.get('campaign_goal')
+        signature_id = data.get('signature_id')
+
+        # Selected Account Read
+        selected_account_id = data.get("sent_from")  # <-- fetch from POST JSON
+
+        if selected_account_id:
+            google_account = SocialAccount.objects.get(
+                id=selected_account_id,
+                user=request.user,
+                provider="google"
+            )
+
+            google_token = SocialToken.objects.get(account=google_account)
+
+            sender_email = google_account.extra_data.get("email")
+            access_token = google_token.token
+
+            # Optional: log for debug
+            logger.info(f"Selected Google Account: {sender_email} for user {request.user.id}")
+        else:
+            sender_email = None
+            access_token = None
 
         if selected_service:
             service = ProductService.objects.get(user=request.user, service_name=selected_service)
@@ -126,14 +215,31 @@ class GenerateEmailView(LoginRequiredMixin, View):
         )
         emails = json.loads(get_response(request.user, target, service))
 
+        signature_html = ""
+        if signature_id:
+            try:
+                signature = Signature.objects.get(id=signature_id, user=request.user)
+                signature_html = self.format_signature(
+                    signature,
+                    request.user
+                )
+            except Signature.DoesNotExist:
+                signature_html = ""
+
+        default_signature = (
+            f"<p>Best,<br>"
+            f"{request.user.full_name}"
+            f"{'<br>' + request.user.contact if request.user.contact else ''}"
+            f"<br>{request.user.company_name}</p>"
+        )
+
+        final_signature = signature_html or default_signature
+
         for email in emails['follow_ups']:
-            email['body'] += (f"<p>Best,<br>{request.user.full_name}"
-                              f"{'<br>' + request.user.contact if request.user.contact else ''}"
-                              f"<br>{request.user.company_name}</p>")
+            email['body'] +=  final_signature or default_signature
+    
         emails['main_email'][
-            'body'] += (f"<p>Best,<br>{request.user.full_name}"
-                        f"{'<br>' + request.user.contact if request.user.contact else ''}"
-                        f"<br>{request.user.company_name}</p>")
+            'body'] += final_signature or default_signature
 
         return JsonResponse({'success': True,'emails': emails, 'targetId':target.id,# Return normalized URLs to display in the UI
             'normalized_urls': {
@@ -141,8 +247,6 @@ class GenerateEmailView(LoginRequiredMixin, View):
                 'company_linkedin_url': company_linkedin_url,
                 'receiver_linkedin_url': receiver_linkedin_url
             }})
-
-import numpy as np
 
 def add_business_days_np(start_date, n_days):
     # Convert to numpy datetime64
@@ -180,7 +284,9 @@ class SendEmailView(LoginRequiredMixin, View):
                     'error': 'Email limit reached. You can only send up to 500 emails.'
                 }, status=403)
 
-        sent_email = sendGeneratedEmail(request, request.user, target, main_email)
+        # ✅ Send main email
+        sent_email = send_email(request, user, target, main_email)
+
         ActivityLog.objects.get_or_create(
             user=request.user,
             action="EMAIL_SENT",
@@ -222,39 +328,8 @@ class SendEmailView(LoginRequiredMixin, View):
         })
 
 import logging
+from django.views.decorators.cache import never_cache
 logger = logging.getLogger(__name__)
-def track_email_open(request, uid):
-    logger.info(f"Pixel hit: UID={uid}, IP={request.META.get('REMOTE_ADDR')}, Auth={request.user.is_authenticated}, Source={request.GET.get('source')}")
-
-    # Avoid tracking if user is logged in (e.g., reading from your own UI)
-    if request.user.is_authenticated:
-        pixel = (
-            b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01'
-            b'\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89'
-            b'\x00\x00\x00\nIDATx\xdac\xf8\xff\xff?\x00\x05\xfe\x02'
-            b'\xfeA\xe2 \xa1\x00\x00\x00\x00IEND\xaeB`\x82'
-        )
-        return HttpResponse(pixel, content_type='image/png')
-    # Log the open event (use a unique ID for each email)
-    try:
-        tracker = SentEmail.objects.get(uid=uid)
-        tracker.opened = True
-        ActivityLog.objects.get_or_create(
-            user=tracker.user,
-            action="EMAIL_OPENED",
-            description=f"{tracker.target_audience.email} opened email"
-        )
-        tracker.save()
-    except SentEmail.DoesNotExist:
-        pass
-
-    # Return a transparent 1x1 PNG
-    pixel = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01' \
-            b'\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89' \
-            b'\x00\x00\x00\nIDATx\xdac\xf8\xff\xff?\x00\x05\xfe\x02' \
-            b'\xfeA\xe2 \xa1\x00\x00\x00\x00IEND\xaeB`\x82'
-    return HttpResponse(pixel, content_type='image/png')
-
 
 class EmailListView(LoginRequiredMixin, ListView):
     model = SentEmail
@@ -262,21 +337,139 @@ class EmailListView(LoginRequiredMixin, ListView):
     context_object_name = 'sent_emails'
    
 
-    def get_queryset(self):
+    def parse_full_datetime(self, value):
+        """
+        13 Jan 2026, 05:58 pm
+        """
+        try:
+            dt = datetime.strptime(value, "%d %b %Y, %I:%M %p")
+            return timezone.make_aware(dt)
+        except ValueError:
+            return None
+    def parse_natural_date(self, value):
+        """
+        13 jan
+        13 jan 2026
+        """
+        parts = value.lower().split()
 
+        if len(parts) not in (2, 3):
+            return None
+        month = day = year = None
+
+        for part in parts:
+            if part.isdigit():
+                if len(part) == 4:
+                    year = int(part)
+                else:
+                    day = int(part)
+            else:
+                try:
+                    month = list(calendar.month_name).index(part.capitalize())
+                except ValueError:
+                    try:
+                        month = list(calendar.month_abbr).index(part.capitalize())
+                    except ValueError:
+                        pass
+
+        if not month or not day:
+            return None
+
+        if not year:
+            year = timezone.now().year
+
+        try:
+            return datetime(year, month, day).date()
+        except ValueError:
+            return None
+        
+    def parse_month(self, value):
+        """
+        jan, january
+        """
+        value = value.lower()
+        for i in range(1, 13):
+            if value in (
+                calendar.month_name[i].lower(),
+                calendar.month_abbr[i].lower()
+            ):
+                return i
+        return None
+    
+    def get_queryset(self):
+        search = self.request.GET.get('search', '').strip()
+
+        today= timezone.now().date()
         next_reminder = ReminderEmail.objects.filter(
             sent_email=OuterRef('pk'),
-            send_at__gte=now().date()
+            sent=False,
+            # send_at__gte=now().date()
+            send_at__gte=today
         ).order_by('send_at').values('send_at')[:1]
-        
-        # Show only emails sent by the logged-in user, newest first
-        return (
-            SentEmail.objects
-            .filter(user=self.request.user)
-            .select_related('target_audience')
-            .annotate(next_reminder_date=Subquery(next_reminder))
-            .order_by('-created')
+
+        qs = (
+        SentEmail.objects
+        .filter(user=self.request.user)
+        .select_related('target_audience')
+        .annotate(next_reminder_date=Subquery(next_reminder))
+        .order_by('-created')
         )
+
+        full_dt=self.parse_full_datetime(search)
+        if full_dt:
+            start = full_dt.replace(second=0, microsecond=0)
+            end = start + timedelta(minutes=1)
+            qs= qs.filter(created__gte=start, created__lt=end)
+            return qs
+        
+        natural_date=self.parse_natural_date(search)
+        if natural_date:
+            qs= qs.filter(
+                Q(created__date=natural_date) |
+                Q(next_reminder_date=natural_date)
+            )
+            return qs
+        
+        month=self.parse_month(search)
+        if month:
+            qs= qs.filter(
+                Q(created__month=month) |
+                Q(next_reminder_date__month=month)
+            )
+            return qs
+
+        if search:
+            qs = qs.filter(
+                Q(target_audience__email__icontains=search) |
+                Q(subject__icontains=search) |
+                Q(target_audience__receiver_first_name__icontains=search) |
+                Q(target_audience__receiver_last_name__icontains=search)
+            )
+        return qs
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.GET.get('ajax') == '1':
+            emails = context['sent_emails'].values(
+                'subject',
+                'target_audience__email',
+                'target_audience__receiver_first_name',
+                'target_audience__receiver_last_name',
+                'created',
+                'next_reminder_date',
+                'stop_reminder'
+            )
+            data = [
+                {
+                    'subject': e['subject'],
+                    'email': e['target_audience__email'],
+                    'name': f"{e['target_audience__receiver_first_name']} {e['target_audience__receiver_last_name']}",
+                    'created': e['created'].strftime("%d %b %Y, %I:%M %p"),
+                    'next_reminder_date': e['next_reminder_date'].strftime("%d %b %Y") if e['next_reminder_date'] else None,
+                    'stop_reminder': e['stop_reminder'] 
+                }
+                for e in emails
+            ]
+            return JsonResponse(data, safe=False)
+        return super().render_to_response(context, **response_kwargs)
 
     def post(self, request):
         data = json.loads(request.body)
@@ -288,23 +481,149 @@ class EmailListView(LoginRequiredMixin, ListView):
 
         return JsonResponse({'success': True})
 
+class CheckEmailHistoryView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        email = request.GET.get("email")
+        service=request.GET.get("service")
 
+        if not email or not service:
+            return JsonResponse(
+                {"exists": False},
+                status=400
+            )
+
+        last_email = (
+            SentEmail.objects
+            .filter(user=request.user, email=email,target_audience__selected_service=service)
+            .select_related('target_audience')
+            .order_by("-created")
+            .first()
+        )
+
+        if last_email:
+            return JsonResponse({
+                "exists": True,
+                "subject": last_email.subject,
+                "service": last_email.target_audience.selected_service,
+                "sent_at": last_email.created.strftime("%d %b %Y, %I:%M %p"),
+            })
+
+        return JsonResponse({"exists": False})
+    
 class LeadListView(LoginRequiredMixin, ListView):
-    model = SentEmail
+    # model = SentEmail
+    model = TargetAudience
     template_name = 'generate_email/lead_list.html'
     context_object_name = 'target_audience'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        base_qs = TargetAudience.objects.filter(user=self.request.user)
+
+        context["service_options"] = [x for x in base_qs.values_list("selected_service", flat=True).distinct().order_by("selected_service") if x]
+        context["framework_options"] = [x for x in base_qs.values_list("framework", flat=True).distinct().order_by("framework") if x]
+        context["goal_options"] = [x for x in base_qs.values_list("campaign_goal", flat=True).distinct().order_by("campaign_goal") if x]
+
+        return context
+    
+    def parse_natural_date(self, value):
+        """
+        13 jan
+        13 jan 2026
+        """
+        parts = value.lower().split()
+
+        if len(parts) not in (2, 3):
+            return None
+        month = day = year = None
+
+        for part in parts:
+            if part.isdigit():
+                if len(part) == 4:
+                    year = int(part)
+                else:
+                    day = int(part)
+            else:
+                try:
+                    month = list(calendar.month_name).index(part.capitalize())
+                except ValueError:
+                    try:
+                        month = list(calendar.month_abbr).index(part.capitalize())
+                    except ValueError:
+                        pass
+
+        if not month or not day:
+            return None
+
+        if not year:
+            year = timezone.now().year
+
+        try:
+            return datetime(year, month, day).date()
+        except ValueError:
+            return None
+
     def get_queryset(self):
-        target_audience = TargetAudience.objects.filter(user=self.request.user).order_by('-created')
+        search = self.request.GET.get('search', '').strip()
+        service = self.request.GET.get('service', '').strip()
+        framework = self.request.GET.get('framework', '').strip()
+        goal = self.request.GET.get('goal', '').strip()
+        last_days = self.request.GET.get('last_days', '').strip()
 
-        # Show only emails sent by the logged-in user, newest first
-        return target_audience
+        qs = TargetAudience.objects.filter(user=self.request.user).order_by('-created')
 
-# views.py
-import csv
-from django.http import HttpResponse
-from .models import TargetAudience  # Update with your model name
+        if service:
+            qs = qs.filter(selected_service=service)
+        if framework:
+            qs = qs.filter(framework=framework)
+        if goal:
+            qs = qs.filter(campaign_goal=goal)
+        if last_days.isdigit():
+            days = int(last_days)
+            qs = qs.filter(created__gte=timezone.now() - timedelta(days=days))
 
+        natural_date=self.parse_natural_date(search)
+        if natural_date:
+            qs= qs.filter(created__date=natural_date)
+            return qs
+
+        if search:
+            qs = qs.filter(
+                Q(email__icontains=search) |
+                Q(receiver_first_name__icontains=search) |
+                Q(receiver_last_name__icontains=search)|
+                Q(selected_service__icontains=search) |
+                Q(framework__icontains=search)|
+                Q(campaign_goal__icontains=search)|
+                Q(company_url__icontains=search)
+            )
+        return qs
+
+    def render_to_response(self, context, **response_kwargs):
+        # Check for the ajax flag in the GET parameters
+        if self.request.GET.get('ajax') == '1':
+            leads = context['target_audience']
+            data = [
+                {
+                    'id': lead.id,
+                    'first_name': lead.receiver_first_name,
+                    'last_name': lead.receiver_last_name,
+                    'email': lead.email,
+                    'linkedin_url': lead.receiver_linkedin_url,
+                    'selected_service': lead.selected_service,
+                    'company_url': lead.company_url,
+                    'framework': lead.framework,
+                    'campaign_goal': lead.campaign_goal,
+                    'created': lead.created.strftime("%b %d, %Y"),
+                    # Construct the URL for the clickable row
+                    'view_url': reverse('view-leads-email', kwargs={'pk': lead.id})
+                }
+                for lead in leads
+            ]
+            return JsonResponse(data, safe=False)
+        
+        return super().render_to_response(context, **response_kwargs)
+    
 
 def escape_csv(value):
     """
@@ -351,6 +670,8 @@ class LeadEmailListView(LoginRequiredMixin, ListView):
     context_object_name = 'target_audience_email'
 
     def get_queryset(self):
+
+
         pk = self.kwargs.get('pk')
         self.target_audience = TargetAudience.objects.get(pk=pk)
         next_reminder = ReminderEmail.objects.filter(
@@ -384,10 +705,6 @@ class EmailMessageView(DetailView):
         ).order_by('send_at')
         return context
 
-from saleswithai import settings
-import time
-from urllib.parse import quote, unquote
-
 @csrf_exempt
 def msgraph_webhook(request):
     start_time = time.time()
@@ -409,7 +726,6 @@ def msgraph_webhook(request):
                 # validate clientState matches
                 if change.get('clientState') != settings.MS_GRAPH_CLIENT_STATE:
                     continue
-                # resource e.g. "users/{id}/messages/{msgId}"
 
                 try:
 
@@ -461,64 +777,10 @@ def msgraph_webhook(request):
 
         # TODO: Check if message is a reply, update DB, etc.
         return HttpResponse(status=202)
-
-
     return HttpResponse(status=405)
 
-import requests
-
-# def get_message_details(user, msg_id):
-
-#     token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
-
-#     # Check if token is expired
-#     if token.expires_at and token.expires_at <= timezone.now():
-#         new_token = refresh_microsoft_token(user)
-#         if not new_token:
-#             raise MicrosoftEmailSendError("Microsoft token refresh failed")
-#         access_token = new_token
-#         print("new")
-#     else:
-#         access_token = token.token
-#     # msg_id = "AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0AMZFau0IUOUmcRpqAeOGh6wABWFX3OQAA"
-#     url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}?$select=internetMessageHeaders"
-#     # url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}"
-#     # print("access", access_token)
-#     headers = {"Authorization": f"Bearer {access_token}"}
-#     try:
-#         resp = requests.get(url, headers=headers)
-#         resp.raise_for_status()
-#         # conversationId = resp.json().get("conversationId")
-#         # conversationId = quote(conversationId)
-#         data = resp.json()
-#         # print("data :", data)
-
-#         # Extract headers
-#         in_reply_to = ""
-#         for header in data.get("internetMessageHeaders", []):
-#             if header["name"].lower() in ["in-reply-to", "references"]:
-#                 in_reply_to = header['value']
-#                 # print(f"{header['name']}: {header['value']}")
-#         # print("con", conversationId)
-#         base_url = f"https://graph.microsoft.com/v1.0/me/messages?$filter=internetMessageId eq '{in_reply_to}'"
-#         # # params = {
-#         # #     "$filter": f"conversationId eq '{conversationId}'",
-#         # #     "$orderby": "receivedDateTime"
-#         # # }
-#         resp1 = requests.get(base_url, headers=headers)
-#         resp1.raise_for_status()
-#         return resp1.json()
-#     except requests.HTTPError as e:
-#         if e.response.status_code == 404:
-#             return None
-
 def get_message_details(user, msg_id):
-    from .utils import MicrosoftEmailSendError
-    import requests
 
-    # access_token = get_latest_microsoft_token(user)
-    # if not access_token:
-    #     raise MicrosoftEmailSendError("No Microsoft token found for this user")
     access_token = get_latest_microsoft_token(user)
 
     if not access_token:
@@ -558,52 +820,6 @@ def get_message_details(user, msg_id):
             return None
         raise
 
-    # messages = resp1.json().get("value", [])
-    # get_url = f"https://graph.microsoft.com/v1.0/me/messages?$filter=conversationId eq '{conversationId}'&$orderby=receivedDateTime"
-    # resp1 = requests.get(get_url, headers=headers)
-    # resp1.raise_for_status()
-
-
-# AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0AMZFau0IUOUmcRpqAeOGh6wABWFX3OQAA
-
-# 'conversationId': 'AAQkAGRiNDg0OTg1LWIwZmUtNGIzMi1hOGM1LTk5MWE1ODU3ZjA0ZgAQALuRXNnrgZNNuXTkW2wsHEw='
-
-# def get_conversation_id(user, msg_id):
-
-#     token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
-
-#     # Check if token is expired
-#     if token.expires_at and token.expires_at <= timezone.now():
-#         new_token = refresh_microsoft_token(user)
-#         if not new_token:
-#             raise MicrosoftEmailSendError("Microsoft token refresh failed")
-#         access_token = new_token
-#         print("new")
-#     else:
-#         access_token = token.token
-#     # msg_id = "AAkALgAAAAAAHYQDEapmEc2byACqAC-EWg0AMZFau0IUOUmcRpqAeOGh6wABWFX3OQAA"
-#     # url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}?$select=internetMessageHeaders"
-#     url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}"
-#     # print("access", access_token)
-#     headers = {"Authorization": f"Bearer {access_token}"}
-#     resp = requests.get(url, headers=headers)
-#     if resp.status_code == 404:
-#         # Message not found — skip / handle gracefully
-#         print(f"Message {msg_id} not found, skipping.")
-#         return None
-#     resp.raise_for_status()
-#     # conversationId = resp.json().get("conversationId")
-#     # conversationId = quote(conversationId)
-#     data = resp.json()
-#     # print("conversation ", data)
-#     if "conversationId" in data:
-#         return data["conversationId"]
-
-#         # If response is paginated or wrapped in 'value'
-#     if "value" in data and data["value"]:
-#         return data["value"][0].get("conversationId")
-#     return None
-
 def get_conversation_id(user, msg_id):
     import requests
 
@@ -629,3 +845,43 @@ def get_conversation_id(user, msg_id):
         return data["value"][0].get("conversationId")
 
     return None
+
+
+@csrf_exempt
+def email_open_pixel(request, uid):
+
+    # 🚫 Ignore admin / logged-in users
+    if request.user.is_authenticated:
+        return transparent_pixel_response()
+
+    # 🚫 Ignore Django admin preview
+    referer = request.META.get("HTTP_REFERER", "")
+    if "/admin/" in referer:
+        return transparent_pixel_response()
+
+    try:
+        email = SentEmail.objects.get(uid=uid)
+
+        if not email.opened:
+            email.opened = True
+            email.opened_at = timezone.now()
+            email.opened_count = 1
+        else:
+            email.opened_count += 1
+
+        email.save(update_fields=["opened", "opened_at", "opened_count"])
+
+    except SentEmail.DoesNotExist:
+        pass
+
+    return transparent_pixel_response()
+
+
+def transparent_pixel_response():
+    pixel = (
+        b'\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80'
+        b'\x00\x00\x00\x00\x00\xff\xff\xff\x21\xf9\x04'
+        b'\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00\x01'
+        b'\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b'
+    )
+    return HttpResponse(pixel, content_type='image/gif')

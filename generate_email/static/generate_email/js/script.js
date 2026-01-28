@@ -33,8 +33,8 @@ class EmailMarketingApp {
     // Form submissions
     document.getElementById("targetFrameworkForm").addEventListener("submit", (e) => {
       e.preventDefault()
-      this.nextStep()
-      this.submitForm()
+      console.log("Checking email history and proceeding...");
+      app.checkEmailHistoryAndProceed()
     })
 
     document.getElementById("sendEmail").addEventListener("click", () => {
@@ -387,6 +387,51 @@ class EmailMarketingApp {
     }
 }
 
+  async checkEmailHistoryAndProceed() {
+  const email = document.getElementById("targetEmail").value.trim();
+  const service =document.getElementById("id_service").value;
+
+  console.log("Checking email history for:", email, service);
+
+  try {
+    const response = await fetch(
+      `/generator/check-email-history/?email=${encodeURIComponent(email)}&service=${encodeURIComponent(service)}`
+    );
+    const data = await response.json();
+
+    if (data.exists) {
+      // Show modal
+      document.getElementById("emailExistsBody").innerHTML = `
+        <p><strong>This email was already contacted.</strong></p>
+        <p><b>Subject:</b> ${data.service}</p>
+        <p><b>Subject:</b> ${data.subject}</p>
+        <p><b>Sent on:</b> ${data.sent_at}</p>
+        <p>Do you want to send another email?</p>
+      `;
+
+      const modalEl = document.getElementById("emailExistsModal");
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+
+      const confirmBtn = document.getElementById("confirmGenerate");
+      confirmBtn.onclick = () => {
+        modal.hide();
+        this.nextStep();   // proceed to step 2
+        this.submitForm(); // generate emails
+      };
+    } else {
+      // No previous email → proceed directly
+      this.nextStep();
+      this.submitForm();
+    }
+
+  } catch (error) {
+    console.error("Email history check failed:", error);
+    this.showAlert("Unable to verify email history.", "danger");
+  }
+}
+
+
     getCSRFToken() {
         // Function to get CSRF token from cookies
         const cookieValue = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
@@ -535,8 +580,11 @@ class EmailMarketingApp {
     });
     
     document.getElementById("viewAnalyticsBtn").addEventListener("click", () => {
-        window.location.href = "/";
-    });
+    // This explicitly points to the 'users' app root which is mapped to HomeView (Dashboard)
+    window.location.href = '/users/';
+    
+
+});
 }
 
   resetApp() {
