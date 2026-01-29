@@ -86,21 +86,7 @@ class EmailMarketingApp {
       }
     })
 
-    // Update navigation buttons
-//    const prevBtn = document.getElementById("prevBtn")
-//    const nextBtn = document.getElementById("nextBtn")
-
-//    prevBtn.style.display = this.currentStep === 1 ? "none" : "inline-block"
-
-//    if (this.currentStep === this.totalSteps) {
-//      nextBtn.style.display = "none"
-//    } else {
-//      nextBtn.style.display = "inline-block"
-//      nextBtn.innerHTML =
-//        this.currentStep === 4
-//          ? 'Generate & Review<i class="fas fa-arrow-right ms-2"></i>'
-//          : 'Next<i class="fas fa-arrow-right ms-2"></i>'
-//    }
+  
   }
 
   validateCurrentStep() {
@@ -339,7 +325,12 @@ class EmailMarketingApp {
     // Show loading indicator while sending
     this.showLoading(true, "Sending Email...");
     const emails = this.generatedEmails;
-
+    const sentFrom = document.querySelector('select[name="sent_from"]')?.value;
+    if (!sentFrom) {
+      this.showAlert("Please select a sending account.", "warning");
+      this.showLoading(false);
+      return;
+    }
     // collect selected days from dropdowns
     const daySelects = document.querySelectorAll(".reminder-day-select");
     daySelects.forEach(select => {
@@ -360,9 +351,11 @@ class EmailMarketingApp {
             },
             body: JSON.stringify({
                 emails: emails,          // The generated email content
-                targetId: this.targetId  // ID of the target audience
+                targetId: this.targetId,  // ID of the target audience
+                sent_from: sentFrom            // Selected sending account
             }),
         });
+           
 
         // Parse JSON response from server
         const data = await response.json();

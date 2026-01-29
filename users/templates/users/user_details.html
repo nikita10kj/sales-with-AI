@@ -80,12 +80,12 @@
 
                     <!-- Company LinkedIn URL -->
                     <div class="mb-3">
-                        <label for="id_company_linkedin_url" class="form-label">Company LinkedIn URL *</label>
+                        <label for="id_company_linkedin_url" class="form-label">Company LinkedIn URL </label>
                         <input type="text" name="company_linkedin_url" id="id_company_linkedin_url"
                                class="form-control"
                                placeholder="https://example.com"
                                value="{{ form.data.company_linkedin_url|default:user.company_linkedin_url|default_if_none:'' }}"
-                               required>
+                               >
                         {% if form.company_linkedin_url.errors %}
                             {% for error in form.company_linkedin_url.errors %}
                                 <div class="invalid-feedback d-block">{{ error }}</div>

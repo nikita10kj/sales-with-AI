@@ -92,16 +92,21 @@ class GenerateEmailView(LoginRequiredMixin, View):
                 user.contact or "",
                 user.company_name or ""
             ])
-        html = "<p>" + "<br>".join(lines) + "</p>"
+        html = (
+            '<div style="margin:0;padding:0;line-height:1.4;">'
+            + "<br>".join(lines)
+            + "</div>"
+        )
 
         if signature_obj.photo:
-            html += f"""
-                <p>
-                    <img src="{signature_obj.photo.url}"
-                        alt="Signature Photo"
-                        style="max-width:420px;margin-top:8px;width:100%;height:auto;display:block;">
-                </p>
-            """
+           photo_url = settings.SITE_URL+signature_obj.photo.url
+           html += f"""
+                    <p>
+                        <img src="{photo_url}"
+                            alt="Signature Photo"
+                            style="max-width:420px;margin-top:8px;width:100%;height:auto;display:block;">
+                    </p>
+                """
         return html
 
     def get(self, request):
@@ -110,7 +115,7 @@ class GenerateEmailView(LoginRequiredMixin, View):
         signatures = Signature.objects.filter(user=request.user)
         google_accounts = SocialAccount.objects.filter(
             user=request.user,
-            provider="google"
+            provider__in=["google", "microsoft"]
         )
         user = request.user
 
@@ -176,13 +181,20 @@ class GenerateEmailView(LoginRequiredMixin, View):
             google_account = SocialAccount.objects.get(
                 id=selected_account_id,
                 user=request.user,
-                provider="google"
             )
 
+            
             google_token = SocialToken.objects.get(account=google_account)
-
-            sender_email = google_account.extra_data.get("email")
             access_token = google_token.token
+
+            if google_account.provider == "google":
+                sender_email = google_account.extra_data.get("email")
+
+            elif google_account.provider == "microsoft":
+                sender_email = (
+                    google_account.extra_data.get("mail")
+                    or google_account.extra_data.get("userPrincipalName")
+                )
 
             # Optional: log for debug
             logger.info(f"Selected Google Account: {sender_email} for user {request.user.id}")
@@ -227,13 +239,13 @@ class GenerateEmailView(LoginRequiredMixin, View):
                 signature_html = ""
 
         default_signature = (
-            f"<p>Best,<br>"
-            f"{request.user.full_name}"
-            f"{'<br>' + request.user.contact if request.user.contact else ''}"
-            f"<br>{request.user.company_name}</p>"
-        )
+                '<div style="margin:0;padding:0;line-height:1.4;">'
+                f'Best,<br>{request.user.full_name}'
+                '</div>'
+            )
 
-        final_signature = signature_html or default_signature
+
+        final_signature = signature_html if signature_html else default_signature
 
         for email in emails['follow_ups']:
             email['body'] +=  final_signature or default_signature
@@ -241,7 +253,7 @@ class GenerateEmailView(LoginRequiredMixin, View):
         emails['main_email'][
             'body'] += final_signature or default_signature
 
-        return JsonResponse({'success': True,'emails': emails, 'targetId':target.id,# Return normalized URLs to display in the UI
+        return JsonResponse({'success': True,'emails': emails, 'targetId':target.id, 'sent_from': selected_account_id, 
             'normalized_urls': {
                 'company_url': company_url,
                 'company_linkedin_url': company_linkedin_url,
@@ -261,6 +273,33 @@ class SendEmailView(LoginRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
+        sent_from = data.get("sent_from")
+        selected_account = None
+
+        if not sent_from:
+            return JsonResponse(
+                {"success": False, "error": "Sending account not selected"},
+                status=400
+            )
+
+        try:
+            sent_from = int(sent_from)
+        except (TypeError, ValueError):
+            return JsonResponse(
+                {"success": False, "error": "Invalid sending account"},
+                status=400
+            )
+
+        selected_account = SocialAccount.objects.filter(
+            id=sent_from,
+            user=request.user
+        ).first()
+
+        if not selected_account:
+            return JsonResponse(
+                {"success": False, "error": "Selected sending account not found"},
+                status=404
+            )
 
         emails = data.get("emails")
         targetId = data.get("targetId")
@@ -285,7 +324,7 @@ class SendEmailView(LoginRequiredMixin, View):
                 }, status=403)
 
         # ✅ Send main email
-        sent_email = send_email(request, user, target, main_email)
+        sent_email = send_email(request, user, target, main_email,selected_account=selected_account)
 
         ActivityLog.objects.get_or_create(
             user=request.user,

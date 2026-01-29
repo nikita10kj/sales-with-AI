@@ -65,8 +65,23 @@
 
 .tab-section.active {
     display: block;
-    
 }
+.signature-editor {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 10px;
+    min-height: 120px;
+    outline: none;
+    font-family: inherit;
+}
+.signature-editor:focus {
+    border-color: #6a6fdc;
+    box-shadow: 0 0 0 0.2rem rgba(106,111,220,.25);
+}
+.hidden-textarea {
+    display: none;
+}
+
 
 </style>
 <div class="profile-layout">
@@ -83,7 +98,7 @@
             <i class="fas fa-signature me-2"></i> Signature
         </div>
         <div class="sidebar-item" onclick="showTab('account')">
-            <i class="fas fa-envelope me-2"></i> Add Email
+            <i class="fas fa-envelope me-2"></i> Email Accounts
         </div>
     </div>
 
@@ -342,7 +357,7 @@
 </div>
 
 
-    <!-- ================= ADD ACCOUNT ================= -->
+    {% comment %} <!-- ================= ADD ACCOUNT ================= -->
                     <div id="account" class="tab-section">
                         <div class="card shadow-sm">
                             <div class="card-header bg-info text-white">
@@ -359,10 +374,17 @@
                                     {% for acc in google_accounts %}
                                         <li class="list-group-item">
                                             {{ acc.extra_data.email }}
+                                            <br> </br>
+                                            <form method="post" action="{% url 'remove_google_account' acc.id %}">
+                                                {% csrf_token %}
+                                                <button class="btn btn-sm btn-outline-danger">
+                                                    Remove
+                                                </button>
+                                            </form>
                                         </li>
                                     {% empty %}
                                         <li class="list-group-item text-muted">
-                                            No Google accounts connected
+                                            No  accounts connected
                                         </li>
                                     {% endfor %}
                                 </ul>
@@ -376,10 +398,190 @@
                             </div>
                         </div>
                     </div>
+                    
                     </form>
                 </div>
             </div>
+        </div> {% endcomment %}
+
+
+<!-- ================= EMAIL ACCOUNTS ================= -->
+<div id="account" class="tab-section">
+
+    <div style="
+        display:flex;
+        gap:28px;
+        flex-wrap:wrap;
+    ">
+
+        <!-- ================= GOOGLE ACCOUNTS ================= -->
+        {% for acc in google_accounts %}
+        <div style="
+            width:360px;
+            background:linear-gradient(135deg,#e9ecff,#f6f4ff);
+            border-radius:20px;
+            padding:22px;
+            box-shadow:0 18px 40px rgba(79,70,229,0.15);
+            position:relative;
+            transition:all .25s ease;
+        ">
+
+            <!-- Remove -->
+            <form method="post"
+                  action="{% url 'remove_google_account' acc.id %}"
+                  style="position:absolute;top:14px;right:16px;">
+                {% csrf_token %}
+                <button type="submit"
+                        title="Remove account"
+                        style="
+                            background:#fff;
+                            border:none;
+                            width:28px;
+                            height:28px;
+                            border-radius:50%;
+                            font-size:16px;
+                            color:#ef4444;
+                            cursor:pointer;
+                            box-shadow:0 4px 12px rgba(0,0,0,0.15);
+                        ">
+                    ×
+                </button>
+            </form>
+
+            <div style="display:flex;align-items:center;gap:16px;">
+
+                <div style="
+                    width:52px;
+                    height:52px;
+                    border-radius:50%;
+                    background:linear-gradient(135deg,#4285F4,#7b61ff);
+                    color:white;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    font-size:18px;
+                    font-weight:700;
+                    box-shadow:0 6px 16px rgba(66,133,244,.45);
+                ">
+                    {{ acc.extra_data.email|first|upper }}
+                </div>
+
+                <div>
+                    <div style="
+                        font-weight:700;
+                        font-size:16px;
+                        color:#1f2937;
+                    ">
+                        Google Mail
+                    </div>
+
+                    <div style="
+                        font-size:14px;
+                        color:#4b5563;
+                        margin-top:2px;
+                        word-break:break-all;
+                    ">
+                        {{ acc.extra_data.email }}
+                    </div>
+                </div>
+
+            </div>
         </div>
+        {% endfor %}
+
+        <!-- ================= MICROSOFT ACCOUNTS ================= -->
+        {% for acc in microsoft_accounts %}
+        <div style="
+            width:360px;
+            background:linear-gradient(135deg,#eef2ff,#faf5ff);
+            border-radius:20px;
+            padding:22px;
+            box-shadow:0 18px 40px rgba(124,58,237,0.18);
+        ">
+
+            <div style="display:flex;align-items:center;gap:16px;">
+
+                <div style="
+                    width:52px;
+                    height:52px;
+                    border-radius:50%;
+                    background:linear-gradient(135deg,#6366f1,#9333ea);
+                    color:white;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    font-size:18px;
+                    font-weight:700;
+                    box-shadow:0 6px 16px rgba(147,51,234,.45);
+                ">
+                    {{ acc.extra_data.mail|default:acc.extra_data.userPrincipalName|first|upper }}
+                </div>
+
+                <div>
+                    <div style="
+                        font-weight:700;
+                        font-size:16px;
+                        color:#1f2937;
+                    ">
+                        Microsoft Mail
+                    </div>
+
+                    <div style="
+                        font-size:14px;
+                        color:#4b5563;
+                        margin-top:2px;
+                        word-break:break-all;
+                    ">
+                        {{ acc.extra_data.mail|default:acc.extra_data.userPrincipalName }}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- ================= ADD ANOTHER ACCOUNT ================= -->
+        <a href="/accounts/google/login/?process=connect"
+           style="
+                width:360px;
+                height:150px;
+                border-radius:20px;
+                background:linear-gradient(135deg,#eef2ff,#f5f3ff);
+                border:2px dashed #6366f1;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                flex-direction:column;
+                text-decoration:none;
+                color:#4f46e5;
+                font-weight:700;
+                box-shadow:0 14px 32px rgba(99,102,241,.18);
+                transition:all .25s ease;
+           ">
+
+            <div style="
+                font-size:34px;
+                line-height:1;
+                margin-bottom:6px;
+            ">
+                +
+            </div>
+
+            <div style="font-size:15px;">
+                Add Another Account
+            </div>
+
+        </a>
+
+    </div>
+</div>
+
+
+  
+
+
+
+
     </div>
 </div>
 
@@ -498,4 +700,39 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
+
+<script>
+function initSignatureEditors() {
+    document.querySelectorAll('textarea[name^="signature_"]:not(.hidden-textarea)').forEach((ta) => {
+
+        ta.classList.add("hidden-textarea");
+
+        const editor = document.createElement("div");
+        editor.className = "signature-editor";
+        editor.contentEditable = true;
+        editor.innerHTML = ta.value || "";
+
+        ta.parentNode.insertBefore(editor, ta);
+
+        editor.addEventListener("input", () => {
+            ta.value = editor.innerHTML;
+        });
+
+        editor.addEventListener("keydown", function (e) {
+            if (e.ctrlKey && e.key.toLowerCase() === "b") {
+                e.preventDefault();
+                document.execCommand("bold");
+            }
+        });
+    });
+}
+
+document.addEventListener("DOMContentLoaded", initSignatureEditors);
+
+// Re-init after adding new signature
+document.getElementById("add-signature-btn")?.addEventListener("click", () => {
+    setTimeout(initSignatureEditors, 50);
+});
+</script>
+
 {% endblock %}

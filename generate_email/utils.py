@@ -33,22 +33,18 @@ class MicrosoftEmailSendError(Exception):
 
 
 def get_user_provider(user):
-    accounts = SocialAccount.objects.filter(user=user)
-    if not accounts.exists():
-        return None
-    # prioritize Microsoft if exists
-    ms_account = accounts.filter(provider='microsoft').first()
-    if ms_account:
-        return 'microsoft'
-    # otherwise just return first provider
-    return accounts.first().provider
+    """
+    Returns 'google' or 'microsoft' based on user's connected account.
+    Priority: selected/available account.
+    """
+    account = SocialAccount.objects.filter(user=user).first()
+    return account.provider if account else None
 
-def get_gmail_service(user):
-    token = SocialToken.objects.filter(account__user=user, account__provider='google').order_by('-expires_at')
-    if not token.exists():
+
+def get_gmail_service(user,selected_account=None):
+    token = SocialToken.objects.filter(account=selected_account, account__provider='google').order_by('-expires_at').first()
+    if not token:
         raise MicrosoftEmailSendError("No Google token found for user")
-
-    token = token.first()  # pick the latest token
 
     if token.expires_at and token.expires_at <= timezone.now():
         new_token = refresh_google_token(user)
@@ -183,11 +179,12 @@ def refresh_microsoft_token(user):
         print("Error refreshing Microsoft token:", e)
         return None
 
-def send_microsoft_email(user, to_email, subject, html_body):
+def send_microsoft_email(user, to_email, subject, html_body,selected_account=None):
     # Fetch all Microsoft tokens for the user
     tokens = SocialToken.objects.filter(
-        account__user=user, account__provider='microsoft'
-    ).order_by('-expires_at')
+        account__user=user, account__provider='microsoft').order_by('-expires_at')
+    if selected_account:
+        tokens = tokens.filter(account=selected_account)
 
     if not tokens.exists():
         raise MicrosoftEmailSendError("No Microsoft token found for user")
@@ -239,7 +236,7 @@ def send_microsoft_email(user, to_email, subject, html_body):
     return graph_id
 
 
-def sendGeneratedEmail(request, user, target_audience, main_email):
+def sendGeneratedEmail(request, user, target_audience, main_email,selected_account=None):
     subject = main_email["subject"]
     message = main_email["body"]
     email = target_audience.email
@@ -264,18 +261,18 @@ def sendGeneratedEmail(request, user, target_audience, main_email):
     message += tracking_pixel
     sent_email.message =message
     sent_email.save(update_fields=["message"])
-    provider = get_user_provider(user)
+    if not selected_account:
+        raise Exception("No sending account selected")
+
+    provider = selected_account.provider
 
 
     if provider == 'google':
         try:
-            google_accounts = get_google_accounts(user)
-
-            account = google_accounts[0]  # default to first
-
-            service = get_gmail_service(user)
+            service = get_gmail_service(user,selected_account)
+            sender_email = selected_account.extra_data.get("email")
             user_name = user.full_name
-            messages = create_message(user_name, user.email, email, subject, message, new_msg_id=message_id)
+            messages = create_message(user_name,sender_email, email, subject, message, new_msg_id=message_id)
             original_msg = service.users().messages().send(userId='me', body=messages).execute()
 
             thread_id = original_msg.get('threadId')
@@ -296,25 +293,37 @@ def sendGeneratedEmail(request, user, target_audience, main_email):
             email_msg.send(fail_silently=False)
 
     elif provider == 'microsoft':
-        try:
-            graph_message_id = send_microsoft_email(user, email, subject, message)
+        graph_message_id = send_microsoft_email(
+            user=user,
+            to_email=email,
+            subject=subject,
+            html_body=message,
+            selected_account=selected_account
+        )
 
-            print("message id : ", graph_message_id)
-            if graph_message_id:
-                sent_email.message_id = graph_message_id
-                sent_email.save()
-        except MicrosoftEmailSendError as e:
-            print(f"Microsoft email send failed: {e}")
-            # Fallback to SMTP
-            email_msg = EmailMessage(
-                subject,
-                message,
-                to=[email],
-                reply_to=[user.email],
-                headers={'Message-ID': message_id}
-            )
-            email_msg.content_subtype = 'html'
-            email_msg.send(fail_silently=False)
+        sent_email.message_id = graph_message_id
+        sent_email.save(update_fields=["message_id"])
+
+    # elif provider == 'microsoft':
+    #     try:
+    #         graph_message_id = send_microsoft_email(user, email, subject, message,selected_account=selected_account)
+
+    #         print("message id : ", graph_message_id)
+    #         if graph_message_id:
+    #             sent_email.message_id = graph_message_id
+    #             sent_email.save()
+    #     except MicrosoftEmailSendError as e:
+    #         print(f"Microsoft email send failed: {e}")
+            # # Fallback to SMTP
+            # email_msg = EmailMessage(
+            #     subject,
+            #     message,
+            #     to=[email],
+            #     reply_to=[user.email],
+            #     headers={'Message-ID': message_id}
+            # )
+            # email_msg.content_subtype = 'html'
+            # email_msg.send(fail_silently=False)
 
     else:
 
