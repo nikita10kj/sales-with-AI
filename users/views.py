@@ -513,6 +513,12 @@ class ProfileView(LoginRequiredMixin, View):
             provider="google"
         )
 
+        microsoft_accounts = SocialAccount.objects.filter(
+        user=request.user,
+        provider="microsoft"
+        )
+
+
         services = ProductService.objects.filter(
             user=request.user
         ).order_by('id')
@@ -525,8 +531,8 @@ class ProfileView(LoginRequiredMixin, View):
             'user': request.user,
             'services': services,
             "signatures": signatures,
-            "google_accounts": google_accounts
-
+            "google_accounts": google_accounts,
+            "microsoft_accounts": microsoft_accounts,
         })
 
     
@@ -647,19 +653,28 @@ class ProfileView(LoginRequiredMixin, View):
             return redirect('profile')
         
         elif 'signature_submit' in request.POST:
+    # keep old photos by current order
+            old_sigs = list(Signature.objects.filter(user=user).order_by('id'))
+            old_photos = {i: s.photo for i, s in enumerate(old_sigs)}  # 0,1,2...
+
+            # delete old records
             Signature.objects.filter(user=user).delete()
 
+            # recreate records, preserving old photo if user didn't upload new one
             for key, value in request.POST.items():
                 if key.startswith('signature_') and value.strip():
-                    idx = key.split('_')[1]
+                    idx = int(key.split('_')[1])
+
                     photo = request.FILES.get(f'signature_photo_{idx}')
+                    if not photo:
+                        photo = old_photos.get(idx)   # reuse previous photo for that index
 
                     Signature.objects.create(
-                            user=user,
-                            signature=value.strip(),
-                            photo=photo
+                        user=user,
+                        signature=value.strip(),
+                        photo=photo
                     )
-            
+
             messages.success(request, "Signatures saved successfully!")
             return redirect('profile')
 
@@ -735,3 +750,42 @@ def dashboard(request):
     }
 
     return render(request, "users/dashboard.html", context)
+
+@login_required
+def remove_google_account(request, pk):
+    acc = get_object_or_404(SocialAccount, pk=pk, user=request.user)
+    acc.delete()
+    return redirect("profile")   # tamaru profile page
+
+
+# from django.contrib.auth.mixins import UserPassesTestMixin
+# from django.views.generic import TemplateView
+
+# class SuperUserRequiredMixin(UserPassesTestMixin):
+#     def test_func(self):
+#         return self.request.user.is_superuser
+# from django.utils import timezone
+# from django.db.models import Count
+# from datetime import timedelta
+# from .models import CustomUser
+
+# class AdminDashboardView(SuperUserRequiredMixin, TemplateView):
+#     template_name = "users/admin_dashboard.html"
+
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+
+#         now = timezone.now()
+#         today = now.date()
+#         week_start = today - timedelta(days=7)
+#         month_start = today.replace(day=1)
+
+#         users = CustomUser.objects.all().order_by('-last_login')
+
+#         context["users"] = users
+
+#         context["today_logins"] = users.filter(last_login__date=today).count()
+#         context["week_logins"] = users.filter(last_login__date__gte=week_start).count()
+#         context["month_logins"] = users.filter(last_login__date__gte=month_start).count()
+
+#         return context

@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import (HomeView, LoginView,LandingPageView, RegisterView, VerifyOTPView, ResendOTPView,
-                    UserDetailsView,ProfileView,PrivacyPolicyView,TermsConditionsView,SupportView,LearningHubView, dashboard)
+from .views import ( HomeView, LoginView,LandingPageView, RegisterView, VerifyOTPView, ResendOTPView,
+                    UserDetailsView,ProfileView,PrivacyPolicyView,TermsConditionsView,SupportView,LearningHubView, dashboard, remove_google_account)
 
 
 urlpatterns = [
@@ -16,5 +16,6 @@ urlpatterns = [
     path('termsconditions/',TermsConditionsView.as_view(),name='terms-conditions'),
     path('support/', SupportView.as_view(), name='support'),
     path("dashboard/", dashboard, name="dashboard"),
-
+    path("remove-google/<int:pk>/",remove_google_account, name="remove_google_account"),
+    # path("admin-dashboard/", AdminDashboardView.as_view(), name="admin-dashboard"),
 ]

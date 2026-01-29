@@ -56,6 +56,15 @@
                         Leads
                     </a>
                 </li>
+
+                {% if user.is_superuser %}
+                <li class="nav-item">
+                {% comment %} <a class="nav-link" href="{% url 'admin-dashboard' %}">
+                    Admin Dashboard
+                </a> {% endcomment %}
+                </li>
+                {% endif %}
+
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                        style="{% if request.resolver_match.url_name == 'profile' %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; padding-left: 10px; padding-right: 10px;{% endif %}">

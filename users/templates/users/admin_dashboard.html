@@ -1,0 +1,49 @@
+{% comment %} {% extends "users/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <h3>👑 Super Admin Dashboard</h3>
+
+  <div class="row mt-3">
+    <div class="col-md-4">
+      <div class="card p-3">Today Logins: <b>{{ today_logins }}</b></div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-3">This Week: <b>{{ week_logins }}</b></div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-3">This Month: <b>{{ month_logins }}</b></div>
+    </div>
+  </div>
+
+  <hr>
+
+  <h5>All Users</h5>
+  <table class="table table-bordered mt-2">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Last Login</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+      <tr>
+        <td>{{ user.get_full_name|default:user.username }}</td>
+        <td>{{ user.email }}</td>
+        <td>
+          {% if user.last_login %}
+            {{ user.last_login|date:"d M Y, H:i" }}
+          {% else %}
+            Never
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+{% endblock %} {% endcomment %}

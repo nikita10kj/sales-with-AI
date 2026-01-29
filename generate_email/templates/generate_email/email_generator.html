@@ -148,14 +148,15 @@
                             Choose Email Signature
                         </label>
                         <select class="form-select" name="signature_id" id="id_signature">
-                            <option value="">No Signature</option>
+                            <option value="">Default Signature</option>
 
                             {% for sig in signatures %}
-                                <option value="{{ sig.id }}">
-                                    {{ sig.signature|truncatechars:40 }}
-                                </option>
+                                <option value="{{ sig.id }}"
+                                    data-html="{{ sig.signature|striptags|cut:'&nbsp;'|safe }}">
+                                        {{ sig.signature|striptags|cut:"&nbsp;"|truncatechars:40 }}
+                            </option>
                             {% empty %}
-                                <option disabled>No signatures added yet</option>
+                                {% comment %} <option disabled> Default Signature</option> {% endcomment %}
                             {% endfor %}
                         </select>
                     </div>
@@ -163,12 +164,20 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Sent From</label>
                         <select name="sent_from" class="form-select" required>
+
                             {% for acc in google_accounts %}
                                 <option value="{{ acc.id }}">
-                                    {{ acc.extra_data.email }}
+                                    {% if acc.provider == "google" %}
+                                        🟢 {{ acc.extra_data.email }}
+                                    {% elif acc.provider == "microsoft" %}
+                                        🔵 {{ acc.extra_data.mail|default:acc.extra_data.userPrincipalName }}
+                                    {% endif %}
+                                    ({{ acc.provider|title }})
                                 </option>
+
                             {% endfor %}
                         </select>
+
                     </div>
 
                     <button class="btn btn-primary" type="submit">
@@ -320,6 +329,35 @@
 
 
 </script>
+<script>
+document.getElementById("id_signature").addEventListener("change", function () {
+    const selected = this.options[this.selectedIndex];
+    let sig = selected.dataset.html;
+
+    let finalSignature = "";
+
+    // ✅ DEFAULT signature
+   const DEFAULT_SIGNATURE = "";
+
+    if (sig) {
+        // ✅ Custom signature selected
+        finalSignature = `
+        <div style="margin:0;padding:0;line-height:1.4;">
+            ${sig.replace(/\n/g, "<br>")}
+        </div>`;
+    } else {
+        // ✅ No signature selected → DEFAULT signature
+        finalSignature = DEFAULT_SIGNATURE;
+    }
+
+    const preview = document.getElementById("emailPreviewContent");
+    if (preview) {
+        preview.innerHTML = finalSignature;
+    }
+});
+</script>
+
+
 {% endblock content %}
 {% block js %}
 <script src="{% static 'generate_email/js/script.js' %}"></script>
