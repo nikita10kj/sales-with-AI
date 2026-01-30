@@ -30,6 +30,8 @@
             <div class="border p-3 bg-light">
                 {{ email.message|safe }}
             </div>
+
+             {% comment %} Email Sent Time with Tracking Pixel {% endcomment %}
             <p class="mt-3">
                 <strong>Sent:</strong>
                 <span class="utc-time" data-utc="{{ email.created|date:'c' }}"></span>

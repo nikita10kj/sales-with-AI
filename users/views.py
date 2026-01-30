@@ -758,34 +758,47 @@ def remove_google_account(request, pk):
     return redirect("profile")   # tamaru profile page
 
 
-# from django.contrib.auth.mixins import UserPassesTestMixin
-# from django.views.generic import TemplateView
+from django.contrib.auth.mixins import UserPassesTestMixin
+from django.views.generic import TemplateView
 
-# class SuperUserRequiredMixin(UserPassesTestMixin):
-#     def test_func(self):
-#         return self.request.user.is_superuser
-# from django.utils import timezone
-# from django.db.models import Count
-# from datetime import timedelta
-# from .models import CustomUser
+class SuperUserRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_superuser
 
-# class AdminDashboardView(SuperUserRequiredMixin, TemplateView):
-#     template_name = "users/admin_dashboard.html"
 
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
+from django.db.models import Count
+from django.utils import timezone
+from datetime import timedelta
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from .models import CustomUser
 
-#         now = timezone.now()
-#         today = now.date()
-#         week_start = today - timedelta(days=7)
-#         month_start = today.replace(day=1)
 
-#         users = CustomUser.objects.all().order_by('-last_login')
+class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "users/admin_dashboard.html"
 
-#         context["users"] = users
+    def test_func(self):
+        return self.request.user.is_superuser
 
-#         context["today_logins"] = users.filter(last_login__date=today).count()
-#         context["week_logins"] = users.filter(last_login__date__gte=week_start).count()
-#         context["month_logins"] = users.filter(last_login__date__gte=month_start).count()
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
 
-#         return context
+        now = timezone.now()
+        today = now.date()
+        week_start = today - timedelta(days=7)
+        month_start = today.replace(day=1)
+
+        users = CustomUser.objects.filter(
+            is_superuser=False
+        ).annotate(
+            email_count=Count("sent_email")
+        ).order_by("-last_login")
+
+
+        context["users"] = users
+        context["superuser"] = CustomUser.objects.filter(is_superuser=True).first()
+        context["today_logins"] = CustomUser.objects.filter(last_login__date=today).count()
+        context["week_logins"] = CustomUser.objects.filter(last_login__date__gte=week_start).count()
+        context["month_logins"] = CustomUser.objects.filter(last_login__date__gte=month_start).count()
+
+        return context
