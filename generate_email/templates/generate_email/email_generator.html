@@ -156,7 +156,6 @@
                                         {{ sig.signature|striptags|cut:"&nbsp;"|truncatechars:40 }}
                             </option>
                             {% empty %}
-                                {% comment %} <option disabled> Default Signature</option> {% endcomment %}
                             {% endfor %}
                         </select>
                     </div>

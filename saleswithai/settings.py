@@ -33,7 +33,8 @@ ALLOWED_HOSTS = ['fairly-whole-hawk.ngrok-free.app','localhost','sellsmart-dvdhb
 MS_GRAPH_CLIENT_STATE = "superSecret123jms"
 SITE_ID = 1
 
-SITE_URL = "https://sellsharp.co"
+# SITE_URL = "https://sellsharp.co"
+SITE_URL = "http://localhost:8000/"
 
 # Application definition
 
@@ -45,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'storages',
     'users',
     'generate_email',
     # allauth apps
@@ -54,7 +56,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.microsoft',
     'django_celery_beat',
-    'frontend'
+    'frontend',
 ]
 
 SOCIALACCOUNT_PROVIDERS = {
@@ -121,8 +123,94 @@ TEMPLATES = [
     },
 ]
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# # --------------------------------------------------
+# # MEDIA FILES (LOCAL + AZURE BLOB)
+# # --------------------------------------------------
+
+# USE_AZURE_MEDIA = os.environ.get("USE_AZURE_MEDIA", "0").lower() in ("1", "true")
+
+# if USE_AZURE_MEDIA:
+#     # ===== AZURE BLOB STORAGE (PRODUCTION) =====
+#     AZURE_ACCOUNT_NAME = os.environ["AZURE_ACCOUNT_NAME"]
+#     AZURE_ACCOUNT_KEY = os.environ["AZURE_ACCOUNT_KEY"]
+#     AZURE_CONTAINER = os.environ.get("AZURE_MEDIA_CONTAINER", "media")
+
+#     AZURE_CUSTOM_DOMAIN = os.environ.get(
+#         "AZURE_CUSTOM_DOMAIN",
+#         f"{AZURE_ACCOUNT_NAME}.blob.core.windows.net",
+#     )
+
+#     DEFAULT_FILE_STORAGE = "storages.backends.azure_storage.AzureStorage"
+
+#     MEDIA_URL = f"https://{AZURE_CUSTOM_DOMAIN}/{AZURE_CONTAINER}/"
+
+#     STORAGES = {
+#         "default": {
+#             "BACKEND": "storages.backends.azure_storage.AzureStorage",
+#         },
+#         "staticfiles": {
+#             "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+#         },
+#     }
+
+# else:
+#     # ===== LOCAL FILESYSTEM (DEVELOPMENT) =====
+#     MEDIA_URL = "/media/"
+#     MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+#     STORAGES = {
+#         "default": {
+#             "BACKEND": "django.core.files.storage.FileSystemStorage",
+#         },
+#         "staticfiles": {
+#             "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+#         },
+#     }
+
+# --------------------------------------------------
+# MEDIA FILES – AZURE BLOB (HARD CODED)
+# --------------------------------------------------
+
+# --------------------------------------------------
+# MEDIA FILES (LOCAL vs AZURE - AUTO SWITCH)
+# --------------------------------------------------
+
+if DEBUG:
+    # =====================
+    # LOCAL MEDIA (DEV)
+    # =====================
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+
+else:
+    # =====================
+    # AZURE BLOB (PROD)
+    # =====================
+    MEDIA_URL = "https://sellsharpstorage.blob.core.windows.net/media/"
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.azure_storage.AzureStorage",
+            "OPTIONS": {
+                "account_name": os.environ["AZURE_ACCOUNT_NAME"],
+                "account_key": os.environ["AZURE_ACCOUNT_KEY"],
+                "azure_container": "media",
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+
 
 WSGI_APPLICATION = 'saleswithai.wsgi.application'
 

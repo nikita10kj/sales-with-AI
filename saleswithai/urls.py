@@ -21,7 +21,7 @@ from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 from users.views import thirdparty_redirect
-
+ 
 
 urlpatterns = [
     # path('', RedirectView.as_view(url='/users/',permanent=False)),
@@ -33,4 +33,11 @@ urlpatterns = [
     path('', include('frontend.urls')), 
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
-]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+if settings.DEBUG:
+    urlpatterns += static(
+        settings.MEDIA_URL,
+        document_root=settings.MEDIA_ROOT
+    )
+
