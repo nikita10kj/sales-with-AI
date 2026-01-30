@@ -355,7 +355,8 @@ def sendReminderEmail(reminder_email):
             target_audience=reminder_email.target_audience,
             subject=subject,
             message=message,
-            message_id=message_id
+            message_id=message_id,
+            opened_count=0,  # explicit
         )
         track_url = f"https://sellsharp.co{reverse('track-email-open', args=[sent_email.uid])}"
 
