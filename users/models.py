@@ -79,13 +79,12 @@ class ProductService(models.Model):
 
 class Signature(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100,null=True,blank=True)   
     signature = models.TextField()
-    photo = models.ImageField(
-        upload_to='signatures/',
-        null=True,
-        blank=True
-    )
+    photo = models.ImageField(upload_to='signatures/',null=True,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+def __str__(self):
+        return f"{self.user.email} - {self.name}"
 
 class EmailAttachment(models.Model):
     user = models.ForeignKey(

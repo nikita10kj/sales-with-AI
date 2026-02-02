@@ -362,7 +362,7 @@ def sendReminderEmail(reminder_email):
             try:
                 service = get_gmail_service(reminder_email.user)
                 user_name = reminder_email.user.full_name
-                messages = create_message(user_name, reminder_email.user.email, email, subject, message,original_msg_id=original_message_id,attachment=reminder_email.attachment if hasattr(reminder_email, "attachment") else None,new_msg_id=message_id)
+                messages = create_message(user_name, reminder_email.user.email, email, subject, message,original_msg_id=original_message_id,new_msg_id=message_id)
                 if reminder_email.sent_email.threadId:
                     thread_id = reminder_email.sent_email.threadId
                     messages['threadId'] = thread_id

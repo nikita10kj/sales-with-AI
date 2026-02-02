@@ -152,8 +152,8 @@
 
                             {% for sig in signatures %}
                                 <option value="{{ sig.id }}"
-                                    data-html="{{ sig.signature|striptags|cut:'&nbsp;'|safe }}">
-                                        {{ sig.signature|striptags|cut:"&nbsp;"|truncatechars:40 }}
+                                     data-html="{{ sig.signature|safe }}">
+                                        {{ sig.name|default:"Signature " }} 
                             </option>
                             {% empty %}
                             {% endfor %}

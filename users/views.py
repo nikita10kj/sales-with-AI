@@ -72,7 +72,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
         # --- Email sending limit logic ---
         organization_domain = "jmsadvisory"
         user_email = (user.email or "").lower()
-        is_jms_user = "@jmsadvisory.com" in user_email
+        is_jms_user = "@jmsadvisory" in user_email
         email_limit = None
         remaining_emails = None
 
@@ -660,30 +660,31 @@ class ProfileView(LoginRequiredMixin, View):
             return redirect('profile')
         
         elif 'signature_submit' in request.POST:
-    # keep old photos by current order
             old_sigs = list(Signature.objects.filter(user=user).order_by('id'))
-            old_photos = {i: s.photo for i, s in enumerate(old_sigs)}  # 0,1,2...
+            old_photos = {i: s.photo for i, s in enumerate(old_sigs)}
 
-            # delete old records
             Signature.objects.filter(user=user).delete()
 
-            # recreate records, preserving old photo if user didn't upload new one
             for key, value in request.POST.items():
-                if key.startswith('signature_') and value.strip():
+                if key.startswith('signature_') and not key.startswith('signature_name_') and value.strip():
                     idx = int(key.split('_')[1])
 
+                    name = request.POST.get(f'signature_name_{idx}', '').strip()
                     photo = request.FILES.get(f'signature_photo_{idx}')
+
                     if not photo:
-                        photo = old_photos.get(idx)   # reuse previous photo for that index
+                        photo = old_photos.get(idx)
 
                     Signature.objects.create(
                         user=user,
+                        name=name,
                         signature=value.strip(),
                         photo=photo
                     )
 
             messages.success(request, "Signatures saved successfully!")
             return redirect('profile')
+
         
         elif 'attachment_submit' in request.POST:
             files = request.FILES.getlist('attachments')
@@ -854,3 +855,10 @@ def list_user_attachments(request):
     ]
 
     return JsonResponse({"attachments": data})
+
+@login_required
+def delete_signature(request, pk):
+    if request.method == "POST":
+        Signature.objects.filter(id=pk, user=request.user).delete()
+        return JsonResponse({"success": True})
+    return JsonResponse({"success": False})
