@@ -1,3 +1,4 @@
+from email.mime.multipart import MIMEMultipart
 from saleswithai.settings import EMAIL_HOST_USER
 import random
 from django.core.mail import EmailMessage
@@ -26,11 +27,13 @@ import time
 import requests
 from datetime import datetime, timedelta
 import pytz
-
+from email.mime.base import MIMEBase
+from email import encoders
+import mimetypes
+from users.models import EmailAttachment         
 
 class MicrosoftEmailSendError(Exception):
     pass
-
 
 def get_user_provider(user):
     """
@@ -39,7 +42,6 @@ def get_user_provider(user):
     """
     account = SocialAccount.objects.filter(user=user).first()
     return account.provider if account else None
-
 
 def get_gmail_service(user,selected_account=None):
     token = SocialToken.objects.filter(account=selected_account, account__provider='google').order_by('-expires_at').first()
@@ -65,12 +67,11 @@ def get_gmail_service(user,selected_account=None):
     service = build('gmail', 'v1', credentials=credentials)
     return service
 
-
-def create_message(sender_name, sender, to, subject, body, original_msg_id=None, new_msg_id=None):
-    message = MIMEText(body, 'html')
+def create_message(sender_name, sender, to, subject, body, attachment=None, original_msg_id=None, new_msg_id=None):
+    message = MIMEMultipart()
+    message.attach(MIMEText(body, 'html')) 
     message['to'] = to
     from_field = formataddr((sender_name, sender))
-
     message['from'] =  from_field
     message['subject'] = subject
     if new_msg_id:
@@ -79,7 +80,22 @@ def create_message(sender_name, sender, to, subject, body, original_msg_id=None,
         message['In-Reply-To'] = f'<{original_msg_id}>'
         message['References'] = f'<{original_msg_id}>'
 
+ # ✅ ADD ATTACHMENT
+    if attachment:
+        content_type, _ = mimetypes.guess_type(attachment.name)
+        if content_type is None:
+            content_type = "application/octet-stream"
 
+        main_type, sub_type = content_type.split("/", 1)
+        part = MIMEBase(main_type, sub_type)
+        part.set_payload(attachment.read())
+        encoders.encode_base64(part)
+
+        part.add_header(
+            "Content-Disposition",
+            f'attachment; filename="{attachment.name}"'
+        )
+        message.attach(part)
     raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
     return {'raw': raw_message}
 
@@ -139,21 +155,16 @@ def get_google_accounts(user):
         })
     return accounts
 
-
 def refresh_microsoft_token(user):
     try:
         # token = SocialToken.objects.get(account__user=user, account__provider='microsoft')
         token = SocialToken.objects.filter(account__user=user, account__provider='microsoft').order_by('-expires_at').first()
-
         app = SocialApp.objects.get(provider='microsoft')
-
         refresh_token = token.token_secret  # or token.token depending on storage
         client_id = app.client_id
         client_secret = app.secret
         tenant = 'common'  # or your tenant ID if it's specific
-
         token_url = f'https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token'
-
         data = {
             'client_id': client_id,
             'client_secret': client_secret,
@@ -161,10 +172,8 @@ def refresh_microsoft_token(user):
             'refresh_token': refresh_token,
             'scope': 'https://graph.microsoft.com/.default offline_access',
         }
-
         response = requests.post(token_url, data=data)
         response.raise_for_status()
-
         tokens = response.json()
 
         # Update the existing token
@@ -172,14 +181,13 @@ def refresh_microsoft_token(user):
         token.token_secret = tokens.get('refresh_token', token.token_secret)
         token.expires_at = timezone.now() + timezone.timedelta(seconds=int(tokens['expires_in']))
         token.save()
-
         return token.token
 
     except Exception as e:
         print("Error refreshing Microsoft token:", e)
         return None
 
-def send_microsoft_email(user, to_email, subject, html_body,selected_account=None):
+def send_microsoft_email(user, to_email, subject, html_body,selected_account=None,attachment=None):
     # Fetch all Microsoft tokens for the user
     tokens = SocialToken.objects.filter(
         account__user=user, account__provider='microsoft').order_by('-expires_at')
@@ -208,7 +216,7 @@ def send_microsoft_email(user, to_email, subject, html_body,selected_account=Non
         'Content-Type': 'application/json',
         "Prefer": 'IdType="ImmutableId"'
     }
-
+ 
     message_payload = {
         "subject": subject,
         "body": {
@@ -223,24 +231,30 @@ def send_microsoft_email(user, to_email, subject, html_body,selected_account=Non
             }
         ],
     }
+    if attachment:
+        message_payload["attachments"] = [
+            {
+                "@odata.type": "#microsoft.graph.fileAttachment",
+                "name": attachment.name,
+                "contentBytes": base64.b64encode(attachment.read()).decode("utf-8")
+            }
+        ]
 
     response = requests.post(url, headers=headers, json=message_payload)
     response.raise_for_status()
-
     draft = response.json()
     graph_id = draft["id"]  # immutable ID
     send_url = f"https://graph.microsoft.com/v1.0/me/messages/{graph_id}/send"
     send_response = requests.post(send_url, headers=headers)
     send_response.raise_for_status()
-
     return graph_id
 
 
-def sendGeneratedEmail(request, user, target_audience, main_email,selected_account=None):
+def sendGeneratedEmail(request, user, target_audience, main_email,selected_account=None,attachment=None):
+    
     subject = main_email["subject"]
     message = main_email["body"]
     email = target_audience.email
-
     message_id = make_msgid(domain='sellsharp.co')
 
     # Save the OTP
@@ -250,7 +264,7 @@ def sendGeneratedEmail(request, user, target_audience, main_email,selected_accou
         target_audience=target_audience,
         subject=subject,
         message=message,
-        message_id=message_id
+        message_id=message_id,
     )
 # 
     track_url = request.build_absolute_uri(
@@ -263,16 +277,14 @@ def sendGeneratedEmail(request, user, target_audience, main_email,selected_accou
     sent_email.save(update_fields=["message"])
     if not selected_account:
         raise Exception("No sending account selected")
-
     provider = selected_account.provider
-
 
     if provider == 'google':
         try:
             service = get_gmail_service(user,selected_account)
             sender_email = selected_account.extra_data.get("email")
             user_name = user.full_name
-            messages = create_message(user_name,sender_email, email, subject, message, new_msg_id=message_id)
+            messages = create_message(user_name,sender_email, email, subject, message,attachment=attachment,new_msg_id=message_id)
             original_msg = service.users().messages().send(userId='me', body=messages).execute()
 
             thread_id = original_msg.get('threadId')
@@ -289,6 +301,9 @@ def sendGeneratedEmail(request, user, target_audience, main_email,selected_accou
                 reply_to=[user.email],
                 headers={'Message-ID': message_id}
             )
+            if attachment:
+                email_msg.attach_file(attachment.path)
+
             email_msg.content_subtype = 'html'
             email_msg.send(fail_silently=False)
 
@@ -298,33 +313,12 @@ def sendGeneratedEmail(request, user, target_audience, main_email,selected_accou
             to_email=email,
             subject=subject,
             html_body=message,
-            selected_account=selected_account
+            selected_account=selected_account,
+            attachment=attachment   
         )
 
         sent_email.message_id = graph_message_id
         sent_email.save(update_fields=["message_id"])
-
-    # elif provider == 'microsoft':
-    #     try:
-    #         graph_message_id = send_microsoft_email(user, email, subject, message,selected_account=selected_account)
-
-    #         print("message id : ", graph_message_id)
-    #         if graph_message_id:
-    #             sent_email.message_id = graph_message_id
-    #             sent_email.save()
-    #     except MicrosoftEmailSendError as e:
-    #         print(f"Microsoft email send failed: {e}")
-            # # Fallback to SMTP
-            # email_msg = EmailMessage(
-            #     subject,
-            #     message,
-            #     to=[email],
-            #     reply_to=[user.email],
-            #     headers={'Message-ID': message_id}
-            # )
-            # email_msg.content_subtype = 'html'
-            # email_msg.send(fail_silently=False)
-
     else:
 
         email_msg = EmailMessage(
@@ -368,7 +362,7 @@ def sendReminderEmail(reminder_email):
             try:
                 service = get_gmail_service(reminder_email.user)
                 user_name = reminder_email.user.full_name
-                messages = create_message(user_name, reminder_email.user.email, email, subject, message,original_msg_id=original_message_id, new_msg_id=message_id)
+                messages = create_message(user_name, reminder_email.user.email, email, subject, message,original_msg_id=original_message_id,attachment=reminder_email.attachment if hasattr(reminder_email, "attachment") else None,new_msg_id=message_id)
                 if reminder_email.sent_email.threadId:
                     thread_id = reminder_email.sent_email.threadId
                     messages['threadId'] = thread_id
@@ -396,8 +390,6 @@ def sendReminderEmail(reminder_email):
         elif provider == 'microsoft':
             try:
                 token = SocialToken.objects.filter(account__user=reminder_email.user, account__provider='microsoft').order_by('-expires_at').first()
-
-
                 # Check if token is expired
                 if token.expires_at and token.expires_at <= timezone.now():
                     new_token = refresh_microsoft_token(reminder_email.user)
@@ -412,7 +404,6 @@ def sendReminderEmail(reminder_email):
                     'Authorization': f'Bearer {access_token}',
                     'Content-Type': 'application/json'
                 }
-
                 # Step 1: Create reply draft
                 create_reply_url = f"https://graph.microsoft.com/v1.0/me/messages/{original_message_id}/createReply"
 

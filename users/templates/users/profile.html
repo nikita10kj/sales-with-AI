@@ -81,7 +81,10 @@
 .hidden-textarea {
     display: none;
 }
-
+attachments-list {
+    list-style-type: none;
+    padding: 0;
+}
 
 </style>
 <div class="profile-layout">
@@ -96,6 +99,9 @@
         </div>
         <div class="sidebar-item" onclick="showTab('signature')">
             <i class="fas fa-signature me-2"></i> Signature
+        </div>
+        <div class="sidebar-item" onclick="showTab('attachments')">
+            <i class="fas fa-paperclip me-2"></i> Attachments
         </div>
         <div class="sidebar-item" onclick="showTab('account')">
             <i class="fas fa-envelope me-2"></i> Email Accounts
@@ -348,7 +354,6 @@
                                 <i class="fas fa-save me-2"></i>Save Signatures
                             </button>
                         </div>
-
                     </form>
                 </div>
             </div>
@@ -357,53 +362,83 @@
 </div>
 
 
-    {% comment %} <!-- ================= ADD ACCOUNT ================= -->
-                    <div id="account" class="tab-section">
-                        <div class="card shadow-sm">
-                            <div class="card-header bg-info text-white">
-                                <h4><i class="fas fa-envelope me-2"></i>Email Accounts</h4>
-                                <p class="mb-0 text-white-50">
-                                    Connect Google accounts used for sending emails
-                                </p>
-                            </div>
+<!-- ================= ATTACHMENTS ================= -->
+<div id="attachments" class="tab-section">
+    <div class="row mt-3 gx-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
 
-                            <div class="card-body">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-paperclip me-2"></i>Email Attachments
+                    </h4>
+                    <p class="mb-0 text-white-50">
+                        Upload files to use while sending emails
+                    </p>
+                </div>
 
-                                <!-- Connected Google Accounts -->
-                                <ul class="list-group mb-3">
-                                    {% for acc in google_accounts %}
-                                        <li class="list-group-item">
-                                            {{ acc.extra_data.email }}
-                                            <br> </br>
-                                            <form method="post" action="{% url 'remove_google_account' acc.id %}">
-                                                {% csrf_token %}
-                                                <button class="btn btn-sm btn-outline-danger">
-                                                    Remove
-                                                </button>
-                                            </form>
-                                        </li>
-                                    {% empty %}
-                                        <li class="list-group-item text-muted">
-                                            No  accounts connected
-                                        </li>
-                                    {% endfor %}
-                                </ul>
+                <div class="card-body">
 
-                                <!-- Add Google Account -->
-                                {% load socialaccount %}
-                                    <a href="/accounts/google/login/?process=connect"
-                                    class="btn btn-primary px-4">
-                                        <i class="fab fa-go ogle"></i> Add Another Account
-                                    </a>
-                            </div>
-                        </div>
-                    </div>
-                    
+                    <!-- Upload Form -->
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <input type="file"
+                               name="attachments"
+                               class="form-control mb-3"
+                               multiple
+                               required>
+
+                       <button type="submit"
+                            name="attachment_submit"
+                            class="btn"
+                            style="background:#FFD000; color:#000; font-weight:600;">
+                        <i class="fas fa-upload me-2"></i>Upload Attachments
+                    </button>
+
+
                     </form>
+
+                    <hr>
+
+                    <!-- Uploaded Files List -->
+                    {% if attachments %}
+                        <h6 class="mb-2">Uploaded Files</h6>
+
+                        <ul class="list-group">
+                            {% for att in attachments %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center position-relative">
+
+                                    <span>{{ att.original_name }}</span>
+
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ att.file.url }}"
+                                           target="_blank"
+                                           class="btn btn-sm btn-outline-secondary">
+                                            View
+                                        </a>
+
+                                        <a href="{% url 'delete_attachment' att.id %}"
+                                           class="btn btn-sm btn-outline-danger"
+                                           title="Delete attachment"
+                                           onclick="return confirm('Delete this attachment?');">
+                                            ✕
+                                        </a>
+                                    </div>
+
+                                </li>
+                            {% endfor %}
+                        </ul>
+
+                    {% else %}
+                        <p class="text-muted mt-3">No attachments uploaded yet.</p>
+                    {% endif %}
+
                 </div>
             </div>
-        </div> {% endcomment %}
-
+        </div>
+    </div>
+</div>
 
 <!-- ================= EMAIL ACCOUNTS ================= -->
 <div id="account" class="tab-section">
@@ -575,13 +610,6 @@
 
     </div>
 </div>
-
-
-  
-
-
-
-
     </div>
 </div>
 
