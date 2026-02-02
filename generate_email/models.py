@@ -34,6 +34,8 @@ class SentEmail(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     opened_count = models.PositiveIntegerField(default=0)
 
+
+
 class ReminderEmail(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='reminder_email')
     target_audience = models.ForeignKey(TargetAudience, on_delete=models.CASCADE, related_name='reminder_email')

@@ -31,6 +31,8 @@ from urllib.parse import quote, unquote
 import numpy as np
 import csv
 import requests
+from users.models import EmailAttachment 
+
 
 #     return latest.token
 def get_latest_microsoft_token(user):
@@ -99,7 +101,8 @@ class GenerateEmailView(LoginRequiredMixin, View):
         )
 
         if signature_obj.photo:
-           photo_url = settings.SITE_URL+signature_obj.photo.url
+           photo_url = signature_obj.photo.url   
+
            html += f"""
                     <p>
                         <img src="{photo_url}"
@@ -112,6 +115,8 @@ class GenerateEmailView(LoginRequiredMixin, View):
     def get(self, request):
          # Fetch the user's services for the dropdown
         user_services = ProductService.objects.filter(user=request.user).values_list('service_name', flat=True).distinct()
+        user_attachments = EmailAttachment.objects.filter(user=request.user)
+
         signatures = Signature.objects.filter(user=request.user)
         google_accounts = SocialAccount.objects.filter(
             user=request.user,
@@ -155,6 +160,8 @@ class GenerateEmailView(LoginRequiredMixin, View):
             "unread_emails": unread_emails,
             "read_percentage": read_percentage,
             "unread_percentage": unread_percentage,
+            "user_attachments": user_attachments,   
+
         }
 
         return render(request, 'generate_email/email_generator.html', context)
@@ -243,8 +250,6 @@ class GenerateEmailView(LoginRequiredMixin, View):
                 f'Best,<br>{request.user.full_name}'
                 '</div>'
             )
-
-
         final_signature = signature_html if signature_html else default_signature
 
         for email in emails['follow_ups']:
@@ -272,9 +277,37 @@ class SendEmailView(LoginRequiredMixin, View):
         return render(request, 'generate_email/email_generator.html', {'title': "Home"})
 
     def post(self, request, *args, **kwargs):
-        data = json.loads(request.body)
-        sent_from = data.get("sent_from")
-        selected_account = None
+        saved_attachment_id = None   
+
+        # SUPPORT BOTH JSON & multipart/form-data
+        if request.content_type and request.content_type.startswith("multipart"):
+            # FormData (with attachment)
+            emails = json.loads(request.POST.get("emails"))
+            targetId = request.POST.get("targetId")
+            sent_from = request.POST.get("sent_from")
+
+            saved_attachment_id = request.POST.get("saved_attachment_id")
+
+            attachment = None
+
+            if saved_attachment_id:
+                try:
+                    saved_obj = EmailAttachment.objects.get(
+                        id=saved_attachment_id,
+                        user=request.user
+                    )
+                    attachment = saved_obj.file   
+                except EmailAttachment.DoesNotExist:
+                    attachment = None
+
+        else:
+            # Raw JSON (no attachment)
+            data = json.loads(request.body)
+            emails = data.get("emails")
+            targetId = data.get("targetId")
+            sent_from = data.get("sent_from")
+            attachment = None
+            selected_account = None
 
         if not sent_from:
             return JsonResponse(
@@ -301,8 +334,6 @@ class SendEmailView(LoginRequiredMixin, View):
                 status=404
             )
 
-        emails = data.get("emails")
-        targetId = data.get("targetId")
         target = TargetAudience.objects.get(id=targetId)
         main_email = emails["main_email"]
         followup_emails = emails["follow_ups"]
@@ -324,7 +355,7 @@ class SendEmailView(LoginRequiredMixin, View):
                 }, status=403)
 
         # ✅ Send main email
-        sent_email = send_email(request, user, target, main_email,selected_account=selected_account)
+        sent_email = send_email(request, user, target, main_email,selected_account=selected_account,attachment=attachment)
 
         ActivityLog.objects.get_or_create(
             user=request.user,
@@ -661,8 +692,7 @@ class LeadListView(LoginRequiredMixin, ListView):
             ]
             return JsonResponse(data, safe=False)
         
-        return super().render_to_response(context, **response_kwargs)
-    
+        return super().render_to_response(context, **response_kwargs)  
 
 def escape_csv(value):
     """
@@ -699,9 +729,7 @@ def export_target_audience_csv(request):
             ta.created.strftime("%Y-%m-%d"),
         ]
         writer.writerow([escape_csv(cell) for cell in row])
-
     return response
-
 
 class LeadEmailListView(LoginRequiredMixin, ListView):
     model = SentEmail
@@ -767,7 +795,6 @@ def msgraph_webhook(request):
                     continue
 
                 try:
-
                     msg_id = change.get('resourceData', {}).get('id')
                     sub_id = change.get("subscriptionId")
                     sub = EmailSubscription.objects.get(subscription_id=sub_id)
@@ -889,11 +916,11 @@ def get_conversation_id(user, msg_id):
 @csrf_exempt
 def email_open_pixel(request, uid):
 
-    # 🚫 Ignore admin / logged-in users
+    #  Ignore admin / logged-in users
     if request.user.is_authenticated:
         return transparent_pixel_response()
 
-    # 🚫 Ignore Django admin preview
+    #  Ignore Django admin preview
     referer = request.META.get("HTTP_REFERER", "")
     if "/admin/" in referer:
         return transparent_pixel_response()

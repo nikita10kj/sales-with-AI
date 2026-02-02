@@ -87,6 +87,21 @@ class Signature(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
+class EmailAttachment(models.Model):
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name="email_attachments"
+    )
+    file = models.FileField(upload_to="attachments/")
+    original_name = models.CharField(max_length=255)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.original_name
+
+
+
 class ActivityLog(models.Model):
     ACTION_CHOICES = [
         ('PROFILE_UPDATED', 'PROFILE_UPDATED'),
