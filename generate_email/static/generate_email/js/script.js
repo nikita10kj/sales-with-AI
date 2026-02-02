@@ -232,7 +232,6 @@ class EmailMarketingApp {
         </div>
         <div class="email-content">
             ${email.body}
-            ${this.renderAttachmentPreview()}
         </div>
     </div>
   `;

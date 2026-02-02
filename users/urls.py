@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import ( HomeView, LoginView,LandingPageView, RegisterView, VerifyOTPView, ResendOTPView,
-                    UserDetailsView,ProfileView,PrivacyPolicyView,TermsConditionsView,SupportView,LearningHubView, dashboard, delete_attachment, list_user_attachments, remove_google_account, AdminDashboardView)
+                    UserDetailsView,ProfileView,PrivacyPolicyView,TermsConditionsView,SupportView,LearningHubView,delete_signature,dashboard, delete_attachment, list_user_attachments, remove_google_account, AdminDashboardView)
 
 
 urlpatterns = [
@@ -20,5 +20,5 @@ urlpatterns = [
     path("admin-dashboard/", AdminDashboardView.as_view(), name="admin-dashboard"),
     path("delete-attachment/<int:pk>/", delete_attachment, name="delete_attachment"),
     path("attachments/list/", list_user_attachments, name="list_attachments"),
-
+    path('delete-signature/<int:pk>/',delete_signature, name='delete_signature')
 ]
