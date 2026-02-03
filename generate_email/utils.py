@@ -35,12 +35,44 @@ from users.models import EmailAttachment
 class MicrosoftEmailSendError(Exception):
     pass
 
+# def get_user_provider(user):
+#     """
+#     Returns 'google' or 'microsoft' based on user's connected account.
+#     Priority: selected/available account.
+#     """
+#     account = SocialAccount.objects.filter(user=user).first()
+#     return account.provider if account else None
+
 def get_user_provider(user):
     """
-    Returns 'google' or 'microsoft' based on user's connected account.
-    Priority: selected/available account.
+    Returns provider for sending email.
+    Priority: Google → Microsoft → any available.
     """
-    account = SocialAccount.objects.filter(user=user).first()
+
+    # Prefer Google
+    account = SocialAccount.objects.filter(
+        user=user,
+        provider="google"
+    ).first()
+    if account:
+        return "google"
+
+    # Then Microsoft
+    account = SocialAccount.objects.filter(
+        user=user,
+        provider="microsoft"
+    ).first()
+    if account:
+        return "microsoft"
+
+    # Fallback: any account (ordered)
+    account = (
+        SocialAccount.objects
+        .filter(user=user)
+        .order_by("-id")
+        .first()
+    )
+
     return account.provider if account else None
 
 def get_gmail_service(user,selected_account=None):
