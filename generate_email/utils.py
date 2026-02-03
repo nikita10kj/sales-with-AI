@@ -265,6 +265,9 @@ def sendGeneratedEmail(request, user, target_audience, main_email,selected_accou
         subject=subject,
         message=message,
         message_id=message_id,
+        opened_count=0,
+        clicked_count=0,
+        replied_count=0,
     )
 # 
     track_url = request.build_absolute_uri(
