@@ -5,7 +5,7 @@ class EmailMarketingApp {
     this.formData = {}
     this.generatedEmails = []
     this.selectedEmails = []
-
+    this.savedAttachmentId = null;
     this.init()
   }
 
@@ -15,10 +15,6 @@ class EmailMarketingApp {
   }
 
   bindEvents() {
-    // Navigation buttons
-//    document.getElementById("nextBtn").addEventListener("click", () => this.nextStep())
-//    document.getElementById("prevBtn").addEventListener("click", () => this.prevStep())
-
     // Step navigation from sidebar
     document.querySelectorAll(".step").forEach((step) => {
       step.addEventListener("click", (e) => {
@@ -26,9 +22,6 @@ class EmailMarketingApp {
         this.goToStep(stepNumber)
       })
     })
-
-    // Generate emails button
-//    document.getElementById("generateEmails").addEventListener("click", () => this.generateEmails())
 
     // Form submissions
     document.getElementById("targetFrameworkForm").addEventListener("submit", (e) => {
@@ -42,7 +35,18 @@ class EmailMarketingApp {
 
         this.sendEmail()
     })
+    const savedAttachmentSelect = document.getElementById("saved_attachment");
+      if (savedAttachmentSelect) {
+          savedAttachmentSelect.addEventListener("change", (e) => {
+              this.savedAttachmentId = e.target.value || null;
+              console.log("Saved attachment selected:", this.savedAttachmentId);
 
+              // If user selects saved file, clear manual upload
+              if (this.savedAttachmentId) {
+                  this.attachmentFile = null;
+              }
+          });
+}
   }
 
   nextStep() {
@@ -85,8 +89,6 @@ class EmailMarketingApp {
         step.classList.add("completed")
       }
     })
-
-  
   }
 
   validateCurrentStep() {
@@ -151,7 +153,6 @@ class EmailMarketingApp {
         return;
       }
       this.updateStepDisplay()
-
       this.generatedEmails = data.emails; // Assuming the response contains the generated emails
       this.targetId = data.targetId;
       this.displayGeneratedEmails();
@@ -163,8 +164,6 @@ class EmailMarketingApp {
       this.showLoading(false);
     }
   }
-
-
 
   displayGeneratedEmails() {
     const container = document.getElementById("emailsContainer")
@@ -179,11 +178,9 @@ class EmailMarketingApp {
           <div class="email-header">
               <h5 class="email-title">${main.title}</h5>
               <div class="email-actions">
-
                   <button class="btn btn-sm btn-outline-primary" onclick="app.editEmail(this)">
                       <i class="fas fa-edit"></i> Edit
                   </button>
-
               </div>
           </div>
           <div class="email-body">
@@ -191,13 +188,13 @@ class EmailMarketingApp {
                   <strong>Subject:</strong> ${main.subject}
               </div>
               <div class="email-content">
-                  ${main.body}
+                  ${main.body}                      
+                  ${this.renderAttachmentPreview()}
               </div>
           </div>
         `;
         container.appendChild(mainCard);
       }
-
     this.generatedEmails.follow_ups.forEach((email, index) => {
       const emailCard = this.createEmailCard(email, index + 1)
       container.appendChild(emailCard)
@@ -207,7 +204,6 @@ class EmailMarketingApp {
   createEmailCard(email, count) {
   const defaultDays = [3, 5, 7, 10];
   const defaultDay = defaultDays[count - 1] || 3; // default if more than 4 follow-ups
-
   const card = document.createElement("div");
   card.className = "email-card";
   card.dataset.emailId = `follow_up_${count - 1}`;
@@ -241,27 +237,6 @@ class EmailMarketingApp {
   `;
   return card;
 }
-
-
-//  previewEmail(emailId) {
-//    const email = this.generatedEmails.find((e) => e.id === emailId)
-//    if (email) {
-//      const modal = new bootstrap.Modal(document.getElementById("emailPreviewModal"))
-//      document.getElementById("emailPreviewContent").innerHTML = `
-//                <div class="email-template">
-//                    <div class="subject-line">Subject: ${email.subject}</div>
-//                    <div class="email-body">${email.body.replace(/\n/g, "<br>")}</div>
-//                    <div class="signature">
-//                        <p>Best regards,<br>
-//                        ${this.formData.senderName}<br>
-//                        ${this.formData.companyName}</p>
-//                    </div>
-//                </div>
-//            `
-//      modal.show()
-//    }
-//  }
-
   editEmail(button) {
       const card = button.closest('.email-card');
       const emailKey = card.dataset.emailId;
@@ -283,7 +258,6 @@ class EmailMarketingApp {
                          </div>
                     </div>
                 `
-
           document.getElementById("saveEmailChanges").onclick = () => {
             email.subject = document.getElementById("editSubject").value
             email.body = document.getElementById("editBody").innerHTML
@@ -291,7 +265,6 @@ class EmailMarketingApp {
             modal.hide()
             this.showAlert("Email updated successfully!", "success")
           }
-
           modal.show()
         }
       } else if (emailKey.startsWith('follow_up_')) {
@@ -307,18 +280,15 @@ class EmailMarketingApp {
                          </div>
                     </div>
                 `
-
           document.getElementById("saveEmailChanges").onclick = () => {
             email.body = document.getElementById("editBody").innerHTML
             this.displayGeneratedEmails()
             modal.hide()
             this.showAlert("Email updated successfully!", "success")
           }
-
           modal.show()
         }
       }
-
   }
 
   async sendEmail() {
@@ -341,22 +311,39 @@ class EmailMarketingApp {
       }
     });
 
-    try {
-        // Make POST request to send emails
-        const response = await fetch("/generator/send_email/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": this.getCSRFToken(), // Include CSRF token for Django
-            },
-            body: JSON.stringify({
-                emails: emails,          // The generated email content
-                targetId: this.targetId,  // ID of the target audience
-                sent_from: sentFrom            // Selected sending account
-            }),
-        });
-           
+        let response;
+        // ✅ IF ATTACHMENT EXISTS → USE FormData
+       if (this.savedAttachmentId) {
+          const formData = new FormData();
+          formData.append("emails", JSON.stringify(emails));
+          formData.append("targetId", this.targetId);
+          formData.append("sent_from", sentFrom);
+          formData.append("saved_attachment_id", this.savedAttachmentId);
 
+          response = await fetch("/generator/send_email/", {
+              method: "POST",
+              headers: {
+                  "X-CSRFToken": this.getCSRFToken(),
+              },
+              body: formData,
+          });
+        
+
+        } else {
+            // 🔁 EXISTING JSON FLOW (UNCHANGED)
+            response = await fetch("/generator/send_email/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": this.getCSRFToken(),
+                },
+                body: JSON.stringify({
+                    emails: emails,
+                    targetId: this.targetId,
+                    sent_from: sentFrom
+                }),
+            });
+        }
         // Parse JSON response from server
         const data = await response.json();
         
@@ -374,18 +361,14 @@ class EmailMarketingApp {
         // Handle network errors
         console.error("Error:", error);
         this.showAlert("An error occurred while sending the email.", "danger");
-    } finally {
         // Always hide loading indicator when done
         this.showLoading(false);
-    }
+    // }
 }
-
   async checkEmailHistoryAndProceed() {
   const email = document.getElementById("targetEmail").value.trim();
   const service =document.getElementById("id_service").value;
-
   console.log("Checking email history for:", email, service);
-
   try {
     const response = await fetch(
       `/generator/check-email-history/?email=${encodeURIComponent(email)}&service=${encodeURIComponent(service)}`
@@ -401,11 +384,9 @@ class EmailMarketingApp {
         <p><b>Sent on:</b> ${data.sent_at}</p>
         <p>Do you want to send another email?</p>
       `;
-
       const modalEl = document.getElementById("emailExistsModal");
       const modal = new bootstrap.Modal(modalEl);
       modal.show();
-
       const confirmBtn = document.getElementById("confirmGenerate");
       confirmBtn.onclick = () => {
         modal.hide();
@@ -417,14 +398,11 @@ class EmailMarketingApp {
       this.nextStep();
       this.submitForm();
     }
-
   } catch (error) {
     console.error("Email history check failed:", error);
     this.showAlert("Unable to verify email history.", "danger");
   }
 }
-
-
     getCSRFToken() {
         // Function to get CSRF token from cookies
         const cookieValue = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
@@ -487,10 +465,7 @@ class EmailMarketingApp {
                     <h6>Email Sequence</h6>
                     <p class="text-muted">Send as a drip campaign</p>
                 </div>
-            </div>
-
-
-        `
+            </div>        `
   }
 
   selectSendOption(option) {
@@ -500,8 +475,6 @@ class EmailMarketingApp {
     this.selectedSendOption = option
     document.getElementById("sendCampaignBtn").disabled = this.selectedEmails.length === 0
   }
-
-
   showSuccessState(reminders, targetEmail) {
     let remindersHtml = '';
     
@@ -571,12 +544,9 @@ class EmailMarketingApp {
     document.getElementById("newEmailBtn").addEventListener("click", () => {
         window.location.href = "/generator/generate_email/";
     });
-    
     document.getElementById("viewAnalyticsBtn").addEventListener("click", () => {
     // This explicitly points to the 'users' app root which is mapped to HomeView (Dashboard)
     window.location.href = '/users/';
-    
-
 });
 }
 
@@ -614,8 +584,7 @@ class EmailMarketingApp {
     alertDiv.style.cssText = "top: 20px; right: 20px; z-index: 10000; min-width: 300px;"
     alertDiv.innerHTML = `
             ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>        `
 
     document.body.appendChild(alertDiv)
 
@@ -626,11 +595,29 @@ class EmailMarketingApp {
       }
     }, 5000)
   }
+ renderAttachmentPreview() {
+    if (!this.savedAttachmentId) return "";
+
+    const select = document.getElementById("saved_attachment");
+    const text = select.options[select.selectedIndex].text;
+
+    return `
+        <div style="
+            margin-top:12px;
+            padding-top:8px;
+            border-top:1px dashed #ddd;
+            font-size:14px;
+            color:#444;
+        ">
+            <strong>📎 Saved Attachment</strong><br>
+            ${text}
+        </div>
+    `;
 }
 
+}
 // Initialize the app
 const app = new EmailMarketingApp()
-
 // Additional utility functions
 document.addEventListener("DOMContentLoaded", () => {
   // File upload preview
@@ -639,7 +626,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (files.length > 0) {
       const fileList = files.map((file) => file.name).join(", ")
       app.showAlert(`Files selected: ${fileList}`, "info")
-    }
+    } 
+    app.attachmentFile = e.target.files[0] || null
   })
 
   // Form validation styling

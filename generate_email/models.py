@@ -33,6 +33,10 @@ class SentEmail(models.Model):
     threadId = models.CharField(max_length=255, null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     opened_count = models.PositiveIntegerField(default=0,null=False)
+    clicked_count = models.IntegerField(default=0)
+    replied_count = models.IntegerField(default=0)
+
+
 
 class ReminderEmail(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='reminder_email')

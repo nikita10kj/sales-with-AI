@@ -36,7 +36,7 @@
                 <p class="text-light mb-0">Define your target and email strategy</p>
             </div>
             <div class="card-body">
-                <form id="targetFrameworkForm">
+                <form id="targetFrameworkForm" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="row">
 
@@ -152,8 +152,8 @@
 
                             {% for sig in signatures %}
                                 <option value="{{ sig.id }}"
-                                    data-html="{{ sig.signature|striptags|cut:'&nbsp;'|safe }}">
-                                        {{ sig.signature|striptags|cut:"&nbsp;"|truncatechars:40 }}
+                                     data-html="{{ sig.signature|safe }}">
+                                        {{ sig.name|default:"Signature " }} 
                             </option>
                             {% empty %}
                             {% endfor %}
@@ -176,8 +176,22 @@
 
                             {% endfor %}
                         </select>
-
                     </div>
+
+                    <!-- ===== SAVED ATTACHMENT DROPDOWN ===== -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select Saved Attachment </label>
+                        <select id="saved_attachment" class="form-select">
+                            <option value="">-- Select Attachment --</option>
+
+                            {% for att in user_attachments %}
+                            <option value="{{ att.id }}">
+                                {{ att.file.name|cut:"attachments/" }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
 
                     <button class="btn btn-primary" type="submit">
                     <i class="fas fa-magic me-2"></i>Generate Emails
@@ -325,8 +339,6 @@
         }
     });
 });
-
-
 </script>
 <script>
 document.getElementById("id_signature").addEventListener("change", function () {
@@ -353,6 +365,39 @@ document.getElementById("id_signature").addEventListener("change", function () {
     if (preview) {
         preview.innerHTML = finalSignature;
     }
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const dropdown = document.getElementById("attachmentDropdown");
+    const hiddenUrl = document.getElementById("selectedAttachmentUrl");
+
+    // Call users app to get attachments
+    fetch("/attachments/list/")
+        .then(res => res.json())
+        .then(data => {
+
+            dropdown.innerHTML = `<option value="">No attachment selected</option>`;
+
+            data.attachments.forEach(att => {
+                const opt = document.createElement("option");
+                opt.value = att.id;      // ID will be sent
+                opt.textContent = att.name;
+                opt.setAttribute("data-url", att.url);
+                dropdown.appendChild(opt);
+            });
+        });
+
+    // When user selects attachment
+    dropdown.addEventListener("change", function () {
+        const selected = this.options[this.selectedIndex];
+        const fileUrl = selected.getAttribute("data-url") || "";
+
+        hiddenUrl.value = fileUrl;  // store for sending email
+    });
+
 });
 </script>
 

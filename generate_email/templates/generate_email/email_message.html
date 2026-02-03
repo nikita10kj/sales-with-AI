@@ -30,6 +30,17 @@
             <div class="border p-3 bg-light">
                 {{ email.message|safe }}
             </div>
+                {% if email.attachment %}
+                    <p class="mt-3">
+                        <strong>Attachment:</strong><br>
+                        <a href="{{ email.attachment.url }}" 
+                        class="btn btn-sm btn-outline-secondary" 
+                        target="_blank" download>
+                            <i class="fas fa-paperclip me-1"></i>
+                            {{ email.attachment.name|cut:"attachment/" }}
+                        </a>
+                    </p>
+                {% endif %}
 
              {% comment %} Email Sent Time with Tracking Pixel {% endcomment %}
             <p class="mt-3">
@@ -87,15 +98,12 @@ document.addEventListener('DOMContentLoaded', function () {
     elements.forEach(el => {
         const utcDateStr = el.getAttribute('data-utc');
         if (!utcDateStr) return;
-
         const utcDate = new Date(utcDateStr);
         const localDate = new Date(utcDate.getTime());
-
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const tomorrow = new Date(today);
         tomorrow.setDate(today.getDate() + 1);
-
         const emailDate = new Date(localDate.getFullYear(), localDate.getMonth(), localDate.getDate());
 
         let label;
@@ -110,13 +118,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 day: 'numeric'
             });
         }
-
         const timePart = localDate.toLocaleTimeString(undefined, {
             hour: '2-digit',
             minute: '2-digit',
             hour12: true
         });
-
         el.textContent = `${label}, ${timePart}`;
     });
 
