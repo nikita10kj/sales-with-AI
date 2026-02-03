@@ -36,6 +36,15 @@ class SentEmail(models.Model):
     clicked_count = models.IntegerField(default=0)
     replied_count = models.IntegerField(default=0)
 
+    def save(self, *args, **kwargs):
+        if self.opened_count is None:
+            self.opened_count = 0
+        if self.clicked_count is None:
+            self.clicked_count = 0
+        if self.replied_count is None:
+            self.replied_count = 0
+        super().save(*args, **kwargs)
+
 
 
 class ReminderEmail(models.Model):
