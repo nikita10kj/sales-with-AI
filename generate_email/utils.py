@@ -31,6 +31,7 @@ from email.mime.base import MIMEBase
 from email import encoders
 import mimetypes
 from users.models import EmailAttachment         
+from googleapiclient.errors import HttpError
 
 class MicrosoftEmailSendError(Exception):
     pass
@@ -395,34 +396,78 @@ def sendReminderEmail(reminder_email):
 
         provider = get_user_provider(reminder_email.user)
 
+        # if provider == 'google':
+        #     try:
+        #         service = get_gmail_service(reminder_email.user)
+        #         user_name = reminder_email.user.full_name
+        #         messages = create_message(user_name, reminder_email.user.email, email, subject, message,original_msg_id=original_message_id,new_msg_id=message_id)
+        #         if reminder_email.sent_email.threadId:
+        #             thread_id = reminder_email.sent_email.threadId
+        #             messages['threadId'] = thread_id
+        #             service.users().messages().send(userId='me', body=messages).execute()
+        #         else:
+        #             service.users().messages().send(userId='me', body=messages).execute()
+
+        #     except MicrosoftEmailSendError as e:
+        #         print(f"Google email send failed: {e}")
+        #         # Fallback to SMTP
+        #         email_msg = EmailMessage(
+        #             subject,
+        #             message,
+        #             to=[email],
+        #             reply_to=[reminder_email.user.email],
+        #             headers={
+        #                 'Message-ID': message_id,
+        #                 'In-Reply-To': original_message_id,
+        #                 'References': original_message_id
+        #             }
+        #         )
+        #         email_msg.content_subtype = 'html'
+        #         email_msg.send(fail_silently=False)
         if provider == 'google':
             try:
-                service = get_gmail_service(reminder_email.user)
+                selected_account = SocialAccount.objects.filter(
+                    user=reminder_email.user,
+                    provider="google"
+                ).order_by("-id").first()
+        
+                if not selected_account:
+                    raise MicrosoftEmailSendError("No Google account found")
+        
+                service = get_gmail_service(reminder_email.user, selected_account)
+        
                 user_name = reminder_email.user.full_name
-                messages = create_message(user_name, reminder_email.user.email, email, subject, message,original_msg_id=original_message_id,new_msg_id=message_id)
-                if reminder_email.sent_email.threadId:
-                    thread_id = reminder_email.sent_email.threadId
-                    messages['threadId'] = thread_id
-                    service.users().messages().send(userId='me', body=messages).execute()
-                else:
-                    service.users().messages().send(userId='me', body=messages).execute()
-
-            except MicrosoftEmailSendError as e:
-                print(f"Google email send failed: {e}")
-                # Fallback to SMTP
-                email_msg = EmailMessage(
+                messages = create_message(
+                    user_name,
+                    selected_account.extra_data.get("email"),
+                    email,
                     subject,
                     message,
-                    to=[email],
-                    reply_to=[reminder_email.user.email],
-                    headers={
-                        'Message-ID': message_id,
-                        'In-Reply-To': original_message_id,
-                        'References': original_message_id
-                    }
+                    original_msg_id=original_message_id,
+                    new_msg_id=message_id
                 )
-                email_msg.content_subtype = 'html'
-                email_msg.send(fail_silently=False)
+        
+                if reminder_email.sent_email.threadId:
+                    messages["threadId"] = reminder_email.sent_email.threadId
+        
+                service.users().messages().send(
+                    userId="me",
+                    body=messages
+                ).execute()
+        
+            except HttpError as e:
+                # ✅ THIS LINE PREVENTS CRON FAILURE
+                print(
+                    f"Gmail reminder skipped for {reminder_email.user.email}: {e}"
+                )
+                return None
+        
+            except MicrosoftEmailSendError as e:
+                print(
+                    f"Google setup error for {reminder_email.user.email}: {e}"
+                )
+                return None
+
 
         elif provider == 'microsoft':
             try:
