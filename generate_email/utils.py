@@ -424,7 +424,9 @@ def sendReminderEmail(reminder_email):
         #         )
         #         email_msg.content_subtype = 'html'
         #         email_msg.send(fail_silently=False)
-        if provider == 'google':
+        
+
+        if provider == "google":
             try:
                 selected_account = SocialAccount.objects.filter(
                     user=reminder_email.user,
@@ -432,13 +434,12 @@ def sendReminderEmail(reminder_email):
                 ).order_by("-id").first()
         
                 if not selected_account:
-                    raise MicrosoftEmailSendError("No Google account found")
+                    raise GoogleEmailSendError("No Google account found")
         
                 service = get_gmail_service(reminder_email.user, selected_account)
         
-                user_name = reminder_email.user.full_name
                 messages = create_message(
-                    user_name,
+                    reminder_email.user.full_name,
                     selected_account.extra_data.get("email"),
                     email,
                     subject,
@@ -456,17 +457,17 @@ def sendReminderEmail(reminder_email):
                 ).execute()
         
             except HttpError as e:
-                # ✅ THIS LINE PREVENTS CRON FAILURE
-                print(
+                logger.warning(
                     f"Gmail reminder skipped for {reminder_email.user.email}: {e}"
                 )
                 return None
         
-            except MicrosoftEmailSendError as e:
-                print(
+            except GoogleEmailSendError as e:
+                logger.error(
                     f"Google setup error for {reminder_email.user.email}: {e}"
                 )
                 return None
+
 
 
         elif provider == 'microsoft':
