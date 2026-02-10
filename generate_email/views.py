@@ -10,7 +10,7 @@ from django.views.generic import FormView, View,TemplateView,ListView,DetailView
 from django.http import JsonResponse
 from .genai_email import get_response
 from .models import TargetAudience, SentEmail, ReminderEmail, EmailSubscription
-from users.models import ProductService, ActivityLog,Signature
+from users.models import ProductService, ActivityLog,Signature,UserWallet
 import json
 from django.http import HttpResponse
 from django.db.models import Q
@@ -62,6 +62,7 @@ def get_latest_microsoft_token(user):
         return None
         
 # Create your views here.
+ORG_DOMAIN = "jmsadvisory.in"
 class GenerateEmailView(LoginRequiredMixin, View):
     def normalize_url(self, url):
         """Ensure the URL starts with http:// or https://"""
@@ -168,6 +169,17 @@ class GenerateEmailView(LoginRequiredMixin, View):
 
 
     def post(self, request, *args, **kwargs):
+        user_domain = (request.user.email or "").split("@")[-1].lower()
+        if user_domain != ORG_DOMAIN:
+            wallet, _ = UserWallet.objects.get_or_create(
+                user=request.user,
+                defaults={"credits": 500}
+            )
+            if wallet.credits <= 0:
+                return JsonResponse({
+                    'success': False,
+                    'errors': "Free limit finished. Please buy credits."
+                })
         data = json.loads(request.body)
 
         email = data.get('email')
@@ -215,12 +227,13 @@ class GenerateEmailView(LoginRequiredMixin, View):
             service = ProductService.objects.filter(user=request.user).first()
 
         # Only count SentEmails that do NOT have a corresponding ReminderEmail
-        if request.user.email.split('@')[-1] != "jmsadvisory.in":
-            sent_emails = SentEmail.objects.filter(user=request.user).exclude(
-                id__in=ReminderEmail.objects.filter(sent_email=OuterRef('pk')).values('sent_email')
-            )
-            if sent_emails.count() >= 50 :
-                return JsonResponse({'success': False, 'errors': "You have Exceeded limit of 50 emails."})
+        # if request.user.email.split('@')[-1] != "jmsadvisory.in":
+        #     sent_emails = SentEmail.objects.filter(user=request.user).exclude(
+        #         id__in=ReminderEmail.objects.filter(sent_email=OuterRef('pk')).values('sent_email')
+        #     )
+        #     if sent_emails.count() >= 50 :
+        #         return JsonResponse({'success': False, 'errors': "You have Exceeded limit of 50 emails."})
+            
         target, _ = TargetAudience.objects.get_or_create(
             user=request.user,
             email=email,
@@ -339,23 +352,47 @@ class SendEmailView(LoginRequiredMixin, View):
         followup_emails = emails["follow_ups"]
 
         #for restriction more than 500 user    
-        user = request.user
-        user_email = user.email.lower() if user.email else ""
-        organization_domain = "jmsadvisory"
+        # user = request.user
+        # user_email = user.email.lower() if user.email else ""
+        # organization_domain = "jmsadvisory"
 
-        # ✅ Check if user is from your organization
-        if organization_domain not in user_email:
-            # Count how many emails this user has already sent
-            sent_count = SentEmail.objects.filter(user=user).count()
+        # # ✅ Check if user is from your organization
+        # if organization_domain not in user_email:
+        #     # Count how many emails this user has already sent
+        #     sent_count = SentEmail.objects.filter(user=user).count()
 
-            if sent_count >= 500:
+        #     if sent_count >= 500:
+        #         return JsonResponse({
+        #             'success': False,
+        #             'error': 'Email limit reached. You can only send up to 500 emails.'
+        #         }, status=403)
+
+        # # ✅ Send main email
+        # sent_email = send_email(request, user, target, main_email,selected_account=selected_account,attachment=attachment)
+
+        user_domain = (request.user.email or "").split("@")[-1].lower()
+        wallet = None
+
+        if user_domain != ORG_DOMAIN:
+            wallet, _ = UserWallet.objects.get_or_create(
+                user=request.user,
+                defaults={"credits": 500}
+            )
+
+            if wallet.credits <= 0:
                 return JsonResponse({
-                    'success': False,
-                    'error': 'Email limit reached. You can only send up to 500 emails.'
+                    "success": False,
+                    "error": "Free limit finished. Please buy credits to continue."
                 }, status=403)
+        
+        try:
+            sent_email = send_email(request, request.user, target, main_email,selected_account=selected_account,attachment=attachment)
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
 
-        # ✅ Send main email
-        sent_email = send_email(request, user, target, main_email,selected_account=selected_account,attachment=attachment)
+        if wallet is not None:
+            wallet.credits -= 1
+            wallet.save(update_fields=["credits", "updated_at"])
 
         ActivityLog.objects.get_or_create(
             user=request.user,

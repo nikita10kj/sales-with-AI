@@ -718,6 +718,150 @@ class TermsConditionsView(View):
 
     def get(self, request):
         return render(request, self.template_name)
+class PricingView(View):
+    template_name = "users/pricing.html"
+
+    def get(self, request):
+        plans = [
+            {
+                "name": "Starter",
+                "tagline": "For individuals getting started",
+                "price_month": 0,
+                "price_year": 0,
+                "cta": "Start Free Trial",
+                "popular": False,
+                "features": [
+                    "AI Email Generator",
+                    "Basic personalization",
+                    "Limited templates",
+                    "Community support",
+                ],
+            },
+            {
+                "name": "Pro",
+                "tagline": "Best for sales reps & freelancers",
+                "price_month": 299,
+                "price_year": 2990,
+                "cta": "Start Free Trial",
+                "popular": True,
+                "features": [
+                    "Everything in Starter",
+                    "Smart personalization",
+                    "Tone & style control",
+                    "Performance analytics",
+                ],
+            },
+            {
+                "name": "Team",
+                "tagline": "For growing teams & agencies",
+                "price_month": 799,
+                "price_year": 7990,
+                "cta": "Talk to Sales",
+                "popular": False,
+                "features": [
+                    "Everything in Pro",
+                    "Shared templates & sequences",
+                    "Team management",
+                    "Priority support",
+                ],
+            },
+        ]
+
+        context = {"plans": plans}
+        return render(request, self.template_name, context)
+    
+import json, hmac, hashlib
+from django.conf import settings
+from django.http import JsonResponse
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+import razorpay
+from .models import RazorpayCreditOrder, UserWallet
+
+razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+MIN_CREDITS = 1000
+
+@login_required
+@require_POST
+def razorpay_create_order(request):
+    data = json.loads(request.body or "{}")
+    credits = int(data.get("credits", 0))
+    if credits < MIN_CREDITS:
+        return JsonResponse({"error": "Minimum purchase is 1000 credits"}, status=400)
+
+    amount_rupees = credits
+    amount_paise = amount_rupees * 100
+
+    rp_order = razorpay_client.order.create({
+        "amount": amount_paise,
+        "currency": "INR",
+        "receipt": f"credits_{request.user.id}_{credits}",
+        "payment_capture": 1,
+        "notes": {"user_id": str(request.user.id), "credits": str(credits)}
+    })
+
+    RazorpayCreditOrder.objects.create(
+        user=request.user,
+        credits=credits,
+        amount_rupees=amount_rupees,
+        amount_paise=amount_paise,
+        razorpay_order_id=rp_order["id"],
+        status="CREATED",
+    )
+
+    return JsonResponse({
+        "key_id": settings.RAZORPAY_KEY_ID,
+        "order_id": rp_order["id"],
+        "amount": amount_paise,
+        "currency": "INR",
+        "credits": credits,
+        "name": "SellSharp",
+        "description": f"Buy {credits} credits",
+        "prefill": {"name": request.user.get_full_name(), "email": request.user.email},
+    })
+
+
+@login_required
+@require_POST
+def razorpay_verify_payment(request):
+    data = json.loads(request.body or "{}")
+    oid = data.get("razorpay_order_id")
+    pid = data.get("razorpay_payment_id")
+    sig = data.get("razorpay_signature")
+
+    if not (oid and pid and sig):
+        return JsonResponse({"error": "Missing Razorpay fields"}, status=400)
+
+    try:
+        order = RazorpayCreditOrder.objects.select_for_update().get(user=request.user, razorpay_order_id=oid)
+    except RazorpayCreditOrder.DoesNotExist:
+        return JsonResponse({"error": "Order not found"}, status=404)
+
+    if order.status == "PAID":
+        wallet = UserWallet.objects.get(user=request.user)
+        return JsonResponse({"status": "success", "credits_added": 0, "new_balance": wallet.credits})
+
+    msg = f"{oid}|{pid}".encode("utf-8")
+    expected = hmac.new(settings.RAZORPAY_KEY_SECRET.encode("utf-8"), msg, hashlib.sha256).hexdigest()
+
+    if expected != sig:
+        order.status = "FAILED"
+        order.save(update_fields=["status"])
+        return JsonResponse({"error": "Signature mismatch"}, status=400)
+
+    wallet, _ = UserWallet.objects.get_or_create(user=request.user, defaults={"credits": 500})
+    wallet.credits += order.credits
+    wallet.save(update_fields=["credits", "updated_at"])
+
+    order.razorpay_payment_id = pid
+    order.razorpay_signature = sig
+    order.status = "PAID"
+    order.paid_at = timezone.now()
+    order.save(update_fields=["razorpay_payment_id", "razorpay_signature", "status", "paid_at"])
+
+    return JsonResponse({"status": "success", "credits_added": order.credits, "new_balance": wallet.credits})
+
 
 class SupportView(LoginRequiredMixin, FormView):    
     template_name = "users/support.html"    

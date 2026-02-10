@@ -1,0 +1,687 @@
+{% extends "users/base.html" %}
+{% load static %}
+{% block css %}
+{% comment %} <link rel="stylesheet" href="{% static 'users/css/pricing.css' %}"> {% endcomment %}
+{% endblock css %}
+
+{% block content %}
+<style>
+  .how-credits-work{
+  background: #EEF0FF;           /* same section tint like your page */
+  padding: 60px 0;
+  margin-top: 60px;
+  border-radius: 16px;
+}
+
+/* Title */
+.how-credits-work .section-title{
+  font-family: inherit;           /* match site font */
+  font-size: 32px;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 8px;
+  color: #111827;
+}
+
+/* Subtitle */
+.how-credits-work > .container > p{
+  color: #6B7280 !important;
+  font-size: 15px !important;
+  margin-bottom: 32px !important;
+}
+
+/* 3 cards grid */
+.credit-grid{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 10px;
+}
+
+/* Cards */
+.credit-item{
+  background: #fff;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: 14px;
+  padding: 22px 18px;
+  text-align: center;
+  box-shadow: 0 10px 24px rgba(16, 24, 40, 0.06);
+  transition: all .2s ease;
+}
+
+/* hover */
+.credit-item:hover{
+  transform: translateY(-3px);
+  border-color: rgba(13, 110, 253, 0.25); /* bootstrap primary hint */
+  box-shadow: 0 16px 40px rgba(13, 110, 253, 0.10);
+}
+
+/* Icon */
+.credit-icon{
+  font-size: 22px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 110, 253, 0.08); /* soft primary */
+  margin-bottom: 12px;
+}
+
+/* card title */
+.credit-item h3{
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  color: #111827;
+}
+
+/* card text */
+.credit-item p{
+  font-size: 13px;
+  color: #6B7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Example */
+.credit-example{
+  max-width: 1000px;
+  margin: 22px auto 0;
+  background: #fff;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: 14px;
+  padding: 18px 18px;
+  box-shadow: 0 10px 24px rgba(16, 24, 40, 0.06);
+}
+
+.credit-example h3{
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  color: #111827;
+}
+
+.credit-example p{
+  margin: 0;
+  font-size: 13px;
+  color: #6B7280;
+}
+
+/* Responsive */
+@media (max-width: 992px){
+  .credit-grid{
+    grid-template-columns: 1fr;
+  }
+  .how-credits-work{
+    border-radius: 0;
+  }
+}
+
+.pricing-page-wrap,
+.container.py-5{
+  background: #F6F7FB;
+}
+.container.py-5 .text-center h2{
+  color: #111827;
+  letter-spacing: -0.3px;
+}
+.container.py-5 .text-center p{
+  color: #6B7280 !important;
+}
+
+/* cards look (pricing + calculator) */
+.container.py-5 .card{
+  border-radius: 14px !important;
+  border: 1px solid rgba(17,24,39,0.08) !important;
+  box-shadow: 0 10px 26px rgba(16, 24, 40, 0.06) !important;
+  overflow: hidden;
+}
+
+/* recommended card border */
+.container.py-5 .card.border-primary{
+  border: 1px solid rgba(13,110,253,0.25) !important;
+  box-shadow: 0 14px 36px rgba(13,110,253,0.10) !important;
+}
+
+/* card body spacing */
+.container.py-5 .card .card-body{
+  padding: 22px !important;
+}
+
+/* headings */
+.container.py-5 .card h4{
+  font-size: 16px;
+  font-weight: 800;
+  color: #111827;
+}
+
+/* small subtitle */
+.container.py-5 .card .text-muted.small{
+  font-size: 12px;
+  color: #6B7280 !important;
+}
+
+/* price */
+.container.py-5 .card .display-6{
+  font-size: 34px;
+  font-weight: 900;
+  color: #111827;
+}
+
+/* badge */
+.container.py-5 .badge{
+  font-size: 11px;
+  font-weight: 800;
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+
+/* credit breakdown box */
+.credit-breakdown{
+  background: #F8FAFF;
+  border: 1px solid rgba(13,110,253,0.12);
+  border-radius: 12px;
+  padding: 14px 14px;
+  margin: 14px 0;
+}
+
+.credit-breakdown h4{
+  font-size: 12px;
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.credit-breakdown ul{
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.credit-breakdown li{
+  font-size: 12px;
+  color: #4B5563;
+  padding: 5px 0;
+}
+
+.credit-breakdown .total{
+  color: #0D6EFD;
+  font-weight: 800;
+}
+
+/* features list */
+.container.py-5 ul.list-unstyled li{
+  font-size: 13px;
+  color: #374151;
+}
+
+.container.py-5 ul.list-unstyled i{
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+/* buttons */
+.container.py-5 .btn{
+  border-radius: 10px !important;
+  font-weight: 800 !important;
+  padding: 10px 14px !important;
+}
+
+/* oprimary button */
+.container.py-5 .btn-outline-primary{
+  border: 1px solid rgba(13,110,253,0.35) !important;
+}
+
+/* primary button*/
+.container.py-5 .btn-primary{
+  background: linear-gradient(135deg,#667EEA 0%,#764BA2 100%) !important;
+  border: none !important;
+  box-shadow: 0 10px 24px rgba(102,126,234,0.22) !important;
+}
+
+.container.py-5 .btn-primary:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 14px 34px rgba(102,126,234,0.30) !important;
+}
+
+.container.py-5 .card .form-label{
+  font-size: 12px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.container.py-5 input.form-control{
+  border-radius: 10px;
+  border: 1px solid rgba(17,24,39,0.10);
+  padding: 10px 12px;
+  font-weight: 700;
+}
+
+.container.py-5 input.form-control:focus{
+  border-color: rgba(102,126,234,0.6);
+  box-shadow: 0 0 0 4px rgba(102,126,234,0.15);
+}
+
+/* result boxes */
+.container.py-5 .p-3.bg-light.rounded{
+  background: #F8FAFF !important;
+  border: 1px solid rgba(13,110,253,0.10);
+  border-radius: 12px !important;
+}
+
+.container.py-5 .p-3.bg-light.rounded .text-muted.small{
+  font-size: 11px;
+}
+
+.container.py-5 .p-3.bg-light.rounded .fs-4{
+  font-size: 22px !important;
+  font-weight: 900 !important;
+  color: #111827;
+}
+
+/* calculator header badge */
+.container.py-5 .badge.text-bg-primary{
+  background: linear-gradient(135deg,#667EEA 0%,#764BA2 100%) !important;
+}
+
+/* spacing fixes between pricing + how credits */
+.how-credits-work{
+  margin-top: 50px;
+}
+
+/* responsive */
+@media (max-width: 992px){
+  .container.py-5 .card .card-body{
+    padding: 18px !important;
+  }
+}
+
+</style>
+<div class="container py-5">
+
+  <div class="text-center mb-4">
+    <h2 class="fw-bold">Simple Pricing That Grows With You</h2>
+    <p class="text-muted mb-0">
+      Start free, scale smart. No hidden fees, no surprises — just powerful AI emails that convert.
+    </p>
+  </div>
+
+  <!-- Pricing Cards (No Monthly/Yearly) -->
+  <div class="row g-4 justify-content-center">
+
+    <!-- Free Plan -->
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-body d-flex flex-column">
+          <div class="d-flex align-items-start justify-content-between">
+            <div>
+              <h4 class="fw-bold mb-1">Free</h4>
+              <div class="text-muted small">Best for trying SellSharp</div>
+            </div>
+            <span class="badge text-bg-success">Free</span>
+          </div>
+
+          <div class="my-3">
+            <span class="display-6 fw-bold">₹0</span>
+          </div>
+
+               <div class="credit-breakdown">
+                        <h4>Credit Breakdown:</h4>
+                        <ul>
+                            <li>1 Credit = 1 Primary Email + 4 Follow-up Emails</li>
+                            <li>500 Credits = 500 Primary Emails + 2,000 Follow-ups</li>
+                            <li class="total">Total: 2500 Emails to kickstart your outreach</li>
+                        </ul>
+                </div>
+
+          {% comment %} <a href="{% url 'login' %}" class="btn btn-outline-primary w-100 mb-3">
+            Start Free
+          </a> {% endcomment %}
+          <a href="{% if user.is_authenticated %}{% url 'home' %}{% else %}{% url 'login' %}{% endif %}"
+            class="btn btn-outline-primary w-100 mb-3">
+            Start Free
+          </a>
+
+          <ul class="list-unstyled mb-0 mt-auto">
+            <li class="d-flex gap-2 mb-2">
+              <i class="fa-solid fa-check text-success mt-1"></i>
+              <span><b>500 emails free</b></span>
+            </li>
+            <li class="d-flex gap-2 mb-2">
+              <i class="fa-solid fa-check text-success mt-1"></i>
+              <span>AI Email Generator</span>
+            </li>
+            <li class="d-flex gap-2 mb-2">
+              <i class="fa-solid fa-check text-success mt-1"></i>
+              <span>Basic personalization</span>
+            </li>
+            <li class="d-flex gap-2 mb-2">
+              <i class="fa-solid fa-check text-success mt-1"></i>
+              <span>Community support</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Credits Plan -->
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="card h-100 shadow-sm border-primary">
+        <div class="card-body d-flex flex-column">
+          <div class="d-flex align-items-start justify-content-between">
+            <div>
+              <h4 class="fw-bold mb-1">Pay As You Go</h4>
+              <div class="text-muted small">Buy credits only when you need</div>
+            </div>
+            <span class="badge text-bg-primary">Recommended</span>
+          </div>
+
+          <div class="my-3">
+            <span class="fs-3 fw-bold">₹</span>
+            <span class="display-6 fw-bold" id="paygoAmount">1000</span>
+            <div class="text-muted small">Minimum purchase</div>
+          </div>
+
+           <div class="credit-breakdown">
+                        <h4>Credit Breakdown:</h4>
+                        <ul>
+                            <li>1 Credit = 1 Primary Email + 4 Follow-up Emails</li>
+                            <li>1,000 Credits = 1,000 Primary Emails + 4,000 Follow-ups</li>
+                            <li class="total">Total: 5,000 Emails to supercharge your sales</li>
+                        </ul>
+            </div>
+
+              {% if user.is_authenticated %}
+              <button type="button" class="btn btn-primary btn-lg buyBtn disabled">Buy Credits</button>
+              {% else %}
+              <a class="btn btn-primary btn-lg" href="{% url 'login' %}">Login to Buy</a>
+              {% endif %}
+
+
+          <ul class="list-unstyled mb-0 mt-auto">
+            <li class="d-flex gap-2 mb-2">
+              <i class="fa-solid fa-check text-success mt-1"></i>
+              <span><b>1 Credit = 1 Primary email + 4 Follow-ups</b></span>
+            </li>
+            <li class="d-flex gap-2 mb-2">
+              <i class="fa-solid fa-check text-success mt-1"></i>
+              <span>Better personalization & control</span>
+            </li>
+            <li class="d-flex gap-2 mb-2">
+              <i class="fa-solid fa-check text-success mt-1"></i>
+              <span>Priority support</span>
+            </li>
+          </ul>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!--how Credit works -->
+  <section class="how-credits-work">
+        <div class="container">
+            <h2 class="section-title">How Credits Work</h2>
+            <p style="text-align: center; font-size: 18px; color: var(--gray-700); margin-bottom: 48px; max-width: 700px; margin-left: auto; margin-right: auto;">
+                Every credit unlocks a complete email sequence designed to convert leads into customers.
+            </p>
+
+            <div class="credit-grid">
+                <div class="credit-item">
+                    <div class="credit-icon">📧</div>
+                    <h3>1 Primary Email</h3>
+                    <p>Your initial outreach message crafted by AI to grab attention and start conversations.</p>
+                </div>
+                <div class="credit-item">
+                    <div class="credit-icon">📨</div>
+                    <h3>4 Follow-up Emails</h3>
+                    <p>Automated nurture sequence that keeps prospects engaged until they respond.</p>
+                </div>
+                <div class="credit-item">
+                    <div class="credit-icon">📊</div>
+                    <h3>Full Analytics</h3>
+                    <p>Track opens, clicks, and conversions to continuously improve your campaigns.</p>
+                </div>
+            </div>
+
+            <div class="credit-example">
+                <h3>Example</h3>
+                <p>With 100 credits, you can reach 100 new prospects with 4 intelligent follow-ups each = <strong>500 total emails</strong> sent on autopilot.</p>
+            </div>
+        </div>
+    </section>
+
+  <!-- Credit Calculator -->
+  <div class="row justify-content-center mt-5">
+    <div class="col-12 col-lg-10">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+          <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+            <div>
+              <h4 class="fw-bold mb-1">Credit Calculator</h4>
+              <p class="text-muted mb-0">
+                Minimum purchase: <b>1000 Credits</b>. ₹1 = 1 Credit. 1 Credit = 1 Primary + 4 Follow-ups.
+              </p>
+            </div>
+            <span class="badge text-bg-primary align-self-start align-self-md-center">
+              Minimum ₹1000
+            </span>
+          </div>
+
+          <hr class="my-4"/>
+
+          <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-4">
+              <label class="form-label fw-semibold">Credits</label>
+              <input
+                id="creditsInput"
+                type="number"
+                class="form-control"
+                min="1000"
+                step="1"
+                value="1000"
+              />
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label fw-semibold">Amount (₹)</label>
+              <input id="rupeesOutput" type="text" class="form-control" value="1000" readonly />
+            </div>
+
+            <div class="col-12 col-md-4 d-grid">
+                  {% if user.is_authenticated %}
+                  <button type="button" class="btn btn-primary btn-lg buyBtn disabled">Buy Credits</button>
+                  {% else %}
+                  <a class="btn btn-primary btn-lg" href="{% url 'login' %}">Login to Buy</a>
+                  {% endif %}
+            </div>
+          </div>
+
+          <div class="row g-3 mt-3">
+            <div class="col-12 col-md-3">
+              <div class="p-3 bg-light rounded">
+                <div class="text-muted small">Primary Emails</div>
+                <div class="fs-4 fw-bold" id="primaryOut">1000</div>
+              </div>
+            </div>
+
+            <div class="col-12 col-md-3">
+              <div class="p-3 bg-light rounded">
+                <div class="text-muted small">Follow-up Emails</div>
+                <div class="fs-4 fw-bold" id="followupsOut">4000</div>
+              </div>
+            </div>
+
+            <div class="col-12 col-md-3">
+              <div class="p-3 bg-light rounded">
+                <div class="text-muted small">Total Emails</div>
+                <div class="fs-4 fw-bold" id="totalEmailsOut">5000</div>
+              </div>
+            </div>
+
+            <div class="col-12 col-md-3">
+              <div class="p-3 bg-light rounded">
+                <div class="text-muted small">Bundles</div>
+                <div class="fs-4 fw-bold" id="bundlesOut">1000</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+
+{% block js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  const MIN_CREDITS = 1000;
+  const PRIMARY_PER_CREDIT = 1;
+  const FOLLOWUPS_PER_CREDIT = 4;
+  const RUPEES_PER_CREDIT = 1;
+
+  const creditsInput   = document.getElementById("creditsInput");
+  const rupeesOutput   = document.getElementById("rupeesOutput");
+  const primaryOut     = document.getElementById("primaryOut");
+  const followupsOut   = document.getElementById("followupsOut");
+  const totalEmailsOut = document.getElementById("totalEmailsOut");
+  const bundlesOut     = document.getElementById("bundlesOut");
+  const buyBtn         = document.getElementById("buyBtn");
+  const paygoAmount    = document.getElementById("paygoAmount");
+
+  function toInt(val) {
+    const n = parseInt(val, 10);
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  // Update output boxes WITHOUT forcing the input value while typing
+  function updateOutputs(credits) {
+    const safeCredits = Number.isFinite(credits) ? credits : MIN_CREDITS;
+
+    const rupees = safeCredits * RUPEES_PER_CREDIT;
+    const primary = safeCredits * PRIMARY_PER_CREDIT;
+    const followups = safeCredits * FOLLOWUPS_PER_CREDIT;
+    const totalEmails = primary + followups;
+
+    rupeesOutput.value = rupees;
+    primaryOut.textContent = primary;
+    followupsOut.textContent = followups;
+    totalEmailsOut.textContent = totalEmails;
+    bundlesOut.textContent = safeCredits;
+    paygoAmount.textContent = rupees;
+
+    {% comment %} const baseHref = buyBtn.getAttribute("href").split("?")[0]; {% endcomment %}
+    {% comment %} buyBtn.setAttribute("href", `${baseHref}?credits=${safeCredits}`); {% endcomment %}
+  }
+
+  // While typing: allow partial values like "2", "20", "200"
+  creditsInput.addEventListener("input", () => {
+    const raw = creditsInput.value.trim();
+
+    // If empty, don't fight user; just show minimum stats
+    if (raw === "") {
+      updateOutputs(MIN_CREDITS);
+      return;
+    }
+
+    const n = toInt(raw);
+    if (!Number.isFinite(n) || n < 0) return;
+
+    // If they typed less than minimum, still show based on minimum,
+    // but DO NOT overwrite what they are typing.
+    updateOutputs(n < MIN_CREDITS ? MIN_CREDITS : n);
+  });
+
+  // When user finishes (clicks out): enforce minimum and normalize
+  creditsInput.addEventListener("blur", () => {
+    let n = toInt(creditsInput.value);
+    if (!Number.isFinite(n) || n < MIN_CREDITS) n = MIN_CREDITS;
+    creditsInput.value = String(n);
+    updateOutputs(n);
+  });
+
+  // Initial load
+  document.addEventListener("DOMContentLoaded", () => {
+    creditsInput.value = String(MIN_CREDITS);
+    updateOutputs(MIN_CREDITS);
+  });
+
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + "=")) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const csrftoken = getCookie("csrftoken");
+  const creditsInput = document.getElementById("creditsInput");
+
+  document.querySelectorAll(".buyBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const credits = parseInt(creditsInput.value, 10);
+
+      const res = await fetch("{% url 'razorpay_create_order' %}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrftoken
+        },
+        body: JSON.stringify({ credits })
+      });
+
+      const data = await res.json();
+      if (!res.ok) return alert(data.error || "Order failed");
+
+      const rzp = new Razorpay({
+        key: data.key_id,
+        amount: data.amount,
+        currency: data.currency,
+        name: data.name,
+        description: data.description,
+        order_id: data.order_id,
+        prefill: data.prefill,
+        handler: async function (response) {
+          const verifyRes = await fetch("{% url 'razorpay_verify_payment' %}", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrftoken
+            },
+            body: JSON.stringify(response)
+          });
+
+          const verifyData = await verifyRes.json();
+          if (verifyRes.ok) {
+            alert("Payment Success! Credits added: " + verifyData.credits_added);
+            window.location.reload();
+          } else {
+            alert(verifyData.error || "Verify failed");
+          }
+        }
+      });
+
+      rzp.open();
+    });
+  });
+});
+
+
+</script>
+
+{% endblock js %}
