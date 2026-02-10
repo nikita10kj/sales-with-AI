@@ -8,7 +8,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="{% static 'users/img/logo_1.png' %}" />
+    <link rel="icon" type="image/x-icon" href="{% static 'users/img/logo_4.png' %}" />
     <title>Email Marketing Generator</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -54,6 +54,18 @@
                     <a class="nav-link" href="{% url 'view-leads' %}"
                        style="{% if request.resolver_match.url_name == 'view-leads' %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; padding-left: 10px; padding-right: 10px;{% endif %}">
                         Leads
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'Customized-Learning-Solutions' %}"
+                       style="{% if request.resolver_match.url_name == 'Customized-Learning-Solutions' %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; padding-left: 10px; padding-right: 10px;{% endif %}">
+                        Academy
+                    </a>
+                </li>
+                 <li class="nav-item">
+                    <a class="nav-link" href="{% url 'pricing' %}"
+                       style="{% if request.resolver_match.url_name == 'pricing' %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; padding-left: 10px; padding-right: 10px;{% endif %}">
+                        Pricing
                     </a>
                 </li>
 
@@ -118,7 +130,7 @@
           >
             <span class="mx-2.5">|</span>
           <a
-            href="{% url 'learning-hub' %}"
+            href="{% url 'Customized-Learning-Solutions' %}"
             class="text-white text-decoration-underline"
             >Learning Hub</a
           >

@@ -98,6 +98,31 @@ class EmailAttachment(models.Model):
 
     def __str__(self):
         return self.original_name
+class UserWallet(models.Model):
+    user=models.OneToOneField(CustomUser,on_delete=models.CASCADE,related_name="wallet")
+    credits=models.IntegerField(default=500)
+    updated_at=models.DateTimeField(auto_now=True)
+    
+class RazorpayCreditOrder(models.Model):
+    STATUS_CHOICES = [
+        ("CREATED", "CREATED"),
+        ("PAID", "PAID"),
+        ("FAILED", "FAILED"),
+    ]
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="razorpay_credit_orders")
+
+    credits = models.PositiveIntegerField()        # credits purchased
+    amount_rupees = models.PositiveIntegerField()  # ₹
+    amount_paise = models.PositiveIntegerField()   # paise
+
+    razorpay_order_id = models.CharField(max_length=100, unique=True)
+    razorpay_payment_id = models.CharField(max_length=100, null=True, blank=True)
+    razorpay_signature = models.CharField(max_length=200, null=True, blank=True)
+
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="CREATED")
+    created_at = models.DateTimeField(auto_now_add=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+
 
 
 

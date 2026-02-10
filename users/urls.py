@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import ( HomeView, LoginView,LandingPageView, RegisterView, VerifyOTPView, ResendOTPView,
-                    UserDetailsView,ProfileView,PrivacyPolicyView,TermsConditionsView,SupportView,LearningHubView,delete_signature,dashboard, delete_attachment, list_user_attachments, remove_google_account, AdminDashboardView)
+                    UserDetailsView,ProfileView,PrivacyPolicyView,TermsConditionsView,SupportView,LearningHubView,delete_signature,dashboard, delete_attachment, list_user_attachments, remove_google_account, AdminDashboardView, razorpay_create_order,razorpay_verify_payment,PricingView)
 
 
 urlpatterns = [
@@ -12,7 +12,7 @@ urlpatterns = [
     path('user-details/<int:pk>/', UserDetailsView.as_view(), name='user-details'),
     path('profile/', ProfileView.as_view(), name='profile'),
     path('privacypolicy/',PrivacyPolicyView.as_view(),name='privacy-policy'),
-    path('learninghub/',LearningHubView.as_view(),name='learning-hub'),
+    path('Customized-Learning-Solutions/',LearningHubView.as_view(),name='Customized-Learning-Solutions'),
     path('termsconditions/',TermsConditionsView.as_view(),name='terms-conditions'),
     path('support/', SupportView.as_view(), name='support'),
     path("dashboard/", dashboard, name="dashboard"),
@@ -20,5 +20,8 @@ urlpatterns = [
     path("admin-dashboard/", AdminDashboardView.as_view(), name="admin-dashboard"),
     path("delete-attachment/<int:pk>/", delete_attachment, name="delete_attachment"),
     path("attachments/list/", list_user_attachments, name="list_attachments"),
-    path('delete-signature/<int:pk>/',delete_signature, name='delete_signature')
+    path('delete-signature/<int:pk>/',delete_signature, name='delete_signature'),
+    path("pricing/", PricingView.as_view(), name="pricing"),
+    path("razorpay/create-order/", razorpay_create_order, name="razorpay_create_order"),
+    path("razorpay/verify/", razorpay_verify_payment, name="razorpay_verify_payment")
 ]

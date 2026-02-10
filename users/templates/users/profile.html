@@ -369,7 +369,6 @@ attachments-list {
     </div>
 </div>
 
-
 <!-- ================= ATTACHMENTS ================= -->
 <div id="attachments" class="tab-section">
     <div class="row mt-3 gx-4">
@@ -387,76 +386,81 @@ attachments-list {
 
                 <div class="card-body">
 
-                    <!-- Upload Form -->
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
+    <!-- Upload Form -->
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
 
-                        <input type="file"
-                               name="attachments"
-                               class="form-control mb-3"
-                               multiple
-                               required>
+        <div class="d-flex align-items-center gap-3">
+            <input type="file"
+                   name="attachments"
+                   class="form-control"
+                   multiple
+                   required>
 
-                       <button type="submit"
-                            name="attachment_submit"
-                            class="btn"
-                            style="background:#FFD000; color:#000; font-weight:600;">
-                        <i class="fas fa-upload me-2"></i>Upload Attachments
-                    </button>
+            <button type="submit"
+                    name="attachment_submit"
+                    class="btn"
+                    style="
+                        background:#FFD000;
+                        color:#000;
+                        font-weight:600;
+                        border-radius:10px;
+                        padding:8px 16px;
+                        white-space:nowrap;
+                    ">
+                <i class="fas fa-upload me-1"></i> Upload Attachments
+            </button>
+        </div>
 
+    </form>
 
-                    </form>
+    <hr class="my-4">
 
-                    <hr>
+    <!-- Uploaded Files -->
+    {% if attachments %}
+        <h6 class="mb-3">Uploaded Files</h6>
 
-                    <!-- Uploaded Files List -->
-                    {% if attachments %}
-                        <h6 class="mb-2">Uploaded Files</h6>
+        <div class="list-group">
+            {% for att in attachments %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
 
-                        <ul class="list-group">
-                            {% for att in attachments %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center position-relative">
+                <span>{{ att.original_name }}</span>
 
-                                    <span>{{ att.original_name }}</span>
+                <div class="d-flex gap-2">
+                    <a href="{{ att.file.url }}"
+                       target="_blank"
+                       class="btn btn-sm btn-outline-secondary"
+                       style="border-radius:10px;">
+                        View
+                    </a>
 
-                                    <div class="d-flex gap-2">
-                                        <a href="{{ att.file.url }}"
-                                           target="_blank"
-                                           class="btn btn-sm btn-outline-secondary">
-                                            View
-                                        </a>
-
-                                        <a href="{% url 'delete_attachment' att.id %}"
-                                           class="btn btn-sm btn-outline-danger"
-                                           title="Delete attachment"
-                                           onclick="return confirm('Delete this attachment?');">
-                                            ✕
-                                        </a>
-                                    </div>
-
-                                </li>
-                            {% endfor %}
-                        </ul>
-
-                    {% else %}
-                        <p class="text-muted mt-3">No attachments uploaded yet.</p>
-                    {% endif %}
-
+                    <a href="{% url 'delete_attachment' att.id %}"
+                       onclick="return confirm('Delete this attachment?');"
+                       class="btn btn-sm btn-outline-danger"
+                       style="border-radius:10px;">
+                        ✕
+                    </a>
                 </div>
+
             </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted">No attachments uploaded yet.</p>
+    {% endif %}
+</div>
+      </div>
         </div>
     </div>
 </div>
 
 <!-- ================= EMAIL ACCOUNTS ================= -->
 <div id="account" class="tab-section">
-
     <div style="
         display:flex;
         gap:28px;
         flex-wrap:wrap;
     ">
-
         <!-- ================= GOOGLE ACCOUNTS ================= -->
         {% for acc in google_accounts %}
         <div style="
@@ -468,7 +472,6 @@ attachments-list {
             position:relative;
             transition:all .25s ease;
         ">
-
             <!-- Remove -->
             <form method="post"
                   action="{% url 'remove_google_account' acc.id %}"
@@ -492,7 +495,6 @@ attachments-list {
             </form>
 
             <div style="display:flex;align-items:center;gap:16px;">
-
                 <div style="
                     width:52px;
                     height:52px;
@@ -796,6 +798,4 @@ function deleteSignature(sigId, btn){
     });
 }
 </script>
-
-
 {% endblock %}
