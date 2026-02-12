@@ -718,6 +718,11 @@ class TermsConditionsView(View):
 
     def get(self, request):
         return render(request, self.template_name)
+class RefundPolicyView(View):
+    template_name='users/refundpolicy.html'
+
+    def get(self, request):
+        return render(request, self.template_name)
 class PricingView(View):
     template_name = "users/pricing.html"
 
