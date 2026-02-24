@@ -341,10 +341,10 @@ EMAIL RULES (STRICT):
 - CTA must be 1 short sentence
 
 FOLLOW-UP RULES:
-1. Short case study (max 80 words)
-2. Industry insight (max 80 words)
-3. Service benefit summary (max 80 words)
-4. Short FOMO close (max 60 words)
+1. Short case study (max 150–180 words)
+2. Industry insight (max 150–180 words)
+3. Service benefit summary (max 150–180 words)
+4. Short FOMO close (max 150–180 words)
 
 OUTPUT JSON:
 {{
