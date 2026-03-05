@@ -31,7 +31,7 @@ SECRET_KEY = os.environ['SECRET']
 DEBUG = False
 ALLOWED_HOSTS = ['fairly-whole-hawk.ngrok-free.app','localhost','sellsmart-dvdhbme5h6eud4hz.centralindia-01.azurewebsites.net','www.sellsharp.co', 'sellsharp.co','20.192.98.161', '127.0.0.1']
 MS_GRAPH_CLIENT_STATE = "superSecret123jms"
-SITE_ID = 3
+SITE_ID = 1
 
 SITE_URL = "https://sellsharp.co"
 
