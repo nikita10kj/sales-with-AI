@@ -234,19 +234,25 @@ class GenerateEmailView(LoginRequiredMixin, View):
         #     if sent_emails.count() >= 50 :
         #         return JsonResponse({'success': False, 'errors': "You have Exceeded limit of 50 emails."})
             
-        target, _ = TargetAudience.objects.get_or_create(
+        targets = TargetAudience.objects.filter(
             user=request.user,
-            email=email,
-            defaults={
-                "receiver_first_name": receiver_first_name,
-                "receiver_last_name": receiver_last_name,
-                "receiver_linkedin_url": receiver_linkedin_url,
-                "selected_service": selected_service,
-                "company_url": company_url,
-                "framework": framework,
-                "campaign_goal": campaign_goal,
-            }
+            email=email
         )
+
+        if targets.exists():
+            target = targets.first()
+        else:
+            target = TargetAudience.objects.create(
+                user=request.user,
+                email=email,
+                receiver_first_name=receiver_first_name,    
+                receiver_last_name=receiver_last_name,
+                receiver_linkedin_url=receiver_linkedin_url,
+                selected_service=selected_service,
+                company_url=company_url,
+                framework=framework,
+                campaign_goal=campaign_goal,
+            )
         emails = json.loads(get_response(request.user, target, service))
 
         signature_html = ""
