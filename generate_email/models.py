@@ -12,10 +12,10 @@ class TargetAudience(models.Model):
     receiver_first_name = models.CharField(max_length=500, blank=True, null=True)
     receiver_last_name = models.CharField(max_length=500, blank=True, null=True)
     receiver_linkedin_url = models.URLField(blank=True, null=True)
-    selected_service = models.CharField(max_length=255, null=True)
+    selected_service = models.TextField(null=True, blank=True)
     company_url = models.URLField(blank=True, null=True)
-    framework = models.CharField(max_length=255, blank=True, null=True)
-    campaign_goal = models.CharField(max_length=255, blank=True, null=True)
+    framework = models.TextField(blank=True, null=True)
+    campaign_goal = models.TextField(blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
 
 
