@@ -301,11 +301,23 @@ def sendGeneratedEmail(request, user, target_audience, main_email,selected_accou
         opened_count=0,
         clicked_count=0,
         replied_count=0,
+        
     )
-# 
-    track_url = request.build_absolute_uri(
-        reverse("email_open_pixel", kwargs={"uid": sent_email.uid})
-    ) + f"?v={int(time.time())}"
+
+    # track_url = request.build_absolute_uri(
+    #     reverse("email_open_pixel", kwargs={"uid": sent_email.uid})
+    # ) + f"?v={int(time.time())}"
+    
+    from django.conf import settings
+
+    if request:
+        track_url = request.build_absolute_uri(
+            reverse("email_open_pixel", kwargs={"uid": sent_email.uid})
+        )
+    else:
+        track_url = f"{settings.SITE_URL}/email/open/{sent_email.uid}/"
+
+    track_url += f"?v={int(time.time())}"
 
     tracking_pixel = f"<img src='{track_url}' width='1' height='1' style='display:none;' alt='' />"
     message += tracking_pixel
@@ -326,6 +338,7 @@ def sendGeneratedEmail(request, user, target_audience, main_email,selected_accou
             thread_id = original_msg.get('threadId')
             sent_email.threadId = thread_id
             sent_email.save(update_fields=["threadId"])
+            
 
         except MicrosoftEmailSendError as e:
             print(f"Google email send failed: {e}")
@@ -624,3 +637,150 @@ def create_subscription(user):
 
 # Alias for easier import
 send_email = sendGeneratedEmail
+
+
+def refresh_google_token_campaign(selected_account):
+
+    token = SocialToken.objects.filter(
+        account=selected_account,
+        account__provider='google'
+    ).order_by('-expires_at').first()
+
+    if not token:
+        return None
+
+    refresh_token = token.token_secret
+
+    data = {
+        'client_id': os.getenv('GOOGLE_CLIENT_ID'),
+        'client_secret': os.getenv('GOOGLE_CLIENT_SECRET'),
+        'refresh_token': refresh_token,
+        'grant_type': 'refresh_token'
+    }
+
+    response = requests.post(
+        'https://oauth2.googleapis.com/token',
+        data=data
+    )
+
+    if response.status_code == 200:
+        token_data = response.json()
+        token.token = token_data['access_token']
+        token.expires_at = timezone.now() + timezone.timedelta(
+            seconds=token_data.get('expires_in', 3600)
+        )
+        token.save()
+
+        return token.token
+    else:
+        print("Campaign refresh failed:", response.text)
+        return None
+
+
+def get_gmail_service_campaign(selected_account):
+
+    token = SocialToken.objects.filter(
+        account=selected_account,
+        account__provider='google'
+    ).order_by('-expires_at').first()
+
+    if not token:
+        raise MicrosoftEmailSendError("No Google token found for selected account")
+
+    if token.expires_at and token.expires_at <= timezone.now():
+        new_token = refresh_google_token_campaign(selected_account)
+        if not new_token:
+            raise MicrosoftEmailSendError("Failed to refresh Google token")
+        access_token = new_token
+    else:
+        access_token = token.token
+
+    credentials = Credentials(
+        access_token,
+        refresh_token=token.token_secret,
+        token_uri='https://oauth2.googleapis.com/token',
+        client_id=os.getenv('GOOGLE_CLIENT_ID'),
+        client_secret=os.getenv('GOOGLE_CLIENT_SECRET')
+    )
+
+    service = build('gmail', 'v1', credentials=credentials)
+    return service
+
+from email.utils import make_msgid
+
+def sendCampaignEmail(request, user, target_audience, main_email, selected_account=None, attachment=None):
+
+    subject = main_email["subject"]
+    message = main_email["body"]
+    email = target_audience.email
+    message_id = make_msgid(domain='sellsharp.co')
+
+    if not selected_account:
+        raise Exception("No sending account selected")
+
+    provider = selected_account.provider
+
+    # 🔥 IMPORTANT: derive sender email from selected account
+    sender_email = (
+        selected_account.extra_data.get("email")
+        or selected_account.extra_data.get("userPrincipalName")
+        or selected_account.extra_data.get("mail")
+    )
+
+    if not sender_email:
+        raise Exception("Sender email not found in selected account")
+
+    sent_email = SentEmail.objects.create(
+        user=user,
+        email=email,
+        target_audience=target_audience,
+        subject=subject,
+        message=message,
+        message_id=message_id,
+        opened_count=0,
+        clicked_count=0,
+        replied_count=0,
+        sending_account=selected_account
+    )
+
+    # =========================
+    # GOOGLE
+    # =========================
+    if provider == 'google':
+
+        service = get_gmail_service_campaign(selected_account)
+        user_name = user.full_name
+
+        messages = create_message(
+            user_name,
+            sender_email,   # ✅ selected account email
+            email,
+            subject,
+            message,
+            attachment=attachment,
+            new_msg_id=message_id
+        )
+
+        service.users().messages().send(
+            userId='me',
+            body=messages
+        ).execute()
+
+    # =========================
+    # MICROSOFT
+    # =========================
+    elif provider == 'microsoft':
+
+        send_microsoft_email(
+            to_email=email,
+            subject=subject,
+            html_body=message,
+            selected_account=selected_account,
+            sender_email=sender_email,  # ✅ pass correct sender
+            attachment=attachment
+        )
+
+    else:
+        raise Exception("Unsupported provider")
+
+    return sent_email

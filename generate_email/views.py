@@ -100,10 +100,10 @@ class GenerateEmailView(LoginRequiredMixin, View):
             + "<br>".join(lines)
             + "</div>"
         )
-
+ 
         if signature_obj.photo:
            photo_url = signature_obj.photo.url   
-
+ 
            html += f"""
                     <p>
                         <img src="{photo_url}"
@@ -112,44 +112,44 @@ class GenerateEmailView(LoginRequiredMixin, View):
                     </p>
                 """
         return html
-
+ 
     def get(self, request):
          # Fetch the user's services for the dropdown
         user_services = ProductService.objects.filter(user=request.user).values_list('service_name', flat=True).distinct()
         user_attachments = EmailAttachment.objects.filter(user=request.user)
-
+ 
         signatures = Signature.objects.filter(user=request.user)
         google_accounts = SocialAccount.objects.filter(
             user=request.user,
             provider__in=["google", "microsoft"]
         )
         user = request.user
-
+ 
         total_sent = SentEmail.objects.filter(user=user).count()
-
+ 
         read_emails = SentEmail.objects.filter(
             user=user,
             opened=True
         ).count()
-
+ 
         unread_emails = SentEmail.objects.filter(
             user=user,
             opened=False
         ).count()
-
+ 
         today = timezone.now().date()
-
+ 
         today_opened = SentEmail.objects.filter(
             user=user,
             opened=True,
             opened_at__date=today
         ).count()
-
+ 
         # Percentages
         open_rate = round((read_emails / total_sent) * 100, 2) if total_sent else 0
         read_percentage = open_rate
         unread_percentage = round(100 - open_rate, 2) if total_sent else 0
-
+ 
         context = {
             "google_accounts": google_accounts,
             "user_services": user_services,
@@ -162,12 +162,12 @@ class GenerateEmailView(LoginRequiredMixin, View):
             "read_percentage": read_percentage,
             "unread_percentage": unread_percentage,
             "user_attachments": user_attachments,   
-
+ 
         }
-
+ 
         return render(request, 'generate_email/email_generator.html', context)
-
-
+ 
+ 
     def post(self, request, *args, **kwargs):
         user_domain = (request.user.email or "").split("@")[-1].lower()
         if user_domain != ORG_DOMAIN:
@@ -181,51 +181,51 @@ class GenerateEmailView(LoginRequiredMixin, View):
                     'errors': "Free limit finished. Please buy credits."
                 })
         data = json.loads(request.body)
-
+ 
         email = data.get('email')
         receiver_first_name = data.get('receiver_first_name')
         receiver_last_name = data.get('receiver_last_name')
         company_linkedin_url = self.normalize_url(data.get('company_linkedin_url', ''))
         receiver_linkedin_url = self.normalize_url(data.get('receiver_linkedin_url', ''))
-        selected_service = data.get('selected_service')
+        selected_service = (data.get('selected_service') or "")[:500]
         company_url = self.normalize_url(data.get('company_url', ''))
-        framework = data.get('framework')
-        campaign_goal = data.get('campaign_goal')
+        framework = (data.get('framework') or "")[:500]
+        campaign_goal = (data.get('campaign_goal') or "")[:500]
         signature_id = data.get('signature_id')
-
+ 
         # Selected Account Read
         selected_account_id = data.get("sent_from")  # <-- fetch from POST JSON
-
+ 
         if selected_account_id:
             google_account = SocialAccount.objects.get(
                 id=selected_account_id,
                 user=request.user,
             )
-
+ 
             
             google_token = SocialToken.objects.get(account=google_account)
             access_token = google_token.token
-
+ 
             if google_account.provider == "google":
                 sender_email = google_account.extra_data.get("email")
-
+ 
             elif google_account.provider == "microsoft":
                 sender_email = (
                     google_account.extra_data.get("mail")
                     or google_account.extra_data.get("userPrincipalName")
                 )
-
+ 
             # Optional: log for debug
             logger.info(f"Selected Google Account: {sender_email} for user {request.user.id}")
         else:
             sender_email = None
             access_token = None
-
+ 
         if selected_service:
             service = ProductService.objects.get(user=request.user, service_name=selected_service)
         else:
             service = ProductService.objects.filter(user=request.user).first()
-
+ 
         # Only count SentEmails that do NOT have a corresponding ReminderEmail
         # if request.user.email.split('@')[-1] != "jmsadvisory.in":
         #     sent_emails = SentEmail.objects.filter(user=request.user).exclude(
@@ -234,19 +234,27 @@ class GenerateEmailView(LoginRequiredMixin, View):
         #     if sent_emails.count() >= 50 :
         #         return JsonResponse({'success': False, 'errors': "You have Exceeded limit of 50 emails."})
             
-        target, _ = TargetAudience.objects.get_or_create(
+        targets = TargetAudience.objects.filter(
             user=request.user,
-            email=email,
-            receiver_first_name=receiver_first_name,
-            receiver_last_name=receiver_last_name,
-            receiver_linkedin_url=receiver_linkedin_url,
-            selected_service=selected_service,
-            company_url=company_url,
-            framework=framework,
-            campaign_goal=campaign_goal
+            email=email
         )
+ 
+        if targets.exists():
+            target = targets.first()
+        else:
+            target = TargetAudience.objects.create(
+                user=request.user,
+                email=email,
+                receiver_first_name=receiver_first_name,    
+                receiver_last_name=receiver_last_name,
+                receiver_linkedin_url=receiver_linkedin_url,
+                selected_service=selected_service,
+                company_url=company_url,
+                framework=framework,
+                campaign_goal=campaign_goal,
+            )
         emails = json.loads(get_response(request.user, target, service))
-
+ 
         signature_html = ""
         if signature_id:
             try:
@@ -257,26 +265,27 @@ class GenerateEmailView(LoginRequiredMixin, View):
                 )
             except Signature.DoesNotExist:
                 signature_html = ""
-
+ 
         default_signature = (
                 '<div style="margin:0;padding:0;line-height:1.4;">'
                 f'Best,<br>{request.user.full_name}'
                 '</div>'
             )
         final_signature = signature_html if signature_html else default_signature
-
+ 
         for email in emails['follow_ups']:
             email['body'] +=  final_signature or default_signature
     
         emails['main_email'][
             'body'] += final_signature or default_signature
-
-        return JsonResponse({'success': True,'emails': emails, 'targetId':target.id, 'sent_from': selected_account_id, 
+ 
+        return JsonResponse({'success': True,'emails': emails, 'targetId':target.id, 'sent_from': selected_account_id,
             'normalized_urls': {
                 'company_url': company_url,
                 'company_linkedin_url': company_linkedin_url,
                 'receiver_linkedin_url': receiver_linkedin_url
             }})
+    
 
 def add_business_days_np(start_date, n_days):
     # Convert to numpy datetime64
@@ -809,78 +818,171 @@ class EmailMessageView(DetailView):
         ).order_by('send_at')
         return context
 
+# @csrf_exempt
+# def msgraph_webhook(request):
+#     start_time = time.time()
+#     print("MS Graph request arrived at", timezone.now(), "method:", request.method)
+#     # Step 1: Handle validation (GET or POST with validationToken)
+#     validation_token = request.GET.get("validationToken")
+#     if not validation_token and request.method == "POST":
+
+#         # In POST validation, token is sent in the query string too
+#         validation_token = request.GET.get("validationToken")
+#     if validation_token:
+#         return HttpResponse(validation_token, content_type="text/plain", status=200)
+
+#     # Step 2: Handle actual notifications
+#     if request.method == "POST":
+#         try:
+#             data = json.loads(request.body.decode('utf-8') or '{}')
+#             for change in data.get('value', []):
+#                 # validate clientState matches
+#                 if change.get('clientState') != settings.MS_GRAPH_CLIENT_STATE:
+#                     continue
+
+#                 try:
+#                     msg_id = change.get('resourceData', {}).get('id')
+#                     sub_id = change.get("subscriptionId")
+#                     sub = EmailSubscription.objects.get(subscription_id=sub_id)
+#                     user = sub.user
+#                     # message_data = get_message_details(user, msg_id)
+#                     try:
+#                         message_data = get_message_details(user, msg_id)
+#                     except Exception:
+#                         logger.exception("Webhook-safe Graph failure")
+#                         continue
+
+
+#                     if not message_data or not isinstance(message_data, dict):
+#                         logger.warning("MS Graph webhook returned no message data for msg_id=%s", msg_id)
+#                         continue
+
+#                     # in_reply_to = message_data.get('value',[])[0]["conversationId"]
+#                     value_list = message_data.get('value', [])
+
+#                     if not value_list:
+#                         # Handle gracefully, e.g., skip or log the event
+#                         logger.warning("MS Graph webhook received empty 'value' list: %s", message_data)
+#                         return JsonResponse({"status": "ignored"}, status=200)
+
+#                     in_reply_to = value_list[0].get("conversationId")
+
+
+#                     for email in SentEmail.objects.filter(user=user):
+#                         reminder_qs = email.reminder_email.all()
+#                         if reminder_qs.exists():
+
+#                             sent_msg_id = email.message_id
+#                             if sent_msg_id.startswith("AA"):
+#                                 conversation_id = get_conversation_id(user, sent_msg_id)
+
+#                                 if conversation_id == in_reply_to:
+
+#                                     email.stop_reminder = True
+#                                     email.save()
+#                 except EmailSubscription.DoesNotExist:
+#                     continue  # unknown subscription
+
+
+#         except json.JSONDecodeError:
+#             return HttpResponse(status=400)
+
+#         # TODO: Check if message is a reply, update DB, etc.
+#         return HttpResponse(status=202)
+#     return HttpResponse(status=405)
+
+import json
+import time
+import logging
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+from django.utils import timezone
+ 
+logger = logging.getLogger(__name__)
+ 
 @csrf_exempt
 def msgraph_webhook(request):
-    start_time = time.time()
     print("MS Graph request arrived at", timezone.now(), "method:", request.method)
-    # Step 1: Handle validation (GET or POST with validationToken)
+ 
+    # Handle validation
     validation_token = request.GET.get("validationToken")
-    if not validation_token and request.method == "POST":
-
-        # In POST validation, token is sent in the query string too
-        validation_token = request.GET.get("validationToken")
     if validation_token:
         return HttpResponse(validation_token, content_type="text/plain", status=200)
-
-    # Step 2: Handle actual notifications
-    if request.method == "POST":
+ 
+    if request.method != "POST":
+        return HttpResponse(status=405)
+ 
+    try:
+        data = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        return HttpResponse(status=400)
+ 
+    for change in data.get("value", []):
+ 
+        # Validate clientState
+        if change.get("clientState") != settings.MS_GRAPH_CLIENT_STATE:
+            continue
+ 
+        msg_id = change.get("resourceData", {}).get("id")
+        sub_id = change.get("subscriptionId")
+ 
+        if not msg_id or not sub_id:
+            continue
+ 
         try:
-            data = json.loads(request.body.decode('utf-8') or '{}')
-            for change in data.get('value', []):
-                # validate clientState matches
-                if change.get('clientState') != settings.MS_GRAPH_CLIENT_STATE:
-                    continue
-
-                try:
-                    msg_id = change.get('resourceData', {}).get('id')
-                    sub_id = change.get("subscriptionId")
-                    sub = EmailSubscription.objects.get(subscription_id=sub_id)
-                    user = sub.user
-                    # message_data = get_message_details(user, msg_id)
-                    try:
-                        message_data = get_message_details(user, msg_id)
-                    except Exception:
-                        logger.exception("Webhook-safe Graph failure")
-                        continue
-
-
-                    if not message_data or not isinstance(message_data, dict):
-                        logger.warning("MS Graph webhook returned no message data for msg_id=%s", msg_id)
-                        continue
-
-                    # in_reply_to = message_data.get('value',[])[0]["conversationId"]
-                    value_list = message_data.get('value', [])
-
-                    if not value_list:
-                        # Handle gracefully, e.g., skip or log the event
-                        logger.warning("MS Graph webhook received empty 'value' list: %s", message_data)
-                        return JsonResponse({"status": "ignored"}, status=200)
-
-                    in_reply_to = value_list[0].get("conversationId")
-
-
-                    for email in SentEmail.objects.filter(user=user):
-                        reminder_qs = email.reminder_email.all()
-                        if reminder_qs.exists():
-
-                            sent_msg_id = email.message_id
-                            if sent_msg_id.startswith("AA"):
-                                conversation_id = get_conversation_id(user, sent_msg_id)
-
-                                if conversation_id == in_reply_to:
-
-                                    email.stop_reminder = True
-                                    email.save()
-                except EmailSubscription.DoesNotExist:
-                    continue  # unknown subscription
-
-
-        except json.JSONDecodeError:
-            return HttpResponse(status=400)
-
-        # TODO: Check if message is a reply, update DB, etc.
-        return HttpResponse(status=202)
-    return HttpResponse(status=405)
+            sub = EmailSubscription.objects.get(subscription_id=sub_id)
+            user = sub.user
+        except EmailSubscription.DoesNotExist:
+            continue
+ 
+        # Fetch message details safely
+        try:
+            message_data = get_message_details(user, msg_id)
+        except Exception as e:
+            logger.error(f"Graph API error while getting message details: {e}")
+            continue
+ 
+        if not message_data or not isinstance(message_data, dict):
+            logger.warning("MS Graph webhook returned invalid message data")
+            continue
+ 
+        value_list = message_data.get("value", [])
+        if not value_list:
+            continue
+ 
+        in_reply_to = value_list[0].get("conversationId")
+ 
+        # ✅ SECOND FIX: Only fetch emails that have reminders
+        emails = SentEmail.objects.filter(
+            user=user,
+            reminder_email__isnull=False
+        ).distinct()
+ 
+        for email in emails:
+ 
+            sent_msg_id = email.message_id
+ 
+            if not sent_msg_id:
+                continue
+ 
+            if not sent_msg_id.startswith("AA"):
+                continue
+ 
+            try:
+                conversation_id = get_conversation_id(user, sent_msg_id)
+            except Exception as e:
+                logger.error(f"Graph API error: {e}")
+                continue
+ 
+            if conversation_id == in_reply_to:
+                email.stop_reminder = True
+                email.save(update_fields=["stop_reminder"])
+ 
+            # small delay to avoid Graph rate limit
+            time.sleep(0.2)
+ 
+    return HttpResponse(status=202)
 
 def get_message_details(user, msg_id):
 
@@ -923,32 +1025,63 @@ def get_message_details(user, msg_id):
             return None
         raise
 
-def get_conversation_id(user, msg_id):
-    import requests
+# def get_conversation_id(user, msg_id):
+#     import requests
 
+#     access_token = get_latest_microsoft_token(user)
+#     if not access_token:
+#         return None
+
+#     url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}"
+#     headers = {"Authorization": f"Bearer {access_token}"}
+
+#     resp = requests.get(url, headers=headers)
+#     if resp.status_code == 404:
+#         print(f"Message {msg_id} not found, skipping.")
+#         return None
+
+#     resp.raise_for_status()
+#     data = resp.json()
+
+#     if "conversationId" in data:
+#         return data["conversationId"]
+
+#     if "value" in data and data["value"]:
+#         return data["value"][0].get("conversationId")
+
+#     return None
+
+import requests
+import time
+ 
+def get_conversation_id(user, msg_id):
     access_token = get_latest_microsoft_token(user)
     if not access_token:
         return None
-
+ 
     url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}"
     headers = {"Authorization": f"Bearer {access_token}"}
-
-    resp = requests.get(url, headers=headers)
-    if resp.status_code == 404:
-        print(f"Message {msg_id} not found, skipping.")
-        return None
-
-    resp.raise_for_status()
-    data = resp.json()
-
-    if "conversationId" in data:
-        return data["conversationId"]
-
-    if "value" in data and data["value"]:
-        return data["value"][0].get("conversationId")
-
+ 
+    retries = 3
+ 
+    for attempt in range(retries):
+        resp = requests.get(url, headers=headers)
+ 
+        if resp.status_code == 429:
+            retry_after = int(resp.headers.get("Retry-After", 2))
+            time.sleep(retry_after)
+            continue
+ 
+        if resp.status_code == 404:
+            return None
+ 
+        if resp.status_code != 200:
+            return None
+ 
+        data = resp.json()
+        return data.get("conversationId")
+ 
     return None
-
 
 @csrf_exempt
 def email_open_pixel(request, uid):
@@ -988,3 +1121,498 @@ def transparent_pixel_response():
         b'\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b'
     )
     return HttpResponse(pixel, content_type='image/gif')
+
+import csv
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import TargetAudience, AudienceTag
+
+# def import_leads(request):
+
+#     if request.method == "POST":
+
+#         csv_file = request.FILES.get("csv_file")
+#         tag_name = request.POST.get("tag_name")
+
+#         if not csv_file or not tag_name:
+#             messages.error(request, "CSV file and Tag required")
+#             return redirect("leads")
+
+#         tag, created = AudienceTag.objects.get_or_create(
+#             user=request.user,
+#             name=tag_name
+#         )
+
+#         decoded = csv_file.read().decode("utf-8").splitlines()
+#         reader = csv.DictReader(decoded)
+
+#         for row in reader:
+#             TargetAudience.objects.create(
+#                 user=request.user,
+#                 email=row.get("email"),
+#                 receiver_first_name=row.get("receiver_first_name"),
+#                 receiver_last_name=row.get("receiver_last_name"),
+#                 tag=tag
+#             )
+
+#         messages.success(request, "Leads imported successfully")
+#         return redirect("view-leads")
+
+#     return render(request, "generate_email/import_leads.html")
+def import_leads(request):
+
+    if request.method == "POST":
+
+        csv_file = request.FILES.get("csv_file")
+        tag_name = request.POST.get("tag_name")
+
+        if not csv_file or not tag_name:
+            messages.error(request, "CSV file and Tag required")
+            return redirect("leads")
+
+        tag, created = AudienceTag.objects.get_or_create(
+            user=request.user,
+            name=tag_name
+        )
+
+        decoded = csv_file.read().decode("utf-8").splitlines()
+        reader = csv.DictReader(decoded)
+
+        for row in reader:
+
+            email = row.get("Target Person Email")
+
+            if not email:
+                continue  # skip empty rows
+
+            TargetAudience.objects.create(
+                user=request.user,
+                email=email,
+                receiver_linkedin_url=row.get("Target Person LinkedIn"),
+                company_url=row.get("Target Company Website"),
+                receiver_first_name=row.get("Target Person First Name"),
+                receiver_last_name=row.get("Target Person Last Name"),
+                tag=tag
+            )
+
+        messages.success(request, "Leads imported successfully")
+        return redirect("view-leads")
+
+    return render(request, "generate_email/import_leads.html")
+from django.utils.dateparse import parse_datetime
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from allauth.socialaccount.models import SocialAccount
+from users.models import ProductService, Signature, EmailAttachment
+from .models import TargetAudience, SentEmail, AudienceTag
+from .utils import sendCampaignEmail 
+
+# def campaign_view(request):
+
+#     tags = AudienceTag.objects.filter(user=request.user)
+
+#     user_services = ProductService.objects.filter(
+#         user=request.user
+#     ).values_list("service_name", flat=True).distinct()
+
+#     signatures = Signature.objects.filter(user=request.user)
+
+#     google_accounts = SocialAccount.objects.filter(
+#         user=request.user,
+#         provider__in=["google", "microsoft"]
+#     )
+
+#     user_attachments = EmailAttachment.objects.filter(user=request.user)
+
+#     if request.method == "POST":
+
+#         tag_id = request.POST.get("tag_id")
+#         selected_service = request.POST.get("selected_service")
+#         framework = request.POST.get("framework")
+#         campaign_goal = request.POST.get("campaign_goal")
+#         signature_id = request.POST.get("signature_id")
+#         sent_from = request.POST.get("sent_from")
+#         saved_attachment_id = request.POST.get("saved_attachment")
+
+#         subject = request.POST.get("subject") or ""
+#         message = request.POST.get("message") or ""
+#         schedule_time = request.POST.get("schedule_time")
+
+#         if not tag_id or not sent_from:
+#             messages.error(request, "Tag and Sending Account required")
+#             return redirect("campaign_view")
+
+#         selected_account = SocialAccount.objects.filter(
+#             id=sent_from,
+#             user=request.user
+#         ).first()
+
+#         if not selected_account:
+#             messages.error(request, "Invalid sending account")
+#             return redirect("campaign_view")
+
+#         audiences = TargetAudience.objects.filter(
+#             user=request.user,
+#             tag_id=tag_id
+#         )
+
+#         if not audiences.exists():
+#             messages.error(request, "No leads found under selected tag")
+#             return redirect("campaign_view")
+
+#         # ✅ SAFE SIGNATURE HANDLING
+#         signature_html = ""
+#         if signature_id:
+#             sig = Signature.objects.filter(
+#                 id=signature_id,
+#                 user=request.user
+#             ).first()
+
+#             if sig and sig.signature:
+#                 signature_html = sig.signature
+
+#         # ✅ SAFE MESSAGE BUILD
+#         final_message = message
+#         if signature_html:
+#             final_message += "<br><br>" + signature_html
+
+#         # ==============================
+#         # 🚀 IMMEDIATE SEND
+#         # ==============================
+#         if not schedule_time:
+
+#             for audience in audiences:
+
+#                 main_email = {
+#                     "subject": subject,
+#                     "body": final_message
+#                 }
+
+#                 sendCampaignEmail(
+#                     request=request,
+#                     user=request.user,
+#                     target_audience=audience,
+#                     main_email=main_email,
+#                     selected_account=selected_account,
+#                     attachment=None
+#                 )
+
+#             messages.success(request, "Campaign Sent Successfully")
+
+#         # ==============================
+#         # ⏰ SCHEDULE SEND
+#         # ==============================
+#         else:
+#             schedule_dt = parse_datetime(schedule_time)
+
+#             if schedule_dt:
+#                 schedule_dt = timezone.make_aware(schedule_dt)
+
+#             if not schedule_dt:
+#                 messages.error(request, "Invalid schedule time")
+#                 return redirect("campaign_view")
+
+#             for audience in audiences:
+
+#                 SentEmail.objects.create(
+#                     user=request.user,
+#                     target_audience=audience,
+#                     email=audience.email,
+#                     subject=subject,
+#                     message=final_message,
+#                     is_scheduled=True,
+#                     scheduled_at=schedule_dt,
+#                     sending_account=selected_account
+#                 )
+
+#             messages.success(request, "Campaign Scheduled Successfully")
+
+#         return redirect("campaign_view")
+
+#     return render(request, "generate_email/campaign.html", {
+#         "tags": tags,
+#         "user_services": user_services,
+#         "signatures": signatures,
+#         "google_accounts": google_accounts,
+#         "user_attachments": user_attachments
+#     })
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.utils.dateparse import parse_datetime
+from django.utils import timezone
+import json
+
+def campaign_view(request):
+
+    tags = AudienceTag.objects.filter(user=request.user)
+    user_services = ProductService.objects.filter(user=request.user)
+    signatures = Signature.objects.filter(user=request.user)
+
+    google_accounts = SocialAccount.objects.filter(
+        user=request.user,
+        provider__in=["google", "microsoft"]
+    )
+
+    user_attachments = EmailAttachment.objects.filter(user=request.user)
+
+    if request.method == "POST":
+
+        # =========================
+        # FORM DATA
+        # =========================
+        tag_id = request.POST.get("tag_id")
+        service_name = request.POST.get("selected_service")
+        framework = request.POST.get("framework")
+        campaign_goal = request.POST.get("campaign_goal")
+        signature_id = request.POST.get("signature_id")
+        sent_from = request.POST.get("sent_from")
+        schedule_time = request.POST.get("schedule_time")
+        # shuffle_accounts = request.POST.get("shuffle_accounts")
+        shuffle_accounts = request.POST.get("shuffle_accounts") == "on"
+        saved_attachment_id = request.POST.get("saved_attachment")
+
+        # =========================
+        # VALIDATIONS
+        # =========================
+        if not tag_id or not service_name or not sent_from:
+            messages.error(request, "Tag, Service and Sending Account are required")
+            return redirect("campaign_view")
+
+        selected_service = ProductService.objects.filter(
+            service_name=service_name,
+            user=request.user
+        ).first()
+
+        if not selected_service:
+            messages.error(request, "Invalid service selected")
+            return redirect("campaign_view")
+
+        selected_account = SocialAccount.objects.filter(
+            id=sent_from,
+            user=request.user
+        ).first()
+
+        if not selected_account:
+            messages.error(request, "Invalid sending account")
+            return redirect("campaign_view")
+
+        audiences = TargetAudience.objects.filter(
+            user=request.user,
+            tag_id=tag_id
+        )
+
+        if not audiences.exists():
+            messages.error(request, "No leads found under selected tag")
+            return redirect("campaign_view")
+
+        # =========================
+        # SIGNATURE
+        # =========================
+        signature_html = ""
+
+        if signature_id:
+            try:
+                signature_obj = Signature.objects.get(
+                    id=signature_id,
+                    user=request.user
+                )
+            except Signature.DoesNotExist:
+                signature_obj = None
+        else:
+            # Default signature if none selected
+            signature_obj = Signature.objects.filter(
+                user=request.user,
+            ).first()
+
+        if signature_obj:
+            signature_html = signature_obj.signature or ""
+
+            # ✅ If photo exists, append it
+            if signature_obj.photo:
+                photo_url = request.build_absolute_uri(signature_obj.photo.url)
+
+                signature_html += f"""
+                    <p>
+                        <img src="{photo_url}"
+                            alt="Signature Photo"
+                            style="max-width:420px;margin-top:8px;width:100%;height:auto;display:block;">
+                    </p>
+                """
+
+        # If still empty → fallback default
+        if not signature_html:
+            signature_html = (
+                '<div style="margin:0;padding:0;line-height:1.4;">'
+                f'Best,<br>{request.user.full_name}'
+                '</div>'
+            )
+
+        # =========================
+        # ATTACHMENT
+        # =========================
+        attachment_file = None
+
+        if saved_attachment_id:
+            try:
+                saved_obj = EmailAttachment.objects.get(
+                    id=saved_attachment_id,
+                    user=request.user
+                )
+
+                # 🔥 VERY IMPORTANT
+                attachment_file = saved_obj.file
+
+                # Ensure file pointer is at start
+                attachment_file.open()
+                attachment_file.seek(0)
+
+            except EmailAttachment.DoesNotExist:
+                attachment_file = None
+
+        # =========================
+        # SCHEDULED SEND
+        # =========================
+        if schedule_time:
+
+            schedule_dt = parse_datetime(schedule_time)
+
+            if schedule_dt:
+                schedule_dt = timezone.make_aware(schedule_dt)
+
+            if not schedule_dt:
+                messages.error(request, "Invalid schedule time")
+                return redirect("campaign_view")
+
+            for audience in audiences:
+                # ✅ Lead update
+                audience.campaign_goal = campaign_goal
+                audience.framework = framework
+                audience.selected_service = service_name
+
+                audience.save(update_fields=[
+                    "campaign_goal",
+                    "framework",
+                    "selected_service"
+                ])
+
+                ai_raw = get_response(request.user, audience, selected_service)
+                ai_data = json.loads(ai_raw)
+
+                subject = ai_data["main_email"]["subject"]
+                message = ai_data["main_email"]["body"]
+
+                final_message = message
+                if signature_html:
+                    final_message += "<br><br>" + signature_html
+
+                SentEmail.objects.create(
+                    user=request.user,
+                    target_audience=audience,
+                    email=audience.email,
+                    subject=subject,
+                    message=final_message,
+                    is_scheduled=True,
+                    scheduled_at=schedule_dt,
+                    sending_account = None if shuffle_accounts else selected_account,
+                    attachment=saved_obj if saved_attachment_id else None,
+                    shuffle_accounts=shuffle_accounts
+
+                )
+                # =========================
+                # FOLLOW-UP GENERATION FOR SCHEDULED CAMPAIGN
+                # =========================
+
+                follow_ups = ai_data.get("follow_ups", [])
+                follow_up_days = [2, 4, 6, 8]
+
+                # Get latest sent email
+                sent_email_obj = SentEmail.objects.filter(
+                    user=request.user,
+                    target_audience=audience
+                ).order_by("-created").first()
+
+                if sent_email_obj:
+                    for i, follow in enumerate(follow_ups):
+
+                        if i >= len(follow_up_days):
+                            break
+
+                        follow_body = follow.get("body", "")
+
+                        if signature_html:
+                            follow_body += "<br><br>" + signature_html
+
+                        ReminderEmail.objects.create(
+                            user=request.user,
+                            target_audience=audience,
+                            sent_email=sent_email_obj,
+                            message_id=make_msgid(domain='sellsharp.co'),
+                            email=audience.email,
+                            subject=f"Re: {subject}",
+                            message=follow_body,
+                            send_at=(schedule_dt + timezone.timedelta(days=follow_up_days[i])).date(),
+                            sent=False
+                        )
+            print("Saved Attachment ID:", saved_attachment_id)
+            print("Attachment File Path:", attachment_file)
+            messages.success(request, "Campaign Scheduled Successfully")
+            return redirect("campaign_view")
+
+        # =========================
+        # IMMEDIATE SEND
+        # =========================
+        else:
+
+            account_list = list(google_accounts)
+
+            for index, audience in enumerate(audiences):
+                # ✅ Lead update
+                audience.campaign_goal = campaign_goal
+                audience.framework = framework
+                audience.selected_service = service_name
+
+                audience.save(update_fields=[
+                    "campaign_goal",
+                    "framework",
+                    "selected_service"
+                ])
+
+                # Shuffle logic
+                if shuffle_accounts and account_list:
+                    selected_account = account_list[index % len(account_list)]
+
+                ai_raw = get_response(request.user, audience, selected_service)
+                ai_data = json.loads(ai_raw)
+
+                subject = ai_data["main_email"]["subject"]
+                message = ai_data["main_email"]["body"]
+
+                final_message = message
+                if signature_html:
+                    final_message += "<br><br>" + signature_html
+
+                main_email = {
+                    "subject": subject,
+                    "body": final_message
+                }
+
+                sendCampaignEmail(
+                    request=request,
+                    user=request.user,
+                    target_audience=audience,
+                    main_email=main_email,
+                    selected_account=selected_account,
+                    attachment=attachment_file   
+                )
+            
+            messages.success(request, "Campaign Sent Successfully")
+            return redirect("campaign_view")
+
+    return render(request, "generate_email/campaign.html", {
+        "tags": tags,
+        "user_services": user_services,
+        "signatures": signatures,
+        "google_accounts": google_accounts,
+        "user_attachments": user_attachments
+    })

@@ -1,0 +1,118 @@
+{% extends "users/base.html" %}
+{% block content %}
+
+<div class="container mt-4 mb-5" style="max-width: 700px;">
+    <div class="card shadow border-0 rounded-4 overflow-hidden">
+
+        <!-- Header -->
+       <div class="card-header text-white py-3 d-flex align-items-center"
+            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+
+            <i class="fas fa-file-upload me-2" style="font-size:35px;"></i>
+
+            <div>
+                <h5 class="mb-1 fw-semibold">Import Leads</h5>
+                <small style="font-size:13px; opacity:0.85;">
+                    Upload CSV file and organize leads with a tag
+                </small>
+            </div>
+
+        </div>
+
+        <div class="card-body p-4">
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Tag Name -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Tag Name *</label>
+                    <input type="text"
+                           name="tag_name"
+                           class="form-control"
+                           placeholder="Enter tag name (e.g. JMS_HR)"
+                           required>
+                </div>
+
+                <!-- CSV Upload -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Upload CSV File *</label>
+                    <input type="file"
+                           name="csv_file"
+                           class="form-control"
+                           accept=".csv"
+                           required>
+                    <small class="text-muted" style="font-size:12px;">
+                        Only .csv files supported
+                    </small>
+                </div>
+
+                <!-- Button -->
+                <div class="d-grid">
+                    <button type="submit"
+                            class="btn text-white fw-semibold"
+                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                   border:none; padding:10px;">
+                         Upload Leads
+                    </button>
+                </div>
+
+            </form>
+            <!-- CSV Format Guide -->
+              <div class="mt-4"> 
+                <h6 class="fw-semibold mb-2">CSV File Format</h6> 
+                <small class="text-muted"> Your CSV must contain the following columns. Fields marked with * are required. 
+
+                </small> <div class="table-responsive mt-2"> 
+                    <table class="table table-bordered table-sm text-center align-middle">
+                         <thead style="background:#f5f6fa;"> 
+                            <tr> 
+                                <th>Target Person Email </th> 
+                                <th>Target Person LinkedIn</th> 
+                                <th>Target Company Website </th> 
+                                <th>Target Person First Name </th> 
+                                <th>Target Person Last Name</th> 
+                            </tr> 
+                        </thead> 
+                        <tbody> 
+                            <tr> 
+                                <td>john@gmail.com</td> 
+                                <td>https://linkedin.com/in/john</td> 
+                                <td>https://company.com</td> 
+                                <td>John</td> 
+                                <td>Doe</td> 
+                            </tr> 
+                        </tbody> 
+                        </table> 
+                    </div> 
+                </div>
+        </div>
+        
+    </div>
+</div>
+
+<style>
+.card-body {
+    font-size: 14px;
+}
+
+.form-label {
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.form-control {
+    font-size: 14px;
+    padding: 8px 12px;
+}
+</style>
+
+{% endblock %}
