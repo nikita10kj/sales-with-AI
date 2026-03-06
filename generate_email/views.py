@@ -238,7 +238,6 @@ class GenerateEmailView(LoginRequiredMixin, View):
             user=request.user,
             email=email
         )
- 
         if targets.exists():
             target = targets.first()
         else:
@@ -898,90 +897,89 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.utils import timezone
- 
+
 logger = logging.getLogger(__name__)
- 
+
 @csrf_exempt
 def msgraph_webhook(request):
     print("MS Graph request arrived at", timezone.now(), "method:", request.method)
- 
+
     # Handle validation
     validation_token = request.GET.get("validationToken")
     if validation_token:
         return HttpResponse(validation_token, content_type="text/plain", status=200)
- 
+
     if request.method != "POST":
         return HttpResponse(status=405)
- 
+
     try:
         data = json.loads(request.body.decode("utf-8") or "{}")
     except json.JSONDecodeError:
         return HttpResponse(status=400)
- 
+
     for change in data.get("value", []):
- 
+
         # Validate clientState
         if change.get("clientState") != settings.MS_GRAPH_CLIENT_STATE:
             continue
- 
+
         msg_id = change.get("resourceData", {}).get("id")
         sub_id = change.get("subscriptionId")
- 
+
         if not msg_id or not sub_id:
             continue
- 
+
         try:
             sub = EmailSubscription.objects.get(subscription_id=sub_id)
             user = sub.user
         except EmailSubscription.DoesNotExist:
             continue
- 
         # Fetch message details safely
         try:
             message_data = get_message_details(user, msg_id)
         except Exception as e:
             logger.error(f"Graph API error while getting message details: {e}")
             continue
- 
+
         if not message_data or not isinstance(message_data, dict):
             logger.warning("MS Graph webhook returned invalid message data")
             continue
- 
+
         value_list = message_data.get("value", [])
         if not value_list:
             continue
- 
+
         in_reply_to = value_list[0].get("conversationId")
- 
+
         # ✅ SECOND FIX: Only fetch emails that have reminders
         emails = SentEmail.objects.filter(
             user=user,
             reminder_email__isnull=False
         ).distinct()
- 
+
         for email in emails:
- 
+
             sent_msg_id = email.message_id
- 
+
             if not sent_msg_id:
                 continue
- 
+
             if not sent_msg_id.startswith("AA"):
                 continue
- 
+
             try:
                 conversation_id = get_conversation_id(user, sent_msg_id)
             except Exception as e:
                 logger.error(f"Graph API error: {e}")
                 continue
- 
+
             if conversation_id == in_reply_to:
                 email.stop_reminder = True
                 email.save(update_fields=["stop_reminder"])
- 
+
             # small delay to avoid Graph rate limit
             time.sleep(0.2)
- 
+
     return HttpResponse(status=202)
 
 def get_message_details(user, msg_id):
@@ -1050,10 +1048,9 @@ def get_message_details(user, msg_id):
 #         return data["value"][0].get("conversationId")
 
 #     return None
-
 import requests
 import time
- 
+
 def get_conversation_id(user, msg_id):
     access_token = get_latest_microsoft_token(user)
     if not access_token:
@@ -1061,26 +1058,26 @@ def get_conversation_id(user, msg_id):
  
     url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}"
     headers = {"Authorization": f"Bearer {access_token}"}
- 
+
     retries = 3
- 
+
     for attempt in range(retries):
         resp = requests.get(url, headers=headers)
- 
+
         if resp.status_code == 429:
             retry_after = int(resp.headers.get("Retry-After", 2))
             time.sleep(retry_after)
             continue
- 
+
         if resp.status_code == 404:
             return None
- 
+
         if resp.status_code != 200:
             return None
- 
+
         data = resp.json()
         return data.get("conversationId")
- 
+
     return None
 
 @csrf_exempt
