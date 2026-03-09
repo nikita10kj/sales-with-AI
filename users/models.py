@@ -98,6 +98,7 @@ class EmailAttachment(models.Model):
 
     def __str__(self):
         return self.original_name
+    
 class UserWallet(models.Model):
     user=models.OneToOneField(CustomUser,on_delete=models.CASCADE,related_name="wallet")
     credits=models.IntegerField(default=500)

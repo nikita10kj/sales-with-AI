@@ -1,402 +1,359 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sell Sharp Learning Hub</title>
+{% extends "users/base.html" %}
+{% load static %}
 
-  <style>
-    :root {
-      --primary:  #6f42c1
-      --bg: #f5f7fb;
-      --card-bg: #ffffff;
-      --text: #1a1a1a;
-      --muted: #666;
-      --radius: 14px;
-    }
+{% block extra_css %}
+<style>
+  :root {
+    --primary: #6f42c1; /* ✅ FIXED: missing semicolon */
+    --bg: #f5f7fb;
+    --card-bg: #ffffff;
+    --text: #1a1a1a;
+    --muted: #666;
+    --radius: 14px;
+  }
 
-    * { box-sizing: border-box; font-family: Inter, Arial, sans-serif; }
+  * { box-sizing: border-box; font-family: Inter, Arial, sans-serif; }
 
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-    }
+  /* base.html already has body styles sometimes; keep this light */
+  .learninghub-page {
+    background: var(--bg);
+    color: var(--text);
+    padding-bottom: 3rem;
+  }
 
-    header {
-      padding: 3rem 1.5rem;
-      text-align: center;
-      background: linear-gradient(135deg, #6a6fdc, #7b5fdc);
-      color: white;
-    }
+  .main-header {
+    position: relative;
+    padding: 3rem 1.5rem;
+    text-align: center;
+    background: linear-gradient(135deg, #6a6fdc, #7b5fdc);
+    color: white;
+    margin-bottom: 2rem;
+  }
 
-    header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
-    header p { max-width: 700px; margin: auto; opacity: 0.95; }
+  .header-login-btn {
+    position: absolute;
+    top: 1.2rem;
+    right: 1.5rem;
+    padding: 0.6rem 1.3rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background: white;
+    color: #6f42c1;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .header-login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  }
 
-    .container {
-      max-width: 1200px;
-      margin: 3rem auto;
-      padding: 0 1.5rem;
-    }
+  .container-hub {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
 
-    .section-title {
-      font-size: 1.8rem;
-      margin-bottom: 1.5rem;
-    }
+  .section-title {
+    font-size: 1.8rem;
+    margin: 2rem 0 1.5rem;
+    font-weight: 800;
+  }
 
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 1.5rem;
-    }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+  }
 
-    .card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      padding: 1.8rem;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      cursor: pointer;
-      outline: none;
-      border: 2px solid transparent;
-    }
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 1.8rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+    outline: none;
+    border: 2px solid transparent;
+  }
 
-    .card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 18px 40px rgba(0,0,0,0.1);
-    }
+  .card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 18px 40px rgba(0,0,0,0.1);
+  }
 
-    .card:focus-visible{
-      border-color: rgba(31,111,255,0.5);
-      box-shadow: 0 18px 40px rgba(0,0,0,0.1);
-    }
+  .card:focus-visible{
+    border-color: rgba(31,111,255,0.5);
+    box-shadow: 0 18px 40px rgba(0,0,0,0.1);
+  }
 
-    .card h3 { margin-top: 0; font-size: 1.2rem; }
-    .card p { color: var(--muted); font-size: 0.95rem; }
+  .card h3 { margin-top: 0; font-size: 1.2rem; font-weight: 800; }
+  .card p { color: var(--muted); font-size: 0.95rem; margin-bottom: 0; }
 
-    .tag {
-      display: inline-block;
-      background: rgba(31,111,255,0.1);
-      color: var(--primary);
-      padding: 0.3rem 0.7rem;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      margin-bottom: 0.8rem;
-    }
+  .tag {
+    display: inline-block;
+    background: rgba(31,111,255,0.1);
+    color: var(--primary);
+    padding: 0.3rem 0.7rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    margin-bottom: 0.8rem;
+    font-weight: 600;
+  }
 
-    footer {
-      text-align: center;
-      padding: 2rem 1rem;
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
+  /* MODAL + ACCORDION */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 999;
+  }
+  .modal-overlay.open { display: flex; }
 
-    /* =========================
-       MODAL + ACCORDION (NEW)
-       ========================= */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-      z-index: 999;
-    }
-    .modal-overlay.open { display: flex; }
+  .modal {
+    width: min(900px, 100%);
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 30px 90px rgba(0,0,0,0.25);
+    overflow: hidden;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+  }
 
-    .modal {
-      width: min(900px, 100%);
-      background: #fff;
-      border-radius: 18px;
-      box-shadow: 0 30px 90px rgba(0,0,0,0.25);
-      overflow: hidden;
-      max-height: 85vh;
-      display: flex;
-      flex-direction: column;
-    }
+  .modal-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
 
-    .modal-header {
-      padding: 1rem 1.25rem;
-      border-bottom: 1px solid rgba(0,0,0,0.08);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-    }
+  .modal-title {
+    margin: 0;
+    font-size: 1.15rem;
+    line-height: 1.2;
+    font-weight: 800;
+  }
 
-    .modal-title {
-      margin: 0;
-      font-size: 1.15rem;
-      line-height: 1.2;
-    }
+  .modal-close {
+    border: none;
+    background: rgba(0,0,0,0.06);
+    padding: 0.5rem 0.75rem;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .modal-close:hover { background: rgba(0,0,0,0.10); }
 
-    .modal-close {
-      border: none;
-      background: rgba(0,0,0,0.06);
-      padding: 0.5rem 0.75rem;
-      border-radius: 12px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .modal-close:hover { background: rgba(0,0,0,0.10); }
+  .modal-body { padding: 1rem 1.25rem 1.25rem; overflow: auto; }
 
-    .modal-body {
-      padding: 1rem 1.25rem 1.25rem;
-      overflow: auto;
-    }
+  .accordion { display: grid; gap: 0.75rem; margin-top: 0.5rem; }
 
-    .accordion {
-      display: grid;
-      gap: 0.75rem;
-      margin-top: 0.5rem;
-    }
+  .acc-item {
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+  }
 
-    .acc-item {
-      border: 1px solid rgba(0,0,0,0.08);
-      border-radius: 14px;
-      overflow: hidden;
-      background: #fff;
-    }
+  .acc-btn {
+    width: 100%;
+    text-align: left;
+    padding: 0.95rem 1rem;
+    border: none;
+    background: #fff;
+    cursor: pointer;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
 
-    .acc-btn {
-      width: 100%;
-      text-align: left;
-      padding: 0.95rem 1rem;
-      border: none;
-      background: #fff;
-      cursor: pointer;
-      font-weight: 650;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-    }
+  .acc-btn:hover { background: rgba(31,111,255,0.05); }
 
-    .acc-btn:hover {
-      background: rgba(31,111,255,0.05);
-    }
+  .acc-icon {
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    background: rgba(31,111,255,0.10);
+    color: var(--primary);
+    font-weight: 900;
+    line-height: 1;
+  }
 
-    .acc-icon {
-      flex: 0 0 auto;
-      width: 26px;
-      height: 26px;
-      border-radius: 9px;
-      display: grid;
-      place-items: center;
-      background: rgba(31,111,255,0.10);
-      color: var(--primary);
-      font-weight: 900;
-      line-height: 1;
-    }
+  .acc-panel {
+    padding: 0 1rem 1rem;
+    color: var(--muted);
+    display: none;
+    white-space: pre-line; /* ✅ makes \n show as new lines */
+  }
+  .acc-panel.open { display: block; }
 
-    .acc-panel {
-      padding: 0 1rem 1rem;
-      color: var(--muted);
-      display: none;
-    }
+  .empty-state {
+    padding: 1rem;
+    border-radius: 14px;
+    background: rgba(31,111,255,0.06);
+    color: #2b3a55;
+    border: 1px dashed rgba(31,111,255,0.35);
+  }
+</style>
+{% endblock extra_css %}
 
-    .acc-panel.open { display: block; }
+{% block content %}
+<div class="learninghub-page">
 
-    .empty-state {
-      padding: 1rem;
-      border-radius: 14px;
-      background: rgba(31,111,255,0.06);
-      color: #2b3a55;
-      border: 1px dashed rgba(31,111,255,0.35);
-    }
+  <header class="main-header">
+    {% if not request.user.is_authenticated %}
+      <a href="{% url 'login' %}" class="header-login-btn">Login</a>
+    {% endif %}
 
-   .main-header {
-  position: relative; /* IMPORTANT */
-  padding: 3rem 1.5rem;
-  text-align: center;
-  background: linear-gradient(135deg, #6a6fdc, #7b5fdc);
-  color: white;
-}
+    <h1>Sell Sharp Learning Hub</h1>
+    <p>Learn how to write high-converting sales emails using proven frameworks, AI-powered personalization, and real-world use cases.</p>
+  </header>
 
-/* Login button */
-.header-login-btn {
-  position: absolute;
-  top: 1.2rem;
-  right: 1.5rem;
+  <div class="container-hub">
 
-  padding: 0.6rem 1.3rem;
-  font-size: 0.9rem;
-  font-weight: 600;
+    <h2 class="section-title">Foundation</h2>
+    <div class="card-grid">
+      <div class="card" tabindex="0" data-topic="cold_email">
+        <span class="tag">Cold Email Basics</span>
+        <h3>Cold Email Basics</h3>
+        <p>For beginners who want to understand cold emailing clearly.</p>
+      </div>
 
-  background: white;
-  color: #6f42c1;
-  border-radius: 6px;
-  text-decoration: none;
+      <div class="card" tabindex="0" data-topic="write">
+        <span class="tag">write and send</span>
+        <h3>Writing & Sending Cold Emails</h3>
+        <p>Teaches how to actually write and send emails.</p>
+      </div>
 
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.header-login-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
-}
-
-
-
-  </style>
-</head>
-
-<body>
-
-<header class="main-header">
-  {% if not request.user.is_authenticated %}
-    <a href="{% url 'login' %}" class="header-login-btn">Login</a>
-  {% endif %}
-  <h1>Sell Sharp Learning Hub</h1>
-  <p>Learn how to write high-converting sales emails using proven frameworks, AI-powered personalization, and real-world use cases.</p>
-  
-</header>
-
-<div class="container">
-
-  <h2 class="section-title">Foundation</h2>
-  <div class="card-grid">
-    <div class="card" tabindex="0" data-topic="cold_email">
-      <span class="tag">Cold Email Basics</span>
-      <h3>Cold Email Basics</h3>
-      <p>For beginners who want to understand cold emailing clearly.</p>
+      <div class="card" tabindex="0" data-topic="strategy">
+        <span class="tag">Advanced</span>
+        <h3>Advanced Strategy & Best Practices</h3>
+        <p>For users who want better reply rates and scale outreach.</p>
+      </div>
     </div>
 
-    <div class="card" tabindex="0" data-topic="write">
-      <span class="tag">write and send</span>
-      <h3>Writing & Sending Cold Emails</h3>
-      <p>Teaches how to actually write and send emails.</p>
+    <h2 class="section-title">Learning by Use Case</h2>
+    <div class="card-grid">
+      <div class="card" tabindex="0" data-topic="startup_founders">
+        <span class="tag">Founders</span>
+        <h3>Startup Founders</h3>
+        <p>Learn how founders can generate effective sales emails without sales experience and focus on scaling their startup.</p>
+      </div>
+
+      <div class="card" tabindex="0" data-topic="small_sales_teams">
+        <span class="tag">Sales Teams</span>
+        <h3>Small & Growing Sales Teams</h3>
+        <p>Standardize outreach, reduce onboarding time, and improve follow-ups across your sales team.</p>
+      </div>
+
+      <div class="card" tabindex="0" data-topic="msme_owners">
+        <span class="tag">MSME</span>
+        <h3>MSME Owners & Business Leaders</h3>
+        <p>Build a professional sales process in-house and avoid common outreach mistakes.</p>
+      </div>
+
+      <div class="card" tabindex="0" data-topic="agencies">
+        <span class="tag">Agencies</span>
+        <h3>Agencies & Service Providers</h3>
+        <p>Scale client campaigns with consistent, brand-aligned sales messaging.</p>
+      </div>
+
+      <div class="card" tabindex="0" data-topic="solo_consultants">
+        <span class="tag">Consultants</span>
+        <h3>Solo Consultants & Professionals</h3>
+        <p>Automate follow-ups and maintain polished communication while working solo.</p>
+      </div>
     </div>
 
-    <div class="card" tabindex="0" data-topic="strategy">
-      <span class="tag">Advanced</span>
-      <h3>Advanced Strategy & Best Practices</h3>
-      <p>For users who want better reply rates and scale outreach.</p>
-    </div>
+    <h2 class="section-title" style="margin-top:4rem">Frameworks & Features</h2>
+    <div class="card-grid">
+      <div class="card" tabindex="0" data-topic="AIDA">
+        <span class="tag">Framework</span>
+        <h3>AIDA Framework</h3>
+        <p><strong>Best for:</strong> cold outreach, short sales emails, fast replies.<br>
+          (Attention → Interest → Desire → Action)
+        </p>
+      </div>
+
+      <div class="card" tabindex="0" data-topic="PAS">
+        <span class="tag">Framework</span>
+        <h3>PAS Framework</h3>
+        <p><strong>Best for:</strong> pain-point driven sales, SaaS, service offers.
+          (Problem → Agitate → Solution)
+        </p>
+      </div>
+
+      <div class="card" tabindex="0" data-topic="BAB">
+        <span class="tag">Framework</span>
+        <h3>Before–After–Bridge Framework</h3>
+        <p><strong>Best for:</strong> transformation-focused messaging.<br>
+         (Current State → Desired State → Solution)
+        </p>
+      </div>
+
+      <div class="card" tabindex="0" data-topic="STAR">
+        <span class="tag">Framework</span>
+        <h3>STAR Framework</h3>
+        <p><strong>Best for:</strong> case studies, proof-based selling.<br>
+         (Situation → Task → Action → Result)
+        </p>
+      </div>
+
+      <div class="card" tabindex="0" data-topic="Magic">
+        <span class="tag">Framework</span>
+        <h3>Magic Framework</h3>
+        <p><strong>Best for:</strong> differentiation, attention-grabbing emails.
+          (Unique Hook → Curiosity → Outcome)
+        </p>
+      </div>
+
+      <div class="card" tabindex="0" data-topic="ACCA">
+        <span class="tag">Framework</span>
+        <h3>ACCA Framework</h3>
+        <p><strong>Best for:</strong> long sales cycles, education-based outreach.
+          (Awareness → Comprehension → Conviction → Action)
+        </p>
+      </div>
+
+      <div class="card" tabindex="0" data-topic="product">
+        <span class="tag">Product</span>
+        <h3>Product Features</h3>
+        <p><strong>Best for:</strong> understanding what Sell Sharp includes.</p>
+      </div>
     </div>
 
-
-  <h2 class="section-title">Learning by Use Case</h2>
-  <div class="card-grid">
-    <div class="card" tabindex="0" data-topic="startup_founders">
-      <span class="tag">Founders</span>
-      <h3>Startup Founders</h3>
-      <p>Learn how founders can generate effective sales emails without sales experience and focus on scaling their startup.</p>
-    </div>
-
-    <div class="card" tabindex="0" data-topic="small_sales_teams">
-      <span class="tag">Sales Teams</span>
-      <h3>Small & Growing Sales Teams</h3>
-      <p>Standardize outreach, reduce onboarding time, and improve follow-ups across your sales team.</p>
-    </div>
-
-    <div class="card" tabindex="0" data-topic="msme_owners">
-      <span class="tag">MSME</span>
-      <h3>MSME Owners & Business Leaders</h3>
-      <p>Build a professional sales process in-house and avoid common outreach mistakes.</p>
-    </div>
-
-    <div class="card" tabindex="0" data-topic="agencies">
-      <span class="tag">Agencies</span>
-      <h3>Agencies & Service Providers</h3>
-      <p>Scale client campaigns with consistent, brand-aligned sales messaging.</p>
-    </div>
-
-    <div class="card" tabindex="0" data-topic="solo_consultants">
-      <span class="tag">Consultants</span>
-      <h3>Solo Consultants & Professionals</h3>
-      <p>Automate follow-ups and maintain polished communication while working solo.</p>
-    </div>
   </div>
 
-  <h2 class="section-title" style="margin-top:4rem">Frameworks & Features</h2>
-  <div class="card-grid">
-    <div class="card" tabindex="0" data-topic="AIDA">
-      <span class="tag">Framework</span>
-      <h3>AIDA Framework</h3>
-      <p><strong>Best for:</strong> cold outreach, short sales emails, fast replies.<br>
-        (Attention → Interest → Desire → Action)
-      </p>
-    </div>
-
-    <div class="card" tabindex="0" data-topic="PAS">
-      <span class="tag">Framework</span>
-      <h3>PAS Framework</h3>
-      <p><strong>Best for:</strong> pain-point driven sales, SaaS, service offers.
-        (Problem → Agitate → Solution)
-      </p>
-        
-
-
-    </div>
-
-    <div class="card" tabindex="0" data-topic="BAB">
-      <span class="tag">Framework</span>
-      <h3>Before–After–Bridge Framework</h3>
-      <p><strong>Best for:</strong> transformation-focused messaging.<br>
-       (Current State → Desired State → Solution)
-      </p>
-    </div>
-
-    <div class="card" tabindex="0" data-topic="STAR">
-      <span class="tag">Framework</span>
-      <h3>STAR Framework</h3>
-      <p><strong>Best for:</strong> case studies, proof-based selling.<br>
-       (Situation → Task → Action → Result)
-      </p>
-    </div>
-
-    <div class="card" tabindex="0" data-topic="Magic">
-      <span class="tag">Framework</span>
-      <h3>Magic Framework</h3>
-      <p><strong>Best for:</strong> differentiation, attention-grabbing emails.
-        (Unique Hook → Curiosity → Outcome)
-      </p>
-    </div>
-
-    <div class="card" tabindex="0" data-topic="ACCA">
-      <span class="tag">Framework</span>
-      <h3>ACCA Framework</h3>
-      <p><strong>Best for:</strong> long sales cycles, education-based outreach.
-        (Awareness → Comprehension → Conviction → Action)
-      </p>
-    </div>
-    <div class="card" tabindex="0" data-topic="product">
-      <span class="tag">Framework</span>
-      <h3>Product Features</h3>
-      <p><strong>Best for:</strong> long sales cycles, education-based outreach.
-        (Awareness → Comprehension → Conviction → Action)
-      </p>
+  <!-- MODAL -->
+  <div class="modal-overlay" id="qaModalOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="qaModalTitle">
+      <div class="modal-header">
+        <h3 class="modal-title" id="qaModalTitle">Questions</h3>
+        <button class="modal-close" id="qaModalClose" type="button" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="qaAccordion" class="accordion"></div>
+      </div>
     </div>
   </div>
 
 </div>
+{% endblock content %}
 
-<!-- =========================
-     MODAL (NEW) - add once
-     ========================= -->
-<div class="modal-overlay" id="qaModalOverlay" aria-hidden="true">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="qaModalTitle">
-    <div class="modal-header">
-      <h3 class="modal-title" id="qaModalTitle">Questions</h3>
-      <button class="modal-close" id="qaModalClose" type="button" aria-label="Close">✕</button>
-    </div>
-    <div class="modal-body">
-      <div id="qaAccordion" class="accordion"></div>
-    </div>
-  </div>
-</div>
-
-<footer>
-  © 2026 Sell Sharp · Learning Hub
-</footer>
-
+{% block js %}
 <script>
-  /* =========================
-     1) Put your Q&A here
-     ========================= */
   const qaData = {
     startup_founders: {
       title: "Startup Founders — Common Questions",
@@ -795,6 +752,18 @@
 
 
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", function(){
 
+    const toggleBtn = document.getElementById("sidebarToggle");
+    const sidebar = document.getElementById("sidebar");
+
+    toggleBtn.addEventListener("click", function(){
+        sidebar.classList.toggle("collapsed");
+    });
+
+});
+</script>
 </body>
 </html>
+{% endblock js %}

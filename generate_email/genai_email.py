@@ -13,7 +13,6 @@
 #     target.receiver_linkedin_url,
 #     target.company_url
 # )
-
 #     response = client.chat.completions.create(
 #         model="gpt-4o-mini",
 #         response_format={"type": "json_object"},
@@ -32,37 +31,31 @@
 #                 "content": f"""
 #     You are {user.user_linkedin_url}, representing {user.company_url}.
 #     You are pitching to {target.receiver_linkedin_url} at {target.company_url}.
-
 #     ### TARGET COMPANY INTELLIGENCE (SCRAPED):
 #     - Company overview: {scraped_data['company_overview']}
 #     - Recent activity: {scraped_data['recent_activity']}
 #     - Growth signals: {scraped_data['growth_signals']}
 #     - Pain points: {scraped_data['pain_points']}
-
 #     ### YOUR SERVICE:
 #     - Name: {selected_service.service_name}
 #     - URL: {selected_service.product_url}
 #     - USP: {selected_service.product_usp}
-
 #     ### EMAIL STRUCTURE (STRICT):
 #     1. First 1–2 lines MUST mention future plans, growth, launches, or direction inferred from data
 #     2. Clearly articulate the target company's problems or inefficiencies
 #     3. Show how your service directly solves those problems
 #     4. Close with a soft CTA (no signature)
-
 #     Main Email:
 #     - 1–2 lines about future plans, launches, or growth signals
 #     - Clearly state their challenges
 #     - Use bullet points to highlight problems or improvements
 #     - Explain how our service solves those challenges
 #     - End with a soft CTA
-
 #     MAIN EMAIL FORMATTING RULES (STRICT):
 #     - Use bullet points (<ul><li>) where helpful
 #     - Clean HTML only (no markdown)
     
 #     BULLET POINT RULE (STRICT):
-
 #     - Use bullet points ONLY for listing the target company’s pain points
 #     - Pain points must appear as a single <ul><li> block
 #     - Do NOT use bullet points when describing our service, solutions, features, or benefits
@@ -122,7 +115,6 @@
 #         # Try to clean partial output
 #         content = content.strip().split("```")[-1]
 #         data = json.loads(content)
-
 #     def clean_signature(text):
 #         """Remove unwanted signature lines from AI output before adding user's real one."""
 #         if not text:
@@ -157,7 +149,6 @@
 #         "pain_points": "",
 #         "tech_stack": ""
 #     }
-
 #     # ---- Website Scraping ----
 #     try:
 #         resp = requests.get(website_url, timeout=10)
@@ -190,7 +181,7 @@ import requests
 from bs4 import BeautifulSoup
 from openai import OpenAI
 from dotenv import load_dotenv
-
+ 
 load_dotenv()
 
 
@@ -206,21 +197,18 @@ FRAMEWORK_GUIDELINES = {
 4. Action – Direct but soft CTA
 Tone: Persuasive and confident.
 """,
-
     "PAS": """
 1. Problem – Highlight real operational pain
 2. Agitate – Show business risk or cost
 3. Solution – Present service as relief
 Tone: Direct and urgency-driven.
 """,
-
     "BEFORE-AFTER-BRIDGE": """
 1. Before – Current inefficiencies
 2. After – Improved business state
 3. Bridge – How service enables change
 Tone: Transformational and outcome-focused.
 """,
-
     "STAR": """
 1. Situation – Current context
 2. Task – Business objective
@@ -228,7 +216,6 @@ Tone: Transformational and outcome-focused.
 4. Result – Measurable outcome
 Tone: Structured and performance-driven.
 """,
-
     "MAGIC": """
 1. Magnet – Strong opening hook
 2. Avatar – Personal relevance
@@ -237,7 +224,6 @@ Tone: Structured and performance-driven.
 5. Container – Structured solution
 Tone: Strategic and visionary.
 """,
-
     "ACCA": """
 1. Awareness – Show understanding
 2. Comprehension – Clarify issue
@@ -301,16 +287,65 @@ def get_response(user, target, selected_service):
     system_prompt = """
 You are an elite B2B outbound strategist.
 
-CRITICAL:
-- Keep emails SHORT.
+OBJECTIVE:
+Write highly personalized outbound emails to business decision makers using provided company intelligence.
+
+CORE PRINCIPLES:
+- Keep emails SHORT and direct.
 - Focus only on high-impact business topics.
-- No fluff.
-- Clear, executive tone.
-- Bullet points must highlight only key pain points.
-- Service explanation must be concise (max 2 sentences).
+- Use a clear executive tone.
+- No fluff or marketing clichés.
+- Every email must feel researched and specific to the target company.
+
+PERSONALIZATION RULES (CRITICAL):
+- The opening sentence MUST reference a specific signal from TARGET INTEL.
+
+Priority order for opening:
+1. Recent Activity
+2. Growth Signals
+3. Pain Points
+
+The opening must sound like a real observation about the company.
+Do NOT write generic openings.
+
+FORBIDDEN PHRASES:
+Do NOT write phrases like:
+- "I noticed your company..."
+- "As your company grows..."
+- "As you continue to scale..."
+- "Leading provider of..."
+- "Innovative solutions..."
+- "In today's fast-paced environment..."
+- "Helping businesses like yours..."
+
+EMAIL STRUCTURE RULES:
+- Bullet points must highlight only key operational pain points.
+- Maximum 3 bullet points.
+- Each bullet must be short and business-relevant.
+- Service explanation must be concise (maximum 2 sentences).
+- CTA must be one short sentence.
+
+FOLLOW-UP RULES:
+Follow-ups must continue the same conversation and stay relevant to the target company.
+
+Follow-up sequence logic:
+Follow-up 1: short case study
+Follow-up 2: industry insight
+Follow-up 3: service benefit summary
+Follow-up 4: FOMO-style close
+
+FORMAT RULES:
 - Clean HTML only.
-- No signatures.
 - No markdown.
+- No signatures.
+- No emojis.
+- Simple paragraphs and optional bullet list only.
+
+TONE:
+- Professional
+- Confident
+- Consultative
+- Executive-level communication
 """
 
     user_prompt = f"""
@@ -339,13 +374,11 @@ EMAIL RULES (STRICT):
 - Each bullet must be short and high-impact
 - Service paragraph = max 2 sentences
 - CTA must be 1 short sentence
-
 FOLLOW-UP RULES:
 1. Short case study (max 150–180 words)
 2. Industry insight (max 150–180 words)
 3. Service benefit summary (max 150–180 words)
 4. Short FOMO close (max 150–180 words)
-
 OUTPUT JSON:
 {{
     "main_email": {{
@@ -374,15 +407,15 @@ Address recipient:
             {"role": "user", "content": user_prompt}
         ]
     )
-
+ 
     content = response.choices[0].message.content.strip()
-
+ 
     try:
         data = json.loads(content)
     except json.JSONDecodeError:
         content = content.split("```")[-1].strip()
         data = json.loads(content)
-
+ 
     def clean_signature(text):
         if not text:
             return ""
@@ -392,7 +425,6 @@ Address recipient:
             text,
             flags=re.IGNORECASE
         ).strip()
-
     if "main_email" in data:
         data["main_email"]["body"] = clean_signature(
             data["main_email"].get("body", "")

@@ -1,11 +1,19 @@
 from django.db import models
 
-from users.models import CustomUser
+from users.models import CustomUser,EmailAttachment
 from django.core.validators import EmailValidator
 import uuid
+from allauth.socialaccount.models import SocialAccount
 
 
-# Create your models here.
+class AudienceTag(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="audience_tags")
+    name = models.CharField(max_length=255)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
 class TargetAudience(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='target_audience')
     email = models.EmailField(validators=[EmailValidator])
@@ -17,7 +25,7 @@ class TargetAudience(models.Model):
     framework = models.TextField(blank=True, null=True)
     campaign_goal = models.TextField(blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
-
+    tag = models.ForeignKey( AudienceTag,on_delete=models.SET_NULL, null=True,blank=True,related_name="audiences")
 
 class SentEmail(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sent_email')
@@ -35,6 +43,11 @@ class SentEmail(models.Model):
     opened_count = models.PositiveIntegerField(default=0,null=False)
     clicked_count = models.IntegerField(default=0)
     replied_count = models.IntegerField(default=0)
+    scheduled_at = models.DateTimeField(null=True, blank=True)
+    is_scheduled = models.BooleanField(default=False)
+    sending_account = models.ForeignKey(SocialAccount,on_delete=models.SET_NULL,null=True,blank=True)
+    attachment = models.ForeignKey(EmailAttachment,on_delete=models.SET_NULL,null=True, blank=True)
+    shuffle_accounts = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         if self.opened_count is None:
@@ -67,3 +80,4 @@ class EmailSubscription(models.Model):
     subscription_id = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(null=True)
+

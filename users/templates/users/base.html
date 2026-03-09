@@ -16,106 +16,125 @@
     <link href="{% static 'users/css/common.css' %}" rel="stylesheet">
     <link href="{% static 'users/css/analytics-styles.css' %}" rel="stylesheet">
     <link href="{% static 'users/css/styles.css' %}" rel="stylesheet">
+
+    {% block extra_css %}
+    {% endblock extra_css %}
 </head>
 <body style="display: flex; flex-direction: column; min-height: 100vh;">
     <!-- Navigation -->
     
-    <nav class="navbar navbar-expand-lg" style="background-color: #f8f9fa; box-shadow: 0 2px 4px rgba(0,0,0,0.05); padding-top: 0.3rem; padding-bottom: 0.3rem;">
-    <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
-            <img src="{% static 'users/img/logo.png' %}" alt="SellSharp Logo" width="80%" height="auto" />
+<!-- Sidebar Layout Wrapper -->
+<div class="d-flex">
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar d-flex flex-column p-3">
+     <button id="sidebarToggle" class="btn border-0 bg-transparent shadow-none">
+    <i class="fas fa-angle-right text-white"></i>
+</button>
+
+        <a href="{% url 'home' %}" class="mb-4 text-center">
+            <img src="{% static 'users/img/logo.png' %}" width="140" />
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
 
-        <div class="collapse navbar-collapse" id="navbarNav">
-            {% if user.is_authenticated and request.resolver_match.url_name != 'user-details' %}
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'home' %}" 
-                       style="{% if request.resolver_match.url_name == 'home' %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; padding-left: 10px; padding-right: 10px;{% endif %}">
-                        Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'generate_email' %}" 
-                       style="{% if request.resolver_match.url_name == 'generate_email' %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; padding-left: 10px; padding-right: 10px;{% endif %}">
-                        Generator
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'view-emails' %}" 
-                       style="{% if request.resolver_match.url_name == 'view-emails' %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; padding-left: 10px; padding-right: 10px;{% endif %}">
-                        Emails
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'view-leads' %}"
-                       style="{% if request.resolver_match.url_name == 'view-leads' %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; padding-left: 10px; padding-right: 10px;{% endif %}">
-                        Leads
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'Customized-Learning-Solutions' %}"
-                       style="{% if request.resolver_match.url_name == 'Customized-Learning-Solutions' %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; padding-left: 10px; padding-right: 10px;{% endif %}">
-                        Academy
-                    </a>
-                </li>
-                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'pricing' %}"
-                       style="{% if request.resolver_match.url_name == 'pricing' %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; padding-left: 10px; padding-right: 10px;{% endif %}">
-                        Pricing
-                    </a>
-                </li>
+        {% if user.is_authenticated and request.resolver_match.url_name != 'user-details' %}
+        <ul>
 
-                {% if user.is_superuser %}
-                <li class="nav-item">
-                <a class="nav-link" href="{% url 'admin-dashboard' %}">
-                    Users 
+            <li>
+                <a href="{% url 'home' %}" 
+                   class="nav-link {% if request.resolver_match.url_name == 'home' %}active-link{% endif %}">
+                    <i class="fas fa-home me-2"></i> Dashboard
                 </a>
-                </li>
-                {% endif %}
+            </li>
 
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                       style="{% if request.resolver_match.url_name == 'profile' %}background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; padding-left: 10px; padding-right: 10px;{% endif %}">
-                        <i class="fas fa-user-circle"></i> Account
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li>
-                            <a class="dropdown-item" href="{% url 'profile' %}">
-                                <i class="fas fa-user me-2"></i>Profile
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" href="{% url 'support' %}">
-                                <i class="fas fa-headset me-2"></i>Support
-                            </a>
-                        </li>
-                        <li>
-                            <form action="{% url 'logout' %}" method="post">
-                                {% csrf_token %}
-                                <button type="submit" class="dropdown-item">
-                                    <i class="fas fa-sign-out-alt me-2"></i> Log Out
-                                </button>
-                            </form>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
+            <li>
+                <a href="{% url 'generate_email' %}" 
+                   class="nav-link {% if request.resolver_match.url_name == 'generate_email' %}active-link{% endif %}">
+                    <i class="fas fa-envelope me-2"></i> Generator
+                </a>
+            </li>
+          <li>
+                <a href="{% url 'campaign_view' %}" 
+                   class="nav-link {% if request.resolver_match.url_name == 'campaign_view' %}active-link{% endif %}">
+                    <i class="fas fa-mail-bulk me-2"></i> Campaign
+                </a>
+            </li>
+
+
+            <li>
+                <a href="{% url 'view-emails' %}" 
+                   class="nav-link {% if request.resolver_match.url_name == 'view-emails' %}active-link{% endif %}">
+                    <i class="fas fa-envelope-open me-2"></i> Emails
+                </a>
+            </li>
+
+            <li>
+                <a href="{% url 'view-leads' %}" 
+                   class="nav-link {% if request.resolver_match.url_name == 'view-leads' %}active-link{% endif %}">
+                    <i class="fas fa-users me-2"></i> Leads
+                </a>
+            </li>
+
+            <li>
+                <a href="{% url 'Customized-Learning-Solutions' %}" 
+                   class="nav-link {% if request.resolver_match.url_name == 'Customized-Learning-Solutions' %}active-link{% endif %}">
+                    <i class="fas fa-graduation-cap me-2"></i> Academy
+                </a>
+            </li>
+
+            <li>
+                <a href="{% url 'pricing' %}" 
+                   class="nav-link {% if request.resolver_match.url_name == 'pricing' %}active-link{% endif %}">
+                    <i class="fas fa-tag me-2"></i> Pricing
+                </a>
+            </li>
+
+            {% if user.is_superuser %}
+            <li>
+                <a href="{% url 'admin-dashboard' %}" class="nav-link">
+                    <i class="fas fa-user-shield me-2"></i> Users
+                </a>
+            </li>
             {% endif %}
-        </div>
-    </div>
-</nav>
 
-    <!-- Main Container -->
-    <div class="container-fluid">
-        <div class="row">
-            {% block content %}
-            {% endblock content %}
+            <hr class="text-white">
+
+            <li>
+                <a href="{% url 'profile' %}" class="nav-link">
+                    <i class="fas fa-user me-2"></i> Profile
+                </a>
+            </li>
+
+            <li>
+                <a href="{% url 'support' %}" class="nav-link">
+                    <i class="fas fa-headset me-2"></i> Support
+                </a>
+            </li>
+
+            <li>
+                <form action="{% url 'logout' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-link btn btn-link text-start text-white w-100">
+                        <i class="fas fa-sign-out-alt me-2"></i> Logout
+                    </button>
+                </form>
+            </li>
+
+        </ul>
+        {% endif %}
+
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-grow-1 p-4">
+        <div class="container-fluid">
+            <div class="row">
+                {% block content %}
+                {% endblock content %}
+            </div>
         </div>
     </div>
+
+</div>
 
         <!-- Sticky Footer -->
    
@@ -193,6 +212,18 @@
    
 
     {% block js %}
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+    const toggleBtn = document.getElementById("sidebarToggle");
+    const sidebar = document.getElementById("sidebar");
+
+    toggleBtn.addEventListener("click", function(){
+        sidebar.classList.toggle("collapsed");
+    });
+
+});
+</script>
     {% endblock js %}
 </body>
 </html>

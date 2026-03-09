@@ -14,6 +14,7 @@
 
 .profile-layout {
     display: flex;
+    flex-direction: row-reverse;   
     min-height: 100vh;  
     align-items: stretch;
     background: #f5f7fb;
@@ -22,18 +23,24 @@
 /* Sidebar */
 .profile-sidebar {
     width: 260px;
+    min-height: 100vh;
     background: linear-gradient(180deg, #6a6fdc, #7b5fdc);
-    padding: 20px;
+    padding: 25px 18px;
     color: white;
+    position: sticky;
+    top: 0;
 }
 
+/* Sidebar items */
 .sidebar-item {
-    padding: 14px 16px;
-    margin-bottom: 10px;
-    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    border-radius: 12px;
     cursor: pointer;
     font-weight: 500;
-    transition: 0.3s;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
 }
 
 .sidebar-item:hover {
@@ -43,15 +50,15 @@
 .sidebar-item.active {
     background: white;
     color: #6a6fdc;
+    font-weight: 600;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 
 /* Content */
 .profile-content {
     flex: 1;
-    padding: 30px;
-    width: 100%;
+    padding: 40px;
 }
-
 .profile-content .card {
     width: 100%;
     max-width: none;
@@ -87,6 +94,7 @@ attachments-list {
 }
 
 </style>
+<div class="container-fluid p-0">
 <div class="profile-layout">
 
     <!-- Sidebar -->

@@ -1,0 +1,274 @@
+{% extends "users/base.html" %}
+{% block content %}
+
+<div class="container mt-4 mb-5" style="max-width: 955px;">
+    <div class="card shadow border-0 rounded-4 overflow-hidden">
+
+        <!-- Header -->
+        <div class="card-header text-white py-3 d-flex align-items-center"
+            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          
+
+            <i class="fas fa-mail-bulk me-2" style="font-size:30px;"></i>
+
+            <div>
+                <h5 class="mb-1 fw-semibold">Campaign </h5>
+                <small style="font-size:13px; opacity:0.85;">
+                    Configure your campaign and launch with precision
+                </small>
+            </div>
+
+        </div>
+
+        <div class="card-body p-4">
+
+            {% comment %} {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %} {% endcomment %}
+
+            <form method="POST" id="campaignForm" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- TAG -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Select Tag *</label>
+                    <select name="tag_id" class="form-select" required>
+                        <option value="">Select Tag</option>
+                        {% for tag in tags %}
+                            <option value="{{ tag.id }}">{{ tag.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- SERVICE -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Service *</label>
+                    <select class="form-select" name="selected_service" required>
+                        {% for service in user_services %}
+                            <option value="{{ service.service_name }}">
+                                {{ service.service_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- FRAMEWORK -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold mb-2"> Framework *</label>
+
+                    <div class="row g-3">
+
+                        <!-- AIDA -->
+                        <div class="col-md-6 col-lg-3">
+                            <label class="framework-option w-100">
+                                <input type="radio" name="framework" value="AIDA" checked hidden>
+                                <div class="framework-card text-center rounded-3">
+                                    <div class="fw-semibold" style="font-size:14px;">AIDA</div>
+                                    <small>Attention → Interest → Desire → Action</small>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- PAS -->
+                        <div class="col-md-6 col-lg-3">
+                            <label class="framework-option w-100">
+                                <input type="radio" name="framework" value="PAS" hidden>
+                                <div class="framework-card text-center rounded-3">
+                                    <div class="fw-semibold" style="font-size:14px;">PAS</div>
+                                    <small>Problem → Agitate → Solution</small>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- BAB -->
+                        <div class="col-md-6 col-lg-3">
+                            <label class="framework-option w-100">
+                                <input type="radio" name="framework" value="Before-After-Bridge" hidden>
+                                <div class="framework-card text-center rounded-3">
+                                    <div class="fw-semibold" style="font-size:14px;">Before-After-Bridge</div>
+                                    <small>Current → Desired → Solution</small>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- STAR -->
+                        <div class="col-md-6 col-lg-3">
+                            <label class="framework-option w-100">
+                                <input type="radio" name="framework" value="STAR" hidden>
+                                <div class="framework-card text-center rounded-3">
+                                    <div class="fw-semibold" style="font-size:14px;">STAR</div>
+                                    <small>Situation → Task → Action → Result</small>
+                                </div>
+                            </label>
+                        </div>
+                        <!-- MAGIC -->
+                        <div class="col-md-6 col-lg-3">
+                            <label class="framework-option w-100">
+                                <input type="radio" name="framework" value="Magic" hidden>
+                                <div class="framework-card text-center rounded-3">
+                                    <div class="fw-semibold"  style="font-size:14px;">Magic</div>
+                                    <small>Hook → Story → Offer → Close</small>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- ACCA -->
+                        <div class="col-md-6 col-lg-3">
+                            <label class="framework-option w-100">
+                                <input type="radio" name="framework" value="ACCA" hidden>
+                                <div class="framework-card text-center rounded-3">
+                                    <div class="fw-semibold"  style="font-size:14px;">ACCA</div>
+                                    <small>Awareness → Comprehension → Conviction → Action</small>
+                                </div>
+                            </label>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- GOAL -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Campaign Goal *</label>
+                    <select class="form-select" name="campaign_goal" required>
+                        <option value="lead-generation">Lead Generation</option>
+                        <option value="product-demo">Product Demo</option>
+                        <option value="meeting-request">Meeting Request</option>
+                        <option value="collaboration">Collaboration</option>
+                    </select>
+                </div>
+
+                <!-- SIGNATURE -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Signature</label>
+                    <select name="signature_id" class="form-select">
+                        <option value="">Default Signature</option>
+                        {% for sig in signatures %}
+                            <option value="{{ sig.id }}">{{ sig.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- SENT FROM -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Sent From *</label>
+                    <select name="sent_from" class="form-select" required>
+                        {% comment %} <option value="">Select Email</option> {% endcomment %}
+                        {% for acc in google_accounts %}
+                            <option value="{{ acc.id }}">
+                                {{ acc.extra_data.email }} ({{ acc.provider|title }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Shuffle -->
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" name="shuffle_accounts">
+                    <label class="form-check-label">
+                        Shuffle Accounts Automatically
+                    </label>
+                </div>
+                    <!-- ===== SAVED ATTACHMENT DROPDOWN ===== -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select Saved Attachment </label>
+                            <select id="saved_attachment" name="saved_attachment" class="form-select">
+                                <option value="">-- Select Attachment --</option>
+
+                            {% for att in user_attachments %}
+                            <option value="{{ att.id }}">
+                                {{ att.file.name|cut:"attachments/" }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                <!-- Schedule -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Schedule</label>
+                    <input type="datetime-local" name="schedule_time" class="form-control">
+                </div>
+
+                <!-- Button -->
+                <div class="d-grid">
+                    <button type="submit"
+                            class="btn text-white fw-semibold"
+                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                   border:none; padding:10px;">
+                        🚀 Launch Campaign
+                    </button>
+                </div>
+            </form>
+            <!-- Full Screen Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay d-none">
+    <div class="loading-content text-center">
+        <div class="spinner-border text-light mb-3" style="width:3rem;height:3rem;"></div>
+        <h5 class="text-white fw-semibold">Generating Campaign...</h5>
+        <p class="text-white-50 small">Please wait while we prepare your emails</p>
+    </div>
+</div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(25, 25, 40, 0.85);
+    backdrop-filter: blur(6px);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.loading-content {
+    text-align: center;
+}
+.card-body {
+    font-size: 14px;
+}
+
+.form-label {
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.framework-card {
+    padding: 14px;
+    background: #f8f9ff;
+    border: 1.5px solid transparent;
+    transition: 0.2s ease;
+    cursor: pointer;
+}
+
+.framework-option input:checked + .framework-card {
+    border-color: #667eea;
+    background: #eef1ff;
+    box-shadow: 0 4px 12px rgba(102,126,234,0.2);
+}
+
+.framework-card:hover {
+    transform: translateY(-2px);
+}
+
+.framework-card small {
+    font-size: 11.5px;
+    color: #6c757d;
+}
+</style>
+<script>
+document.getElementById("campaignForm").addEventListener("submit", function() {
+
+    // Show overlay
+    document.getElementById("loadingOverlay").classList.remove("d-none");
+
+});
+</script>
+{% endblock %}

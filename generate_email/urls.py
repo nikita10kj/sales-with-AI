@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (GenerateEmailView, SendEmailView, EmailListView,EmailMessageView,
-                    LeadListView, LeadEmailListView, email_open_pixel, export_target_audience_csv, msgraph_webhook, CheckEmailHistoryView)
+                    LeadListView, LeadEmailListView, campaign_view, email_open_pixel, export_target_audience_csv, import_leads, msgraph_webhook, CheckEmailHistoryView)
 
 urlpatterns = [
     path("generate_email/", GenerateEmailView.as_view(), name="generate_email"),
@@ -13,4 +13,7 @@ urlpatterns = [
     path('emailmessage/<uuid:uid>/', EmailMessageView.as_view(), name='view-email-message'),
     path('check-email-history/',CheckEmailHistoryView.as_view(),name="check_email_history"),
     path("email/open/<uuid:uid>/", email_open_pixel, name="email_open_pixel"),
+
+    path("import-leads/", import_leads, name="import_leads"),
+    path("campaign/", campaign_view, name="campaign_view"),
 ]

@@ -2,7 +2,7 @@
 {% load static %}
 {% block content %}
 <!-- Sidebar -->
-<div class="col-md-3 sidebar">
+{% comment %} <div class="col-md-3 sidebar">
     <div class="sidebar-content">
         <h5 class="sidebar-title">
             <i class="fas fa-cogs me-2"></i>
@@ -23,10 +23,41 @@
             </div>
         </div>
     </div>
-</div>
+</div> {% endcomment %}
 
 <!-- Main Content -->
-<div class="col-md-9 main-content">
+<div class="col-md-12 main-content">
+<!-- Horizontal Multi-Step Progress -->
+<div class="container-fluid mb-4">
+    <div class="step-progress d-flex justify-content-between align-items-center">
+
+        <div class="step active" data-step="1">
+            <div class="step-circle">
+                <i class="fas fa-bullseye"></i>
+            </div>
+            <div class="step-label">Target & Framework</div>
+        </div>
+
+        <div class="step-line"></div>
+
+        <div class="step" data-step="2">
+            <div class="step-circle">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <div class="step-label">Generate Emails</div>
+        </div>
+
+        <div class="step-line"></div>
+
+        <div class="step" data-step="3">
+            <div class="step-circle">
+                <i class="fas fa-paper-plane"></i>
+            </div>
+            <div class="step-label">Send Summary</div>
+        </div>
+
+    </div>
+</div>
 
     <!-- Step 3: Target & Framework -->
     <div class="step-content" id="step-1">
@@ -405,4 +436,26 @@ document.addEventListener("DOMContentLoaded", function () {
 {% endblock content %}
 {% block js %}
 <script src="{% static 'generate_email/js/script.js' %}"></script>
+<script>
+    function setActiveStep(stepNumber) {
+    document.querySelectorAll(".step").forEach(step => {
+        step.classList.remove("active");
+    });
+
+    document.querySelector(`.step[data-step="${stepNumber}"]`)
+        .classList.add("active");
+}
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+    const toggleBtn = document.getElementById("sidebarToggle");
+    const sidebar = document.getElementById("sidebar");
+
+    toggleBtn.addEventListener("click", function(){
+        sidebar.classList.toggle("collapsed");
+    });
+
+});
+</script>
 {% endblock js %}
