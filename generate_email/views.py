@@ -238,13 +238,25 @@ class GenerateEmailView(LoginRequiredMixin, View):
             user=request.user,
             email=email
         )
+
         if targets.exists():
             target = targets.first()
+
+            # ✅ Update latest selections
+            target.receiver_first_name = receiver_first_name
+            target.receiver_last_name = receiver_last_name
+            target.receiver_linkedin_url = receiver_linkedin_url
+            target.selected_service = selected_service
+            target.company_url = company_url
+            target.framework = framework
+            target.campaign_goal = campaign_goal
+            target.save()
+
         else:
             target = TargetAudience.objects.create(
                 user=request.user,
                 email=email,
-                receiver_first_name=receiver_first_name,    
+                receiver_first_name=receiver_first_name,
                 receiver_last_name=receiver_last_name,
                 receiver_linkedin_url=receiver_linkedin_url,
                 selected_service=selected_service,
