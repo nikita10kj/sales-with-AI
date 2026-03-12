@@ -1,720 +1,1299 @@
-{% load static %}
+{%load static%}
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>SellSharp | AI Email Generator</title>
-    <link
-      rel="icon"
-      type="image/x-icon"
-      href="{% static 'users/img/logo_4.png' %}"
-    />
-    <!-- <link rel="stylesheet" href="{% static 'frontend/css/main.css' %}" /> -->
-    <!-- Bootstrap & Font Awesome -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-      rel="stylesheet"
-    />
-    <!-- Custom CSS -->
-    <link href="{% static 'users/css/common.css' %}" rel="stylesheet" />
-    <link
-      href="{% static 'users/css/analytics-styles.css' %}"
-      rel="stylesheet"
-    />
-    <link href="{% static 'users/css/styles.css' %}" rel="stylesheet" />
-  </head>
-  <body>
-    <div id="root">
-      <div class="bg-light">
-        <!-- Navbar -->
-        <nav class="navbar navbar-expand-lg bg-white shadow-sm">
-          <div
-            class="container d-flex justify-content-between align-items-center"
-          >
-            <a
-              class="navbar-brand d-flex align-items-center"
-              href="{% url 'landing' %}"
-            >
-              <img
-                src="{% static 'users/img/logo.png' %}"
-                alt="SellSharp Logo"
-                height="auto"
-                width="80%"
-              />
-            </a>
-            <a
-              href="{% url 'login' %}"
-              class="btn text-white fw-semibold px-4 py-2"
-              style="
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                border-radius: 30px;
-                transition: all 0.3s ease;
-              "
-            >
-              Login Today
-            </a>
-          </div>
-        </nav>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SellSharp — AI-Powered Sales Emails</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ── CSS Variables ── */
+    :root {
+      --bg:            #ffffff;
+      --fg:            #0f1117;
+      --card:          #ffffff;
+      --card-fg:       #0f1117;
+      --primary:       #667eea;
+      --primary-h:     217;
+      --primary-s:     90%;
+      --primary-l:     56%;
+      --primary-fg:    #ffffff;
+      --secondary:     #f1f3f8;
+      --secondary-fg:  #0f1117;
+      --muted:         #f1f3f8;
+      --muted-fg:      #6b7280;
+      --border:        #e4e7ef;
+      --surface:       #f8f9fc;
+      --dark-surface:  #0d1220;
+      --dark-fg:       #f2f4f8;
+      --radius:        0.75rem;
+      --primary-10:    hsla(217,90%,56%,0.10);
+      --primary-15:    hsla(217, 90%, 56%, 0.404);
+      --primary-20:    hsla(217,90%,56%,0.20);
+      --primary-30:    hsla(217,90%,56%,0.30);
+      --primary-light: hsl(217,90%,70%);
+    }
 
-        <!-- Hero Section -->
-        <section class="text-center py-5 bg-white">
-          <div class="container">
-            <h1 class="display-5 fw-bold mb-3 typewriter">
-              AI‑Powered Emails That Close Deals
-            </h1>
-            <p class="lead text-muted mx-auto" style="max-width: 700px">
-              SellSharp helps sales teams write smarter, faster, and more
-              personalized emails that turn leads into customers — at scale.
-            </p>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    a { text-decoration: none; color: inherit; }
 
-            <div
-              class="d-flex flex-column flex-sm-row justify-content-center align-items-center gap-3 mt-4"
-            >
-              <a
-                href="{% url 'login' %}"
-                class="btn text-white rounded-pill px-4 py-2"
-                style="
-                  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                  transition: background 0.3s ease;
-                "
-              >
-                Start Free Trial
-              </a>
-<!--              <a-->
-<!--                href="#"-->
-<!--                class="btn btn-outline-dark rounded-pill px-4 py-2"-->
-<!--                style="transition: all 0.3s ease"-->
-<!--                onmouseover="this.classList.remove('btn-outline-dark'); this.classList.add('btn-dark'); this.style.color='white';"-->
-<!--                onmouseout="this.classList.remove('btn-dark'); this.classList.add('btn-outline-dark'); this.style.color='black';"-->
-<!--              >-->
-<!--                Schedule Demo-->
-<!--              </a>-->
-            </div>
+    /* ── Utility Classes ── */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    .glass-card {
+      background: rgba(255,255,255,0.80);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(228,231,239,0.5);
+      border-radius: 1rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+    }
+    .glass-card-dark {
+      background: rgba(13,18,32,0.70);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 1rem;
+    }
+    .glow-border {
+      box-shadow: 0 0 20px hsla(217,90%,56%,0.18), 0 0 60px hsla(217,90%,56%,0.07);
+    }
+    .gradient-text-blue {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .section-dark { background: var(--dark-surface); color: var(--dark-fg); }
+    .bg-surface { background: var(--surface); }
+    .floating-shadow {
+      box-shadow: 0 20px 60px -15px rgba(13,18,32,0.12), 0 0 0 1px rgba(228,231,239,0.5);
+    }
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(228,231,239,0.3) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(228,231,239,0.3) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+    .grid-bg-blue {
+      background-image:
+        linear-gradient(hsla(269, 39%, 50%, 0.12) 1px, transparent 1px),
+        linear-gradient(90deg, hsla(217,90%,56%,0.12) 1px, transparent 1px);
+      background-size: 80px 80px;
+    }
 
-            <div class="mt-5">
-              <img
-                src="{% static 'users/img/image-1-1024x482.webp' %}"
-                alt="App UI"
-                class="img-fluid rounded-4 shadow"
-                style="max-width: 100%; height: auto"
-              />
-            </div>
-          </div>
-        </section>
+    /* ── Animations ── */
+    @keyframes float {
+      0%,100% { transform: translateY(0px); }
+      50%      { transform: translateY(-10px); }
+    }
+    @keyframes floatB {
+      0%,100% { transform: translateY(0px); }
+      50%      { transform: translateY(-15px); }
+    }
+    @keyframes pulseGlow {
+      0%,100% { opacity: 0.4; }
+      50%      { opacity: 1; }
+    }
+    @keyframes glowBlob {
+      0%,100% { opacity: 0.3; transform: scale(1); }
+      50%      { opacity: 0.6; transform: scale(1.15); }
+    }
+    @keyframes barGrow {
+      from { transform: scaleY(0); }
+      to   { transform: scaleY(1); }
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(30px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity:0; }
+      to   { opacity:1; }
+    }
+    @keyframes slideLeft {
+      from { opacity:0; transform: translateX(-40px); }
+      to   { opacity:1; transform: translateX(0); }
+    }
+    @keyframes slideRight {
+      from { opacity:0; transform: translateX(40px); }
+      to   { opacity:1; transform: translateX(0); }
+    }
+    @keyframes popIn {
+      from { opacity:0; transform: scale(0.5); }
+      to   { opacity:1; transform: scale(1); }
+    }
+    @keyframes navDown {
+      from { opacity:0; transform: translateY(-20px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    @keyframes widthExpand {
+      from { width: 0; }
+      to   { width: 60%; }
+    }
 
-        <!-- Connect with google and microsoft -->
-        <section class="py-5 bg-white">
-          <div class="container text-center">
-            <h5 class="fw-bold mb-4">Connect Mail Box</h5>
-            <div
-              class="d-flex justify-content-center align-items-center flex-wrap gap-5 mb-3"
-            >
-              <img
-                src="{% static 'users/img/Untitled-design-10-1-scaled-e1750936356425-1536x572.webp' %}"
-                alt="Google"
-                style="
-                  height: 50px;
-                  object-fit: contain;
-                  filter: grayscale(0.2);
-                  transition: transform 0.3s ease;
-                "
-                onmouseover="this.style.transform='scale(1.1)'"
-                onmouseout="this.style.transform='scale(1)'"
-              />
-              <img
-                src="{% static 'users/img/4-2-e1750935420584.webp' %}"
-                alt="Microsoft"
-                style="
-                  height: 50px;
-                  object-fit: contain;
-                  filter: grayscale(0.2);
-                  transition: transform 0.3s ease;
-                "
-                onmouseover="this.style.transform='scale(1.1)'"
-                onmouseout="this.style.transform='scale(1)'"
-              />
-            </div>
-            <p class="text-muted small">
-              Securely authenticate and sync with your preferred email provider.
-            </p>
-          </div>
-        </section>
+    .anim-fade-up   { animation: fadeUp .7s ease both; }
+    .anim-slide-l   { animation: slideLeft .7s ease both; }
+    .anim-slide-r   { animation: slideRight .7s ease both; }
+    .anim-fade-in   { animation: fadeIn .7s ease both; }
+    .anim-pop-in    { animation: popIn .5s cubic-bezier(.34,1.56,.64,1) both; }
 
-        <!-- Services -->
-        <section class="py-5" style="background: rgb(238, 238, 238)">
-          <div class="container text-center">
-            <h2 class="fw-bold mb-3">What We Offer</h2>
-            <p class="text-muted mb-5">
-              Supercharge your sales outreach with AI-crafted emails, predictive
-              targeting, and intelligent automation.
-            </p>
+    /* Scroll-reveal (JS adds .revealed) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+    .reveal.revealed { opacity: 1; transform: translateY(0); }
+    .reveal-l {
+      opacity: 0;
+      transform: translateX(-40px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+    .reveal-l.revealed { opacity: 1; transform: translateX(0); }
+    .reveal-r {
+      opacity: 0;
+      transform: translateX(40px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+    .reveal-r.revealed { opacity: 1; transform: translateX(0); }
+    .reveal-scale {
+      opacity: 0;
+      transform: scale(0.95) translateY(20px);
+      transition: opacity .7s ease, transform .7s cubic-bezier(.34,1.2,.64,1);
+    }
+    .reveal-scale.revealed { opacity: 1; transform: scale(1) translateY(0); }
 
-            <div class="row g-4 py-4">
-              <!-- Card -->
-              <div class="col-12 col-sm-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm p-4 rounded-4">
-                  <i class="fas fa-robot fa-2x text-primary mb-3"></i>
-                  <h5 class="fw-semibold">AI Email Generator</h5>
-                  <p class="text-muted small">
-                    Create persuasive emails instantly with trained AI that
-                    mimics top sales performers.
-                  </p>
-                </div>
-              </div>
+    /* ── NAVBAR ── */
+    nav {
+      position: fixed; top:0; left:0; right:0; z-index:50;
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(228,231,239,0.5);
+      animation: navDown .5s ease both;
+    }
+    .nav-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: 1.25rem; font-weight: 800; letter-spacing: -.03em;
+    }
+    .nav-logo-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: .85rem; font-weight: 900;
+    }
+    .nav-links {
+      display: flex; align-items: center; gap: 2rem;
+      font-size: 1rem; font-weight: 500; color: var(--muted-fg);
+      list-style: none;
+    }
+    .nav-links a:hover { color: var(--primary); }
+    .nav-actions { display: flex; align-items: center; gap: .75rem; }
+    .nav-sign-in {
+      font-size: .875rem; font-weight: 500;
+      color: var(--muted-fg); transition: color .2s;
+    }
+    .nav-sign-in:hover { color: var(--fg); }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: var(--primary-fg);
+      font-weight: 600; font-size: .875rem;
+      padding: .6rem 1.25rem; border-radius: .5rem;
+      border: none; cursor: pointer;
+      transition: filter .2s, transform .2s;
+      box-shadow: 0 4px 14px hsla(217,90%,56%,0.28);
+    }
+    .btn-primary:hover { filter: brightness(1.1); transform: scale(1.04); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: var(--secondary); color: var(--secondary-fg);
+      font-weight: 600; font-size: .875rem;
+      padding: .875rem 1.75rem; border-radius: .75rem;
+      border: 1px solid var(--border); cursor: pointer;
+      transition: background .2s, transform .2s;
+    }
+    .btn-secondary:hover { background: rgba(241,243,248,0.8); transform: scale(1.04); }
+    .btn-primary-lg {
+      padding: .875rem 1.75rem; font-size: .9375rem; border-radius: .75rem;
+    }
+    .hamburger {
+      display: none; background: none; border: none; cursor: pointer;
+      color: var(--fg); padding: .25rem;
+    }
+    .mobile-menu {
+      display: none; border-top: 1px solid var(--border);
+      padding: 1rem 1.5rem 1.25rem; background: var(--bg);
+    }
+    .mobile-menu a {
+      display: block; padding: .5rem 0;
+      font-size: .875rem; color: var(--muted-fg);
+    }
+    .mobile-menu .btn-primary {
+      width: 100%; justify-content: center; margin-top: .75rem;
+      padding: .75rem; border-radius: .6rem;
+      color: var(--primary-fg);
+    }
+    @media (max-width: 768px) {
+      .nav-links, .nav-actions { display: none; }
+      .hamburger { display: block; }
+      .mobile-menu.open { display: block; }
+    }
 
-              <div class="col-12 col-sm-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm p-4 rounded-4">
-                  <i class="fas fa-user-tag fa-2x text-primary mb-3"></i>
-                  <h5 class="fw-semibold">Smart Personalization</h5>
-                  <p class="text-muted small">
-                    Auto-inserts for names, roles, industries, and intents help
-                    boost relevance and reply rates.
-                  </p>
-                </div>
-              </div>
+    /* ── HERO ── */
+    #hero {
+      position: relative; 
+      display: flex; align-items: center; padding-top: 64px;
+      overflow: hidden;
+    }
+    .hero-grid-bg {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(228,231,239,0.3) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(228,231,239,0.3) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: .5;
+    }
+    .blob {
+      position: absolute; border-radius: 50%;
+      filter: blur(80px); pointer-events: none;
+    }
+    .blob-1 {
+      top: 25%; left: -8rem;
+      width: 384px; height: 384px;
+      background: linear-gradient(135deg, hsla(217, 90%, 56%, 0.1) 0%, hsla(269, 39%, 50%, 0.1) 100%);
+      animation: glowBlob 8s ease-in-out infinite;
+    }
+    .blob-2 {
+      bottom: 25%; right: -8rem;
+      width: 384px; height: 384px;
+      background: linear-gradient(135deg, hsla(217, 90%, 56%, 0.05) 0%, hsla(269, 39%, 50%, 0.05) 100%);
+      animation: glowBlob 10s ease-in-out infinite;
+    }
+    .hero-inner {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;
+      align-items: center; position: relative; z-index: 1;
+      padding: 5rem 0;
+    }
+    
+    .hero-badge svg {
+      animation: pulseGlow 3s ease-in-out infinite;
+      color: var(--primary-fg);
+    }
+    .hero-title {
+      font-size: clamp(2.5rem, 5vw, 3.6rem);
+      font-weight: 800; line-height: 1.05; letter-spacing: -.03em;
+      margin-bottom: 1.5rem; animation: fadeUp .7s .3s ease both;
+    }
+    .hero-subtitle {
+      padding: 0px 12px;
+      font-size: 1.0625rem; color: var(--muted-fg);
+      max-width: 32rem; margin-bottom: 2rem; line-height: 1.7;
+      animation: fadeUp .7s .45s ease both;
+    }
+    .hero-cta { display: flex; flex-wrap: wrap; gap: 1rem; animation: fadeUp .7s .55s ease both; }
+    .hero-meta {
+      display: flex; align-items: center; gap: 1.5rem; margin-top: 2.5rem;
+      font-size: .8125rem; color: var(--muted-fg);
+      animation: fadeIn .8s .7s ease both;
+    }
+    .hero-meta-dot { width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); animation: pulseGlow 3s ease-in-out infinite; }
+    .hero-meta-item { display: flex; align-items: center; gap: .5rem; }
 
-              <div class="col-12 col-sm-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm p-4 rounded-4">
-                  <i class="fas fa-comments fa-2x text-primary mb-3"></i>
-                  <h5 class="fw-semibold">Tone & Style Control</h5>
-                  <p class="text-muted small">
-                    Choose between friendly, persuasive, or direct tones for
-                    each stage of your sales funnel.
-                  </p>
-                </div>
-              </div>
+    /* Floating cards */
+    .hero-cards {
+      position: relative; height: 540px;
+      animation: fadeIn 1s .5s ease both;
+    }
+    .float-card {
+      position: absolute; padding: 1rem;
+      border-radius: 1rem;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(228,231,239,0.5);
+      box-shadow: 0 20px 60px -15px rgba(13,18,32,0.13), 0 0 0 1px rgba(228,231,239,0.5);
+      transition: transform .3s, box-shadow .3s;
+    }
+    .float-card:hover { transform: translateY(-5px) scale(1.02) !important; }
+    .fc-1 { top:0; left:1rem; width:288px; animation: float 6s ease-in-out infinite; }
+    .fc-2 { top:8rem; right:0; width:256px; animation: float 7s .5s ease-in-out infinite; }
+    .fc-3 { bottom:6rem; left:0; width:240px; animation: float 8s 1s ease-in-out infinite; }
+    .fc-4 { bottom:2rem; right:1rem; width:224px; animation: float 7s 1.5s ease-in-out infinite; }
+    .fc-icon {
+      width: 36px; height: 36px; border-radius: .625rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .fc-icon svg { color: var(--primary-fg); }
+    .fc-header { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+    .fc-title { font-size: .875rem; font-weight: 600; color: var(--fg); }
+    .fc-sub { font-size: .75rem; color: var(--muted-fg); }
+    .fc-line { height: 8px; border-radius: 4px; background: var(--muted); margin-bottom: .5rem; }
+    .fc-line-blue { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 60%; }
+    .bars { display: flex; align-items: flex-end; gap: 3px; height: 64px; }
+    .bar { flex: 1; border-radius: 3px 3px 0 0; background: var(--primary-20); transition: background .2s; }
+    .bar:hover { background: var(--primary-30); }
+    .bar-highlight { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; }
+    .score-tags { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .score-tag {
+      font-size: .75rem; font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: var(--primary-fg);
+      padding: .25rem .5rem; border-radius: .375rem;
+    }
+    .fc-big-num { font-size: 1.125rem; font-weight: 700; line-height: 1.2; }
+    .fc-trend {
+      font-size: .75rem; font-weight: 500; margin-top: .25rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
 
-              <div class="col-12 col-sm-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm p-4 rounded-4">
-                  <i class="fas fa-bolt fa-2x text-primary mb-3"></i>
-                  <h5 class="fw-semibold">1-Click Campaigns</h5>
-                  <p class="text-muted small">
-                    Launch entire sequences with one click—great for product
-                    announcements or follow-ups.
-                  </p>
-                </div>
-              </div>
+    @media (max-width: 1024px) {
+      .hero-inner { grid-template-columns: 1fr; }
+      .hero-inner > div:first-child {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+      .hero-cards { display: none; }
+    }
 
-              <div class="col-12 col-sm-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm p-4 rounded-4">
-                  <i class="fas fa-chart-line fa-2x text-primary mb-3"></i>
-                  <h5 class="fw-semibold">Performance Analytics</h5>
-                  <p class="text-muted small">
-                    Track opens, clicks, and conversions to continuously improve
-                    what works.
-                  </p>
-                </div>
-              </div>
+    /* ── SECTION HEADER ── */
+    .section-header { text-align: center; max-width: 45rem; margin: 0 auto 4rem; }
+    .section-tag {
+       font-weight: 600;
+      text-transform: uppercase; letter-spacing: .1em; margin-bottom: .75rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .section-title {
+      font-size: clamp(2rem, 4vw, 2rem);
+      font-weight: 800; letter-spacing: -.025em; line-height: 1.15; margin-bottom: 1rem;
+    }
+    .section-sub { font-size: 1.0625rem; color: var(--muted-fg); padding: 0px 40px;}
 
-              <div class="col-12 col-sm-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm p-4 rounded-4">
-                  <i class="fas fa-star-half-alt fa-2x text-primary mb-3"></i>
-                  <h5 class="fw-semibold">Lead Scoring AI</h5>
-                  <p class="text-muted small">
-                    Identify hot prospects with AI that scores leads based on
-                    behavior and engagement history.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+    /* ── FEATURES ── */
+    #features { padding: 7rem 0;  }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 1.5rem;
+    }
+    .feature-card {
+      padding: 1.75rem;
+      border-radius: 1rem;
+      background: rgba(255,255,255,0.80);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(228,231,239,0.5);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+      cursor: default;
+      transition: transform .3s, box-shadow .3s;
+    }
+    .feature-card:hover { transform: translateY(-8px); box-shadow: 0 0 25px hsla(217, 90%, 56%, 0.2), 0 0 25px hsla(269, 39%, 50%, 0.2); }
+    .feature-icon {
+      width: 48px; height: 48px; border-radius: .75rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 1.25rem;
+      transition: background .3s, transform .3s;
+    }
+    .feature-card:hover .feature-icon { filter: brightness(1.2); transform: scale(1.1); }
+    .feature-icon svg { color: var(--primary-fg); }
+    .feature-title { font-size: 1rem; font-weight: 600; margin-bottom: .5rem; }
+    .feature-desc { font-size: .875rem; color: var(--muted-fg); line-height: 1.65; }
 
-        <!-- Split Section -->
-        <section class="py-5 bg-white">
-          <div class="container">
-            <div class="row align-items-center gy-4">
-              <!-- Text Column -->
-              <div class="col-lg-6 text-center text-lg-start">
-                <h3 class="fw-bold display-6 mb-3">
-                  Tailored Outreach for Maximum Impact
-                </h3>
-                <p class="text-muted">
-                  No more one-size-fits-all templates. SellSharp delivers
-                  personalized, high-converting messages that reflect your brand
-                  voice, your customer's pain points, and the stage of the sales
-                  cycle.
-                </p>
-                <a
-                  href="{% url 'login' %}"
-                  class="btn btn-outline-dark rounded-pill mt-3 px-4 py-2"
-                  style="transition: all 0.3s ease"
-                  onmouseover="this.classList.remove('btn-outline-dark'); this.classList.add('btn-dark'); this.style.color='white';"
-                  onmouseout="this.classList.remove('btn-dark'); this.classList.add('btn-outline-dark'); this.style.color='black';"
-                >
-                  Get Started Today →
-                </a>
-              </div>
+    @media (max-width: 900px) { .features-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 600px) { .features-grid { grid-template-columns: 1fr; } }
 
-              <!-- Image Column -->
-              <div class="col-lg-6 text-center">
-                <img
-                  src="{% static 'users/img/Email Intelligence & Automation.png' %}"
-                  class="img-fluid"
-                  alt="Email Illustration"
-                  style="
-                    max-width: 70%;
-                    transition: transform 0.4s ease, box-shadow 0.4s ease;
-                  "
-                  onmouseover="this.style.transform='scale(1.1)';"
-                  onmouseout="this.style.transform='scale(1)';"
-                />
-              </div>
-            </div>
-          </div>
-        </section>
+    /* ── AI PLATFORM ── */
+    #ai-platform { padding: 7rem 0; position: relative; overflow: hidden; }
+    .ai-top-blob {
+      position: absolute; top:0; left:50%; transform: translateX(-50%);
+      width: 600px; height: 300px;
+      background: linear-gradient(135deg, hsla(217, 90%, 56%, 0.1) 0%, hsla(269, 39%, 50%, 0.1) 100%);
+      border-radius: 50%; filter: blur(120px);
+      animation: glowBlob 6s ease-in-out infinite;
+    }
+    .ai-bot-blob {
+      position: absolute; bottom:0; left:25%;
+      width: 256px; height: 256px;
+      background: linear-gradient(135deg, hsla(217, 90%, 56%, 0.05) 0%, hsla(269, 39%, 50%, 0.05) 100%);
+      border-radius: 50%; filter: blur(80px);
+    }
+    .ai-grid-overlay {
+      position: absolute; inset: 0; opacity: .1;
+      background-image:
+        linear-gradient(hsla(269, 39%, 50%, 0.2) 1px, transparent 1px),
+        linear-gradient(90deg, hsla(217,90%,56%,0.2) 1px, transparent 1px);
+      background-size: 80px 80px;
+    }
+    .ai-inner { position: relative; z-index: 1; }
+    .pillars-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 2rem; }
+    .pillar-card {
+      padding: 2rem; cursor: default;
+      display: flex; align-items: flex-start; gap: 1.5rem;
+      border-radius: 1rem;
+      background: rgba(255,255,255,0.80);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(228,231,239,0.5);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+      transition: transform .3s, box-shadow .3s;
+    }
+    .pillar-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 0 25px hsla(217, 90%, 56%, 0.2), 0 0 25px hsla(269, 39%, 50%, 0.2); }
+    .pillar-icon {
+      width: 56px; height: 56px; border-radius: 1rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: .25rem;
+      transition: background .3s, transform .3s;
+    }
+    .pillar-card:hover .pillar-icon { filter: brightness(1.2); transform: scale(1.1); }
+    .pillar-icon svg { color: var(--primary-fg); }
+    .pillar-title { font-size: 1.25rem; font-weight: 600; margin-bottom: .5rem; color: var(--card-fg); text-align: left; }
+    .pillar-desc { font-size: .875rem; line-height: 1.65; color: var(--muted-fg); text-align: left; }
+    .ai-dots {
+      display: flex; justify-content: center; gap: 1rem; margin-top: 4rem;
+    }
+    .ai-dot {
+      width: 12px; height: 12px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      animation: pulseGlow 3s ease-in-out infinite;
+    }
+    @media (max-width: 768px) { 
+      .pillars-grid { grid-template-columns: 1fr; gap: 1.5rem; } 
+      #ai-platform { padding: 3rem 0; }
+    }
 
-        <!-- Expert Statement -->
-        <section class="py-5" style="background: rgb(238, 238, 238)">
-          <div class="container text-center">
-            <h3 class="fw-bold mb-3">Built by Experts, Powered by AI</h3>
-            <p class="text-muted mb-4">
-              SellSharp combines proven sales principles with cutting-edge AI to
-              help your team convert faster. Whether you're a startup or an
-              enterprise, our platform helps scale outreach, boost engagement,
-              and close more deals.
-            </p>
+    /* ── EMAIL INTEGRATION ── */
+    #integrations { padding: 7rem 0; }
+    .integration-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; max-width: 56rem; margin: 0 auto; }
+    .int-card {
+      padding: 2rem; cursor: pointer;
+      border-radius: 1rem;
+      background: rgba(255,255,255,0.80);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(228,231,239,0.5);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+      transition: transform .3s, box-shadow .3s;
+    }
+    .int-card:hover { transform: translateY(-6px); box-shadow: 0 0 25px hsla(217, 90%, 56%, 0.2), 0 0 25px hsla(269, 39%, 50%, 0.2); }
+    .int-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .int-logo { width: 56px; height: 56px; border-radius: 1rem; background: var(--secondary); display: flex; align-items: center; justify-content: center; transition: transform .3s; }
+    .int-card:hover .int-logo { transform: scale(1.1); }
+    .int-title { font-size: 1.25rem; font-weight: 600; }
+    .int-sub { font-size: .875rem; color: var(--muted-fg); }
+    .int-features { display: flex; flex-direction: column; gap: .75rem; }
+    .int-feat { display: flex; align-items: center; gap: .5rem; font-size: .875rem; color: var(--muted-fg); }
+    .int-feat svg { color: #764ba2; flex-shrink: 0; }
+    .security-row {
+      display: flex; align-items: center; justify-content: center; gap: 1.5rem;
+      margin-top: 3rem; flex-wrap: wrap;
+    }
+    .security-item { display: flex; align-items: center; gap: .5rem; font-size: .875rem; color: var(--muted-fg); }
+    .security-item svg { color: #764ba2; }
+    @media (max-width: 640px) { .integration-grid { grid-template-columns: 1fr; } }
 
-            <div class="row g-4">
-              <!-- Card 1 -->
-              <div class="col-sm-12 col-md-6 col-lg-4">
-                <div
-                  class="p-3 h-100 border rounded-4 shadow-sm bg-white d-flex flex-column"
-                >
-                  <img
-                    src="{% static 'users/img/Learning from Top Campaigns.png' %}"
-                    alt="AI Concept"
-                    class="img-fluid rounded-3 mb-3"
-                    style="height: 250px; width: 100%; object-fit: cover"
-                  />
-                  <p class="small text-muted mb-0 mt-auto">
-                    Our algorithms continuously learn from high-performing
-                    campaigns across industries.
-                  </p>
-                </div>
-              </div>
+    /* ── PERSONALIZATION ── */
+    #personalization { padding: 7rem 0; }
+    .person-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+    .person-tag {
+      font-size: .8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; margin-bottom: .75rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .person-title { font-size: clamp(2rem,4vw,3rem); font-weight: 800; letter-spacing: -.025em; line-height: 1.15; margin-bottom: 1rem; }
+    .person-sub { font-size: 1.0625rem; color: var(--muted-fg); line-height: 1.7; margin-bottom: 2rem; }
+    .person-features { display: flex; flex-direction: column; gap: 1rem; }
+    .person-feat { display: flex; align-items: center; gap: .75rem; }
+    .person-feat-icon {
+      width: 36px; height: 36px; border-radius: .5rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      transition: background .3s, transform .3s;
+    }
+    .person-feat:hover .person-feat-icon { filter: brightness(1.2); transform: scale(1.1); }
+    .person-feat-icon svg { color: var(--primary-fg); }
+    .person-feat-label { font-size: .875rem; font-weight: 500; }
+    .editor-mock {
+      border-radius: 1rem;
+      background: rgba(255,255,255,0.80);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(228,231,239,0.5);
+      box-shadow: 0 20px 60px -15px rgba(13,18,32,0.12), 0 0 0 1px rgba(228,231,239,0.5);
+      padding: 1.5rem;
+      transition: transform .3s;
+    }
+    .editor-mock:hover { transform: translateY(-5px); }
+    .mac-dots { display: flex; align-items: center; gap: .5rem; margin-bottom: 1rem; }
+    .mac-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .mac-dot-red { background: rgba(239,68,68,0.6); }
+    .mac-dot-yellow { background: rgba(234,179,8,0.6); }
+    .mac-dot-green { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .mac-label { font-size: .75rem; color: var(--muted-fg); margin-left: .5rem; }
+    .editor-row { display: flex; align-items: center; gap: .5rem; margin-bottom: .75rem; font-size: .875rem; }
+    .editor-label { color: var(--muted-fg); }
+    .pill-tag {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: var(--primary-fg);
+      padding: .125rem .5rem; border-radius: .25rem;
+      font-size: .75rem; font-weight: 600;
+    }
+    .editor-body { border-top: 1px solid var(--border); padding-top: .75rem; font-size: .875rem; }
+    .editor-body p { color: var(--muted-fg); line-height: 1.7; margin-top: .5rem; }
+    .ai-confidence { display: flex; align-items: center; gap: .5rem; border-top: 1px solid var(--border); padding-top: .75rem; margin-top: .75rem; }
+    .ai-confidence svg { color: #764ba2; }
+    .ai-confidence span {
+      font-size: .75rem; font-weight: 500;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    @media (max-width: 900px) { .person-grid { grid-template-columns: 1fr; } }
 
-              <!-- Card 2 -->
-              <div class="col-sm-12 col-md-6 col-lg-4">
-                <div
-                  class="p-3 h-100 border rounded-4 shadow-sm bg-white d-flex flex-column"
-                >
-                  <img
-                    src="{% static 'users/img/data-analytics.avif' %}"
-                    alt="AI Dashboard"
-                    class="img-fluid rounded-3 mb-3"
-                    style="height: 250px; width: 100%; object-fit: cover"
-                  />
-                  <p class="small text-muted mb-0 mt-auto">
-                    Powerful analytics and smart suggestions help you iterate
-                    faster and better.
-                  </p>
-                </div>
-              </div>
+    /* ── USE CASES ── */
+    #use-cases { padding: 7rem 0; }
+    .use-cases-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.5rem; }
+    @media (max-width: 900px) { .use-cases-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 600px) { .use-cases-grid { grid-template-columns: 1fr; } }
 
-              <!-- Card 3 -->
-              <div class="col-sm-12 col-md-6 col-lg-4">
-                <div
-                  class="p-3 h-100 border rounded-4 shadow-sm bg-white d-flex flex-column"
-                >
-                  <img
-                    src="{% static 'users/img/Smart Analytics & Suggestions.png' %}"
-                    alt="AI Workflow"
-                    class="img-fluid rounded-3 mb-3"
-                    style="height: 250px; width: 100%; object-fit: cover"
-                  />
-                  <p class="small text-muted mb-0 mt-auto">
-                    Predictive workflows and automation reduce manual effort and
-                    improve efficiency.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+    /* ── ANALYTICS ── */
+    #analytics { padding: 7rem 0; }
+    .dashboard-mock {
+      border-radius: 1rem;
+      background: rgba(255,255,255,0.80);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(228,231,239,0.5);
+      box-shadow: 0 20px 60px -15px rgba(13,18,32,0.12), 0 0 0 1px rgba(228,231,239,0.5);
+      padding: 2rem; max-width: 900px; margin: 0 auto;
+      transition: transform .3s;
+    }
+    .dashboard-mock:hover { transform: translateY(-5px); }
+    .dash-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
+    .dash-topbar-label { font-size: .75rem; color: var(--muted-fg); }
+    .metrics-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 2rem; }
+    .metric-card {
+      background: rgba(241,243,248,0.5); border-radius: .75rem; padding: 1rem;
+      transition: transform .2s;
+    }
+    .metric-card:hover { transform: scale(1.03); }
+    .metric-header { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; }
+    .metric-header svg { color: #764ba2; }
+    .metric-header span { font-size: .75rem; color: var(--muted-fg); }
+    .metric-val { font-size: 1.5rem; font-weight: 700; }
+    .metric-change {
+      font-size: .75rem; font-weight: 500; margin-top: .25rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .chart-area { background: rgba(241,243,248,0.3); border-radius: .75rem; padding: 1.5rem; }
+    .chart-bars { display: flex; align-items: flex-end; gap: .5rem; height: 128px; }
+    .chart-bar-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+    .chart-bar {
+      border-radius: 3px 3px 0 0; background: linear-gradient(135deg, hsla(217, 90%, 56%, 0.2) 0%, hsla(269, 39%, 50%, 0.2) 100%);
+      transform-origin: bottom; transition: background .2s;
+    }
+    .chart-bar:hover { background: linear-gradient(135deg, hsla(217, 90%, 56%, 0.3) 0%, hsla(269, 39%, 50%, 0.3) 100%); }
+    .chart-bar.highlight { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .chart-labels { display: flex; justify-content: space-between; margin-top: .75rem; font-size: .75rem; color: var(--muted-fg); overflow: hidden; }
+.chart-labels span { flex: 1; text-align: center; overflow: hidden; font-size: clamp(.5rem, 1.5vw, .75rem); }
+    @media (max-width: 640px) { .metrics-grid { grid-template-columns: 1fr 1fr; } }
 
-        <!-- Audience Use Cases -->
-        <section class="py-5 bg-white">
-          <div class="container">
-            <div class="text-center mb-5">
-              <h4 class="text-primary text-uppercase">Our Work</h4>
-              <h1 class="fw-bold">Solutions Designed to Deliver Results</h1>
-              <p class="text-muted">
-                SellSharp adapts to every business model — see how it fits
-                yours.
-              </p>
-            </div>
-            <div class="row row-cols-1 row-cols-md-2 g-4">
-              <!-- Card 1 -->
-              <div class="d-flex flex-column gap-4">
-                <div
-                  class="d-flex flex-column flex-md-row align-items-center gap-4 scroll-fade border rounded-4 shadow-sm p-3"
-                >
-                  <div
-                    class="overflow-hidden"
-                    style="
-                      flex-shrink: 0;
-                      border-top-left-radius: 0.75rem;
-                      border-bottom-left-radius: 0.75rem;
-                    "
-                  >
-                    <img
-                      src="{% static 'users/img/For SaaS Products.png' %}"
-                      class="img-fluid w-100"
-                      style="max-width: 250px; height: 150px; object-fit: cover"
-                      alt="SaaS"
-                    />
-                  </div>
-                  <div>
-                    <h5 class="fw-bold mb-2">For SaaS Products</h5>
-                    <p class="text-muted small mb-0">
-                      Deliver onboarding, updates, and retention flows
-                      automatically with seamless AI-powered workflows.
-                    </p>
-                  </div>
-                </div>
+    /* ── CTA ── */
+    #cta { padding: 7rem 0; }
+    .cta-card {
+      position: relative; text-align: center;
+      max-width: 56rem; margin: 0 auto;
+      padding: 4rem 2rem; border-radius: 1rem; overflow: hidden;
+      background: rgba(255,255,255,0.80);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(228,231,239,0.5);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+    }
+    .cta-glow {
+      position: absolute; top:0; left:50%; transform: translateX(-50%);
+      width: 400px; height: 200px;
+      background: linear-gradient(135deg, hsla(217, 90%, 56%, 0.15) 0%, hsla(269, 39%, 50%, 0.15) 100%);
+      border-radius: 50%; filter: blur(100px);
+      animation: glowBlob 5s ease-in-out infinite;
+    }
+    .cta-inner { position: relative; z-index: 1; }
+    .cta-title { font-size: clamp(2rem,4vw,2rem); font-weight: 800; letter-spacing: -.025em; line-height: 1.15; margin-bottom: 1rem; }
+    .cta-sub { font-size: 1.0625rem; color: var(--muted-fg); max-width: 32rem; margin: 0 auto 2rem; }
+    .cta-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
 
-                <div
-                  class="d-flex flex-column-reverse flex-md-row-reverse align-items-center gap-4 scroll-fade border rounded-4 shadow-sm p-3"
-                >
-                  <div
-                    class="overflow-hidden"
-                    style="
-                      flex-shrink: 0;
-                      border-top-right-radius: 0.75rem;
-                      border-bottom-right-radius: 0.75rem;
-                    "
-                  >
-                    <img
-                      src="{% static 'users/img/For Agencies.png' %}"
-                      class="img-fluid w-100"
-                      style="max-width: 250px; height: 150px; object-fit: cover"
-                      alt="Agencies"
-                    />
-                  </div>
-                  <div>
-                    <h5 class="fw-bold mb-2">For Agencies</h5>
-                    <p class="text-muted small mb-0">
-                      Automate content workflows for multiple clients without
-                      compromising personalization.
-                    </p>
-                  </div>
-                </div>
+    /* ── FOOTER ── */
+    footer { 
+      background: #0b0f19; color: #94a3b8; 
+      padding: 5rem 0 2rem; border-top: 1px solid rgba(255,255,255,0.05);
+      position: relative; overflow: hidden;
+    }
+    .footer-grid { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4rem; margin-bottom: 4rem; position: relative; z-index: 2; }
+    .footer-brand-col { flex: 1 1 300px; max-width: 400px; }
+    .footer-links-grid { display: flex; flex-wrap: wrap; gap: 4rem; flex: 2 1 400px; justify-content: flex-end; }
+    .footer-brand-logo { display: flex; align-items: center; gap: .5rem; margin-bottom: 1.25rem; }
+    .footer-desc { font-size: .9rem; line-height: 1.6; color: #eceff3; }
+    .footer-col-title { font-size: .875rem; font-weight: 700; color: #fdfdfd; margin-bottom: 1.25rem; letter-spacing: .02em; }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: .75rem; }
+    .footer-col ul li a { font-size: .875rem; color: #e4e7ec; transition: all .2s; }
+    .footer-col ul li a:hover { color: var(--primary); padding-left: 4px; }
+    .footer-bottom { 
+      border-top: 1px solid rgba(255,255,255,0.05); margin-top: 4rem; padding-top: 2rem; 
+      display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 1rem; 
+      position: relative; z-index: 2;
+    }
+    .footer-copyright { font-size: .8125rem; color: #adb0b4; }
+    .footer-socials { display: flex; gap: 1rem; }
+    .footer-social-icon {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: rgba(255,255,255,0.03);
+      display: flex; align-items: center; justify-content: center;
+      color: #94a3b8; transition: all .3s;
+    }
+    .footer-copyright{
+  color:#FFF;
+}
 
-                <div
-                  class="d-flex flex-column flex-md-row align-items-center gap-4 scroll-fade border rounded-4 shadow-sm p-3"
-                >
-                  <div
-                    class="overflow-hidden"
-                    style="
-                      flex-shrink: 0;
-                      border-top-left-radius: 0.75rem;
-                      border-bottom-left-radius: 0.75rem;
-                    "
-                  >
-                    <img
-                      src="{% static 'users/img/For Freelancers.png' %}"
-                      class="img-fluid w-100"
-                      style="max-width: 250px; height: 150px; object-fit: cover"
-                      alt="Freelancers"
-                    />
-                  </div>
-                  <div>
-                    <h5 class="fw-bold mb-2">For Freelancers</h5>
-                    <p class="text-muted small mb-0">
-                      Land more gigs with polished outreach and consistent
-                      follow-ups.
-                    </p>
-                  </div>
-                </div>
-              </div>
+.jms-link{
+  color:#FFF;
+  text-decoration:none;
+}
 
-              <!-- Column 2 -->
-              <div class="d-flex flex-column gap-4">
-                <div
-                  class="d-flex flex-column-reverse flex-md-row-reverse align-items-center gap-4 scroll-fade border rounded-4 shadow-sm p-3"
-                >
-                  <div
-                    class="overflow-hidden"
-                    style="
-                      flex-shrink: 0;
-                      border-top-right-radius: 0.75rem;
-                      border-bottom-right-radius: 0.75rem;
-                    "
-                  >
-                    <img
-                      src="{% static 'users/img/For Sales Teams.png' %}"
-                      class="img-fluid w-100"
-                      style="max-width: 250px; height: 150px; object-fit: cover"
-                      alt="Sales Teams"
-                    />
-                  </div>
-                  <div>
-                    <h5 class="fw-bold mb-2">For Sales Teams</h5>
-                    <p class="text-muted small mb-0">
-                      Accelerate outreach with AI-generated, context-aware
-                      emails at scale.
-                    </p>
-                  </div>
-                </div>
+.jms-link:hover{
+  color:#4f94b6;
+}
 
-                <div
-                  class="d-flex flex-column flex-md-row align-items-center gap-4 scroll-fade border rounded-4 shadow-sm p-3"
-                >
-                  <div
-                    class="overflow-hidden"
-                    style="
-                      flex-shrink: 0;
-                      border-top-left-radius: 0.75rem;
-                      border-bottom-left-radius: 0.75rem;
-                    "
-                  >
-                    <img
-                      src="{% static 'users/img/For E-Commerce.png' %}"
-                      class="img-fluid w-100"
-                      style="max-width: 250px; height: 150px; object-fit: cover"
-                      alt="E-Commerce"
-                    />
-                  </div>
-                  <div>
-                    <h5 class="fw-bold mb-2">For E-Commerce</h5>
-                    <p class="text-muted small mb-0">
-                      Recover carts, upsell, and reactivate customers on
-                      autopilot.
-                    </p>
-                  </div>
-                </div>
+/* Mobile view */
+@media (max-width:768px){
+   .footer-copyright{
+    font-size:18px;   /* Mobile ma font moto */
+    text-align:center;
+  }
 
-                <div
-                  class="d-flex flex-column-reverse flex-md-row-reverse align-items-center gap-4 scroll-fade border rounded-4 shadow-sm p-3"
-                >
-                  <div
-                    class="overflow-hidden"
-                    style="
-                      flex-shrink: 0;
-                      border-top-right-radius: 0.75rem;
-                      border-bottom-right-radius: 0.75rem;
-                    "
-                  >
-                    <img
-                      src="{% static 'users/img/For Enterprise Ops.png' %}"
-                      class="img-fluid w-100"
-                      style="max-width: 250px; height: 150px; object-fit: cover"
-                      alt="Enterprise"
-                    />
-                  </div>
-                  <div>
-                    <h5 class="fw-bold mb-2">For Enterprise Ops</h5>
-                    <p class="text-muted small mb-0">
-                      Ensure compliance, localization, and brand consistency at
-                      global scale.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+  .built-by{
+    display:block;
+    margin-top:6px;
 
-        <!-- Company logos -->
-        <section class="bg-white">
-          <div class="container text-center">
-            <div
-              class="d-flex justify-content-center align-items-center flex-wrap mb-3 py-3"
-            >
-              <img
-                src="{% static 'users/img/25-e1750936423555.webp' %}"
-                alt="Gesia"
-                style="
-                  height: 100px;
-                  object-fit: contain;
-                  filter: grayscale(0.2);
-                  transition: transform 0.3s ease;
-                "
-                onmouseover="this.style.transform='scale(1.1)'"
-                onmouseout="this.style.transform='scale(1)'"
-              />
-              <img
-                src="{% static 'users/img/Nasscom-logo-svg.svg.png' %}"
-                alt="nasscom"
-                style="
-                  margin: 0 100px;
-                  height: 65px;
-                  object-fit: contain;
-                  filter: grayscale(0.2);
-                  transition: transform 0.3s ease;
-                "
-                onmouseover="this.style.transform='scale(1.1)'"
-                onmouseout="this.style.transform='scale(1)'"
-              />
+  }
+}
+    .footer-social-icon:hover { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; transform: translateY(-3px); }
+    .footer-glow {
+      position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 80%; height: 300px;
+      background: radial-gradient(ellipse at bottom, rgba(102,126,234,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    @media (max-width: 900px) { 
+      .footer-links-grid { justify-content: flex-start; }
+    }
+    @media (max-width: 600px) { }
+    /* Stagger delays */
+    .d1 { transition-delay: .05s; } .d2 { transition-delay: .1s; } .d3 { transition-delay: .15s; }
+    .d4 { transition-delay: .2s; }  .d5 { transition-delay: .25s; } .d6 { transition-delay: .3s; }
+  </style>
+</head>
+<body>
 
-              <img
-                src="{% static 'users/img/26-e1750936514221.webp' %}"
-                alt="isf"
-                style="
-                  height: 100px;
-                  object-fit: contain;
-                  filter: grayscale(0.2);
-                  transition: transform 0.3s ease;
-                "
-                onmouseover="this.style.transform='scale(1.1)'"
-                onmouseout="this.style.transform='scale(1)'"
-              />
-            </div>
-          </div>
-        </section>
-        <!-- Final CTA -->
-        <section
-          class="text-center py-5 text-white"
-          style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-        >
-          <div class="container">
-            <h6
-              class="text-uppercase fw-semibold mb-2"
-              style="letter-spacing: 1px"
-            >
-              Start Your Journey
-            </h6>
-            <h2 class="fw-bold mb-3 display-5">
-              Transform Your Sales Outreach with AI
-            </h2>
-            <p class="lead mb-4">
-              Say goodbye to generic emails and hello to intelligent,
-              personalized messaging that converts.
-            </p>
-            <div class="d-flex justify-content-center flex-wrap gap-3">
-              <a
-                href="{% url 'login' %}"
-                class="btn btn-outline-dark rounded-pill mt-3 px-4 py-2 text-white border-white"
-                style="transition: all 0.3s ease"
-                onmouseover="this.classList.remove('btn-outline-dark'); this.classList.add('btn-dark'); this.style.color='white';"
-                onmouseout="this.classList.remove('btn-dark'); this.classList.add('btn-outline-dark'); this.style.color='black';"
-              >
-                Get Started Now
-              </a>
-<!--              <a-->
-<!--                href="#"-->
-<!--                class="btn btn-outline-dark rounded-pill mt-3 px-4 py-2 text-white border-white"-->
-<!--                style="transition: all 0.3s ease"-->
-<!--                onmouseover="this.classList.remove('btn-outline-dark'); this.classList.add('btn-dark'); this.style.color='white';"-->
-<!--                onmouseout="this.classList.remove('btn-dark'); this.classList.add('btn-outline-dark'); this.style.color='black';"-->
-<!--              >-->
-<!--                Request a demo-->
-<!--              </a>-->
-            </div>
-          </div>
-        </section>
+<!-- ═══════════════ NAVBAR ═══════════════ -->
+<nav>
+  <div class="container nav-inner">
+    <a href="#" class="nav-logo">
+      <img src="{% static 'users/img/LOgo (9) (1).png' %}" alt="SellSharp Logo" width="120" >
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#integrations">Integrations</a></li>
+      <li><a href="#use-cases">Use Cases</a></li>
+      <li><a href="#analytics">Analytics</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="https://sellsharp.co/users/login/"  class="btn-primary">Start Free Trial</a>
+    </div>
+    <button class="hamburger" id="hamburger" aria-label="Menu">
+      <svg id="menu-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <svg id="close-icon" style="display:none" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="#features">Features</a>
+    <a href="#integrations">Integrations</a>
+    <a href="#use-cases">Use Cases</a>
+    <a href="#analytics">Analytics</a>
+    <a href="https://sellsharp.co/users/login/"  class="btn-primary">Start Free Trial</a>
+  </div>
+</nav>
 
-        <!-- Footer -->
-        <footer class="bg-dark text-white pt-5 pb-4">
-          <div class="container">
-            <div class="row align-items-center justify-content-between gy-4">
-              <!-- Logo and About -->
-              <div class="col-md-7 text-center text-md-start">
-                <img
-                  src="{% static 'users/img/logo_2.webp' %}"
-                  alt="SellSharp Logo"
-                  width="160"
-                  class="mb-3"
-                />
-                <p class="text-white-50 small mb-2">
-                  <i class="fas fa-bolt me-2 text-primary"></i>
-                  SellSharp empowers sales teams to craft personalized,
-                  AI-driven emails that convert.
-                </p>
-                <p class="text-white-50 small mb-2">
-                  <i class="fas fa-brain me-2 text-primary"></i>
-                  Our AI adapts and improves continuously from every sales
-                  interaction.
-                </p>
-                <p class="text-white-50 small">
-                  <i class="fas fa-envelope-open-text me-2 text-primary"></i>
-                  Automate outreach, boost conversions, and drive efficiency at
-                  scale.
-                </p>
-              </div>
+<!-- ═══════════════ HERO ═══════════════ -->
+<section id="hero">
+  <div class="hero-grid-bg"></div>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
 
-              <!-- Partner Logos -->
-              <div class="col-md-4 text-center text-md-end">
-                <div
-                  class="d-flex justify-content-center justify-content-md-end align-items-center gap-4"
-                >
-                  <img
-                    src="{% static 'users/img/25-e1750936423555.webp' %}"
-                    alt="Gesia"
-                    style="height: 60px; object-fit: contain"
-                  />
-                  <img
-                    src="{% static 'users/img/Nasscom-logo-svg.svg.png' %}"
-                    alt="Nasscom"
-                    style="height: 30px; object-fit: contain"
-                  />
-                  <img
-                    src="{% static 'users/img/26-e1750936514221.webp' %}"
-                    alt="ISF"
-                    style="height: 60px; object-fit: contain"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <hr class="border-secondary mt-4" />
-            <div class="text-center">
-              <p class="small text-white-50 mb-0">
-                &copy; 2025 SellSharp — Built with ❤️ by JMS Advisory |
-                <a
-                  href="{% url 'privacy-policy' %}"
-                  class="text-white text-decoration-underline"
-                  >Privacy Policy</a>
-                  <span class="mx-2.5">|</span>
-                <a
-                  href="{% url 'Customized-Learning-Solutions' %}"
-                  class="text-white text-decoration-underline"
-                  >Learning Hub</a>
-                  <span class="mx-2.5">|</span>
-                <a
-                  href="{% url 'refund-policy' %}"
-                  class="text-white text-decoration-underline"
-                  >Refund Policy</a
-                >
-                <span class="mx-2.5">|</span>
-          <a
-            href="{% url 'terms-conditions' %}"
-            class="text-white text-decoration-underline"
-            >Terms & Conditions</a
-          >
-              </p>
-            </div>
-          </div>
-        </footer>
+  <div class="container hero-inner">
+    <!-- Left -->
+    <div>
+      <div class="hero-badge">
+        
+      </div>
+      <h1 class="hero-title">
+        <span class="gradient-text-blue">Automate</span> Your<span class="gradient-text-blue"> Sales </span>
+         <br>Emails with<span class="gradient-text-blue"> AI </span>
+      </h1>
+      <p class="hero-subtitle">
+        Generate personalized emails, automate follow-ups, and manage outreach campaigns from one powerful platform, while sending emails directly from your own Google or Microsoft account. 
+      </p>
+      <div class="hero-cta">
+        <a href="https://sellsharp.co/users/login/"  class="btn-primary btn-primary-lg">
+          Start Free Trial
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="https://outlook.office365.com/book/BookaMeetingwithJMSConsultants@jmsadvisory.in/?ismsaljsauthenabled=true" target="_blank" class="btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Book Demo
+        </a>
+      </div>
+      <div class="hero-meta">
+        <div class="hero-meta-item"><div class="hero-meta-dot"></div> Free 500 Credits</div>
+        <div class="hero-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          Setup in 2 minutes
+        </div>
       </div>
     </div>
-    <script>
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("active");
-            } else {
-              entry.target.classList.remove("active");
-            }
-          });
-        },
-        { threshold: 0.1 }
-      );
-      document
-        .querySelectorAll(".scroll-fade")
-        .forEach((el) => observer.observe(el));
-    </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- <script src="{% static 'frontend/js/main.js' %}"></script> -->
-  </body>
+    <!-- Right: floating cards -->
+    <div class="hero-cards">
+      <!-- Card 1: Email Generator -->
+      <div class="float-card fc-1">
+        <div class="fc-header">
+          <div class="fc-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>
+          </div>
+          <div>
+            <div class="fc-title">AI Email Generator</div>
+            <div class="fc-sub">3 drafts ready</div>
+          </div>
+        </div>
+        <div class="fc-line" style="width:100%"></div>
+        <div class="fc-line" style="width:80%"></div>
+        <div class="fc-line fc-line-blue"></div>
+      </div>
+
+      <!-- Card 2: Campaign Analytics -->
+      <div class="float-card fc-2">
+        <div class="fc-header">
+          <div class="fc-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+          </div>
+          <div><div class="fc-title">Campaign Analytics</div></div>
+        </div>
+        <div class="bars" id="hero-bars"></div>
+      </div>
+
+      <!-- Card 3: Lead Scoring -->
+      <div class="float-card fc-3">
+        <div class="fc-header">
+          <div class="fc-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+          </div>
+          <div>
+            <div class="fc-title">Lead Scoring</div>
+            <div class="fc-sub">12 hot leads</div>
+          </div>
+        </div>
+        <div class="score-tags">
+          <span class="score-tag">A+</span>
+          <span class="score-tag">A</span>
+          <span class="score-tag">B+</span>
+        </div>
+      </div>
+
+      <!-- Card 4: Open Rate -->
+      <div class="float-card fc-4">
+        <div class="fc-header">
+          <div class="fc-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <div>
+            <div class="fc-title">Open Rate</div>
+            <div class="fc-big-num gradient-text-blue">68.4%</div>
+          </div>
+        </div>
+        <div class="fc-trend">↑ 12% this week</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ FEATURES ═══════════════ -->
+<section id="features" style="padding: 0.5rem 0;">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-tag">Features</div>
+      <h2 class="section-title">Everything You Need to Manage Sales Outreach</h2>
+      <p class="section-sub">A complete system to generate, send, manage, and track outreach emails from one platform. </p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal d1">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>
+        </div>
+        <div class="feature-title">Multi-Account Email Sending</div>
+        <p class="feature-desc">Connect and send emails from multiple Google accounts directly through the platform.</p>
+      </div>
+      <div class="feature-card reveal d2">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="feature-title">Automated Follow-Up Reminders </div>
+        <p class="feature-desc">Automatically schedule follow-up emails until a reply is received.  </p>
+      </div>
+      <div class="feature-card reveal d3">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        </div>
+        <div class="feature-title">Lead Import & CSV Export </div>
+        <p class="feature-desc">Import lead lists through campaigns and export lead data as CSV files. </p>
+      </div>
+      <div class="feature-card reveal d4">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z"/><path d="m12 15-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+        </div>
+        <div class="feature-title">Contact & Company Search Filters </div>
+        <p class="feature-desc">Find and target prospects using filters for people and company searches.</p>
+      </div>
+      <div class="feature-card reveal d5">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        </div>
+        <div class="feature-title">Duplicate Email Detection</div>
+        <p class="feature-desc">Get alerts when attempting to send duplicate outreach emails to the same recipient.</p>
+      </div>
+      <div class="feature-card reveal d6">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="12" r="10"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="feature-title">Email Engagement Tracking </div>
+        <p class="feature-desc">Monitor read and unread email activity to measure outreach engagement. </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ AI PLATFORM ═══════════════ -->
+<section id="ai-platform" class="bg-surface">
+  <div class="ai-top-blob"></div>
+  <div class="ai-bot-blob"></div>
+  <div class="ai-grid-overlay"></div>
+  <div class="container ai-inner">
+    <div class="section-header reveal">
+      <div class="section-tag">Intelligence</div>
+      <h2 class="section-title">AI That Powers Smarter Outreach </h2>
+      <p class="section-sub">SellSharp uses AI to help teams create better emails faster and personalize outreach at scale. </p>
+    </div>
+    <div class="pillars-grid">
+      <div class="pillar-card reveal d1">
+        <div class="pillar-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+        </div>
+        <div>
+          <div class="pillar-title">AI Email Generation </div>
+          <p class="pillar-desc">Generate structured sales emails instantly using simple prompts.</p>
+        </div>
+      </div>
+      <div class="pillar-card reveal d2">
+        <div class="pillar-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        </div>
+        <div>
+          <div class="pillar-title">Smart Personalization </div>
+          <p class="pillar-desc">AI adapts email messaging using company and recipient context. </p>
+        </div>
+      </div>
+      <div class="pillar-card reveal d3">
+        <div class="pillar-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="4" height="10"/><rect x="10" y="7" width="4" height="14"/><rect x="17" y="3" width="4" height="18"/><line x1="5" y1="11" x2="5" y2="7"/><path d="M5 7 Q8 5 12 7"/><line x1="12" y1="7" x2="12" y2="3"/><path d="M12 3 Q15 1 19 3"/></svg>
+        </div>
+        <div>
+          <div class="pillar-title">Prompt-Driven Email Creation </div>
+          <p class="pillar-desc">Guide AI with prompts to generate tailored outreach messages quickly.</p>
+        </div>
+      </div>
+      <div class="pillar-card reveal d4">
+        <div class="pillar-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="4" height="10"/><rect x="10" y="7" width="4" height="14"/><rect x="17" y="3" width="4" height="18"/><line x1="5" y1="11" x2="5" y2="7"/><path d="M5 7 Q8 5 12 7"/><line x1="12" y1="7" x2="12" y2="3"/><path d="M12 3 Q15 1 19 3"/></svg>
+        </div>
+        <div>
+          <div class="pillar-title">AI-Assisted Email Editing</div>
+          <p class="pillar-desc">Review and refine generated emails before sending them to prospects. </p>
+        </div>
+      </div>
+    </div>
+    <div class="ai-dots">
+      <div class="ai-dot" style="animation-delay:0s"></div>
+      <div class="ai-dot" style="animation-delay:.3s"></div>
+      <div class="ai-dot" style="animation-delay:.6s"></div>
+      <div class="ai-dot" style="animation-delay:.9s"></div>
+      <div class="ai-dot" style="animation-delay:1.2s"></div>
+      <div class="ai-dot" style="animation-delay:1.5s"></div>
+      <div class="ai-dot" style="animation-delay:1.8s"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ EMAIL INTEGRATION ═══════════════ -->
+<section id="integrations" style="padding:2.5rem 0;" class="bg-surface">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-tag">Integrations</div>
+      <h2 class="section-title">Connect Your Email Accounts</h2>
+      <p class="section-sub">Securely connect your existing email services and send outreach directly from your own inbox. </p>
+    </div>
+    <div class="integration-grid">
+      <!-- Google -->
+      <div class="int-card reveal d1">
+        <div class="int-header">
+          <div class="int-logo">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+            </svg>
+          </div>
+          <div>
+            <div class="int-title">Google Workspace</div>
+            <div class="int-sub">Gmail & Google Workspace</div>
+          </div>
+        </div>
+        <div class="int-features">
+          <div class="int-feat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Secure Google Authentication </div>
+          <div class="int-feat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Multiple Account Support </div>
+          <div class="int-feat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Send Emails from Gmail </div>
+        </div>
+      </div>
+      <!-- Microsoft -->
+      <div class="int-card reveal d2">
+        <div class="int-header">
+          <div class="int-logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <rect x="1" y="1" width="10" height="10" fill="#F25022"/>
+              <rect x="13" y="1" width="10" height="10" fill="#7FBA00"/>
+              <rect x="1" y="13" width="10" height="10" fill="#00A4EF"/>
+              <rect x="13" y="13" width="10" height="10" fill="#FFB900"/>
+            </svg>
+          </div>
+          <div>
+            <div class="int-title">Microsoft 365</div>
+            <div class="int-sub">Outlook & Microsoft 365 </div>
+          </div>
+        </div>
+        <div class="int-features">
+          <div class="int-feat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Secure Microsoft Login </div>
+          <div class="int-feat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Send Emails from Outlook </div>
+          <div class="int-feat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Reliable Email Delivery </div>
+        </div>
+      </div>
+    </div>
+    <div class="security-row reveal">
+      <div class="security-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        256-bit encryption
+      </div>
+      <div class="security-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        Real-time sync
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ PERSONALIZATION ═══════════════ -->
+<section id="personalization" class="bg-surface" style="padding:2.5rem 0;">
+  <div class="container">
+    <div class="person-grid">
+      <div class="reveal-l">
+        <div class="person-tag">Personalization</div>
+        <h2 class="person-title">Personalized Outreach That Fe els Natural </h2>
+        <p class="person-sub">SellSharp helps teams create personalized emails at scale by combining AI-generated content with customizable messaging and professional email elements. </p>
+        <div class="person-features">
+          <div class="person-feat">
+            <div class="person-feat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <span class="person-feat-label">AI-generated personalized emails </span>
+          </div>
+          <div class="person-feat">
+            <div class="person-feat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <span class="person-feat-label">Prompt-based email customization </span>
+          </div>
+          <div class="person-feat">
+            <div class="person-feat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+            <span class="person-feat-label">Custom email signatures </span>
+          </div>
+          <div class="person-feat">
+            <div class="person-feat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg></div>
+            <span class="person-feat-label">Editable emails before sending </span>
+          </div>
+        </div>
+      </div>
+      <!-- Editor mockup -->
+      <div class="editor-mock reveal-r">
+        <div class="mac-dots">
+          <div class="mac-dot mac-dot-red"></div>
+          <div class="mac-dot mac-dot-yellow"></div>
+          <div class="mac-dot mac-dot-green"></div>
+          
+        </div>
+        <div class="editor-row">
+          <span class="editor-label">To:</span>
+          <span class="pill-tag">{{first_name}}</span>
+          <span class="editor-label">at</span>
+          <span class="pill-tag">{{company}}</span>
+        </div>
+        <div class="editor-body">
+          <p style="color:var(--fg);">Hi <span class="pill-tag">{{first_name}}</span>,</p>
+          <p>I noticed <span class="pill-tag">{{company}}</span> recently expanded into <span class="pill-tag">{{industry}}</span>. Given your role as <span class="pill-tag">{{job_title}}</span>, I thought you'd find this relevant...</p>
+        </div>
+        <div class="ai-confidence">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+          <span>AI confidence: 94%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ USE CASES ═══════════════ -->
+<section id="use-cases" style="padding:2rem 0;">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-tag">Use Cases</div>
+      <h2 class="section-title">Built for Modern Outreach Teams </h2>
+      <p class="section-sub">SellSharp supports professionals who rely on structured and efficient email communication.</p>
+    </div>
+    <div class="use-cases-grid">
+      <div class="feature-card reveal d1">
+        <div class="feature-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg></div>
+        <div class="feature-title">Sales Teams</div>
+        <p class="feature-desc">Generate personalized outreach emails and automate follow-ups to engage prospects consistently. </p>
+      </div>
+      <div class="feature-card reveal d2">
+        <div class="feature-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+        <div class="feature-title">Business Development Professionals </div>
+        <p class="feature-desc">Reach new clients faster with AI-generated emails and campaign-based outreach. </p>
+      </div>
+      <div class="feature-card reveal d3">
+        <div class="feature-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg></div>
+        <div class="feature-title">Marketing Teams </div>
+        <p class="feature-desc">Run email campaigns and track engagement to improve lead communication. </p>
+      </div>
+      <div class="feature-card reveal d4">
+        <div class="feature-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div>
+        <div class="feature-title">Recruitment Teams </div>
+        <p class="feature-desc">Connect with candidates and companies using structured outreach emails. </p>
+      </div>
+      <div class="feature-card reveal d5">
+        <div class="feature-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg></div>
+        <div class="feature-title">Startup Founders </div>
+        <p class="feature-desc">Scale early-stage outreach and partnership emails without spending hours writing messages. </p>
+      </div>
+      <div class="feature-card reveal d6">
+        <div class="feature-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+        <div class="feature-title">Consultants & Freelancers </div>
+        <p class="feature-desc">Send professional outreach emails and manage follow-ups with potential clients. </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ ANALYTICS ═══════════════ -->
+<section id="analytics" class="bg-surface" style="padding:2.5rem 0;">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-tag">Analytics</div>
+      <h2 class="section-title">Understand Your Email Engagement</h2>
+      <p class="section-sub" style="padding: 0px 45px; font-size: 1rem;">Track read and unread email activity to understand how prospects engage with your outreach and improve campaign performance over time. </p>
+    </div>
+    <div class="dashboard-mock reveal-scale">
+      <div class="dash-topbar">
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <div style="width:12px;height:12px;border-radius:50%;background:rgba(239,68,68,.6);"></div>
+          <div style="width:12px;height:12px;border-radius:50%;background:rgba(234,179,8,.6);"></div>
+          <div style="width:12px;height:12px;border-radius:50%;background:var(--primary-30);"></div>
+          
+        </div>
+        <div class="dash-topbar-label">Last 30 days</div>
+      </div>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-header"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span>Open Rate</span></div>
+          <div class="metric-val">68.4%</div>
+          <div class="metric-change">↑ +12%</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-header"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg><span>Click Rate</span></div>
+          <div class="metric-val">24.2%</div>
+          <div class="metric-change">↑ +8%</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-header"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg><span>Conversion</span></div>
+          <div class="metric-val">8.7%</div>
+          <div class="metric-change">↑ +15%</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-header"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Lead Score</span></div>
+          <div class="metric-val">92/100</div>
+          <div class="metric-change">↑ +5</div>
+        </div>
+      </div>
+      <div class="chart-area">
+        <div class="chart-bars" id="analytics-bars"></div>
+        <div class="chart-labels">
+          <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span>
+          <span>May</span><span>Jun</span><span>Jul</span><span>Aug</span>
+          <span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ CTA ═══════════════ -->
+<section id="cta" style="padding:2rem 0;">
+  <div class="container">
+    <div class="cta-card reveal-scale">
+      <div class="cta-glow"></div>
+      <div class="cta-inner">
+        <h2 class="cta-title">Start Smarter Sales Outreach Today </h2>
+        <p class="cta-sub">Generate better emails, automate follow-ups, and manage outreach campaigns from one intelligent platform. </p>
+        <div class="cta-actions">
+          <a href="https://sellsharp.co/users/login/"  class="btn-primary btn-primary-lg">
+            Start Free Trial
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer>
+  <div class="footer-glow"></div>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand-col">
+        <div class="footer-brand-logo">
+          <img src="{% static 'users/img/LOgo (9) (1).png' %}" alt="SellSharp Logo" style="width:150px; margin-top: -30px;">
+        </div>
+        <p class="footer-desc">SellSharp helps sales teams generate personalized, AI-powered emails and manage outreach more efficiently from a single platform.</p>
+        <p class="footer-desc" style="margin-top:1rem;">Create campaigns, automate follow-ups, track engagement, and send emails directly from your Google or Microsoft account to streamline your entire sales email workflow. </p>
+      </div>
+      <div class="footer-links-grid">
+        <div class="footer-col">
+          <div class="footer-col-title">Product</div>
+          <ul style="color: #fafafa;"><li><a href="#features">Features</a></li><li><a href="#integrations">Integrations</a></li><li><a href="#analytics">Analytics</a></li>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-title">Benefits</div>
+          <ul style="font-size: .875rem; color: #e4e7ec; transition: all .2s;"><li>Email Generator</li><li>Campaign</li><li>Emails</li><li>Leads</li></ul>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-title">Legal</div>
+          <ul><li><a href="https://sellsharp.co/users/privacy-policy/">Privacy Policy</a></li><li><a href="https://sellsharp.co/users/refund-policy/">Refund Policy</a></li><li><a href="https://sellsharp.co/users/terms-conditions/">Terms & Conditions</a></li><li><a href="https://sellsharp.co/users/Customized-Learning-Solutions/">Learning Hub</a></li></ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copyright">
+  © <span id="year"></span> 
+  <a href="#" class="jms-link">SellSharp</a>. All rights reserved |
+  <span class="built-by"> Built with ❤️ by 
+  <a href="https://jmsadvisory.in/" class="jms-link">JMS Advisory</a></span>
+</p>  
+</div>
+  </div>
+</footer>
+
+<!-- ═══════════════ JS ═══════════════ -->
+<script>
+  // ── Hamburger ──
+  const hamburger = document.getElementById('hamburger');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const menuIcon = document.getElementById('menu-icon');
+  const closeIcon = document.getElementById('close-icon');
+  hamburger.addEventListener('click', () => {
+    const open = mobileMenu.classList.toggle('open');
+    menuIcon.style.display = open ? 'none' : 'block';
+    closeIcon.style.display = open ? 'block' : 'none';
+  });
+
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  // ── Build hero bar chart ──
+  const heroBarData = [40, 65, 45, 80, 55, 90, 70, 85];
+  const heroBarsEl = document.getElementById('hero-bars');
+  heroBarData.forEach((h, i) => {
+    const bar = document.createElement('div');
+    bar.className = 'bar' + (i === 5 ? ' bar-highlight' : '');
+    bar.style.height = h + '%';
+    heroBarsEl.appendChild(bar);
+  });
+
+  // ── Build analytics bar chart ──
+  const analyticsBarData = [30, 45, 35, 60, 50, 75, 65, 80, 70, 90, 85, 95];
+  const analyticsBarsEl = document.getElementById('analytics-bars');
+  analyticsBarData.forEach((h, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'chart-bar-wrap';
+    const bar = document.createElement('div');
+    bar.className = 'chart-bar' + (i >= 9 ? ' highlight' : '');
+    bar.style.height = '0%';
+    bar.style.transition = `height .6s ease ${.5 + i * .06}s`;
+    wrap.appendChild(bar);
+    analyticsBarsEl.appendChild(wrap);
+    setTimeout(() => { bar.style.height = h + '%'; }, 100);
+  });
+
+  // ── Scroll-reveal ──
+  const observerOptions = { threshold: 0.1, rootMargin: '-60px' };
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('revealed');
+      }
+    });
+  }, observerOptions);
+  document.querySelectorAll('.reveal, .reveal-l, .reveal-r, .reveal-scale').forEach(el => observer.observe(el));
+
+  // ── Navbar shadow on scroll ──
+  window.addEventListener('scroll', () => {
+    document.querySelector('nav').style.boxShadow = window.scrollY > 20
+      ? '0 4px 20px rgba(0,0,0,0.07)'
+      : 'none';
+  });
+</script>
+</body>
 </html>
-<!-- main.f855e6bc.css -->
- <!-- main.80467040.js -->
-  <!-- logo.6ce24c58023cc2f8fd88fe9d219db6c6.svg -->
