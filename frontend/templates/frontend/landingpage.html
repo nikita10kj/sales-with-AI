@@ -7,7 +7,7 @@
   <title>SellSharp</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="icon" type="image/x-icon" href="{% static 'users/img/favicon (1).png' %}">
+  <link rel="icon" type="image/x-icon" href="{% static 'users/img/shellsharp.png' %}">
   <style>
     /* ── CSS Variables ── */
     :root {
@@ -754,9 +754,9 @@
       <li><a href="#analytics">Analytics</a></li>
     </ul>
     <div class="nav-actions">
-      <a href="https://sellsharp.co/users/login/" class="btn-primary">Login Today</a>
-      {% comment %} <a href="{% url 'login' %}" class="btn-primary">Login Today</a> {% endcomment %}
-
+      {% comment %} <a href="https://sellsharp.co/users/login/" class="btn-primary">Login Today</a> {% endcomment %}
+      <a href="{% url 'login' %}" class="btn-primary">Login Today</a>
+      
     </div>
     <button class="hamburger" id="hamburger" aria-label="Menu">
       <svg id="menu-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>

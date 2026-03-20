@@ -81,3 +81,67 @@ class EmailSubscription(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(null=True)
 
+
+from django.db import models
+from django.contrib.auth.models import User
+
+
+class SavedPeopleList(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="people_lists")
+    name = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "name")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.name
+
+
+class SavedPeopleEntry(models.Model):
+    saved_list = models.ForeignKey(SavedPeopleList, on_delete=models.CASCADE, related_name="entries")
+    first = models.CharField(max_length=100, blank=True)
+    last = models.CharField(max_length=100, blank=True)
+    linkedin = models.URLField(max_length=500, blank=True)
+    company = models.CharField(max_length=255, blank=True)
+    company_website = models.URLField(max_length=500, blank=True)
+    job_title = models.CharField(max_length=255, blank=True)
+    institution = models.CharField(max_length=255, blank=True)
+    location = models.CharField(max_length=255, blank=True)
+    company_headquarter = models.CharField(max_length=255, blank=True)
+    email = models.CharField(max_length=255, blank=True)
+    phone = models.CharField(max_length=14,blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("saved_list", "linkedin")
+
+    def __str__(self):
+        return f"{self.first} {self.last}".strip()
+
+
+class SavedCompanyEntry(models.Model):
+    saved_list = models.ForeignKey(
+        SavedPeopleList,
+        on_delete=models.CASCADE,
+        related_name="company_entries"
+    )
+    name = models.CharField(max_length=255, blank=True)
+    linkedin_url = models.URLField(blank=True)
+    website = models.URLField(blank=True)
+    industry = models.CharField(max_length=255, blank=True)
+    domain = models.CharField(max_length=255, blank=True)
+    revenue = models.CharField(max_length=255, blank=True)
+    specialties = models.TextField(blank=True)
+    headquarter = models.CharField(max_length=255, blank=True)
+    location = models.CharField(max_length=255, blank=True)
+    company_market = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.name or "Unnamed Company"
+

@@ -34,6 +34,11 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
 
+class BlockDirectAccessMixin:
+    def dispatch(self, request, *args, **kwargs):
+        if request.method == "GET" and not request.META.get("HTTP_REFERER"):
+            return redirect('/')
+        return super().dispatch(request, *args, **kwargs)
 
 @requires_csrf_token
 def csrf_failure(request, reason=""):
@@ -391,7 +396,8 @@ class ResendOTPView(View):
         messages.success(request, "A new OTP has been sent to your email.")
         return redirect('verify-otp')
 
-
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
 class UserDetailsView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = CustomUser
     fields = [
@@ -414,23 +420,32 @@ class UserDetailsView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     # Override get_form to sanitize URL fields before form validation
     def get_form(self, form_class=None):
-        print("→ get_form called!")  # Debug print
+        print("→ get_form called!")
         form = super().get_form(form_class)
 
-        # If the request is POST, modify the form data before validation
+        # Only modify data when POST request
         if self.request.method == "POST":
-            # Make the POST data mutable
             data = self.request.POST.copy()
+            validator = URLValidator()
 
-            # Normalize each URL field and print debug info
             for field in ['company_url', 'company_linkedin_url', 'user_linkedin_url']:
                 original = data.get(field)
                 normalized = self.normalize_url(original)
-                data[field] = normalized
-                print(f"{field}: '{original}' → '{normalized}'")  # Debug print
 
-            # Re-create the form with cleaned data
-            form = form.__class__(data, instance=self.get_object(), files=self.request.FILES)
+                try:
+                    if normalized:
+                        validator(normalized)
+                except ValidationError:
+                    form.add_error(field, "Enter a valid URL.")
+
+                data[field] = normalized
+
+            # recreate form with updated data
+            form = form.__class__(
+                data,
+                instance=self.get_object(),
+                files=self.request.FILES
+            )
 
         return form
 
@@ -488,8 +503,28 @@ class UserDetailsView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                 services_data[idx]['product_usp'] = self.request.POST.get(f'product_usp_{idx}', '').strip()
 
         # Save valid services
+        # for service in services_data.values():
+        #     if service.get('service_name') and service.get('product_url'):
+        #         ProductService.objects.create(
+        #             user=user,
+        #             service_name=service['service_name'],
+        #             product_url=service['product_url'],
+        #             product_usp=service.get('product_usp', '')
+        #         )
+
+        validator = URLValidator()
+
         for service in services_data.values():
             if service.get('service_name') and service.get('product_url'):
+                try:
+                    validator(service['product_url'])
+                except ValidationError:
+                    messages.error(
+                        self.request,
+                        f"Invalid URL for service: {service.get('service_name')}"
+                    )
+                    return self.form_invalid(form)
+
                 ProductService.objects.create(
                     user=user,
                     service_name=service['service_name'],
@@ -503,8 +538,7 @@ class UserDetailsView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
         return response
 
-
-class ProfileView(LoginRequiredMixin, View):
+class ProfileView(BlockDirectAccessMixin,LoginRequiredMixin, View):
 
     def normalize_url(self, url):
         if url and not url.startswith(('http://', 'https://')):
@@ -659,10 +693,50 @@ class ProfileView(LoginRequiredMixin, View):
             messages.success(request, "Knowledge Base saved successfully!")
             return redirect('profile')
         
+        # elif 'signature_submit' in request.POST:
+        #     old_sigs = list(Signature.objects.filter(user=user).order_by('id'))
+        #     old_photos = {i: s.photo for i, s in enumerate(old_sigs)}
+
+        #     Signature.objects.filter(user=user).delete()
+
+        #     for key, value in request.POST.items():
+        #         if key.startswith('signature_') and not key.startswith('signature_name_') and value.strip():
+        #             idx = int(key.split('_')[1])
+
+        #             name = request.POST.get(f'signature_name_{idx}', '').strip()
+        #             photo = request.FILES.get(f'signature_photo_{idx}')
+
+        #             if not photo:
+        #                 photo = old_photos.get(idx)
+
+        #             Signature.objects.create(
+        #                 user=user,
+        #                 name=name,
+        #                 signature=value.strip(),
+        #                 photo=photo
+        #             )
+
+            # messages.success(request, "Signatures saved successfully!")
+            # return redirect('profile')
+
         elif 'signature_submit' in request.POST:
             old_sigs = list(Signature.objects.filter(user=user).order_by('id'))
             old_photos = {i: s.photo for i, s in enumerate(old_sigs)}
 
+            has_signature = False
+
+            # 🔍 Check if at least one signature exists
+            for key, value in request.POST.items():
+                if key.startswith('signature_') and not key.startswith('signature_name_') and value.strip():
+                    has_signature = True
+                    break
+
+            # ❌ No signature case
+            if not has_signature:
+                messages.error(request, "No signature added")
+                return redirect('profile')
+
+            # ✅ If signature exists → then delete & save
             Signature.objects.filter(user=user).delete()
 
             for key, value in request.POST.items():
@@ -708,7 +782,7 @@ class PrivacyPolicyView(View):
     def get(self, request):
         return render(request, self.template_name)
 
-class LearningHubView(View):
+class LearningHubView(BlockDirectAccessMixin,View):
     template_name='users/learninghub.html'
 
     def get(self, request):
@@ -718,12 +792,12 @@ class TermsConditionsView(View):
 
     def get(self, request):
         return render(request, self.template_name)
-class RefundPolicyView(View):
+class RefundPolicyView(BlockDirectAccessMixin,View):
     template_name='users/refundpolicy.html'
 
     def get(self, request):
         return render(request, self.template_name)
-class PricingView(View):
+class PricingView(BlockDirectAccessMixin,View):
     template_name = "users/pricing.html"
 
     def get(self, request):
@@ -868,7 +942,7 @@ def razorpay_verify_payment(request):
     return JsonResponse({"status": "success", "credits_added": order.credits, "new_balance": wallet.credits})
 
 
-class SupportView(LoginRequiredMixin, FormView):    
+class SupportView(BlockDirectAccessMixin,LoginRequiredMixin, FormView):    
     template_name = "users/support.html"    
     form_class = SupportForm    
     def get_context_data(self, **kwargs):        
@@ -945,7 +1019,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .models import CustomUser
 
 
-class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class AdminDashboardView(BlockDirectAccessMixin,LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = "users/admin_dashboard.html"
 
     def test_func(self):

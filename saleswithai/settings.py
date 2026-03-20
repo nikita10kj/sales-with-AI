@@ -29,7 +29,7 @@ SECRET_KEY = os.environ['SECRET']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
-ALLOWED_HOSTS = ['fairly-whole-hawk.ngrok-free.app','localhost','sellsmart-dvdhbme5h6eud4hz.centralindia-01.azurewebsites.net','www.sellsharp.co', 'sellsharp.co','20.192.98.161', '127.0.0.1']
+ALLOWED_HOSTS = ['reginia-exfoliative-un.ngrok-free.dev','fairly-whole-hawk.ngrok-free.app','localhost','sellsmart-dvdhbme5h6eud4hz.centralindia-01.azurewebsites.net','www.sellsharp.co', 'sellsharp.co','20.192.98.161', '127.0.0.1']
 MS_GRAPH_CLIENT_STATE = "superSecret123jms"
 SITE_ID = 1
 
@@ -38,6 +38,8 @@ SITE_URL = "http://127.0.0.1:8000"
 
 RAZORPAY_KEY_ID="rzp_live_SC3leksBzXMUTY"
 RAZORPAY_KEY_SECRET="5wHpeUYjmXZCKbiRMbA8LR0p"
+
+REDROB_TOKEN = os.environ.get("REDROB_TOKEN", "")
 
 # Application definition
 
@@ -296,7 +298,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ['EMAIL_HOST_USER']
 EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
-DEFAULT_FROM_EMAIL = f"Sales with AI <{os.environ['EMAIL_HOST_USER']}>"
+DEFAULT_FROM_EMAIL = f"Sellsharp <{os.environ['EMAIL_HOST_USER']}>"
 # EMAIL_HOST = 'smtp.sendgrid.net'
 # EMAIL_PORT = 587
 # EMAIL_USE_TLS = True

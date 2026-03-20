@@ -20,7 +20,7 @@ from django.contrib.auth import views as auth_views
 from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
-from users.views import thirdparty_redirect
+from users.views import thirdparty_redirect,PrivacyPolicyView,TermsConditionsView
  
 
 urlpatterns = [
@@ -32,6 +32,8 @@ urlpatterns = [
     path('generator/', include('generate_email.urls')),
     path('', include('frontend.urls')), 
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('privacypolicy/',PrivacyPolicyView.as_view()),
+    path('termsconditions/',TermsConditionsView.as_view()),
 
 ]
 

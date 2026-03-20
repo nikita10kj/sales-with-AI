@@ -8,10 +8,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin,UserPassesTestMixin
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import FormView, View,TemplateView,ListView,DetailView
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 from .genai_email import get_response
 from .models import TargetAudience, SentEmail, ReminderEmail, EmailSubscription
 from users.models import ProductService, ActivityLog,Signature,UserWallet
 import json
+import datetime
 from django.http import HttpResponse
 from django.db.models import Q
 from .utils import sendGeneratedEmail, create_subscription, refresh_microsoft_token, MicrosoftEmailSendError
@@ -31,7 +33,30 @@ from urllib.parse import quote, unquote
 import numpy as np
 import csv
 import requests
-from users.models import EmailAttachment 
+from users.models import EmailAttachment
+from django.contrib import messages 
+import requests
+from django.utils.text import slugify
+from .utils import (redrob_search_people,
+redrob_start_bulk_enrichment,
+redrob_get_enrichment,
+redrob_search_by_linkedin_url,
+redrob_search_by_company
+)
+
+from .models import SavedPeopleList, SavedPeopleEntry,SavedCompanyEntry
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+
+
+class BlockDirectAccessMixin:
+    def dispatch(self, request, *args, **kwargs):
+        if request.method == "GET" and not request.META.get("HTTP_REFERER"):
+            return redirect('/')
+        return super().dispatch(request, *args, **kwargs)
+
+def normalize_linkedin_url(url: str) -> str:
+    return (url or "").strip().lower().rstrip("/")
 
 
 #     return latest.token
@@ -60,10 +85,1794 @@ def get_latest_microsoft_token(user):
     except Exception:
         logger.exception("Microsoft token lookup failed")
         return None
+    
+
+# class SearchPeopleByLinkdinView(View):
+#     # permisson_class=[Allowany]
+#     template_name = "generate_email/searchby_linkdin.html"
+
+#     def get(self, request):
+#         return render(request, self.template_name)
+
+#     def post(self, request):
+#         linkedin_url = request.POST.get("linkedin_url", "").strip()
+
+#         context = {
+#             "linkedin_url": linkedin_url,
+#             "person": None,
+#             "error": None
+#         }
+
+#         if not linkedin_url:
+#             context["error"] = "Please enter a LinkedIn URL."
+#             return render(request, self.template_name, context)
+
+#         try:
+#             # Start enrichment
+#             start_resp = redrob_start_bulk_enrichment(
+#                 data=[{
+#                     "linkedinUrl": linkedin_url,
+#                     "enrichEmail": True,
+#                     "enrichPhone": True,
+#                 }],
+#                 name="Single Person Enrichment"
+#             )
+
+#             enrichment_id = start_resp.get("data", {}).get("id")
+
+#             if not enrichment_id:
+#                 context["error"] = "Failed to start enrichment."
+#                 return render(request, self.template_name, context)
+
+#             # Poll for result
+#             result = None
+#             for _ in range(25):
+#                 res = redrob_get_enrichment(enrichment_id)
+#                 status = res.get("data", {}).get("status")
+
+#                 if status == "FINISHED":
+#                     result = res
+#                     break
+
+#                 time.sleep(2)
+
+#             if not result:
+#                 context["error"] = "Enrichment still processing. Please try again."
+#                 return render(request, self.template_name, context)
+
+#             datas = result.get("data", {}).get("datas", [])
+
+#             if not datas:
+#                 context["error"] = "No person data found."
+#                 return render(request, self.template_name, context)
+
+#             p = datas[0]
+#             profile = p.get("profile", {})
+
+#             person = {
+#                 "first": p.get("firstname") or profile.get("firstname", ""),
+#                 "last": p.get("lastname") or profile.get("lastname", ""),
+#                 "linkedin": profile.get("linkedin_url", linkedin_url),
+#                 "emails": p.get("emails", []),
+#                 "phones": p.get("phones", [])
+#             }
+
+#             context["person"] = person
+
+#         except requests.RequestException as e:
+#             context["error"] = f"API request failed: {str(e)}"
+#         except Exception as e:
+#             context["error"] = f"Unexpected error: {str(e)}"
+
+#         return render(request, self.template_name, context)
+
+class SearchPeopleByLinkdinView(View):
+    template_name = "generate_email/searchby_linkdin.html"
+
+    def get(self, request, *args, **kwargs):
+        people = request.session.pop("people", [])
+        error = request.session.pop("error", None)
+        form = request.session.pop("form", {
+            "linkedin_url": "",
+        })
+
+        return render(request, self.template_name, {
+            "people": people,
+            "error": error,
+            "form": form,
+        })
+
+    def post(self, request, *args, **kwargs):
+        people = []
+        error = None
+
+        linkedin_url = request.POST.get("linkedin_url", "").strip()
+
+        form = {
+            "linkedin_url": linkedin_url,
+        }
+
+        payload = {
+            "title": f"Search {linkedin_url}" if linkedin_url else "Search by LinkedIn URL",
+            "linkedinUrl": linkedin_url,
+        }
+
+        try:
+            search_resp = redrob_search_by_linkedin_url(payload)
+            raw_people = search_resp.get("data", [])
+
+            for p in raw_people:
+                company_obj = p.get("company") or {}
+                education_list = p.get("education") or []
+                education_obj = education_list[0] if education_list else {}
+
+                headquarter = company_obj.get("headquarter") or {}
+                headquarter_address = headquarter.get("address") or {}
+
+                company_headquarter = ", ".join(
+                    filter(None, [
+                        headquarter_address.get("city", ""),
+                        headquarter_address.get("geographicArea", ""),
+                        headquarter_address.get("country", ""),
+                    ])
+                )
+
+                                # ── Experience ──
+                def months_to_str(years_float):
+                    if not years_float:
+                        return ""
+                    total_months = round(float(years_float) * 12)
+                    y, m = divmod(total_months, 12)
+                    parts = []
+                    if y: parts.append(f"{y} year{'s' if y != 1 else ''}")
+                    if m: parts.append(f"{m} month{'s' if m != 1 else ''}")
+                    return " ".join(parts) if parts else "< 1 month"
+
+                # ── Experience ── (sorted by orderInProfile: 1 = current/most recent)
+                current_company_id = p.get("companyId")
+                exp_raw = sorted(
+                    (p.get("experience") or []),
+                    key=lambda e: e.get("orderInProfile") or 999
+                )
+
+                def fmt_exp_date(raw):
+                    """Turn '2024-05-01' → 'May 2024', pass plain years through."""
+                    if not raw:
+                        return ""
+                    raw = str(raw).strip()
+                    parts = raw.split("-")
+                    if len(parts) == 3:
+                        try:
+                            
+                            month_names = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                                          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+                            m = int(parts[1])
+                            y = int(parts[0])
+                            return f"{month_names[m]} {y}"
+                        except Exception:
+                            pass
+                    return raw
+
+                # Build company insights from the company object (current employer)
+                def fmt_followers(n):
+                    try:
+                        n = int(n)
+                        if n >= 1000:
+                            return f"{n/1000:.1f}K"
+                        return str(n)
+                    except Exception:
+                        return str(n) if n else "--"
+
+                company_insights = {}
+                if company_obj:
+                    funding = company_obj.get("funding") or {}
+                    company_insights = {
+                        "logo":        company_obj.get("logoUrl", ""),
+                        "size":        company_obj.get("size", "") or "--",
+                        "industry":    company_obj.get("industry", "") or "--",
+                        "revenue":     company_obj.get("revenue", "") or "--",
+                        "specialties": company_obj.get("specialties") or [],
+                        "founded":     company_obj.get("foundedAt", "") or "--",
+                        "followers":   fmt_followers(company_obj.get("followers")),
+                        "last_round":  funding.get("lastRoundDate") or "--",
+                    }
+
+                experiences = []
+                for exp in exp_raw:
+                    exp_company_id = exp.get("companyId")
+                    experiences.append({
+                        "title":            exp.get("title", ""),
+                        "company":          exp.get("companyName", ""),
+                        "company_url":      exp.get("companyUrl", ""),
+                        "duration":         exp.get("duration", ""),
+                        "location":         exp.get("location", ""),
+                        "date_from":        fmt_exp_date(exp.get("dateFrom", "")),
+                        "date_to":          fmt_exp_date(exp.get("dateTo", "")),
+                        "description":      exp.get("description", ""),
+                        # Attach full company insights only to the matching company
+                        "company_insights": company_insights if exp_company_id == current_company_id else {},
+                    })
+
+                # ── Education ──
+                all_education = []
+                for edu in education_list:
+                    all_education.append({
+                        "title":     edu.get("title", ""),
+                        "major":     edu.get("major", ""),
+                        "date_from": edu.get("dateFrom", ""),
+                        "date_to":   edu.get("dateTo", ""),
+                    })
+
+                # ── Skills ──
+                skills_list = p.get("skillsArray") or p.get("skills") or []
+
+                # ── Tenure ──
+                total_exp  = p.get("totalExperienceDuration", "")
+                avg_tenure = months_to_str(p.get("averageTenure", 0))
+                cur_tenure = months_to_str(p.get("currentTenure", 0))
+
+                # ── Rich JSON for drawer ──
+                rich_json = json.dumps({
+                    "experience":       experiences,
+                    "education":        all_education,
+                    "skills":           [str(s) for s in skills_list if s],
+                    "total_experience": total_exp,
+                    "avg_tenure":       avg_tenure,
+                    "cur_tenure":       cur_tenure,
+                    "headline":         p.get("headline", "") or p.get("generatedHeadline", ""),
+                    "department":       p.get("department", ""),
+                    "photo":            p.get("pictureUrl", "") or p.get("profilePic", ""),
+                }, ensure_ascii=False)
+
+                people.append({
+                    "first": (p.get("nameFirst") or "").strip(),
+                    "last": (p.get("nameLast") or "").strip(),
+                    "linkedin": p.get("linkedinUrl", ""),
+                    "company": company_obj.get("name", ""),
+                    "job_title": (p.get("jobTitle") or "").strip(),
+                    "institution": education_obj.get("title", ""),
+                    "location": p.get("locationRawAddress", ""),
+                    "company_headquarter": company_headquarter,
+                    "photo":               p.get("pictureUrl", "") or p.get("profilePic", ""),
+                    "rich_json":           rich_json,
+                    # ── Rich fields for server-side HTML rendering ──
+                    "experience":          experiences,
+                    "all_education":       all_education,
+                    "skills_list":         [str(s) for s in skills_list if s],
+                    "total_experience":    total_exp,
+                    "avg_tenure":          avg_tenure,
+                    "cur_tenure":          cur_tenure,
+                    "headline":            p.get("headline", "") or p.get("generatedHeadline", ""),
+                    "department":          p.get("department", ""),
+
+                    "emails": [],
+                    "phones": [],
+                })
+
+            if not raw_people:
+                error = "No person found for this LinkedIn URL."
+
+        except requests.HTTPError as e:
+            error = f"API error {e.response.status_code}: {e.response.text}"
+        except Exception as e:
+            error = f"Server error: {str(e)}"
+
+        request.session["people"] = people
+        request.session["error"] = error
+        request.session["form"] = form
+
+        return redirect("search_by_linkdin")
+
+class SearchPeopleView(View):
+    template_name = "generate_email/search_people.html"
+
+    def get(self, request, *args, **kwargs):
+        people = request.session.pop("people", [])
+        error = request.session.pop("error", None)
+        pagination = request.session.pop("pagination", {})
+
+        form = request.session.pop("form", {
+            "name": "",
+            "company": "",
+            "job_title": "",
+            "seniority": "",
+            "skills": "",
+            "degree": "",
+            "institution": "",
+            "location": "",
+            "industry": "",
+            "min_experience": "",
+            "max_experience": "",
+            "is_decision_maker": "",
+            "specialites": "",
+        })
+        return render(request, self.template_name, {
+            "people": people,
+            "error": error,
+            "form": form,
+            "pagination": pagination,
+        })
+
+    def post(self, request, *args, **kwargs):
+        people = []
+        error = None
+
+        def to_list(value):
+            return [v.strip() for v in value.split(",") if v.strip()]
+
+        name = request.POST.get("name", "").strip()
+        company = request.POST.get("company", "").strip()
+        job_title = request.POST.get("job_title", "").strip()
+        seniority = request.POST.get("seniority", "").strip()
+        skills = request.POST.get("skills", "").strip()
+        degree = request.POST.get("degree", "").strip()
+        institution = request.POST.get("institution", "").strip()
+        location = request.POST.get("location", "").strip()
+        industry = request.POST.get("industry", "").strip()
+        min_experience = request.POST.get("min_experience", "").strip()
+        max_experience = request.POST.get("max_experience", "").strip()
+        specialites = request.POST.get("specialites", "").strip()
+        is_decision_maker = "1" if request.POST.get("is_decision_maker") else ""
+
+        page = request.POST.get("page", "1")
+
+        form = {
+            "name": name,
+            "company": company,
+            "job_title": job_title,
+            "seniority": seniority,
+            "skills": skills,
+            "degree": degree,
+            "institution": institution,
+            "location": location,
+            "industry": industry,
+            "min_experience": min_experience,
+            "max_experience": max_experience,
+            "is_decision_maker": is_decision_maker,
+            "specialites": specialites,
+        }
+
+        # print(name)
+        # print(company)
+        # print(location)
+
+
+        # payload = {
+        #     "title": "Search for people by filters",
+        #     "name": [name] if name else [],
+        #     "company": [company] if company else [],
+        #     "job_title": [job_title] if job_title else [],
+        #     "seniority": [seniority] if seniority else [],
+        #     "skills": [skills] if skills else [],
+        #     "degree": [degree] if degree else [],
+        #     "institution": [institution] if institution else [],
+        #     "location": [location] if location else [],
+        #     "industry": [industry] if industry else [],
+        #     "specialties": [specialites] if specialites else [],
+        #     "is_decision_maker": int(is_decision_maker) if is_decision_maker else None,
+        #     "min_years_of_experience": int(min_experience) if min_experience.isdigit() else None,
+        #     "max_years_of_experience": int(max_experience) if max_experience.isdigit() else None,
+        #     "page": 1,
+        # }
+
+
+        payload = {
+                "title": "Search for people by filters",
+                "name": to_list(name),
+                "company": to_list(company),
+                "job_title": to_list(job_title),
+                "seniority": to_list(seniority),
+                "skills": to_list(skills),
+                "degree": to_list(degree),
+                "institution": to_list(institution),
+                "location": to_list(location),
+                "industry": to_list(industry),
+                "specialties": to_list(specialites),
+                "is_decision_maker": int(is_decision_maker) if is_decision_maker else None,
+                "min_years_of_experience": int(min_experience) if min_experience.isdigit() else None,
+                "max_years_of_experience": int(max_experience) if max_experience.isdigit() else None,
+                "page": int(page),
+            }
+        
+
+        payload = {k: v for k, v in payload.items() if v not in ([], "", None)}
+
+        print(payload)
+
+        try:
+            search_resp = redrob_search_people(payload)
+
+            data = search_resp.get("data", {})
+            raw_people = search_resp.get("data", {}).get("people", [])
+            metadata = data.get("metadata", {})
+
+            pagination = {
+                "current": metadata.get("currentPage", 1),
+                "next": metadata.get("nextPage"),
+                "has_next": metadata.get("hasNext", False),
+                "prev": metadata.get("prevPage"),
+            }
+
+            for p in raw_people:
+                company_obj = p.get("company") or {}
+                education_list = p.get("education") or []
+                education_obj = education_list[0] if education_list else {}
+
+                headquarter = company_obj.get("headquarter") or {}
+                headquarter_address = headquarter.get("address") or {}
+
+                company_headquarter = ", ".join(
+                    filter(None, [
+                        headquarter_address.get("city", ""),
+                        headquarter_address.get("geographicArea", ""),
+                        headquarter_address.get("country", ""),
+                    ])
+                )
+
+                # ── Experience ──
+                def months_to_str(years_float):
+                    if not years_float:
+                        return ""
+                    total_months = round(float(years_float) * 12)
+                    y, m = divmod(total_months, 12)
+                    parts = []
+                    if y: parts.append(f"{y} year{'s' if y != 1 else ''}")
+                    if m: parts.append(f"{m} month{'s' if m != 1 else ''}")
+                    return " ".join(parts) if parts else "< 1 month"
+
+                # ── Experience ── (sorted by orderInProfile: 1 = current/most recent)
+                current_company_id = p.get("companyId")
+                exp_raw = sorted(
+                    (p.get("experience") or []),
+                    key=lambda e: e.get("orderInProfile") or 999
+                )
+
+                def fmt_exp_date(raw):
+                    """Turn '2024-05-01' → 'May 2024', pass plain years through."""
+                    if not raw:
+                        return ""
+                    raw = str(raw).strip()
+                    parts = raw.split("-")
+                    if len(parts) == 3:
+                        try:
+                            
+                            month_names = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                                          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+                            m = int(parts[1])
+                            y = int(parts[0])
+                            return f"{month_names[m]} {y}"
+                        except Exception:
+                            pass
+                    return raw
+
+                # Build company insights from the company object (current employer)
+                def fmt_followers(n):
+                    try:
+                        n = int(n)
+                        if n >= 1000:
+                            return f"{n/1000:.1f}K"
+                        return str(n)
+                    except Exception:
+                        return str(n) if n else "--"
+
+                company_insights = {}
+                if company_obj:
+                    funding = company_obj.get("funding") or {}
+                    company_insights = {
+                        "logo":        company_obj.get("logoUrl", ""),
+                        "size":        company_obj.get("size", "") or "--",
+                        "industry":    company_obj.get("industry", "") or "--",
+                        "revenue":     company_obj.get("revenue", "") or "--",
+                        "specialties": company_obj.get("specialties") or [],
+                        "founded":     company_obj.get("foundedAt", "") or "--",
+                        "followers":   fmt_followers(company_obj.get("followers")),
+                        "last_round":  funding.get("lastRoundDate") or "--",
+                    }
+
+                experiences = []
+                for exp in exp_raw:
+                    exp_company_id = exp.get("companyId")
+                    experiences.append({
+                        "title":            exp.get("title", ""),
+                        "company":          exp.get("companyName", ""),
+                        "company_url":      exp.get("companyUrl", ""),
+                        "duration":         exp.get("duration", ""),
+                        "location":         exp.get("location", ""),
+                        "date_from":        fmt_exp_date(exp.get("dateFrom", "")),
+                        "date_to":          fmt_exp_date(exp.get("dateTo", "")),
+                        "description":      exp.get("description", ""),
+                        # Attach full company insights only to the matching company
+                        "company_insights": company_insights if exp_company_id == current_company_id else {},
+                    })
+
+                # ── Education ──
+                all_education = []
+                for edu in education_list:
+                    all_education.append({
+                        "title":     edu.get("title", ""),
+                        "major":     edu.get("major", ""),
+                        "date_from": edu.get("dateFrom", ""),
+                        "date_to":   edu.get("dateTo", ""),
+                    })
+
+                # ── Skills ──
+                skills_list = p.get("skillsArray") or p.get("skills") or []
+
+                # ── Tenure ──
+                total_exp  = p.get("totalExperienceDuration", "")
+                avg_tenure = months_to_str(p.get("averageTenure", 0))
+                cur_tenure = months_to_str(p.get("currentTenure", 0))
+
+                # ── Rich JSON for drawer ──
+                rich_json = json.dumps({
+                    "experience":       experiences,
+                    "education":        all_education,
+                    "skills":           [str(s) for s in skills_list if s],
+                    "total_experience": total_exp,
+                    "avg_tenure":       avg_tenure,
+                    "cur_tenure":       cur_tenure,
+                    "headline":         p.get("headline", "") or p.get("generatedHeadline", ""),
+                    "department":       p.get("department", ""),
+                    "photo":            p.get("pictureUrl", "") or p.get("profilePic", ""),
+                }, ensure_ascii=False)
+
+                people.append({
+                    "first":               (p.get("nameFirst") or "").strip(),
+                    "last":                (p.get("nameLast") or "").strip(),
+                    "linkedin":            p.get("linkedinUrl", ""),
+                    "company":             company_obj.get("name", ""),
+                    "job_title":           (p.get("jobTitle") or "").strip(),
+                    "company_website":     company_obj.get("website", ""),
+                    "institution":         education_obj.get("title", ""),
+                    "location":            p.get("locationRawAddress", ""),
+                    "company_headquarter": company_headquarter,
+                    "photo":               p.get("pictureUrl", "") or p.get("profilePic", ""),
+                    "rich_json":           rich_json,
+                    # ── Rich fields for server-side HTML rendering ──
+                    "experience":          experiences,
+                    "all_education":       all_education,
+                    "skills_list":         [str(s) for s in skills_list if s],
+                    "total_experience":    total_exp,
+                    "avg_tenure":          avg_tenure,
+                    "cur_tenure":          cur_tenure,
+                    "headline":            p.get("headline", "") or p.get("generatedHeadline", ""),
+                    "department":          p.get("department", ""),
+                    "emails": [],
+                    "phones": [],
+                })
+
+        except requests.HTTPError as e:
+            error = f"API error {e.response.status_code}: {e.response.text}"
+        except Exception as e:
+            error = f"Server error: {str(e)}"
+
+        request.session["people"] = people
+        request.session["error"] = error
+        request.session["form"] = form
+        request.session["pagination"] = pagination
+        
+        return redirect("search_people")
+
+
+# class EnrichPersonView(View):
+#     def post(self, request, *args, **kwargs):
+#         linkedin_url = request.POST.get("linkedin_url", "").strip()
+#         first = request.POST.get("first", "").strip()
+#         last = request.POST.get("last", "").strip()
+#         company = request.POST.get("company", "").strip()
+#         company_website = request.POST.get("company_website", "").strip()
+#         job_title = request.POST.get("job_title", "").strip()
+#         institution = request.POST.get("institution", "").strip()
+#         location = request.POST.get("location", "").strip()
+#         company_headquarter = request.POST.get("company_headquarter", "").strip()
+
+#         if not linkedin_url:
+#             return JsonResponse({
+#                 "success": False,
+#                 "error": "LinkedIn URL is required."
+#             }, status=400)
+
+#         try:
+#             start_resp = redrob_start_bulk_enrichment(
+#                 data=[{
+#                     "linkedinUrl": linkedin_url,
+#                     "enrichEmail": True,
+#                     "enrichPhone": False,
+#                 }],
+#                 name="Single Person Enrichment"
+#             )
+
+#             enrichment_id = start_resp.get("data", {}).get("id")
+
+#             if not enrichment_id:
+#                 return JsonResponse({
+#                     "success": True,
+#                     "person": {
+#                         "first": first,
+#                         "last": last,
+#                         "linkedin": linkedin_url,
+#                         "company": company,
+#                         "company_website": company_website,
+#                         "job_title": job_title,
+#                         "institution": institution,
+#                         "location": location,
+#                         "company_headquarter": company_headquarter,
+#                         "emails": [],
+#                         "phones": [],
+#                         "pending_enrichment": True
+#                     }
+#                 })
+
+#             enrichment_result = None
+#             item = {}
+
+#             for _ in range(25):
+#                 enrichment_resp = redrob_get_enrichment(enrichment_id)
+#                 data = enrichment_resp.get("data", {}) or {}
+#                 status = data.get("status", "")
+#                 datas = data.get("datas", []) or []
+
+#                 if status == "FINISHED":
+#                     if datas:
+#                         item = datas[0] or {}
+#                         enrichment_result = enrichment_resp
+#                         break
+#                 elif status in {"FAILED", "ERROR", "CANCELLED"}:
+#                     return JsonResponse({
+#                         "success": False,
+#                         "error": f"Enrichment failed with status: {status}"
+#                     }, status=500)
+
+#                 time.sleep(2)
+
+#             if not enrichment_result:
+#                 return JsonResponse({
+#                     "success": True,
+#                     "person": {
+#                         "first": first,
+#                         "last": last,
+#                         "linkedin": linkedin_url,
+#                         "company": company,
+#                         "company_website": company_website,
+#                         "job_title": job_title,
+#                         "institution": institution,
+#                         "location": location,
+#                         "company_headquarter": company_headquarter,
+#                         "emails": [],
+#                         "phones": [],
+#                         "pending_enrichment": True
+#                     }
+#                 })
+
+#             return JsonResponse({
+#                 "success": True,
+#                 "person": {
+#                     "first": first,
+#                     "last": last,
+#                     "linkedin": linkedin_url,
+#                     "company": company,
+#                     "company_website": company_website,
+#                     "job_title": job_title,
+#                     "institution": institution,
+#                     "location": location,
+#                     "company_headquarter": company_headquarter,
+#                     "emails": item.get("emails", []) or [],
+#                     "phones": item.get("phones", []) or [],
+#                     "pending_enrichment": False
+#                 }
+#             })
+
+#         except Exception as e:
+#             return JsonResponse({
+#                 "success": False,
+#                 "error": f"Server error: {str(e)}"
+#             }, status=500)
+
+class EnrichPersonView(View):
+    def post(self, request, *args, **kwargs):
+        linkedin_url = request.POST.get("linkedin_url", "").strip()
+        first = request.POST.get("first", "").strip()
+        last = request.POST.get("last", "").strip()
+        company = request.POST.get("company", "").strip()
+        company_website = request.POST.get("company_website", "").strip()
+        job_title = request.POST.get("job_title", "").strip()
+        institution = request.POST.get("institution", "").strip()
+        location = request.POST.get("location", "").strip()
+        company_headquarter = request.POST.get("company_headquarter", "").strip()
+        enrich_type = request.POST.get("enrich_type", "email").strip()
+
+        if not linkedin_url:
+            return JsonResponse({
+                "success": False,
+                "error": "LinkedIn URL is required."
+            }, status=400)
+
+        enrich_email = enrich_type == "email"
+        enrich_phone = enrich_type == "phone"
+
+        try:
+            start_resp = redrob_start_bulk_enrichment(
+                data=[{
+                    "linkedinUrl": linkedin_url,
+                    "enrichEmail": enrich_email,
+                    "enrichPhone": enrich_phone,
+                }],
+                name="Single Person Enrichment"
+            )
+
+            enrichment_id = start_resp.get("data", {}).get("id")
+
+            if not enrichment_id:
+                return JsonResponse({
+                    "success": True,
+                    "person": {
+                        "first": first,
+                        "last": last,
+                        "linkedin": linkedin_url,
+                        "company": company,
+                        "company_website": company_website,
+                        "job_title": job_title,
+                        "institution": institution,
+                        "location": location,
+                        "company_headquarter": company_headquarter,
+                        "emails": [],
+                        "phones": [],
+                        "pending_enrichment": True
+                    }
+                })
+
+            enrichment_result = None
+            item = {}
+
+            for _ in range(25):
+                enrichment_resp = redrob_get_enrichment(enrichment_id)
+                data = enrichment_resp.get("data", {}) or {}
+                status = data.get("status", "")
+                datas = data.get("datas", []) or []
+
+                if status == "FINISHED":
+                    if datas:
+                        item = datas[0] or {}
+                        enrichment_result = enrichment_resp
+                        break
+                elif status in {"FAILED", "ERROR", "CANCELLED"}:
+                    return JsonResponse({
+                        "success": False,
+                        "error": f"Enrichment failed with status: {status}"
+                    }, status=500)
+
+                time.sleep(2)
+
+            if not enrichment_result:
+                return JsonResponse({
+                    "success": True,
+                    "person": {
+                        "first": first,
+                        "last": last,
+                        "linkedin": linkedin_url,
+                        "company": company,
+                        "company_website": company_website,
+                        "job_title": job_title,
+                        "institution": institution,
+                        "location": location,
+                        "company_headquarter": company_headquarter,
+                        "emails": [],
+                        "phones": [],
+                        "pending_enrichment": True
+                    }
+                })
+
+            return JsonResponse({
+                "success": True,
+                "person": {
+                    "first": first,
+                    "last": last,
+                    "linkedin": linkedin_url,
+                    "company": company,
+                    "company_website": company_website,
+                    "job_title": job_title,
+                    "institution": institution,
+                    "location": location,
+                    "company_headquarter": company_headquarter,
+                    "emails": item.get("emails", []) or [],
+                    "phones": item.get("phones", []) or [],
+                    "pending_enrichment": False
+                }
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                "success": False,
+                "error": f"Server error: {str(e)}"
+            }, status=500)
+
+class SearchCompanyView(View):
+    template_name = "generate_email/search_company.html"
+
+    def get(self, request, *args, **kwargs):
+        companies = request.session.pop("companies", [])
+        error = request.session.pop("error", None)
+
+        form = request.session.pop("form", {
+            "name": "",
+            "company": "",
+            "industry": "",
+            "company_market": "",
+            "company_location": "",
+            "year_founded_min": "",
+            "year_founded_max": "",
+            "company_specialites": "",
+            "employee_count": "",
+            "min_revenue": "",
+            "max_revenue": "",
+            "company_technologies": "",
+            "min_technology_count": "",
+            "max_technology_count": "",
+            "job_posts": "",
+            "min_jobpost": "",
+            "max_jobpost": "",
+        })
+
+        return render(request, self.template_name, {
+            "companies": companies,
+            "error": error,
+            "form": form,
+        })
+
+    def post(self, request, *args, **kwargs):
+        companies = []
+        error = None
+
+        def to_list(value):
+            return [v.strip() for v in value.split(",") if v.strip()]
+    
+        # Basic fields
+        name = request.POST.get("name", "").strip()
+        company = request.POST.get("company", "").strip()
+        industry = request.POST.get("industry", "").strip()
+        company_market = request.POST.get("company_market", "").strip()
+        company_location = request.POST.get("company_location", "").strip()
+        year_founded_min = request.POST.get("year_founded_min", "").strip()
+        year_founded_max = request.POST.get("year_founded_max", "").strip()
+
+        # Company lookalike section
+        company_specialites = request.POST.get("company_specialites", "").strip()
+        employee_count = request.POST.get("employee_count", "").strip()
+
+        # Revenue
+        min_revenue = request.POST.get("min_revenue", "").strip()
+        max_revenue = request.POST.get("max_revenue", "").strip()
+
+        # Hiring & tech signals
+        company_technologies = request.POST.get("company_technologies", "").strip()
+        min_technology_count = request.POST.get("min_technology_count", "").strip()
+        max_technology_count = request.POST.get("max_technology_count", "").strip()
+        job_posts = request.POST.get("job_posts", "").strip()
+        min_jobpost = request.POST.get("min_jobpost", "").strip()
+        max_jobpost = request.POST.get("max_jobpost", "").strip()
+
+        form = {
+            "name": name,
+            "company": company,
+            "industry": industry,
+            "company_market": company_market,
+            "company_location": company_location,
+            "year_founded_min": year_founded_min,
+            "year_founded_max": year_founded_max,
+            "company_specialites": company_specialites,
+            "employee_count": employee_count,
+            "min_revenue": min_revenue,
+            "max_revenue": max_revenue,
+            "company_technologies": company_technologies,
+            "min_technology_count": min_technology_count,
+            "max_technology_count": max_technology_count,
+            "job_posts": job_posts,
+            "min_jobpost": min_jobpost,
+            "max_jobpost": max_jobpost,
+        }
+
+        payload = {
+            "title": "Search for companies by filters",
+            "page": 1,
+        }
+
+        # keyword search
+        # if name:
+        #     payload["name"] = [name]
+
+        # company name filter
+        if company:
+            payload["name"] = to_list(company)
+
+        # industry
+        if industry:
+            payload["industries"] = to_list(industry)
+
+        # market
+        if company_market:
+            payload["companyMarket"] = company_market
+
+        # location
+        if company_location:
+            payload["location"] = to_list(company_location)
+
+        # year founded
+        if year_founded_min.isdigit():
+            payload["yearFoundedMin"] = int(year_founded_min)
+
+        if year_founded_max.isdigit():
+            payload["yearFoundedMax"] = int(year_founded_max)
+
+        # specialties
+        if company_specialites:
+            payload["specialties"] = to_list(company_specialites)
+
+
+        # employee count
+        if employee_count:
+            payload["employeeCount"] = to_list(employee_count)
+
+        # revenue
+        if min_revenue.isdigit():
+            payload["min_revenue"] = int(min_revenue)
+
+        if max_revenue.isdigit():
+            payload["max_revenue"] = int(max_revenue)
+
+        # Hiring & Tech Signals
+        hiring_and_tech_signals = {}
+
+        if company_technologies:
+            hiring_and_tech_signals["technologiesUsed"] = to_list(company_technologies)
+
+        if min_technology_count.isdigit():
+            hiring_and_tech_signals["technologyTotalCountMin"] = int(min_technology_count)
+
+        if max_technology_count.isdigit():
+            hiring_and_tech_signals["technologyTotalCountMax"] = int(max_technology_count)
+
+        if job_posts:
+            hiring_and_tech_signals["jobPosts"] = to_list(job_posts)
+
+        if min_jobpost.isdigit():
+            hiring_and_tech_signals["jobPostingCountMin"] = int(min_jobpost)
+
+        if max_jobpost.isdigit():
+            hiring_and_tech_signals["jobPostingCountMax"] = int(max_jobpost)
+
+        if hiring_and_tech_signals:
+            payload["hiringAndTechSignals"] = hiring_and_tech_signals
+
+        payload = {k: v for k, v in payload.items() if v not in ([], "", None)}
+
+        print(payload)
+        # print(payload["name"])
+
+        try:
+            search_resp = redrob_search_by_company(payload)
+            # print(search_resp)
+            raw_companies = search_resp.get("data", {}).get("companies", [])
+            # print(raw_companies)
+
+            # print(raw_companies)
+
+            for c in raw_companies:
+                headquarter = c.get("headquarter") or {}
+                headquarter_address = headquarter.get("address") or {}
+
+                company_headquarter = ", ".join(
+                    filter(None, [
+                        headquarter_address.get("city", ""),
+                        headquarter_address.get("geographic_area", ""),
+                        headquarter_address.get("country", ""),
+                    ])
+                )
+
+                funding = c.get("funding") or {}
+                
+
+                executives = c.get("keyExecutiveArrivals", [])
+                decision_makers = [
+                    {
+                        "name": e.get("member_full_name"),
+                        "title": e.get("member_position_title"),
+                    }
+                    for e in executives[:5]   # limit to 5
+                ]
+
+                # 🔥 NEW: Employee seniority breakdown
+                seniority_data = c.get("employeesBySeniority", [])
+
+                companies.append({
+                    "name": c.get("name", ""),
+                    "linkedin_url": c.get("linkedinUrl", ""),
+                    "website": c.get("website", ""),
+                    "industry": c.get("industry", ""),
+                    "description": c.get("overview", ""),
+                    "company_size": c.get("size", ""),
+                    "revenue": c.get("revenue", ""),
+                    "specialties": c.get("specialties", []),
+                    "headquarter": company_headquarter,
+                    "location_country": c.get("locationCountry", ""),
+                    "company_market": "B2B" if c.get("isB2b") else "B2C" if c.get("isB2c") else "",
+                    "found_at":c.get("foundedAt",""),
+                    # "active_job_postings_count": c.get("activeJobPostingsCount", ""),
+                    # "num_technologies_used": c.get("numTechnologiesUsed", ""),
+                    # "funding_rounds": funding.get("roundsCount", ""),
+                    # "last_funding_amount": funding.get("lastRoundMoneyRaisedAmount", ""),
+                    # "last_funding_date": funding.get("lastRoundAnnouncedOnDate", ""),
+                    # "phone": ", ".join(c.get("phone", [])) if c.get("phone") else "",
+                    "logo_url": c.get("logoUrl", ""),
+                    "tagline": c.get("tagline", ""),
+                    "linkedin_followers": c.get("followers", ""),
+                    "decision_makers": decision_makers,
+                    "employee_seniority": seniority_data,
+                })
+
+        except requests.HTTPError as e:
+            error = f"API error {e.response.status_code}: {e.response.text}"
+        except Exception as e:
+            error = f"Server error: {str(e)}"
+
+        request.session["companies"] = companies
+        request.session["error"] = error
+        request.session["form"] = form
+
+        return redirect("search_company")
+        
+# class GetSavedListsView(LoginRequiredMixin, View):
+#     def get(self, request, *args, **kwargs):
+#         lists = SavedPeopleList.objects.filter(user=request.user).values("id", "name")
+#         return JsonResponse({
+#             "success": True,
+#             "lists": list(lists)
+#         })
+
+from django.db.models import Count
+
+class GetSavedListsView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        lists = (
+            SavedPeopleList.objects
+            .filter(user=request.user)
+            .annotate(count=Count("entries"))
+            .values("id", "name", "count")
+        )
+        return JsonResponse({
+            "success": True,
+            "lists": list(lists)
+        })
+
+
+class SavePeopleToListView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+            list_type = data.get("list_type")  # "new" or "existing"
+            list_name = (data.get("list_name") or "").strip()
+            list_id = data.get("list_id")
+            people = data.get("people", [])
+
+            if not people:
+                return JsonResponse({
+                    "success": False,
+                    "error": "No people selected."
+                }, status=400)
+
+            if list_type == "new":
+                if not list_name:
+                    return JsonResponse({
+                        "success": False,
+                        "error": "List name is required."
+                    }, status=400)
+
+                saved_list, created = SavedPeopleList.objects.get_or_create(
+                    user=request.user,
+                    name=list_name
+                )
+
+            elif list_type == "existing":
+                if not list_id:
+                    return JsonResponse({
+                        "success": False,
+                        "error": "Please select an existing list."
+                    }, status=400)
+
+                try:
+                    saved_list = SavedPeopleList.objects.get(id=list_id, user=request.user)
+                except SavedPeopleList.DoesNotExist:
+                    return JsonResponse({
+                        "success": False,
+                        "error": "List not found."
+                    }, status=404)
+            else:
+                return JsonResponse({
+                    "success": False,
+                    "error": "Invalid list type."
+                }, status=400)
+
+            created_count = 0
+
+            for person in people:
+                obj, created = SavedPeopleEntry.objects.update_or_create(
+                    saved_list=saved_list,
+                    linkedin=person.get("linkedin", ""),
+                    defaults={
+                        "first": person.get("first", ""),
+                        "last": person.get("last", ""),
+                        "company": person.get("company", ""),
+                        "company_website": person.get("company_website", ""),
+                        "job_title": person.get("job_title", ""),
+                        "institution": person.get("institution", ""),
+                        "location": person.get("location", ""),
+                        "company_headquarter": person.get("company_headquarter", ""),
+                        "email": person.get("email", ""),
+                        "phone":person.get("phone",""),
+                    }
+                )
+                if created:
+                    created_count += 1
+
+            return JsonResponse({
+                "success": True,
+                "message": f"{created_count} people saved to '{saved_list.name}'.",
+                "list_id": saved_list.id,
+                "list_name": saved_list.name
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                "success": False,
+                "error": str(e)
+            }, status=500)
+        
+class EnrichSavedListView(LoginRequiredMixin, View):
+    MAX_POLLS = 30
+    POLL_INTERVAL_SECONDS = 3
+
+    def post(self, request, *args, **kwargs):
+        try:
+            body = json.loads(request.body.decode("utf-8"))
+            list_id = body.get("list_id")
+
+            if not list_id:
+                return self.error_response("List ID is required.", 400)
+
+            try:
+                saved_list = SavedPeopleList.objects.prefetch_related("entries").get(
+                    id=list_id,
+                    user=request.user
+                )
+            except SavedPeopleList.DoesNotExist:
+                return self.error_response("List not found.", 404)
+
+            entries = list(saved_list.entries.all())
+
+            if not entries:
+                return self.error_response("This list is empty.", 400)
+
+            linkedin_to_entry, bulk_data = self.build_bulk_data(entries)
+
+            if not bulk_data:
+                return JsonResponse({
+                    "success": True,
+                    "message": "All contacts in this list already have email or valid LinkedIn URL is missing.",
+                    "list_id": saved_list.id,
+                    "list_name": saved_list.name,
+                    "total_people": len(entries),
+                    "updated_count": 0,
+                })
+
+            start_resp = redrob_start_bulk_enrichment(
+                data=bulk_data,
+                name=f"Bulk Email Enrichment - {saved_list.name}"
+            )
+
+            enrichment_id = (start_resp.get("data") or {}).get("id")
+            if not enrichment_id:
+                return self.error_response("No enrichment ID returned from API.", 500)
+
+            enrichment_items = self.poll_enrichment_result(enrichment_id)
+            if isinstance(enrichment_items, JsonResponse):
+                return enrichment_items
+
+            updated_count = self.update_entries_from_results(
+                linkedin_to_entry=linkedin_to_entry,
+                enrichment_items=enrichment_items
+            )
+
+            return JsonResponse({
+                "success": True,
+                "message": f"Enrichment completed. {updated_count} contacts updated.",
+                "list_id": saved_list.id,
+                "list_name": saved_list.name,
+                "total_people": len(entries),
+                "updated_count": updated_count,
+            })
+
+        except requests.HTTPError as e:
+            status_code = e.response.status_code if e.response is not None else 500
+            response_text = e.response.text if e.response is not None else str(e)
+            return self.error_response(
+                f"API error {status_code}: {response_text}",
+                500
+            )
+        except Exception as e:
+            return self.error_response(f"Server error: {str(e)}", 500)
+
+    def build_bulk_data(self, entries):
+        linkedin_to_entry = {}
+        bulk_data = []
+
+        for entry in entries:
+            # skip already enriched people
+            if entry.email:
+                continue
+
+            linkedin_raw = (entry.linkedin or "").strip()
+            linkedin_normalized = normalize_linkedin_url(linkedin_raw)
+
+            if not linkedin_raw:
+                continue
+
+            linkedin_to_entry[linkedin_normalized] = entry
+            bulk_data.append({
+                "linkedinUrl": linkedin_raw,
+                "enrichEmail": True,
+                "enrichPhone": False,
+            })
+
+        return linkedin_to_entry, bulk_data
+
+    def poll_enrichment_result(self, enrichment_id):
+        for _ in range(self.MAX_POLLS):
+            enrichment_resp = redrob_get_enrichment(enrichment_id)
+            data = enrichment_resp.get("data", {}) or {}
+            status = data.get("status", "")
+            items = data.get("datas", []) or []
+
+            if status == "FINISHED":
+                return items
+
+            if status in {"FAILED", "ERROR", "CANCELLED"}:
+                return self.error_response(
+                    f"Enrichment failed with status: {status}",
+                    500
+                )
+
+            time.sleep(self.POLL_INTERVAL_SECONDS)
+
+        return self.error_response(
+            "Enrichment is still processing. Please try again later.",
+            500
+        )
+
+    def update_entries_from_results(self, linkedin_to_entry, enrichment_items):
+        updated_count = 0
+
+        for item in enrichment_items:
+            profile = item.get("profile", {}) or {}
+            linkedin_raw = (
+                profile.get("linkedin_url")
+                or item.get("linkedinUrl")
+                or ""
+            )
+            linkedin_normalized = normalize_linkedin_url(linkedin_raw)
+
+            if not linkedin_normalized:
+                continue
+
+            entry = linkedin_to_entry.get(linkedin_normalized)
+            if not entry:
+                continue
+
+            first_email = self.extract_first_email(item.get("emails", []) or [])
+            first_phone = self.extract_first_phone(item.get("phones", []) or [])
+
+            changed_fields = []
+
+            if first_email and entry.email != first_email:
+                entry.email = first_email
+                changed_fields.append("email")
+
+            if first_phone and entry.phone != first_phone:
+                entry.phone = first_phone
+                changed_fields.append("phone")
+
+            if changed_fields:
+                entry.save(update_fields=changed_fields)
+                updated_count += 1
+
+        return updated_count
+
+    def extract_first_email(self, emails):
+        if not emails:
+            return ""
+
+        first_item = emails[0]
+        if isinstance(first_item, dict):
+            return first_item.get("email", "") or ""
+
+        return str(first_item)
+
+    def extract_first_phone(self, phones):
+        if not phones:
+            return ""
+
+        first_item = phones[0]
+        if isinstance(first_item, dict):
+            return first_item.get("number", "") or ""
+
+        return str(first_item)
+
+    def error_response(self, message, status_code=400):
+        return JsonResponse({
+            "success": False,
+            "error": message
+        }, status=status_code)
+        
+class ExportSavedListCsvView(LoginRequiredMixin, View):
+    def get(self, request, list_id, *args, **kwargs):
+        try:
+            saved_list = SavedPeopleList.objects.get(id=list_id, user=request.user)
+        except SavedPeopleList.DoesNotExist:
+            return HttpResponse("List not found.", status=404)
+
+        entries = saved_list.entries.all().order_by("id")
+
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="{saved_list.name}_enriched.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow([
+            "first",
+            "last",
+            "linkedin",
+            "company",
+            "company_website",
+            "job_title",
+            "institution",
+            "location",
+            "company_headquarter",
+            "email",
+            "phone",
+        ])
+
+        for entry in entries:
+            writer.writerow([
+                entry.first,
+                entry.last,
+                entry.linkedin,
+                entry.company,
+                entry.company_website,
+                entry.job_title,
+                entry.institution,
+                entry.location,
+                entry.company_headquarter,
+                entry.email,
+                entry.phone,
+            ])
+
+        return response
+    
+class DataEnrichmentView(LoginRequiredMixin, View):
+    template_name = "generate_email/data_enrich.html"
+
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name)
+    
+
+
+class UseSavedListInCampaignView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        list_id = request.POST.get("list_id")
+
+        if not list_id:
+            messages.error(request, "Saved list is required.")
+            return redirect("data_enrich")
+
+        try:
+            saved_list = SavedPeopleList.objects.prefetch_related("entries").get(
+                id=list_id,
+                user=request.user
+            )
+        except SavedPeopleList.DoesNotExist:
+            messages.error(request, "Saved list not found.")
+            return redirect("data_enrich")
+
+        # Create or reuse tag with same name as saved list
+        tag, _ = AudienceTag.objects.get_or_create(
+            user=request.user,
+            name=saved_list.name
+        )
+
+        created_count = 0
+        updated_count = 0
+        skipped_count = 0
+
+        for entry in saved_list.entries.all():
+            email = (entry.email or "").strip()
+
+            if not email:
+                skipped_count += 1
+                continue
+
+            try:
+                validate_email(email)
+            except ValidationError:
+                skipped_count += 1
+                continue
+
+            obj, created = TargetAudience.objects.get_or_create(
+                user=request.user,
+                email=email,
+                tag=tag,
+                defaults={
+                    "receiver_first_name": entry.first or "",
+                    "receiver_last_name": entry.last or "",
+                    "receiver_linkedin_url": entry.linkedin or "",
+                    "company_url": entry.company_website or "",
+                }
+            )
+
+            if created:
+                created_count += 1
+            else:
+                changed = False
+                update_fields = []
+
+                if entry.first and obj.receiver_first_name != entry.first:
+                    obj.receiver_first_name = entry.first
+                    update_fields.append("receiver_first_name")
+                    changed = True
+
+                if entry.last and obj.receiver_last_name != entry.last:
+                    obj.receiver_last_name = entry.last
+                    update_fields.append("receiver_last_name")
+                    changed = True
+
+                if entry.linkedin and obj.receiver_linkedin_url != entry.linkedin:
+                    obj.receiver_linkedin_url = entry.linkedin
+                    update_fields.append("receiver_linkedin_url")
+                    changed = True
+
+                if entry.company_website and obj.company_url != entry.company_website:
+                    obj.company_url = entry.company_website
+                    update_fields.append("company_url")
+                    changed = True
+
+                if changed:
+                    obj.save(update_fields=update_fields)
+                    updated_count += 1
+
+        if created_count == 0 and updated_count == 0:
+            messages.warning(
+                request,
+                f"No campaign-ready contacts found in '{saved_list.name}'. Please enrich emails first."
+            )
+            return redirect("data_enrich")
+
+        messages.success(
+            request,
+            f"Saved list '{saved_list.name}' synced to campaign tag '{tag.name}'. "
+            f"Added: {created_count}, Updated: {updated_count}, Skipped: {skipped_count}."
+        )
+
+        return redirect(f"{reverse('campaign_view')}?tag_id={tag.id}")
+
+# class PeopleListView(LoginRequiredMixin, View):
+#     template_name = "generate_email/list.html"
+
+#     def get(self, request, *args, **kwargs):
+#         lists = SavedPeopleList.objects.filter(user=request.user).prefetch_related("entries")
+#         selected_list_id = request.GET.get("list_id")
+#         search_query = request.GET.get("q", "").strip()
+
+#         selected_list = None
+#         selected_entries = []
+
+#         if selected_list_id:
+#             selected_list = get_object_or_404(
+#                 SavedPeopleList.objects.prefetch_related("entries"),
+#                 id=selected_list_id,
+#                 user=request.user
+#             )
+
+#             entries_qs = selected_list.entries.all()
+
+#             if search_query:
+#                 entries_qs = entries_qs.filter(
+#                     Q(first__icontains=search_query) |
+#                     Q(last__icontains=search_query) |
+#                     Q(company__icontains=search_query) |
+#                     Q(job_title__icontains=search_query) |
+#                     Q(email__icontains=search_query) |
+#                     Q(phone__icontains=search_query) |
+#                     Q(location__icontains=search_query) |
+#                     Q(institution__icontains=search_query)
+#                 )
+
+#             selected_entries = entries_qs
+
+#         context = {
+#             "lists": lists,
+#             "selected_list": selected_list,
+#             "selected_entries": selected_entries,
+#             "search_query": search_query,
+#         }
+#         return render(request, self.template_name, context)
+
+class PeopleListView(LoginRequiredMixin, View):
+    template_name = "generate_email/list.html"
+
+    def get(self, request, *args, **kwargs):
+        lists = SavedPeopleList.objects.filter(user=request.user).prefetch_related("entries", "company_entries")
+        selected_list_id = request.GET.get("list_id")
+        search_query = request.GET.get("q", "").strip()
+
+        selected_list = None
+        selected_entries = []
+        selected_company_entries = []
+
+        if selected_list_id:
+            selected_list = get_object_or_404(
+                SavedPeopleList.objects.prefetch_related("entries", "company_entries"),
+                id=selected_list_id,
+                user=request.user
+            )
+
+            people_qs = selected_list.entries.all()
+            company_qs = selected_list.company_entries.all()
+
+            if search_query:
+                people_qs = people_qs.filter(
+                    Q(first__icontains=search_query) |
+                    Q(last__icontains=search_query) |
+                    Q(company__icontains=search_query) |
+                    Q(job_title__icontains=search_query) |
+                    Q(email__icontains=search_query) |
+                    Q(phone__icontains=search_query) |
+                    Q(location__icontains=search_query) |
+                    Q(institution__icontains=search_query)
+                )
+
+                company_qs = company_qs.filter(
+                    Q(name__icontains=search_query) |
+                    Q(industry__icontains=search_query) |
+                    Q(domain__icontains=search_query) |
+                    Q(revenue__icontains=search_query) |
+                    Q(specialties__icontains=search_query) |
+                    Q(headquarter__icontains=search_query) |
+                    Q(location__icontains=search_query) |
+                    Q(company_market__icontains=search_query)
+                )
+
+            selected_entries = people_qs
+            selected_company_entries = company_qs
+
+        context = {
+            "lists": lists,
+            "selected_list": selected_list,
+            "selected_entries": selected_entries,
+            "selected_company_entries": selected_company_entries,
+            "search_query": search_query,
+        }
+        return render(request, self.template_name, context)
+    
+class SaveCompaniesToListView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+            list_type = data.get("list_type")
+            list_name = (data.get("list_name") or "").strip()
+            list_id = data.get("list_id")
+            companies = data.get("companies", [])
+
+            if not companies:
+                return JsonResponse({
+                    "success": False,
+                    "error": "No companies selected."
+                }, status=400)
+
+            if list_type == "new":
+                if not list_name:
+                    return JsonResponse({
+                        "success": False,
+                        "error": "List name is required."
+                    }, status=400)
+
+                saved_list, created = SavedPeopleList.objects.get_or_create(
+                    user=request.user,
+                    name=list_name
+                )
+
+            elif list_type == "existing":
+                if not list_id:
+                    return JsonResponse({
+                        "success": False,
+                        "error": "Please select an existing list."
+                    }, status=400)
+
+                try:
+                    saved_list = SavedPeopleList.objects.get(id=list_id, user=request.user)
+                except SavedPeopleList.DoesNotExist:
+                    return JsonResponse({
+                        "success": False,
+                        "error": "List not found."
+                    }, status=404)
+            else:
+                return JsonResponse({
+                    "success": False,
+                    "error": "Invalid list type."
+                }, status=400)
+
+            created_count = 0
+
+            for company in companies:
+                linkedin_url = (company.get("linkedin_url") or "").strip()
+                website = (company.get("website") or "").strip()
+                name = (company.get("name") or "").strip()
+
+                lookup = {"saved_list": saved_list}
+                if linkedin_url:
+                    lookup["linkedin_url"] = linkedin_url
+                elif website:
+                    lookup["website"] = website
+                else:
+                    lookup["name"] = name
+
+                obj, created = SavedCompanyEntry.objects.update_or_create(
+                    **lookup,
+                    defaults={
+                        "name": name,
+                        "linkedin_url": linkedin_url,
+                        "website": website,
+                        "industry": company.get("industry", ""),
+                        "domain": company.get("domain", ""),
+                        "revenue": company.get("revenue", ""),
+                        "specialties": company.get("specialties", ""),
+                        "headquarter": company.get("headquarter", ""),
+                        "location": company.get("location", ""),
+                        "company_market": company.get("company_market", ""),
+                    }
+                )
+
+                if created:
+                    created_count += 1
+
+            return JsonResponse({
+                "success": True,
+                "message": f"{created_count} companies saved to '{saved_list.name}'.",
+                "list_id": saved_list.id,
+                "list_name": saved_list.name
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                "success": False,
+                "error": str(e)
+            }, status=500)
+        
+class RemoveCompanyFromListView(LoginRequiredMixin, View):
+    def post(self, request, list_id, company_id, *args, **kwargs):
+        saved_list = get_object_or_404(SavedPeopleList, id=list_id, user=request.user)
+        company = get_object_or_404(SavedCompanyEntry, id=company_id, saved_list=saved_list)
+        company.delete()
+        messages.success(request, "Company removed from list successfully.")
+        return redirect(f"{reverse('list_view')}?list_id={saved_list.id}")
+
+class DeleteSavedListView(LoginRequiredMixin, View):
+    def post(self, request, list_id, *args, **kwargs):
+        saved_list = get_object_or_404(SavedPeopleList, id=list_id, user=request.user)
+        saved_list.delete()
+        messages.success(request, "List deleted successfully.")
+        return redirect("list_view")
+    
+class RemovePersonFromListView(LoginRequiredMixin, View):
+    def post(self, request, list_id, entry_id, *args, **kwargs):
+        saved_list = get_object_or_404(SavedPeopleList, id=list_id, user=request.user)
+        entry = get_object_or_404(SavedPeopleEntry, id=entry_id, saved_list=saved_list)
+        entry.delete()
+
+        messages.success(request, "Person removed from list.")
+
+        remaining_exists = saved_list.entries.exists()
+        if remaining_exists:
+            return redirect(f"{reverse('list_view')}?list_id={saved_list.id}")
+        return redirect("list_view")
+
+class DownloadListCSVView(LoginRequiredMixin, View):
+    def get(self, request, list_id, *args, **kwargs):
+        saved_list = get_object_or_404(SavedPeopleList, id=list_id, user=request.user)
+        entries = saved_list.entries.all()
+
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="{saved_list.name}.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow([
+            "First Name",
+            "Last Name",
+            "LinkedIn",
+            "Company",
+            "Company Website",
+            "Job Title",
+            "Institution",
+            "Location",
+            "Company Headquarter",
+            "Email",
+            "Phone",
+        ])
+
+        for item in entries:
+            writer.writerow([
+                item.first,
+                item.last,
+                item.linkedin,
+                item.company,
+                item.company_website,
+                item.job_title,
+                item.institution,
+                item.location,
+                item.company_headquarter,
+                item.email,
+                item.phone,
+            ])
+
+        return response
+
+
+# class SelectPersonForEmailView(View):
+#     def post(self, request, *args, **kwargs):
+#         request.session["prefill_email_data"] = {
+#             "receiver_first_name": request.POST.get("first", "").strip(),
+#             "receiver_last_name": request.POST.get("last", "").strip(),
+#             "email": request.POST.get("email", "").strip(),
+#             "receiver_linkedin_url": request.POST.get("linkedin", "").strip(),
+#             "company_url": request.POST.get("company_website", "").strip(),
+#             "company_name": request.POST.get("company", "").strip(),
+#         }
+#         return redirect("generate_email")
+
+class SelectPersonForEmailView(View):
+    def post(self, request, *args, **kwargs):
+        print("=== SelectPersonForEmailView POST ===")
+        print(request.POST.dict())
+
+        first = (request.POST.get("first") or request.POST.get("receiver_first_name") or "").strip()
+        last = (request.POST.get("last") or request.POST.get("receiver_last_name") or "").strip()
+        email = (request.POST.get("email") or "").strip()
+        linkedin = (
+            request.POST.get("linkedin")
+            or request.POST.get("receiver_linkedin_url")
+            or request.POST.get("linkedin_url")
+            or ""
+        ).strip()
+        company_url = (
+            request.POST.get("company_website")
+            or request.POST.get("company_url")
+            or ""
+        ).strip()
+        company = (request.POST.get("company") or "").strip()
+
+        request.session["prefill_email_data"] = {
+            "receiver_first_name": first,
+            "receiver_last_name": last,
+            "email": email,
+            "receiver_linkedin_url": linkedin,
+            "company_url": company_url,
+            "company_name": company,
+        }
+        request.session.modified = True
+
+        print("=== Saved in session ===")
+        print(request.session["prefill_email_data"])
+
+        return redirect("generate_email")
         
 # Create your views here.
 ORG_DOMAIN = "jmsadvisory.in"
-class GenerateEmailView(LoginRequiredMixin, View):
+class GenerateEmailView(BlockDirectAccessMixin,LoginRequiredMixin, View):
     def normalize_url(self, url):
         """Ensure the URL starts with http:// or https://"""
         if url and not url.startswith(('http://', 'https://')):
@@ -149,6 +1958,9 @@ class GenerateEmailView(LoginRequiredMixin, View):
         open_rate = round((read_emails / total_sent) * 100, 2) if total_sent else 0
         read_percentage = open_rate
         unread_percentage = round(100 - open_rate, 2) if total_sent else 0
+
+        prefill_data = request.session.pop("prefill_email_data", {})
+ 
  
         context = {
             "google_accounts": google_accounts,
@@ -161,11 +1973,13 @@ class GenerateEmailView(LoginRequiredMixin, View):
             "unread_emails": unread_emails,
             "read_percentage": read_percentage,
             "unread_percentage": unread_percentage,
-            "user_attachments": user_attachments,   
+            "user_attachments": user_attachments,
+            "prefill_data": prefill_data,
  
         }
  
         return render(request, 'generate_email/email_generator.html', context)
+    
  
  
     def post(self, request, *args, **kwargs):
@@ -181,6 +1995,27 @@ class GenerateEmailView(LoginRequiredMixin, View):
                     'errors': "Free limit finished. Please buy credits."
                 })
         data = json.loads(request.body)
+
+        from django.core.validators import validate_email
+        from django.core.exceptions import ValidationError
+
+        email = (data.get('email') or "").strip()
+
+        # 🚨 REQUIRED VALIDATION
+        if not email:
+            return JsonResponse({
+                'success': False,
+                'errors': "Target email is required"
+            }, status=400)
+
+        # 🚨 FORMAT VALIDATION
+        try:
+            validate_email(email)
+        except ValidationError:
+            return JsonResponse({
+                'success': False,
+                'errors': "Enter a valid email address"
+            }, status=400)
  
         email = data.get('email')
         receiver_first_name = data.get('receiver_first_name')
@@ -305,7 +2140,7 @@ def add_business_days_np(start_date, n_days):
     result = np.busday_offset(start_np, n_days, roll='forward')
     return result.astype('M8[D]').astype(object)
 
-class SendEmailView(LoginRequiredMixin, View):
+class SendEmailView(BlockDirectAccessMixin,LoginRequiredMixin, View):
     def get(self, request):
         return render(request, 'generate_email/email_generator.html', {'title': "Home"})
 
@@ -368,6 +2203,28 @@ class SendEmailView(LoginRequiredMixin, View):
             )
 
         target = TargetAudience.objects.get(id=targetId)
+
+        from django.core.validators import validate_email
+        from django.core.exceptions import ValidationError
+
+        email = (data.get('email') or "").strip()
+
+        # 🚨 REQUIRED VALIDATION
+        if not email:
+            return JsonResponse({
+                'success': False,
+                'errors': "Target email is required"
+            }, status=400)
+
+        # 🚨 FORMAT VALIDATION
+        try:
+            validate_email(email)
+        except ValidationError:
+            return JsonResponse({
+                'success': False,
+                'errors': "Enter a valid email address"
+            }, status=400)
+        
         main_email = emails["main_email"]
         followup_emails = emails["follow_ups"]
 
@@ -458,7 +2315,7 @@ import logging
 from django.views.decorators.cache import never_cache
 logger = logging.getLogger(__name__)
 
-class EmailListView(LoginRequiredMixin, ListView):
+class EmailListView(BlockDirectAccessMixin,LoginRequiredMixin, ListView):
     model = SentEmail
     template_name = 'generate_email/email_list.html'
     context_object_name = 'sent_emails'
@@ -608,7 +2465,7 @@ class EmailListView(LoginRequiredMixin, ListView):
 
         return JsonResponse({'success': True})
 
-class CheckEmailHistoryView(LoginRequiredMixin, View):
+class CheckEmailHistoryView(BlockDirectAccessMixin,LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         email = request.GET.get("email")
         service=request.GET.get("service")
@@ -637,7 +2494,7 @@ class CheckEmailHistoryView(LoginRequiredMixin, View):
 
         return JsonResponse({"exists": False})
     
-class LeadListView(LoginRequiredMixin, ListView):
+class LeadListView(BlockDirectAccessMixin,LoginRequiredMixin, ListView):
     # model = SentEmail
     model = TargetAudience
     template_name = 'generate_email/lead_list.html'
@@ -760,6 +2617,10 @@ def escape_csv(value):
     return value
 
 def export_target_audience_csv(request):
+
+    if request.method == "GET" and not request.META.get("HTTP_REFERER"):
+        return redirect("/")
+    
     response = HttpResponse(content_type='text/csv')
     today = timezone.now().date()
     filename = f"Lead-List-{today}.csv"
@@ -812,7 +2673,7 @@ class LeadEmailListView(LoginRequiredMixin, ListView):
         context['target_audience'] = self.target_audience
         return context
 
-class EmailMessageView(DetailView):
+class EmailMessageView(BlockDirectAccessMixin,DetailView):
     model = SentEmail
     template_name = 'generate_email/email_message.html'
     context_object_name = 'email'
@@ -1094,6 +2955,8 @@ def get_conversation_id(user, msg_id):
 
 @csrf_exempt
 def email_open_pixel(request, uid):
+    if request.method == "GET" and not request.META.get("HTTP_REFERER"):
+        return redirect("/")
 
     #  Ignore admin / logged-in users
     if request.user.is_authenticated:
@@ -1169,6 +3032,9 @@ from .models import TargetAudience, AudienceTag
 
 #     return render(request, "generate_email/import_leads.html")
 def import_leads(request):
+
+    if request.method == "GET" and not request.META.get("HTTP_REFERER"):
+        return redirect("/")
 
     if request.method == "POST":
 
@@ -1351,8 +3217,289 @@ from django.contrib import messages
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 import json
+#  -----------------campgain 2 --------------------#
+# def campaign_view(request):
 
+#     tags = AudienceTag.objects.filter(user=request.user)
+#     user_services = ProductService.objects.filter(user=request.user)
+#     signatures = Signature.objects.filter(user=request.user)
+
+#     google_accounts = SocialAccount.objects.filter(
+#         user=request.user,
+#         provider__in=["google", "microsoft"]
+#     )
+
+#     user_attachments = EmailAttachment.objects.filter(user=request.user)
+
+#     if request.method == "POST":
+
+#         # =========================
+#         # FORM DATA
+#         # =========================
+#         tag_id = request.POST.get("tag_id")
+#         service_name = request.POST.get("selected_service")
+#         framework = request.POST.get("framework")
+#         campaign_goal = request.POST.get("campaign_goal")
+#         signature_id = request.POST.get("signature_id")
+#         sent_from = request.POST.get("sent_from")
+#         schedule_time = request.POST.get("schedule_time")
+#         # shuffle_accounts = request.POST.get("shuffle_accounts")
+#         shuffle_accounts = request.POST.get("shuffle_accounts") == "on"
+#         saved_attachment_id = request.POST.get("saved_attachment")
+
+#         # =========================
+#         # VALIDATIONS
+#         # =========================
+#         if not tag_id or not service_name or not sent_from:
+#             messages.error(request, "Tag, Service and Sending Account are required")
+#             return redirect("campaign_view")
+
+#         selected_service = ProductService.objects.filter(
+#             service_name=service_name,
+#             user=request.user
+#         ).first()
+
+#         if not selected_service:
+#             messages.error(request, "Invalid service selected")
+#             return redirect("campaign_view")
+
+#         selected_account = SocialAccount.objects.filter(
+#             id=sent_from,
+#             user=request.user
+#         ).first()
+
+#         if not selected_account:
+#             messages.error(request, "Invalid sending account")
+#             return redirect("campaign_view")
+
+#         audiences = TargetAudience.objects.filter(
+#             user=request.user,
+#             tag_id=tag_id
+#         )
+
+#         if not audiences.exists():
+#             messages.error(request, "No leads found under selected tag")
+#             return redirect("campaign_view")
+
+#         # =========================
+#         # SIGNATURE
+#         # =========================
+#         signature_html = ""
+
+#         if signature_id:
+#             try:
+#                 signature_obj = Signature.objects.get(
+#                     id=signature_id,
+#                     user=request.user
+#                 )
+#             except Signature.DoesNotExist:
+#                 signature_obj = None
+#         else:
+#             # Default signature if none selected
+#             signature_obj = Signature.objects.filter(
+#                 user=request.user,
+#             ).first()
+
+#         if signature_obj:
+#             signature_html = signature_obj.signature or ""
+
+#             # ✅ If photo exists, append it
+#             if signature_obj.photo:
+#                 photo_url = request.build_absolute_uri(signature_obj.photo.url)
+
+#                 signature_html += f"""
+#                     <p>
+#                         <img src="{photo_url}"
+#                             alt="Signature Photo"
+#                             style="max-width:420px;margin-top:8px;width:100%;height:auto;display:block;">
+#                     </p>
+#                 """
+
+#         # If still empty → fallback default
+#         if not signature_html:
+#             signature_html = (
+#                 '<div style="margin:0;padding:0;line-height:1.4;">'
+#                 f'Best,<br>{request.user.full_name}'
+#                 '</div>'
+#             )
+
+#         # =========================
+#         # ATTACHMENT
+#         # =========================
+#         attachment_file = None
+
+#         if saved_attachment_id:
+#             try:
+#                 saved_obj = EmailAttachment.objects.get(
+#                     id=saved_attachment_id,
+#                     user=request.user
+#                 )
+
+#                 # 🔥 VERY IMPORTANT
+#                 attachment_file = saved_obj.file
+
+#                 # Ensure file pointer is at start
+#                 attachment_file.open()
+#                 attachment_file.seek(0)
+
+#             except EmailAttachment.DoesNotExist:
+#                 attachment_file = None
+
+#         # =========================
+#         # SCHEDULED SEND
+#         # =========================
+#         if schedule_time:
+
+#             schedule_dt = parse_datetime(schedule_time)
+
+#             if schedule_dt:
+#                 schedule_dt = timezone.make_aware(schedule_dt)
+
+#             if not schedule_dt:
+#                 messages.error(request, "Invalid schedule time")
+#                 return redirect("campaign_view")
+
+#             for audience in audiences:
+#                 # ✅ Lead update
+#                 audience.campaign_goal = campaign_goal
+#                 audience.framework = framework
+#                 audience.selected_service = service_name
+
+#                 audience.save(update_fields=[
+#                     "campaign_goal",
+#                     "framework",
+#                     "selected_service"
+#                 ])
+
+#                 ai_raw = get_response(request.user, audience, selected_service)
+#                 ai_data = json.loads(ai_raw)
+
+#                 subject = ai_data["main_email"]["subject"]
+#                 message = ai_data["main_email"]["body"]
+
+#                 final_message = message
+#                 if signature_html:
+#                     final_message += "<br><br>" + signature_html
+
+#                 SentEmail.objects.create(
+#                     user=request.user,
+#                     target_audience=audience,
+#                     email=audience.email,
+#                     subject=subject,
+#                     message=final_message,
+#                     is_scheduled=True,
+#                     scheduled_at=schedule_dt,
+#                     sending_account = None if shuffle_accounts else selected_account,
+#                     attachment=saved_obj if saved_attachment_id else None,
+#                     shuffle_accounts=shuffle_accounts
+
+#                 )
+#                 # =========================
+#                 # FOLLOW-UP GENERATION FOR SCHEDULED CAMPAIGN
+#                 # =========================
+
+#                 follow_ups = ai_data.get("follow_ups", [])
+#                 follow_up_days = [2, 4, 6, 8]
+
+#                 # Get latest sent email
+#                 sent_email_obj = SentEmail.objects.filter(
+#                     user=request.user,
+#                     target_audience=audience
+#                 ).order_by("-created").first()
+
+#                 if sent_email_obj:
+#                     for i, follow in enumerate(follow_ups):
+
+#                         if i >= len(follow_up_days):
+#                             break
+
+#                         follow_body = follow.get("body", "")
+
+#                         if signature_html:
+#                             follow_body += "<br><br>" + signature_html
+
+#                         ReminderEmail.objects.create(
+#                             user=request.user,
+#                             target_audience=audience,
+#                             sent_email=sent_email_obj,
+#                             message_id=make_msgid(domain='sellsharp.co'),
+#                             email=audience.email,
+#                             subject=f"Re: {subject}",
+#                             message=follow_body,
+#                             send_at=(schedule_dt + timezone.timedelta(days=follow_up_days[i])).date(),
+#                             sent=False
+#                         )
+#             print("Saved Attachment ID:", saved_attachment_id)
+#             print("Attachment File Path:", attachment_file)
+#             messages.success(request, "Campaign Scheduled Successfully")
+#             return redirect("campaign_view")
+
+#         # =========================
+#         # IMMEDIATE SEND
+#         # =========================
+#         else:
+
+#             account_list = list(google_accounts)
+
+#             for index, audience in enumerate(audiences):
+#                 # ✅ Lead update
+#                 audience.campaign_goal = campaign_goal
+#                 audience.framework = framework
+#                 audience.selected_service = service_name
+
+#                 audience.save(update_fields=[
+#                     "campaign_goal",
+#                     "framework",
+#                     "selected_service"
+#                 ])
+
+#                 # Shuffle logic
+#                 if shuffle_accounts and account_list:
+#                     selected_account = account_list[index % len(account_list)]
+
+#                 ai_raw = get_response(request.user, audience, selected_service)
+#                 ai_data = json.loads(ai_raw)
+
+#                 subject = ai_data["main_email"]["subject"]
+#                 message = ai_data["main_email"]["body"]
+
+#                 final_message = message
+#                 if signature_html:
+#                     final_message += "<br><br>" + signature_html
+
+#                 main_email = {
+#                     "subject": subject,
+#                     "body": final_message
+#                 }
+
+#                 sendCampaignEmail(
+#                     request=request,
+#                     user=request.user,
+#                     target_audience=audience,
+#                     main_email=main_email,
+#                     selected_account=selected_account,
+#                     attachment=attachment_file   
+#                 )
+            
+#             messages.success(request, "Campaign Sent Successfully")
+#             return redirect("campaign_view")
+
+#     return render(request, "generate_email/campaign.html", {
+#         "tags": tags,
+#         "user_services": user_services,
+#         "signatures": signatures,
+#         "google_accounts": google_accounts,
+#         "user_attachments": user_attachments
+#     })
+
+
+
+
+@login_required(login_url="login")
 def campaign_view(request):
+
+    if request.method == "GET" and not request.META.get("HTTP_REFERER"):
+        return redirect("/")
 
     tags = AudienceTag.objects.filter(user=request.user)
     user_services = ProductService.objects.filter(user=request.user)
@@ -1377,7 +3524,6 @@ def campaign_view(request):
         signature_id = request.POST.get("signature_id")
         sent_from = request.POST.get("sent_from")
         schedule_time = request.POST.get("schedule_time")
-        # shuffle_accounts = request.POST.get("shuffle_accounts")
         shuffle_accounts = request.POST.get("shuffle_accounts") == "on"
         saved_attachment_id = request.POST.get("saved_attachment")
 
@@ -1429,7 +3575,6 @@ def campaign_view(request):
             except Signature.DoesNotExist:
                 signature_obj = None
         else:
-            # Default signature if none selected
             signature_obj = Signature.objects.filter(
                 user=request.user,
             ).first()
@@ -1437,7 +3582,6 @@ def campaign_view(request):
         if signature_obj:
             signature_html = signature_obj.signature or ""
 
-            # ✅ If photo exists, append it
             if signature_obj.photo:
                 photo_url = request.build_absolute_uri(signature_obj.photo.url)
 
@@ -1449,7 +3593,6 @@ def campaign_view(request):
                     </p>
                 """
 
-        # If still empty → fallback default
         if not signature_html:
             signature_html = (
                 '<div style="margin:0;padding:0;line-height:1.4;">'
@@ -1460,6 +3603,7 @@ def campaign_view(request):
         # =========================
         # ATTACHMENT
         # =========================
+        saved_obj = None
         attachment_file = None
 
         if saved_attachment_id:
@@ -1469,14 +3613,12 @@ def campaign_view(request):
                     user=request.user
                 )
 
-                # 🔥 VERY IMPORTANT
                 attachment_file = saved_obj.file
-
-                # Ensure file pointer is at start
                 attachment_file.open()
                 attachment_file.seek(0)
 
             except EmailAttachment.DoesNotExist:
+                saved_obj = None
                 attachment_file = None
 
         # =========================
@@ -1486,7 +3628,7 @@ def campaign_view(request):
 
             schedule_dt = parse_datetime(schedule_time)
 
-            if schedule_dt:
+            if schedule_dt and timezone.is_naive(schedule_dt):
                 schedule_dt = timezone.make_aware(schedule_dt)
 
             if not schedule_dt:
@@ -1494,7 +3636,6 @@ def campaign_view(request):
                 return redirect("campaign_view")
 
             for audience in audiences:
-                # ✅ Lead update
                 audience.campaign_goal = campaign_goal
                 audience.framework = framework
                 audience.selected_service = service_name
@@ -1523,19 +3664,14 @@ def campaign_view(request):
                     message=final_message,
                     is_scheduled=True,
                     scheduled_at=schedule_dt,
-                    sending_account = None if shuffle_accounts else selected_account,
-                    attachment=saved_obj if saved_attachment_id else None,
+                    sending_account=None if shuffle_accounts else selected_account,
+                    attachment=saved_obj,
                     shuffle_accounts=shuffle_accounts
-
                 )
-                # =========================
-                # FOLLOW-UP GENERATION FOR SCHEDULED CAMPAIGN
-                # =========================
 
                 follow_ups = ai_data.get("follow_ups", [])
                 follow_up_days = [2, 4, 6, 8]
 
-                # Get latest sent email
                 sent_email_obj = SentEmail.objects.filter(
                     user=request.user,
                     target_audience=audience
@@ -1563,8 +3699,7 @@ def campaign_view(request):
                             send_at=(schedule_dt + timezone.timedelta(days=follow_up_days[i])).date(),
                             sent=False
                         )
-            print("Saved Attachment ID:", saved_attachment_id)
-            print("Attachment File Path:", attachment_file)
+
             messages.success(request, "Campaign Scheduled Successfully")
             return redirect("campaign_view")
 
@@ -1576,7 +3711,6 @@ def campaign_view(request):
             account_list = list(google_accounts)
 
             for index, audience in enumerate(audiences):
-                # ✅ Lead update
                 audience.campaign_goal = campaign_goal
                 audience.framework = framework
                 audience.selected_service = service_name
@@ -1587,7 +3721,6 @@ def campaign_view(request):
                     "selected_service"
                 ])
 
-                # Shuffle logic
                 if shuffle_accounts and account_list:
                     selected_account = account_list[index % len(account_list)]
 
@@ -1612,16 +3745,19 @@ def campaign_view(request):
                     target_audience=audience,
                     main_email=main_email,
                     selected_account=selected_account,
-                    attachment=attachment_file   
+                    attachment=attachment_file
                 )
-            
+
             messages.success(request, "Campaign Sent Successfully")
             return redirect("campaign_view")
+
+    selected_tag_id = request.GET.get("tag_id") or request.POST.get("tag_id")
 
     return render(request, "generate_email/campaign.html", {
         "tags": tags,
         "user_services": user_services,
         "signatures": signatures,
         "google_accounts": google_accounts,
-        "user_attachments": user_attachments
+        "user_attachments": user_attachments,
+        "selected_tag_id": str(selected_tag_id) if selected_tag_id else "",
     })

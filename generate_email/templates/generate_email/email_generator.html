@@ -74,13 +74,28 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="targetEmail" class="form-label">Target Person Email *</label>
-                                <input type="email" name="email" class="form-control" id="targetEmail" placeholder="targetperson@gmail.com" required>
+                                <input
+            type="email"
+            name="email"
+            class="form-control"
+            id="targetEmail"
+            placeholder="targetperson@gmail.com"
+            value="{{ prefill_data.email|default:'' }}"
+            required
+        >
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="targetCompanyName" class="form-label">Target Person LinkedIn</label>
-                                <input type="text" name="receiver_linkedin_url" class="form-control" id="targetCompanyName" placeholder="https://linkedin.com/person/target">
+                                <input
+            type="text"
+            name="receiver_linkedin_url"
+            class="form-control"
+            id="targetCompanyName"
+            placeholder="https://linkedin.com/person/target"
+            value="{{ prefill_data.receiver_linkedin_url|default:'' }}"
+        >
                             </div>
                         </div>
                     </div>
@@ -88,7 +103,15 @@
                         <div class="col-md-12">
                             <div class="mb-3">
                                 <label for="targetWebsite" class="form-label">Target Company Website *</label>
-                                <input type="text" name="company_url" class="form-control" required id="targetWebsite" placeholder="https://target-company.com">
+                                <input
+            type="text"
+            name="company_url"
+            class="form-control"
+            id="targetWebsite"
+            placeholder="https://target-company.com"
+            value="{{ prefill_data.company_url|default:'' }}"
+            required
+        >
                             </div>
                         </div>
 
@@ -97,13 +120,13 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="id_first_name" class="form-label">Target Person First Name *</label>
-                                <input type="text" name="receiver_first_name" class="form-control" id="id_first_name" placeholder="Contact person's first name" required>
+                                <input type="text" name="receiver_first_name" class="form-control" id="id_first_name" placeholder="Contact person's first name" required value="{{ prefill_data.receiver_first_name|default:'' }}">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="id_last_name" class="form-label">Target Person Last Name</label>
-                                <input type="text" name="receiver_last_name" class="form-control" id="id_last_name" placeholder="Contact person's last name">
+                                <input type="text" name="receiver_last_name" class="form-control" id="id_last_name" placeholder="Contact person's last name" value="{{ prefill_data.receiver_last_name|default:'' }}">
                             </div>
                         </div>
                     </div>
@@ -326,21 +349,16 @@
 
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
     const emailInput = document.getElementById("targetEmail");
     const websiteInput = document.getElementById("targetWebsite");
 
     const publicDomains = ["gmail", "yahoo", "outlook", "hotmail", "icloud"];
-
     let autoFilled = false;
 
-    // Detect manual edit
-    websiteInput.addEventListener("input", function () {
-        autoFilled = false;
-    });
-
-    emailInput.addEventListener("input", function () {
+    function autoFillWebsiteFromEmail() {
         const email = emailInput.value.trim();
+        const website = websiteInput.value.trim();
 
         const match = email.match(/@([^\.@]+)\.(.+)$/);
         if (!match) {
@@ -363,12 +381,23 @@
             return;
         }
 
-        // Update only if previously auto-filled OR empty
-        if (!websiteInput.value || autoFilled) {
+        // Fill only if website is empty or previously auto-filled
+        if (!website || autoFilled) {
             websiteInput.value = `https://${companyName}.${domainExt}`;
             autoFilled = true;
         }
+    }
+
+    // Detect manual website edit
+    websiteInput.addEventListener("input", function () {
+        autoFilled = false;
     });
+
+    // When user types email
+    emailInput.addEventListener("input", autoFillWebsiteFromEmail);
+
+    // Expose function globally so it can be reused after prefill
+    window.autoFillWebsiteFromEmail = autoFillWebsiteFromEmail;
 });
 </script>
 <script>
@@ -437,7 +466,7 @@ document.addEventListener("DOMContentLoaded", function () {
 {% block js %}
 <script src="{% static 'generate_email/js/script.js' %}"></script>
 <script>
-    function setActiveStep(stepNumber) {
+function setActiveStep(stepNumber) {
     document.querySelectorAll(".step").forEach(step => {
         step.classList.remove("active");
     });
@@ -445,17 +474,40 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelector(`.step[data-step="${stepNumber}"]`)
         .classList.add("active");
 }
-</script>
-<script>
-document.addEventListener("DOMContentLoaded", function(){
 
-    const toggleBtn = document.getElementById("sidebarToggle");
+const toggleBtn = document.getElementById("sidebarToggle");
     const sidebar = document.getElementById("sidebar");
 
     toggleBtn.addEventListener("click", function(){
         sidebar.classList.toggle("collapsed");
-    });
+    })
 
+window.addEventListener("load", function () {
+    const prefillData = {
+        email: "{{ prefill_data.email|default:''|escapejs }}",
+        linkedin: "{{ prefill_data.receiver_linkedin_url|default:''|escapejs }}",
+        company_url: "{{ prefill_data.company_url|default:''|escapejs }}",
+        first_name: "{{ prefill_data.receiver_first_name|default:''|escapejs }}",
+        last_name: "{{ prefill_data.receiver_last_name|default:''|escapejs }}"
+    };
+
+    setTimeout(function () {
+        const emailField = document.getElementById("targetEmail");
+        const linkedinField = document.getElementById("targetCompanyName");
+        const websiteField = document.getElementById("targetWebsite");
+        const firstNameField = document.getElementById("id_first_name");
+        const lastNameField = document.getElementById("id_last_name");
+
+        if (emailField) emailField.value = prefillData.email || "";
+        if (linkedinField) linkedinField.value = prefillData.linkedin || "";
+        if (websiteField) websiteField.value = prefillData.company_url || "";
+        if (firstNameField) firstNameField.value = prefillData.first_name || "";
+        if (lastNameField) lastNameField.value = prefillData.last_name || "";
+
+        if (prefillData.email && !prefillData.company_url && typeof window.autoFillWebsiteFromEmail === "function") {
+            window.autoFillWebsiteFromEmail();
+        }
+    }, 200);
 });
 </script>
 {% endblock js %}
