@@ -179,7 +179,7 @@ import json
 import re
 import requests
 from bs4 import BeautifulSoup
-from openai import OpenAI
+from openai import AzureOpenAI
 from dotenv import load_dotenv
  
 load_dotenv()
@@ -273,7 +273,17 @@ def scrape_target_intel(linkedin_url, website_url):
 # =========================
 
 def get_response(user, target, selected_service):
-    client = OpenAI(api_key=os.environ["CHATGPT_API_KEY"])
+    # client = OpenAI(api_key=os.environ["CHATGPT_API_KEY"])
+    #for production 
+    endpoint = os.getenv("ENDPOINT_URL", "https://jivihireopenai.openai.azure.com/")
+ 
+    # # Initialize Azure OpenAI Service client with key-based authentication
+    client = AzureOpenAI(
+        azure_endpoint=endpoint,
+        api_key=os.environ['CHATGPT_API_KEY'],
+        api_version="2024-05-01-preview",
+    )
+    print(os.environ['CHATGPT_API_KEY'])
 
     scraped_data = scrape_target_intel(
         target.receiver_linkedin_url,
