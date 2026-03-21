@@ -28,7 +28,7 @@ urlpatterns = [
     path("select-person-for-email/", SelectPersonForEmailView.as_view(), name="select_person_for_email"),
     path('search-by-linkdin/',SearchPeopleByLinkdinView.as_view(),name="search_by_linkdin"),
     path('search-company/',SearchCompanyView.as_view(),name="search_company"),
-    path('data-enrichment/',DataEnrichmentView.as_view(),name="data_enrichment"),
+    path('data-enrichment/',DataEnrichmentView.as_view(),name="data_enrich"),
     path("list/",PeopleListView.as_view(),name='list_view'),
     path("saved-lists/", GetSavedListsView.as_view(), name="get_saved_lists"),
 

@@ -31,7 +31,7 @@
 
 <div class="d-flex">
 
-    <div id="sidebar" class="sidebar d-flex flex-column p-3 {% if request.resolver_match.url_name == 'search_people' or request.resolver_match.url_name == 'search_company' or request.resolver_match.url_name == 'search_by_linkdin' or request.resolver_match.url_name == 'data_enrichment' %}collapsed hover-expand{% endif %}">
+    <div id="sidebar" class="sidebar d-flex flex-column p-3 {% if request.resolver_match.url_name == 'search_people' or request.resolver_match.url_name == 'search_company' or request.resolver_match.url_name == 'search_by_linkdin' or request.resolver_match.url_name == 'data_enrich' %}collapsed hover-expand{% endif %}">
         {% comment %} <button id="sidebarToggle" class="btn border-0 bg-transparent shadow-none">
             <i class="fas fa-angle-right text-white"></i>
         </button> {% endcomment %}
@@ -56,11 +56,11 @@
             </li>
 
             <li class="sidebar-dropdown">
-                <a class="nav-link d-flex justify-content-between align-items-center {% if request.resolver_match.url_name == 'search_people' or request.resolver_match.url_name == 'search_company' or request.resolver_match.url_name == 'search_by_linkdin' or request.resolver_match.url_name == 'data_enrichment' %}active-link{% endif %}"
+                <a class="nav-link d-flex justify-content-between align-items-center {% if request.resolver_match.url_name == 'search_people' or request.resolver_match.url_name == 'search_company' or request.resolver_match.url_name == 'search_by_linkdin' or request.resolver_match.url_name == 'data_enrich' %}active-link{% endif %}"
                    data-bs-toggle="collapse"
                    href="#prospectingMenu"
                    role="button"
-                   aria-expanded="{% if request.resolver_match.url_name == 'search_people' or request.resolver_match.url_name == 'search_company' or request.resolver_match.url_name == 'search_by_linkdin' or request.resolver_match.url_name == 'data_enrichment' %}true{% else %}false{% endif %}"
+                   aria-expanded="{% if request.resolver_match.url_name == 'search_people' or request.resolver_match.url_name == 'search_company' or request.resolver_match.url_name == 'search_by_linkdin' or request.resolver_match.url_name == 'data_enrich' %}true{% else %}false{% endif %}"
                    aria-controls="prospectingMenu">
                     
                         <i class="fas fa-search me-2"></i><span>Prospect &amp; Enrich</span>
@@ -68,7 +68,7 @@
                     <i class="fas fa-chevron-down small"></i>
                 </a>
 
-                <div class="collapse {% if request.resolver_match.url_name == 'search_people' or request.resolver_match.url_name == 'search_company' or request.resolver_match.url_name == 'search_by_linkdin' or request.resolver_match.url_name == 'data_enrichment' %}show{% endif %}" id="prospectingMenu">
+                <div class="collapse {% if request.resolver_match.url_name == 'search_people' or request.resolver_match.url_name == 'search_company' or request.resolver_match.url_name == 'search_by_linkdin' or request.resolver_match.url_name == 'data_enrich' %}show{% endif %}" id="prospectingMenu">
                     <ul class="submenu list-unstyled ms-3 mt-2">
                         <li>
                             <a href="{% url 'search_people' %}" class="nav-link submenu-link {% if request.resolver_match.url_name == 'search_people' %}active-link{% endif %}">
@@ -89,7 +89,7 @@
                         </li>
 
                         <li>
-                            <a href="{% url 'data_enrichment' %}" class="nav-link submenu-link {% if request.resolver_match.url_name == 'data_enrichment' %}active-link{% endif %}">
+                            <a href="{% url 'data_enrich' %}" class="nav-link submenu-link {% if request.resolver_match.url_name == 'data_enrich' %}active-link{% endif %}">
                                 <i class="fas fa-database me-2"></i><span>Data Enrichment</span>
                             </a>
                         </li>
