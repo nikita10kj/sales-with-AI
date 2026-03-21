@@ -440,6 +440,7 @@ class SearchPeopleView(View):
     def post(self, request, *args, **kwargs):
         people = []
         error = None
+        pagination = {}
 
         def to_list(value):
             return [v.strip() for v in value.split(",") if v.strip()]
@@ -2518,6 +2519,8 @@ class SendEmailView(BlockDirectAccessMixin,LoginRequiredMixin, View):
 
             saved_attachment_id = request.POST.get("saved_attachment_id")
 
+            email = (request.POST.get("email") or "").strip()
+
             attachment = None
 
             if saved_attachment_id:
@@ -2536,6 +2539,8 @@ class SendEmailView(BlockDirectAccessMixin,LoginRequiredMixin, View):
             emails = data.get("emails")
             targetId = data.get("targetId")
             sent_from = data.get("sent_from")
+
+            email = (data.get("email") or "").strip()
             attachment = None
             selected_account = None
 
@@ -2569,22 +2574,32 @@ class SendEmailView(BlockDirectAccessMixin,LoginRequiredMixin, View):
         from django.core.validators import validate_email
         from django.core.exceptions import ValidationError
 
-        email = (data.get('email') or "").strip()
+        # email = (data.get('email') or "").strip()
 
-        # 🚨 REQUIRED VALIDATION
-        if not email:
-            return JsonResponse({
-                'success': False,
-                'errors': "Target email is required"
-            }, status=400)
+        # # 🚨 REQUIRED VALIDATION
+        # if not email:
+        #     return JsonResponse({
+        #         'success': False,
+        #         'errors': "Target email is required"
+        #     }, status=400)
 
-        # 🚨 FORMAT VALIDATION
+        # # 🚨 FORMAT VALIDATION
+        # try:
+        #     validate_email(email)
+        # except ValidationError:
+        #     return JsonResponse({
+        #         'success': False,
+        #         'errors': "Enter a valid email address"
+        #     }, status=400)
+
+        email = target.email
+
         try:
             validate_email(email)
         except ValidationError:
             return JsonResponse({
                 'success': False,
-                'errors': "Enter a valid email address"
+                'errors': "Invalid target email"
             }, status=400)
         
         main_email = emails["main_email"]
