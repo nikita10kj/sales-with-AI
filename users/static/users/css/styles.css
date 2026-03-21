@@ -1,3 +1,6 @@
+html, body {
+    height: 100%;
+}
 :root {
   --primary-color: #0d6efd;
   --secondary-color: #6c757d;
@@ -7,6 +10,10 @@
   --info-color: #0dcaf0;
   --light-color: #f8f9fa;
   --dark-color: #212529;
+}
+
+.flex-grow-1::-webkit-scrollbar {
+    display: none;
 }
 
 body {
@@ -489,38 +496,254 @@ body {
   color: #666;
 }
 
-/* Sidebar collapse */
+/* ================= SIDEBAR BASE ================= */
 #sidebar {
-  width: 250px;
-  transition: all 0.3s ease;
+    width: 260px;
+    height: auto;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    flex-shrink: 0;
+    transition: width 0.25s ease;
+    z-index: 100;
+    /* overflow-y: auto; Allow scrolling within sidebar if needed */
+    overflow-x: hidden;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
+/* ================= COLLAPSED ================= */
 #sidebar.collapsed {
-  width: 70px;
-}
-#sidebarToggle{
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 10;
+    width: 72px;
 }
 
-/* Hide text when collapsed */
+/* ================= LOGO ================= */
+.logo-full {
+    display: block;
+}
+
+.logo-mini {
+    display: none;
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+}
+
+/* Collapsed logo */
+#sidebar.collapsed .logo-full {
+    display: none;
+}
+
+#sidebar.collapsed .logo-mini {
+    display: block;
+    margin: 30px auto 10px auto;
+}
+
+/* ================= NAV LINKS ================= */
+.sidebar .nav-link {
+    color: rgba(255,255,255,0.8);
+    padding: 10px 15px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+/* Hover */
+.sidebar .nav-link:hover {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+}
+
+/* Active */
+.sidebar .nav-link.active-link {
+    background: linear-gradient(135deg, #ffffff33, #ffffff10);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    border-left: 3px solid #fff;
+}
+
+/* ================= ICON ================= */
+.sidebar .nav-link i {
+    font-size: 18px;
+    min-width: 24px;
+}
+
+/* ================= COLLAPSED NAV ================= */
 #sidebar.collapsed .nav-link {
-  font-size: 0;
+    justify-content: center;
+    padding: 14px 0;
 }
 
-#sidebar.collapsed .nav-link i {
-  font-size: 18px;
-  margin-right: 0;
-}
-
-/* Hide logo */
-#sidebar.collapsed img {
-  width: 40px;
+/* Hide only text */
+#sidebar.collapsed .nav-link span,
+#sidebar.collapsed .nav-link .small {
+    display: none !important;
 }
 
 /* Center icons */
-#sidebar.collapsed ul li {
-  text-align: center;
+#sidebar.collapsed .nav-link i {
+    margin: 0 !important;
+}
+
+/* Active icon style */
+#sidebar.collapsed .nav-link.active-link {
+    border-left: none;
+    background: transparent;
+    box-shadow: none;
+}
+
+#sidebar.collapsed .nav-link.active-link i {
+    background: rgba(255,255,255,0.2);
+    padding: 10px;
+    border-radius: 50%;
+}
+
+/* ================= SUBMENU ================= */
+#sidebar.collapsed .submenu {
+    display: none !important;
+}
+
+/* Fix list spacing */
+#sidebar.collapsed ul {
+    padding-left: 0;
+}
+
+#sidebar.collapsed li {
+    list-style: none;
+    text-align: center;
+}
+
+/* ================= HOVER EXPAND (KEY FIX) ================= */
+
+/* Expand sidebar on hover — but NOT when no-hover is set */
+#sidebar.collapsed.hover-expand:not(.no-hover):hover {
+    width: 260px;
+}
+
+/* Restore full logo */
+#sidebar.collapsed.hover-expand:not(.no-hover):hover .logo-full {
+    display: block !important;
+}
+
+#sidebar.collapsed.hover-expand:not(.no-hover):hover .logo-mini {
+    display: none !important;
+}
+
+/* Restore nav layout */
+#sidebar.collapsed.hover-expand:not(.no-hover):hover .nav-link {
+    justify-content: flex-start;
+    padding: 10px 15px;
+}
+
+/* Show nav text labels */
+#sidebar.collapsed.hover-expand:not(.no-hover):hover .nav-link span,
+#sidebar.collapsed.hover-expand:not(.no-hover):hover .nav-link .small {
+    display: inline !important;
+}
+
+/* NOTE: submenu (People/Company/LinkedIn/Data Enrichment) intentionally NOT shown on hover */
+
+/* Show the Bootstrap collapse wrapper and submenu on hover */
+#sidebar.collapsed.hover-expand:not(.no-hover):hover .collapse {
+    display: block !important;
+}
+
+#sidebar.collapsed.hover-expand:not(.no-hover):hover .submenu {
+    display: block !important;
+}
+
+/* Restore icon spacing */
+#sidebar.collapsed.hover-expand:not(.no-hover):hover .nav-link i {
+    margin-right: 0.5rem !important;
+}
+
+/* Restore active style */
+#sidebar.collapsed.hover-expand:not(.no-hover):hover .nav-link.active-link {
+    border-left: 3px solid #fff;
+    background: linear-gradient(135deg, #ffffff33, #ffffff10);
+}
+
+/* Remove circle from active icon on hover — circle only applies in pure icon-only state */
+#sidebar.collapsed.hover-expand:not(.no-hover):hover .nav-link.active-link i {
+    background: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+}
+
+/* no-hover: keep button centered even while mouse is over sidebar */
+#sidebar.collapsed.hover-expand.no-hover:hover #sidebarToggle {
+    right: 50%;
+    transform: translateX(50%);
+}
+
+
+/* ================= TOGGLE BUTTON ================= */
+#sidebarToggle {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    color: white;
+    transition: right 0.25s ease, transform 0.25s ease;
+}
+
+/* Center toggle when collapsed */
+#sidebar.collapsed #sidebarToggle {
+    right: 50%;
+    transform: translateX(50%);
+}
+
+/* Arrow points LEFT (‹) when sidebar is expanded = user can collapse */
+#sidebar:not(.collapsed) #sidebarToggle .fa-angle-right {
+    display: inline-block;
+    transform: rotate(180deg);
+    transition: transform 0.25s ease;
+}
+
+/* Arrow points RIGHT (›) when collapsed = user can expand */
+#sidebar.collapsed #sidebarToggle .fa-angle-right {
+    display: inline-block;
+    transform: rotate(0deg);
+    transition: transform 0.25s ease;
+}
+
+/* On hover-expand pages: shift button to right edge while hovering so user can click it */
+#sidebar.collapsed.hover-expand:hover #sidebarToggle {
+    right: 10px;
+    transform: none;
+}
+
+
+/* ================= LOGO FIX ================= */
+
+/* Default */
+#sidebar .logo-full {
+    display: block;
+}
+
+#sidebar .logo-mini {
+    display: none;
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+}
+
+/* When collapsed → show mini logo */
+#sidebar.collapsed .logo-full {
+    display: none !important;
+}
+
+#sidebar.collapsed .logo-mini {
+    display: block !important;
+    margin: 30px auto 10px auto;
+}
+
+/* When hover expand → show full logo again */
+#sidebar.collapsed.hover-expand:hover .logo-full {
+    display: block !important;
+}
+
+#sidebar.collapsed.hover-expand:hover .logo-mini {
+    display: none !important;
 }

@@ -1,0 +1,589 @@
+{% extends "users/base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .enrichment-page {
+        padding: 0 0 24px;
+    }
+
+    .enrichment-topbar {
+        background: linear-gradient(90deg, #6276ea, #7c4fc8);
+        color: #fff;
+        padding: 14px 22px;
+        margin: -24px -24px 32px -24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 17px;
+        font-weight: 700;
+        position: relative;
+    }
+
+    .enrichment-topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .enrichment-topbar i {
+        font-size: 18px;
+    }
+
+    .enrichment-container {
+        max-width: 840px;
+        margin: 0 auto;
+    }
+
+    .upload-card {
+        background: #fff;
+        border: 1px solid #e6eaf2;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(50, 50, 93, 0.08);
+        padding: 32px;
+        margin-bottom: 24px;
+        margin-top:25px;
+    }
+
+    .upload-card h3 {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 10px;
+    }
+
+    .upload-card p {
+        font-size: 15px;
+        line-height: 1.7;
+        color: #586174;
+        margin-bottom: 22px;
+        max-width: 720px;
+    }
+
+    .dropzone {
+        border: 2px dashed #cfd7e6;
+        border-radius: 14px;
+        background: #fcfcfd;
+        min-height: 235px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 30px 24px;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        position: relative;
+    }
+
+    .dropzone:hover {
+        border-color: #93b0f8;
+        background: #f9fbff;
+    }
+
+    .dropzone.dragover {
+        border-color: #5f74e8;
+        background: #f5f8ff;
+    }
+
+    .dropzone input[type="file"] {
+        display: none;
+    }
+
+    .dropzone-content i {
+        font-size: 54px;
+        color: #98a2b3;
+        margin-bottom: 18px;
+    }
+
+    .dropzone-title {
+        font-size: 18px;
+        font-weight: 500;
+        color: #111827;
+        margin-bottom: 8px;
+    }
+
+    .dropzone-subtitle {
+        font-size: 14px;
+        color: #667085;
+    }
+
+    .selected-file {
+        margin-top: 16px;
+        font-size: 14px;
+        color: #374151;
+        font-weight: 600;
+    }
+
+    .upload-actions {
+        margin-top: 20px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .theme-btn {
+        background: linear-gradient(90deg, #6276ea, #7c4fc8);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        padding: 13px 24px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.25s ease;
+    }
+
+    .theme-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 18px rgba(98, 118, 234, 0.24);
+        color: #fff;
+    }
+
+    .secondary-btn {
+        background: #eef2ff;
+        color: #4d5ed6;
+        border: 1px solid #d8deff;
+        border-radius: 12px;
+        padding: 13px 22px;
+        font-size: 15px;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .secondary-btn:hover {
+        background: #e8edff;
+        color: #4d5ed6;
+    }
+
+    .info-card {
+        background: #eef4ff;
+        border-radius: 14px;
+        padding: 28px 26px;
+        border: 1px solid #dfe8fb;
+    }
+
+    .info-card h4 {
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 16px;
+    }
+
+    .info-card ul {
+        margin: 0;
+        padding-left: 22px;
+    }
+
+    .info-card li {
+        color: #233a67;
+        font-size: 15px;
+        line-height: 1.9;
+        margin-bottom: 2px;
+    }
+
+    .error-box {
+        background: #fff0f0;
+        color: #c53d3d;
+        border: 1px solid #f2c3c3;
+        padding: 14px 16px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+
+    .success-box {
+        background: #effaf3;
+        color: #18794e;
+        border: 1px solid #bde5ca;
+        padding: 14px 16px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+
+    .loader-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.78);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .loader-box {
+        background: #fff;
+        padding: 24px 32px;
+        border-radius: 18px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+        text-align: center;
+        min-width: 280px;
+    }
+
+    .loader-text {
+        margin-top: 10px;
+        font-weight: 700;
+        color: #2f2f44;
+    }
+
+    .loader-subtext {
+        margin-top: 6px;
+        font-size: 14px;
+        color: #7a7f91;
+    }
+
+    .saved-list-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .saved-list-select {
+        flex: 1;
+        min-width: 240px;
+        height: 48px;
+        border: 1px solid #d6ddeb;
+        border-radius: 12px;
+        padding: 0 14px;
+        font-size: 14px;
+        color: #344054;
+        background: #fff;
+    }
+
+    .status-box {
+        margin-top: 16px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .status-box.error {
+        color: #c53d3d;
+    }
+
+    .status-box.success {
+        color: #18794e;
+    }
+
+    .status-box.info {
+        color: #5f6b85;
+    }
+
+    .inline-form {
+        display: inline;
+    }
+
+    @media (max-width: 768px) {
+        .enrichment-topbar {
+            margin: -24px -16px 24px -16px;
+            padding: 14px 16px;
+        }
+
+        .upload-card {
+            padding: 22px 18px;
+        }
+
+        .info-card {
+            padding: 22px 18px;
+        }
+
+        .dropzone {
+            min-height: 200px;
+            padding: 24px 18px;
+        }
+
+        .dropzone-title {
+            font-size: 16px;
+        }
+    }
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="col-12 enrichment-page">
+    <div class="enrichment-topbar">
+        <div class="enrichment-topbar-left">
+            {% comment %} <button class="mobile-filter-btn" type="button" id="mobileFilterBtn" style="display:none;">
+                <i class="fas fa-filter"></i> Filters
+            </button> {% endcomment %}
+            <i class="far fa-file-alt"></i>
+            <span>Data Enrichment</span>
+        </div>
+        
+    </div>
+    <br>
+
+    <div class="enrichment-container">
+        {% if error %}
+            <div class="error-box">{{ error }}</div>
+        {% endif %}
+
+        {% if success %}
+            <div class="success-box">{{ success }}</div>
+        {% endif %}
+
+        <div class="upload-card">
+            <h3>Enrich Saved List</h3>
+            <p>
+                Select a saved people list and fetch emails for all contacts directly from your saved records.
+                After enrichment, you can download the enriched CSV or move the list into Campaign.
+            </p>
+
+            <div class="saved-list-row">
+                <select id="savedListSelect" class="saved-list-select">
+                    <option value="">Select saved list</option>
+                </select>
+
+                <button type="button" id="enrichSavedListBtn" class="theme-btn">
+                    Enrich Selected List
+                </button>
+
+                <a href="#" id="downloadEnrichedCsvBtn" class="secondary-btn" style="display:none;">
+                    Download Enriched CSV
+                </a>
+
+                <form method="POST" action="{% url 'use_saved_list_in_campaign' %}" id="useInCampaignForm" class="inline-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="list_id" id="campaignListIdInput">
+                    <button type="submit" id="useInCampaignBtn" class="secondary-btn" style="display:none;">
+                        Use in Campaign
+                    </button>
+                </form>
+            </div>
+
+            <div id="savedListEnrichStatus" class="status-box"></div>
+        </div>
+
+        {% comment %} <div class="upload-card">
+            <h3>Upload CSV for Enrichment</h3>
+            <p>
+                Upload your CSV file containing contact or company data. We'll enrich it with
+                additional information like emails, phone numbers, and more.
+            </p>
+
+            <form method="POST" enctype="multipart/form-data" id="enrichmentForm">
+                {% csrf_token %}
+
+                <label class="dropzone" id="dropzone">
+                    <input type="file" name="csv_file" id="csvFileInput" accept=".csv" required>
+                    <div class="dropzone-content">
+                        <i class="fas fa-upload"></i>
+                        <div class="dropzone-title">Drop your CSV file here or click to browse</div>
+                        <div class="dropzone-subtitle">Supported format: .csv (Max 10MB)</div>
+                        <div class="selected-file" id="selectedFileName"></div>
+                    </div>
+                </label>
+
+                <div class="upload-actions">
+                    <button type="submit" class="theme-btn">Upload & Enrich</button>
+                    <a href="#" class="secondary-btn">Download Sample CSV</a>
+                </div>
+            </form>
+        </div> {% endcomment %}
+
+        <div class="info-card">
+            <h4>What is Data Enrichment?</h4>
+            <ul>
+                <li>Add missing email addresses and phone numbers to your contacts</li>
+                <li>Enrich company information with industry, size, and revenue data</li>
+                <li>Find LinkedIn profiles and social media links</li>
+                <li>Verify and standardize existing data for better accuracy</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div id="enrichLoader" class="loader-overlay">
+    <div class="loader-box">
+        <div class="spinner-border text-primary" role="status"></div>
+        <div class="loader-text">Uploading CSV for enrichment...</div>
+        <div class="loader-subtext">Please wait while your file is being processed.</div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block js %}
+<script>
+    const GET_SAVED_LISTS_URL = "{% url 'get_saved_lists' %}";
+    const ENRICH_SAVED_LIST_URL = "{% url 'enrich_saved_list' %}";
+    const EXPORT_SAVED_LIST_CSV_BASE_URL = "{% url 'export_saved_list_csv' 0 %}";
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("enrichmentForm");
+    const loader = document.getElementById("enrichLoader");
+    const fileInput = document.getElementById("csvFileInput");
+    const selectedFileName = document.getElementById("selectedFileName");
+    const dropzone = document.getElementById("dropzone");
+
+    const savedListSelect = document.getElementById("savedListSelect");
+    const enrichSavedListBtn = document.getElementById("enrichSavedListBtn");
+    const savedListEnrichStatus = document.getElementById("savedListEnrichStatus");
+    const downloadEnrichedCsvBtn = document.getElementById("downloadEnrichedCsvBtn");
+
+    const campaignListIdInput = document.getElementById("campaignListIdInput");
+    const useInCampaignBtn = document.getElementById("useInCampaignBtn");
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function updateFileName(file) {
+        if (file) {
+            selectedFileName.textContent = "Selected file: " + file.name;
+        } else {
+            selectedFileName.textContent = "";
+        }
+    }
+
+    async function loadSavedLists() {
+        try {
+            const response = await fetch(GET_SAVED_LISTS_URL, {
+                method: "GET",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            });
+
+            const data = await response.json();
+
+            if (!savedListSelect) return;
+
+            savedListSelect.innerHTML = '<option value="">Select saved list</option>';
+
+            if (data.success && Array.isArray(data.lists)) {
+                data.lists.forEach(function (item) {
+                    const option = document.createElement("option");
+                    option.value = item.id;
+                    option.textContent = `${item.name} (${item.count || 0})`;
+                    savedListSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error("Failed to load saved lists:", error);
+        }
+    }
+
+    if (savedListSelect) {
+    savedListSelect.addEventListener("change", function () {
+        const listId = this.value || "";
+        campaignListIdInput.value = listId;
+
+        useInCampaignBtn.style.display = "none";
+        downloadEnrichedCsvBtn.style.display = "none";
+        savedListEnrichStatus.textContent = "";
+        savedListEnrichStatus.className = "status-box";
+    });
+}
+
+    if (fileInput) {
+        fileInput.addEventListener("change", function () {
+            updateFileName(this.files[0]);
+        });
+    }
+
+    if (dropzone) {
+        ["dragenter", "dragover"].forEach(function(eventName) {
+            dropzone.addEventListener(eventName, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.add("dragover");
+            });
+        });
+
+        ["dragleave", "drop"].forEach(function(eventName) {
+            dropzone.addEventListener(eventName, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.remove("dragover");
+            });
+        });
+
+        dropzone.addEventListener("drop", function(e) {
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) {
+                fileInput.files = files;
+                updateFileName(files[0]);
+            }
+        });
+    }
+
+    if (form) {
+        form.addEventListener("submit", function () {
+            loader.style.display = "flex";
+        });
+    }
+
+    if (enrichSavedListBtn) {
+        enrichSavedListBtn.addEventListener("click", async function () {
+            const listId = savedListSelect ? savedListSelect.value : "";
+
+            if (!listId) {
+                alert("Please select a saved list.");
+                return;
+            }
+
+            enrichSavedListBtn.disabled = true;
+            enrichSavedListBtn.textContent = "Enriching...";
+            savedListEnrichStatus.className = "status-box info";
+            savedListEnrichStatus.textContent = "Fetching emails, please wait...";
+            downloadEnrichedCsvBtn.style.display = "none";
+
+            try {
+                const response = await fetch(ENRICH_SAVED_LIST_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie("csrftoken"),
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: JSON.stringify({
+                        list_id: listId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    savedListEnrichStatus.className = "status-box error";
+                    savedListEnrichStatus.textContent = data.error || "Enrichment failed.";
+                    return;
+                }
+
+                savedListEnrichStatus.className = "status-box success";
+                savedListEnrichStatus.textContent = data.message;
+
+                downloadEnrichedCsvBtn.href = EXPORT_SAVED_LIST_CSV_BASE_URL.replace("/0/export-csv/", `/${data.list_id}/export-csv/`);
+                downloadEnrichedCsvBtn.style.display = "inline-flex";
+
+                campaignListIdInput.value = data.list_id;
+                useInCampaignBtn.style.display = "inline-flex";
+            } catch (error) {
+                console.error(error);
+                savedListEnrichStatus.className = "status-box error";
+                savedListEnrichStatus.textContent = "Server error during enrichment.";
+            } finally {
+                enrichSavedListBtn.disabled = false;
+                enrichSavedListBtn.textContent = "Enrich Selected List";
+            }
+        });
+    }
+
+    loadSavedLists();
+});
+</script>
+{% endblock js %}

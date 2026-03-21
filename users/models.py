@@ -48,7 +48,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True, validators=[EmailValidator],null=True,blank=True)
     full_name = models.CharField(max_length=50, null=True)
     company_url = models.URLField(null=True, blank=True)
-    company_linkedin_url = models.URLField(null=True)
+    company_linkedin_url = models.URLField(null=True,blank=True)
     user_linkedin_url = models.URLField(null=True, blank=True)
     company_name = models.CharField(max_length=255, null=True)
     contact = models.CharField(max_length=15, null=True, blank=True)

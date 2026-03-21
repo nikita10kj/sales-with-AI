@@ -1,0 +1,697 @@
+{% extends 'users/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'search/css/linkdin_search.css' %}?v=8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+{% endblock extra_css %}
+
+{% block content %}
+<div class="col-12 search-page">
+    <div class="linkedin-search-shell">
+
+        <!-- ═══════════════════════════════ LEFT SIDEBAR ═══════════════════════════════ -->
+        <div class="filters-panel">
+            <form method="POST" action="{% url 'search_by_linkdin' %}" id="linkedinSearchForm" class="filter-form">
+                {% csrf_token %}
+
+                <!-- Header brand -->
+                <div class="sidebar-brand">
+                    <span class="sidebar-brand-icon"><i class="fab fa-linkedin-in"></i></span>
+                    <span class="sidebar-brand-label">LinkedIn Lookup</span>
+                </div>
+
+                <!-- URL input section -->
+                <div class="li-input-section">
+                    <div class="li-input-label">
+                        <i class="fas fa-link li-input-label-icon"></i>
+                        LinkedIn Profile URL
+                    </div>
+                    <div class="li-url-wrap">
+                        <span class="li-url-prefix"><i class="fab fa-linkedin-in"></i></span>
+                        <input
+                            type="url"
+                            id="linkedin_url"
+                            name="linkedin_url"
+                            placeholder="https://linkedin.com/in/username"
+                            value="{{ form.linkedin_url }}"
+                            required
+                            autocomplete="off"
+                        >
+                    </div>
+                    <!-- <div class="li-input-hint">Paste any public LinkedIn profile URL to fetch contact details.</div> -->
+                </div>
+
+                <!-- Tips section -->
+                <!-- <div class="li-tips-section">
+                    <div class="li-tip-item">
+                        <span class="li-tip-icon"><i class="fas fa-check-circle"></i></span>
+                        <span>Works with any public LinkedIn profile</span>
+                    </div>
+                    <div class="li-tip-item">
+                        <span class="li-tip-icon"><i class="fas fa-check-circle"></i></span>
+                        <span>Fetches email, phone &amp; company data</span>
+                    </div>
+                    <div class="li-tip-item">
+                        <span class="li-tip-icon"><i class="fas fa-check-circle"></i></span>
+                        <span>Save results directly to your lists</span>
+                    </div>
+                </div> -->
+
+                <!-- Footer: Search + Reset -->
+                <div class="sidebar-footer">
+                    <button type="submit" form="linkedinSearchForm" class="sidebar-search-btn">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                    <a href="{% url 'search_by_linkdin' %}" class="sidebar-reset-btn" title="Clear">
+                        <i class="fas fa-redo"></i>
+                    </a>
+                </div>
+            </form>
+        </div><!-- /filters-panel -->
+
+        <!-- ═══════════════════════════════ RIGHT PANEL ═══════════════════════════════ -->
+        <div class="results-panel">
+            <div class="results-header">
+                <div class="results-header-left">
+                    <button class="mobile-filter-btn" type="button" id="mobileFilterBtn" style="display:none;">
+                        <i class="fas fa-filter"></i> Filters
+                    </button>
+                    <h2>LinkedIn Person Search</h2>
+                    <span class="results-pill">Profile Lookup</span>
+                </div>
+                <div class="results-header-right">
+                    <span class="contact-pill" id="contactPill">0/0</span>
+                    {% comment %} <button class="contact-btn" type="button">Contact Now</button> {% endcomment %}
+                </div>
+            </div>
+
+            <div class="results-content">
+                {% if error %}
+                    <div class="error-box"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+                {% endif %}
+
+                {% if people %}
+                    <div class="results-card">
+
+                        <!-- meta bar -->
+                        <div class="results-meta">
+                            <div class="results-meta-left">
+                                <input type="checkbox" id="selectAllRows">
+                                <i class="fas fa-chevron-down" style="font-size:11px; color:#aab0c4; cursor:pointer;"></i>
+                                <span id="selectedCountText">0 selected of {{ people|length }} results</span>
+                            </div>
+                            <div class="results-meta-right">
+                                <button type="button" id="saveToListBtn" class="save-list-btn" style="display:none;">
+                                    <i class="fas fa-plus"></i> Save to List
+                                </button>
+                                {% comment %} <button type="button" class="save-unlock-btn">
+                                    <i class="fas fa-lock"></i> Save To Unlock Contacts
+                                </button> {% endcomment %}
+                            </div>
+                        </div>
+
+                        <!-- table -->
+                        <div class="table-wrap">
+                            <table class="results-table">
+                                <thead>
+                                    <tr>
+                                        <th class="col-chk"></th>
+                                        <th>Profile</th>
+                                        <th>Job Title</th>
+                                        <th>Contact Location</th>
+                                        <th>Company</th>
+                                        <th>HQ Location</th>
+                                        <th>Institution</th>
+                                        <th>LinkedIn URL</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in people %}
+                                    <tr id="person-card-{{ forloop.counter }}" data-person="{{ p.rich_json|escapejs }}">
+                                        <td class="col-chk">
+                                            <input type="checkbox" class="row-checkbox"
+                                                data-first="{{ p.first|default:''|escape }}"
+                                                data-last="{{ p.last|default:''|escape }}"
+                                                data-linkedin="{{ p.linkedin|default:''|escape }}"
+                                                data-company="{{ p.company|default:''|escape }}"
+                                                data-company_website="{{ p.company_website|default:''|escape }}"
+                                                data-job_title="{{ p.job_title|default:''|escape }}"
+                                                data-institution="{{ p.institution|default:''|escape }}"
+                                                data-location="{{ p.location|default:''|escape }}"
+                                                data-company_headquarter="{{ p.company_headquarter|default:''|escape }}"
+                                                data-email="{% if p.emails and p.emails.0.email %}{{ p.emails.0.email|escape }}{% endif %}"
+                                                data-phone="{% if p.phones and p.phones.0.number %}{{ p.phones.0.number|escape }}{% endif %}">
+                                        </td>
+
+                                        <!-- Profile: avatar + name both clickable to LinkedIn -->
+                                        <td>
+                                            <div class="profile-cell">
+    
+                                                {% if p.linkedin %}
+                                                <a href="{{ p.linkedin }}" target="_blank" class="avatar-link" title="View LinkedIn profile">
+                                                {% endif %}
+
+                                                    <div class="avatar-circle {% if not p.photo %}fallback-avatar{% endif %}">
+                                                        
+                                                        {% if p.photo %}
+                                                            <img src="{{ p.photo }}" alt="Profile Photo"
+                                                                onerror="this.style.display='none'; this.parentElement.classList.add('fallback-avatar');">
+                                                        {% endif %}
+
+                                                        <span class="initials">
+                                                            {{ p.first|default:"U"|slice:":1" }}{{ p.last|default:""|slice:":1" }}
+                                                        </span>
+
+                                                    </div>
+
+                                                {% if p.linkedin %}
+                                                </a>
+                                                {% endif %}
+
+                                                <div class="profile-info">
+                                                        <span class="profile-name drawer-trigger"
+                                                            data-tooltip="{{ p.first }} {{ p.last }}">
+                                                            {{ p.first }} {{ p.last }}
+                                                        </span>
+                                                        <a href="{{ p.linkedin }}" target="_blank" class="li-badge" title="LinkedIn">in</a>
+                                                </div>
+
+                                            </div>
+                                        </td>
+
+                                        <!-- Job Title -->
+                                        <td class="cell-truncate drawer-trigger" data-tooltip="{{ p.job_title|default:'' }}">{{ p.job_title|default:"—" }}</td>
+
+                                        <!-- Contact Location -->
+                                        <td class="cell-truncate drawer-trigger" {% if p.location %}data-tooltip="{{ p.location }}"{% endif %}>
+                                            {% if p.location %}
+                                            <span class="cell-icon"><i class="fas fa-map-marker-alt"></i></span>{{ p.location }}
+                                            {% else %}—{% endif %}
+                                        </td>
+
+                                        <!-- Company: clickable → company website -->
+                                        <td class="cell-truncate" {% if p.company %}data-tooltip="{{ p.company }}"{% endif %}>
+                                            {% if p.company %}
+                                            {% if p.company_website %}
+                                            <a href="{{ p.company_website }}" target="_blank" class="company-link">
+                                                <span class="cell-icon"><i class="fas fa-building"></i></span>{{ p.company }}
+                                            </a>
+                                            {% else %}
+                                            <span class="cell-icon"><i class="fas fa-building"></i></span>{{ p.company }}
+                                            {% endif %}
+                                            {% else %}—{% endif %}
+                                        </td>
+
+                                        <!-- HQ Location -->
+                                        <td class="cell-truncate drawer-trigger" {% if p.company_headquarter %}data-tooltip="{{ p.company_headquarter }}"{% endif %}>
+                                            {% if p.company_headquarter %}
+                                            <span class="cell-icon"><i class="fas fa-map-marker-alt"></i></span>{{ p.company_headquarter }}
+                                            {% else %}—{% endif %}
+                                        </td>
+
+                                        <!-- Institution -->
+                                        <td class="cell-truncate" {% if p.institution %}data-tooltip="{{ p.institution }}"{% endif %}>
+                                            {% if p.institution %}
+                                            <span class="cell-icon"><i class="fas fa-graduation-cap"></i></span>{{ p.institution }}
+                                            {% else %}—{% endif %}
+                                        </td>
+
+                                        <!-- LinkedIn URL: clickable link -->
+                                        <td class="cell-truncate" {% if p.linkedin %}data-tooltip="{{ p.linkedin }}"{% endif %}>
+                                            {% if p.linkedin %}
+                                            <a href="{{ p.linkedin }}" target="_blank" class="linkedin-url-link">
+                                                <i class="fab fa-linkedin" style="color:#0a66c2; margin-right:5px;"></i>View Profile
+                                            </a>
+                                            {% else %}—{% endif %}
+                                        </td>
+
+                                        <!-- Actions -->
+                                        <td>
+                                            <div class="action-icons">
+                                                {% if p.emails and p.emails.0.email %}
+                                                    <form method="POST" action="{% url 'select_person_for_email' %}" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="first" value="{{ p.first|default:'' }}">
+                                                        <input type="hidden" name="last" value="{{ p.last|default:'' }}">
+                                                        <input type="hidden" name="linkedin" value="{{ p.linkedin|default:'' }}">
+                                                        <input type="hidden" name="company" value="{{ p.company|default:'' }}">
+                                                        <input type="hidden" name="company_website" value="{{ p.company_website|default:'' }}">
+                                                        <input type="hidden" name="job_title" value="{{ p.job_title|default:'' }}">
+                                                        <input type="hidden" name="institution" value="{{ p.institution|default:'' }}">
+                                                        <input type="hidden" name="location" value="{{ p.location|default:'' }}">
+                                                        <input type="hidden" name="company_headquarter" value="{{ p.company_headquarter|default:'' }}">
+                                                        <input type="hidden" name="email" value="{{ p.emails.0.email }}">
+                                                        <button type="submit" title="Send Email"><i class="far fa-envelope"></i></button>
+                                                    </form>
+                                                {% else %}
+                                                    <form method="POST" action="{% url 'enrich_person' %}" class="enrich-form d-inline">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="linkedin_url" value="{{ p.linkedin }}">
+                                                        <input type="hidden" name="first" value="{{ p.first }}">
+                                                        <input type="hidden" name="last" value="{{ p.last }}">
+                                                        <input type="hidden" name="company" value="{{ p.company }}">
+                                                        <input type="hidden" name="company_website" value="{{ p.company_website }}">
+                                                        <input type="hidden" name="job_title" value="{{ p.job_title }}">
+                                                        <input type="hidden" name="institution" value="{{ p.institution }}">
+                                                        <input type="hidden" name="location" value="{{ p.location }}">
+                                                        <input type="hidden" name="company_headquarter" value="{{ p.company_headquarter }}">
+                                                        <input type="hidden" name="card_id" value="{{ forloop.counter }}">
+                                                        <input type="hidden" name="enrich_type" value="email">
+                                                        <button type="submit" title="Fetch Email"><i class="far fa-envelope"></i></button>
+                                                    </form>
+                                                {% endif %}
+
+                                                <form method="POST" action="{% url 'enrich_person' %}" class="enrich-form d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="linkedin_url" value="{{ p.linkedin }}">
+                                                    <input type="hidden" name="first" value="{{ p.first }}">
+                                                    <input type="hidden" name="last" value="{{ p.last }}">
+                                                    <input type="hidden" name="company" value="{{ p.company }}">
+                                                    <input type="hidden" name="company_website" value="{{ p.company_website }}">
+                                                    <input type="hidden" name="job_title" value="{{ p.job_title }}">
+                                                    <input type="hidden" name="institution" value="{{ p.institution }}">
+                                                    <input type="hidden" name="location" value="{{ p.location }}">
+                                                    <input type="hidden" name="company_headquarter" value="{{ p.company_headquarter }}">
+                                                    <input type="hidden" name="card_id" value="{{ forloop.counter }}">
+                                                    <input type="hidden" name="enrich_type" value="phone">
+                                                    <button type="submit" title="Fetch Phone"><i class="fas fa-phone-alt"></i></button>
+                                                </form>
+                                                
+                                                <button type="button" title="Save to List" class="single-save-btn"><i class="far fa-bookmark"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <tr class="person-extra-row" id="person-extra-{{ forloop.counter }}" style="display:none;">
+                                        <td colspan="9" style="background:#fafbfe; padding:0;">
+                                            <div class="person-extra-box" style="padding:16px 18px;">
+                                                <div class="person-extra-content"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- pagination footer -->
+                        <div class="results-footer">
+                            <div class="results-footer-left">
+                                <span class="goto-label">Go to page</span>
+                                <span class="goto-page-wrap">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>1</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </span>
+                            </div>
+                            <form method="POST" id="paginationForm">
+                                {% csrf_token %}
+                                <input type="hidden" name="page" id="pageInput" value="{{ pagination.current|default:1 }}">
+                            </form>
+
+                            <div class="pagination-wrap">
+                                <span class="results-count-text">
+                                    Page {{ pagination.current|default:1 }}
+                                </span>
+
+                                <!-- Previous -->
+                                <button class="page-btn" type="button"
+                                        onclick="changePage({{ pagination.current|default:1 }} - 1)">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+
+                                <!-- Next -->
+                                {% if pagination.has_next %}
+                                <button class="page-btn" type="button"
+                                        onclick="changePage({{ pagination.next }})">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="empty-box">
+                        <i class="fas fa-search"></i>
+                        <p>No results yet. Use the filters on the left and hit <strong>Search</strong>.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div><!-- /results-panel -->
+
+    </div>
+</div>
+
+
+<!-- Profile Drawer -->
+<div id="profileDrawerOverlay" class="drawer-overlay"></div>
+<div id="profileDrawer" class="profile-drawer">
+    <div class="drawer-header">
+        <button id="closeProfileDrawer" class="drawer-close-btn" title="Close">&times;</button>
+        <button id="drawerSaveToListBtn" class="drawer-save-btn" title="Save to List">
+            <i class="far fa-bookmark"></i>
+        </button>
+    </div>
+    <div id="profileDrawerContent" class="drawer-body">
+        <!-- populated by JS from pre-rendered divs below -->
+    </div>
+</div>
+
+{% if people %}
+<!-- ═══════════ PRE-RENDERED PERSON PROFILES (hidden, used by drawer) ═══════════ -->
+{% for p in people %}
+<div id="person-profile-{{ forloop.counter }}" class="person-profile-tpl" style="display:none;" aria-hidden="true">
+
+    <!-- ── Hero ── -->
+    <div class="drawer-hero">
+        <div class="drawer-hero-top">
+            <div class="drawer-avatar">
+                {% if p.photo %}
+                    <img src="{{ p.photo }}" alt="{{ p.first }} {{ p.last }}"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="drawer-avatar-initials" style="display:none;">{{ p.first|default:"U"|slice:":1" }}{{ p.last|default:""|slice:":1" }}</span>
+                {% else %}
+                    <span class="drawer-avatar-initials">{{ p.first|default:"U"|slice:":1" }}{{ p.last|default:""|slice:":1" }}</span>
+                {% endif %}
+            </div>
+            <div class="drawer-name-block">
+                <div class="drawer-name">
+                    {% if p.linkedin %}
+                        <a href="{{ p.linkedin }}" target="_blank" style="color:inherit;text-decoration:none;">{{ p.first }} {{ p.last }}</a>
+                        <a href="{{ p.linkedin }}" target="_blank" class="li-badge" title="LinkedIn" style="text-decoration:none;">in</a>
+                    {% else %}
+                        {{ p.first }} {{ p.last }}
+                    {% endif %}
+                </div>
+                {% if p.job_title %}<div class="drawer-job">{{ p.job_title }}</div>{% endif %}
+            </div>
+        </div>
+
+        <!-- Meta rows: location, hq, department -->
+        <div class="drawer-meta-row">
+            {% if p.location %}
+            <div class="drawer-meta-item"><i class="fas fa-map-marker-alt"></i><span>{{ p.location }}</span></div>
+            {% endif %}
+            {% if p.company_headquarter %}
+            <div class="drawer-meta-item"><i class="fas fa-map-pin"></i><span>{{ p.company_headquarter }}</span></div>
+            {% endif %}
+            {% if p.department %}
+            <div class="drawer-meta-item"><i class="fas fa-sitemap"></i><span>{{ p.department }}</span></div>
+            {% endif %}
+        </div>
+
+        <!-- Tag row: company, institution, linkedin -->
+        <div class="drawer-tag-row">
+            {% if p.company %}
+            <span class="drawer-tag">
+                <i class="fas fa-building"></i>
+                {% if p.company_website %}
+                    <a href="{{ p.company_website }}" target="_blank" style="color:inherit;text-decoration:none;">{{ p.company }}</a>
+                {% else %}
+                    {{ p.company }}
+                {% endif %}
+            </span>
+            {% endif %}
+            {% if p.institution %}
+            <span class="drawer-tag"><i class="fas fa-graduation-cap"></i>{{ p.institution }}</span>
+            {% endif %}
+            {% if p.linkedin %}
+            <a href="{{ p.linkedin }}" target="_blank" class="drawer-tag li-tag" style="text-decoration:none;"><i class="fab fa-linkedin-in"></i>LinkedIn</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ── Contacts ── -->
+    <div class="drawer-section">
+        <div class="drawer-section-title">Contacts</div>
+        <div class="drawer-contact-row">
+            <div class="drawer-contact-left">
+                <i class="far fa-envelope"></i>
+                {% if p.emails and p.emails.0.email %}
+                    <span class="contact-val">{{ p.emails.0.email }}</span>
+                {% else %}
+                    <span class="contact-blurred">***@***</span>
+                    <button class="drawer-unlock-link" type="button">Enrich Email</button>
+                {% endif %}
+            </div>
+        </div>
+        <div class="drawer-contact-row">
+            <div class="drawer-contact-left">
+                <i class="fas fa-phone-alt" style="font-size:12px; margin-left:1px;"></i>
+                {% if p.phones and p.phones.0.number %}
+                    <span class="contact-val">{{ p.phones.0.number }}</span>
+                {% else %}
+                    <span class="contact-blurred">**-***-***</span>
+                    <button class="drawer-unlock-link" type="button">Enrich contact</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Work Experience ── -->
+    <div class="drawer-section">
+        <div class="drawer-section-title">Work Experience</div>
+
+        {% if p.total_experience or p.avg_tenure or p.cur_tenure %}
+        <div class="drawer-tenure-stats">
+            {% if p.total_experience %}
+            <div class="drawer-tenure-card">
+                <div class="tenure-header">
+                    <i class="fas fa-briefcase"></i> Total Tenure
+                </div>
+                <div class="tenure-value">{{ p.total_experience }}</div>
+            </div>
+            {% endif %}
+            {% if p.avg_tenure %}
+            <div class="drawer-tenure-card">
+                <div class="tenure-header">
+                    <i class="fas fa-chart-bar"></i> Average Tenure
+                </div>
+                <div class="tenure-value">{{ p.avg_tenure }}</div>
+            </div>
+            {% endif %}
+            {% if p.cur_tenure %}
+            <div class="drawer-tenure-card">
+                <div class="tenure-header">
+                    <i class="far fa-clock"></i> Current Tenure
+                </div>
+                <div class="tenure-value">{{ p.cur_tenure }}</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if p.experience %}
+            {% for exp in p.experience %}
+            <div class="drawer-exp-item">
+                <div class="drawer-exp-icon">
+                    {% if exp.company_insights and exp.company_insights.logo %}
+                        <img src="{{ exp.company_insights.logo }}" alt="{{ exp.company }}" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=\'fas fa-building\'></i>'">
+                    {% else %}
+                        <i class="fas fa-building"></i>
+                    {% endif %}
+                </div>
+                <div class="drawer-exp-body">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                        <div class="drawer-exp-title">{{ exp.title|default:"" }}</div>
+                        {% if exp.date_from or exp.date_to %}
+                        <div class="drawer-exp-date">{{ exp.date_from|default:"" }}{% if exp.date_from and exp.date_to %} - {% endif %}{{ exp.date_to|default:"" }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="drawer-exp-company">
+                        {% if exp.company_url %}
+                            <a href="{{ exp.company_url }}" target="_blank" style="color:inherit;text-decoration:none;">{{ exp.company }}{% if exp.location %} | {{ exp.location }}{% endif %}</a>
+                        {% else %}
+                            {{ exp.company }}{% if exp.location %} | {{ exp.location }}{% endif %}
+                        {% endif %}
+                        {% if exp.duration %}<span class="drawer-exp-duration">&middot; {{ exp.duration }}</span>{% endif %}
+                    </div>
+
+                    {% if exp.company_insights %}
+                    <div class="drawer-insights-content">
+                        <div class="ci-title">Company Information</div>
+                        <div class="ci-row">
+                            <div class="ci-label"><i class="far fa-user"></i> Company Size</div>
+                            <div class="ci-value"><strong>{{ exp.company_insights.size }}</strong></div>
+                        </div>
+                        <div class="ci-row">
+                            <div class="ci-label"><i class="far fa-building"></i> Company Industry</div>
+                            <div class="ci-value"><strong>{{ exp.company_insights.industry }}</strong></div>
+                        </div>
+                        <div class="ci-row">
+                            <div class="ci-label"><i class="far fa-chart-bar"></i> Revenue</div>
+                            <div class="ci-value">{{ exp.company_insights.revenue }}</div>
+                        </div>
+                        {% if exp.company_insights.specialties %}
+                        <div class="ci-row ci-row-chips">
+                            <div class="ci-label"><i class="fas fa-hashtag"></i> Specialities</div>
+                            <div class="ci-chips">
+                                {% for s in exp.company_insights.specialties %}
+                                <span class="ci-chip">{{ s }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="ci-row">
+                            <div class="ci-label"><i class="far fa-clock"></i> Last Round Type</div>
+                            <div class="ci-value">{{ exp.company_insights.last_round }}</div>
+                        </div>
+                        <div class="ci-row">
+                            <div class="ci-label"><i class="far fa-calendar-alt"></i> Founded Year</div>
+                            <div class="ci-value"><strong>{{ exp.company_insights.founded }}</strong></div>
+                        </div>
+                        <div class="ci-row">
+                            <div class="ci-label"><i class="fas fa-users"></i> LinkedIn Follower Count</div>
+                            <div class="ci-value"><strong>{{ exp.company_insights.followers }}</strong></div>
+                        </div>
+                    </div>
+                    
+                    <button class="drawer-insights-toggle" type="button"
+                            onclick="var c=this.previousElementSibling; c.classList.toggle('open'); this.classList.toggle('open'); this.innerHTML=c.classList.contains('open') ? 'Show Less <i class=\'fas fa-chevron-up\'></i>' : 'View Company Insights <i class=\'fas fa-chevron-down\'></i>';">
+                        View Company Insights <i class="fas fa-chevron-down"></i>
+                    </button>
+                    {% endif %}
+
+                    {% if exp.description %}
+                    <ul class="drawer-exp-desc">
+                        {% for bullet in exp.description.splitlines %}
+                        {% if bullet.strip %}<li>{{ bullet.strip }}</li>{% endif %}
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="drawer-no-data">No work experience available</div>
+        {% endif %}
+    </div>
+
+    <!-- ── Education ── -->
+    <div class="drawer-section">
+        <div class="drawer-section-title">Education</div>
+        {% if p.all_education %}
+            {% for edu in p.all_education %}
+            <div class="drawer-exp-item">
+                <div class="drawer-exp-icon" style="background:#e8f0f9; border-color:#c5d9f0;">
+                    <i class="fas fa-graduation-cap" style="color:#1a73e8; font-size:18px;"></i>
+                </div>
+                <div class="drawer-exp-body">
+                    <div class="drawer-exp-title">{{ edu.title|default:"" }}</div>
+                    {% if edu.major %}
+                    <div class="drawer-edu-major">{{ edu.major }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="drawer-no-data">No education data available</div>
+        {% endif %}
+    </div>
+
+    <!-- ── Skills ── -->
+    <div class="drawer-section">
+        <div class="drawer-section-title">Skills</div>
+        {% if p.skills_list %}
+        <div class="drawer-skills-wrap">
+            {% for skill in p.skills_list %}
+            <span class="drawer-skill-chip">{{ skill }}</span>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="drawer-no-data">No skills available</div>
+        {% endif %}
+    </div>
+
+    <!-- ── Action Buttons ── -->
+    <div class="drawer-actions">
+        {% if p.emails and p.emails.0.email %}
+        <form method="POST" action="{% url 'select_person_for_email' %}" class="d-inline" style="flex:1;">
+            {% csrf_token %}
+            <input type="hidden" name="first" value="{{ p.first|default:'' }}">
+            <input type="hidden" name="last" value="{{ p.last|default:'' }}">
+            <input type="hidden" name="linkedin" value="{{ p.linkedin|default:'' }}">
+            <input type="hidden" name="company" value="{{ p.company|default:'' }}">
+            <input type="hidden" name="company_website" value="{{ p.company_website|default:'' }}">
+            <input type="hidden" name="job_title" value="{{ p.job_title|default:'' }}">
+            <input type="hidden" name="institution" value="{{ p.institution|default:'' }}">
+            <input type="hidden" name="location" value="{{ p.location|default:'' }}">
+            <input type="hidden" name="company_headquarter" value="{{ p.company_headquarter|default:'' }}">
+            <input type="hidden" name="email" value="{{ p.emails.0.email }}">
+            <button type="submit" class="drawer-action-btn primary" style="width:100%;"><i class="far fa-envelope"></i> Send Email</button>
+        </form>
+        {% else %}
+        <button class="drawer-action-btn primary" type="button" disabled style="flex:1;opacity:.5;cursor:not-allowed;"><i class="far fa-envelope"></i> Send Email</button>
+        {% endif %}
+        {% if p.linkedin %}
+        <a href="{{ p.linkedin }}" target="_blank" class="drawer-action-btn secondary" style="flex:1;"><i class="fab fa-linkedin-in"></i> LinkedIn</a>
+        {% else %}
+        <button class="drawer-action-btn secondary" type="button" disabled style="flex:1;opacity:.5;cursor:not-allowed;"><i class="fab fa-linkedin-in"></i> LinkedIn</button>
+        {% endif %}
+    </div>
+
+</div><!-- /person-profile-{{ forloop.counter }} -->
+{% endfor %}
+{% endif %}
+    </div>
+</div>
+
+<!-- Enrich loader -->
+<div id="enrichLoader" class="loader-overlay">
+    <div class="loader-box">
+        <div class="spinner-border text-primary" role="status"></div>
+        <div class="loader-text">Searching LinkedIn profile...</div>
+        <div class="loader-subtext">Please wait while person details are fetched.</div>
+    </div>
+</div>
+
+<!-- Save to List modal -->
+<div id="saveListModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:10000; align-items:center; justify-content:center;">
+    <div style="width:100%; max-width:450px; background:#fff; border-radius:18px; overflow:hidden; box-shadow:0 18px 50px rgba(0,0,0,0.18);">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 24px; border-bottom:1px solid #e8ebf2;">
+            <h3 style="margin:0; font-size:20px; font-weight:700;">Save to List</h3>
+            <button type="button" id="closeSaveListModal" style="border:none; background:none; font-size:24px; color:#8c93a3; cursor:pointer;">&times;</button>
+        </div>
+        <div style="padding:24px;">
+            <div style="display:flex; gap:10px; margin-bottom:22px;">
+                <button type="button" id="newListTab" style="flex:1; height:42px; border:none; border-radius:12px; background:#2f6df0; color:#fff; font-weight:700;">+ New List</button>
+                <button type="button" id="existingListTab" style="flex:1; height:42px; border:none; border-radius:12px; background:#eef0f4; color:#2e374d; font-weight:700;">Existing List</button>
+            </div>
+            <div id="newListSection">
+                <label style="display:block; margin-bottom:8px; font-weight:600;">List Name</label>
+                <input type="text" id="newListName" placeholder="Enter list name..." style="width:100%; height:44px; border:1px solid #cfd6e2; border-radius:12px; padding:0 14px;">
+            </div>
+            <div id="existingListSection" style="display:none;">
+                <label style="display:block; margin-bottom:8px; font-weight:600;">Select Existing List</label>
+                <select id="existingListSelect" style="width:100%; height:44px; border:1px solid #cfd6e2; border-radius:12px; padding:0 14px;">
+                    <option value="">Select a list</option>
+                </select>
+            </div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:12px; padding:16px 24px; border-top:1px solid #e8ebf2; background:#fafbfe;">
+            <button type="button" id="cancelSaveListBtn" style="padding:10px 18px; border:1px solid #ccd4e1; border-radius:12px; background:#fff; font-weight:700;">Cancel</button>
+            <button type="button" id="confirmSaveListBtn" style="padding:10px 18px; border:none; border-radius:12px; background:linear-gradient(90deg,#6276ea,#7c4fc8); color:#fff; font-weight:700;">Save to List</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast message -->
+<div id="customMessage" class="custom-message custom-message-success" style="display:none;">
+    <span id="customMessageText">Saved successfully.</span>
+    <button type="button" id="closeCustomMessage" class="custom-message-close">&times;</button>
+</div>
+{% endblock content %}
+
+{% block js %}
+{{ block.super }}
+<script>
+    const GET_SAVED_LISTS_URL = "{% url 'get_saved_lists' %}";
+    const SAVE_PEOPLE_TO_LIST_URL = "{% url 'save_people_to_list' %}";
+    const ENRICH_PERSON_URL = "{% url 'enrich_person' %}";
+    const SELECT_PERSON_FOR_EMAIL_URL = "{% url 'select_person_for_email' %}";
+</script>
+<script src="{% static 'search/js/linkdin_search.js' %}?v=4"></script>
+{% endblock js %}

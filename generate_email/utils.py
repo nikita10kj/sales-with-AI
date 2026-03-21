@@ -784,3 +784,134 @@ def sendCampaignEmail(request, user, target_audience, main_email, selected_accou
         raise Exception("Unsupported provider")
 
     return sent_email
+
+
+def redrob_search_people(filters: dict) -> dict:
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {settings.REDROB_TOKEN}",
+    }
+    r = requests.post(
+        "https://developersapi.redrob.io/search/v2/api/people/by-filters",
+        headers=headers,
+        json=filters,
+        timeout=30,
+    )
+    # print(r.status_code, r.text)
+    r.raise_for_status()
+    return r.json()
+
+def redrob_search_by_linkedin_url(filters: dict) -> dict:
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {settings.REDROB_TOKEN}",
+    }
+    r = requests.post(
+        "https://developersapi.redrob.io/search/api/people/by-linkedin",
+        headers=headers,
+        json=filters,
+        timeout=30,
+    )
+    # print(r.status_code, r.text)
+    r.raise_for_status()
+    return r.json()
+
+def redrob_start_bulk_enrichment(data: list, name: str = "People Enrichment") -> dict:
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {settings.REDROB_TOKEN}",
+    }
+    payload = {
+        "name": name,
+        "data": data,
+    }
+
+    r = requests.post(
+        "https://developersapi.redrob.io/enrichment/api/start-bulk",
+        headers=headers,
+        json=payload,
+        timeout=30,
+    )
+
+    if not r.ok:
+        print("REDROB STATUS:", r.status_code)
+        print("REDROB RESPONSE:", r.text)
+        print("REDROB PAYLOAD:", payload)
+        
+    r.raise_for_status()
+    return r.json()
+
+def redrob_get_enrichment(enrichment_id: str) -> dict:
+    headers = {
+        "Authorization": f"Bearer {settings.REDROB_TOKEN}",
+    }
+
+    r = requests.get(
+        f"https://developersapi.redrob.io/enrichment/api/{enrichment_id}",
+        headers=headers,
+        timeout=30,
+    )
+    r.raise_for_status()
+    return r.json()
+
+def redrob_search_by_company(filters: dict) -> dict:
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {settings.REDROB_TOKEN}",
+    }
+    r = requests.post(
+        "https://developersapi.redrob.io/search/v2/api/company/by-filters",
+        headers=headers,
+        json=filters,
+        timeout=30,
+    )
+    # print(r.status_code, r.text)
+    r.raise_for_status()
+    return r.json()
+
+# def redrob_search_by_linkedin_url(linkedin_url: str, name: str = "LinkedIn Search") -> dict:
+#     start_payload = [
+#         {
+#             "linkedin_url": linkedin_url
+#         }
+#     ]
+#     start_response = redrob_start_bulk_enrichment(start_payload, name=name)
+#     enrichment_id = (
+#         start_response.get("data", {}).get("id")
+#         or start_response.get("id")
+#     )
+#     if not enrichment_id:
+#         raise ValueError("Enrichment ID not found in API response.")
+
+#     final_response = None
+#     for _ in range(10):
+#         result = redrob_get_enrichment(enrichment_id)
+#         status = result.get("data", {}).get("status")
+
+#         if status == "FINISHED":
+#             final_response = result
+#             break
+#         elif status in ["FAILED", "ERROR"]:
+#             raise ValueError("Enrichment failed.")
+
+#         time.sleep(2)
+
+#     if not final_response:
+#         raise ValueError("Enrichment still processing. Please try again.")
+
+#     datas = final_response.get("data", {}).get("datas", [])
+#     if not datas:
+#         raise ValueError("No result found.")
+
+#     p = datas[0]
+#     profile = p.get("profile", {})
+
+#     linkedin = profile.get("linkedin_url", linkedin_url)
+
+#     return {
+#         "first": p.get("firstname") or profile.get("firstname") or "",
+#         "last": p.get("lastname") or profile.get("lastname") or "",
+#         "linkedin": linkedin,
+#         "emails": p.get("emails", []),
+#         "phones": p.get("phones", []),
+#     }

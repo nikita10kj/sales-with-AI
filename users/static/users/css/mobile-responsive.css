@@ -1,0 +1,1305 @@
+/* ================================================================
+   SELLSHARP — COMPLETE MOBILE RESPONSIVE CSS  v3
+   Save as: static/users/css/mobile-responsive.css
+   ================================================================ */
+
+/* ================================================================
+   0. GLOBAL — Horizontal scroll hide, overflow fix
+   ================================================================ */
+
+/* Hide horizontal scrollbar everywhere but still allow touch scroll */
+html, body {
+  overflow-x: hidden !important;
+  max-width: 100vw;
+}
+
+/* Any element that needs horizontal scroll — hide bar, keep scroll */
+.table-responsive,
+.heatmap-container,
+.step-progress,
+.profile-navbar,
+.table-wrap,
+.results-table-wrap {
+  -ms-overflow-style: none !important;  /* IE/Edge */
+  scrollbar-width: none !important;     /* Firefox */
+}
+
+.table-responsive::-webkit-scrollbar,
+.heatmap-container::-webkit-scrollbar,
+.step-progress::-webkit-scrollbar,
+.profile-navbar::-webkit-scrollbar,
+.table-wrap::-webkit-scrollbar,
+.results-table-wrap::-webkit-scrollbar {
+  display: none !important;             
+}
+
+
+/* ================================================================
+   1. BASE LAYOUT — SIDEBAR + MAIN CONTENT
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  body > .d-flex {
+    flex-direction: column !important;
+  }
+
+  /* ── TOPBAR ── */
+  #sidebar,
+  #sidebar.collapsed,
+  #sidebar.hover-expand,
+  #sidebar.no-hover {
+    width: 100% !important;
+    min-width: unset !important;
+    max-width: 100% !important;
+    min-height: unset !important;
+    height: 60px !important;
+    padding: 0 1.1rem !important;
+    position: sticky !important;
+    top: 0;
+    z-index: 1050;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+    overflow: visible !important;
+    background: linear-gradient(135deg, #3b2f8f 0%, #5b3fa6 100%) !important;
+    box-shadow: 0 2px 16px rgba(59,47,143,0.35) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  }
+
+  /* ── LOGO ── */
+  #sidebar > a,
+  #sidebar.collapsed > a {
+    margin-bottom: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    order: 1;
+    opacity: 1 !important;
+    width: auto !important;
+    flex-shrink: 0;
+  }
+
+  #sidebar .logo-full,
+  #sidebar.collapsed .logo-full {
+    display: block !important;
+    width: 110px !important;
+    height: auto !important;
+    opacity: 1 !important;
+  }
+
+  /* Hide mini logo & any extra icon in topbar */
+  #sidebar .logo-mini,
+  #sidebar.collapsed .logo-mini {
+    display: none !important;
+  }
+
+  /* ── HAMBURGER ── */
+  #sidebarToggle {
+    order: 2;
+    margin-left: auto;
+    float: none !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(255,255,255,0.12) !important;
+    border: 1px solid rgba(255,255,255,0.22) !important;
+    transition: background 0.2s !important;
+    padding: 0 !important;
+    flex-shrink: 0;
+    position: static !important;
+    right: auto !important;
+    transform: none !important;
+  }
+
+  #sidebarToggle:active {
+    background: rgba(255,255,255,0.28) !important;
+    transform: scale(0.96);
+  }
+
+  #sidebarToggle i {
+    font-size: 1.1rem !important;
+    color: #fff !important;
+    line-height: 1 !important;
+    pointer-events: none;
+  }
+
+  /* ── NAV DROPDOWN (hidden state) ── */
+  #sidebar > ul,
+  #sidebar.collapsed > ul {
+    display: flex !important;
+    flex-direction: column !important;
+    order: 3;
+    width: 100% !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    transition: max-height 0.38s cubic-bezier(0.4,0,0.2,1),
+                padding 0.3s ease !important;
+    position: absolute !important;
+    top: 60px !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1060;
+    background: linear-gradient(160deg, #2a1f6b 0%, #4530a0 100%) !important;
+    gap: 0 !important;
+    list-style: none !important;
+  }
+
+  /* ── OPEN STATE ── */
+  #sidebar.mobile-open > ul {
+    max-height: 85vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 0.6rem 0.75rem 1.4rem !important;
+    box-shadow: 0 16px 48px rgba(20,10,70,0.55) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+    /* Hide scrollbar */
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  #sidebar.mobile-open > ul::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* ── LIST ITEMS ── */
+  #sidebar > ul > li,
+  #sidebar.collapsed > ul > li {
+    width: 100% !important;
+    list-style: none !important;
+    display: block !important;
+    margin-bottom: 2px !important;
+  }
+
+  /* ── NAV LINKS ── */
+  #sidebar .nav-link,
+  #sidebar.collapsed .nav-link {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.65rem !important;
+    padding: 0.72rem 0.9rem !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    border-radius: 10px !important;
+    width: 100% !important;
+    opacity: 1 !important;
+    color: rgba(255,255,255,0.85) !important;
+    transition: background 0.15s ease, color 0.15s ease !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+  }
+
+  #sidebar .nav-link:hover,
+  #sidebar .nav-link:active {
+    background: rgba(255,255,255,0.13) !important;
+    color: #fff !important;
+  }
+
+  #sidebar .active-link {
+    background: rgba(255,255,255,0.18) !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+  }
+
+  #sidebar .nav-link i {
+    font-size: 0.95rem !important;
+    width: 20px !important;
+    min-width: 20px !important;
+    text-align: center !important;
+    color: rgba(255,255,255,0.7) !important;
+    flex-shrink: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  #sidebar .active-link i,
+  #sidebar .nav-link:hover i {
+    color: #fff !important;
+  }
+
+  /* Chevron in prospect & enrich dropdown */
+  #sidebar .nav-link .fa-chevron-down {
+    margin-left: auto !important;
+    font-size: 0.75rem !important;
+    opacity: 0.7;
+  }
+
+  /* ── SPANS ── */
+  #sidebar span,
+  #sidebar.collapsed span {
+    display: inline !important;
+    opacity: 1 !important;
+    width: auto !important;
+    max-width: unset !important;
+    overflow: visible !important;
+    white-space: nowrap;
+  }
+
+  /* ── SUBMENU ── */
+  #sidebar .submenu {
+    padding-left: 0.3rem !important;
+    margin-top: 2px !important;
+  }
+
+  #sidebar .submenu-link {
+    font-size: 0.85rem !important;
+    padding: 0.55rem 0.9rem !important;
+    color: rgba(255,255,255,0.7) !important;
+    border-radius: 8px !important;
+    white-space: nowrap;
+  }
+
+  #sidebar .submenu-link:hover {
+    background: rgba(255,255,255,0.1) !important;
+    color: #fff !important;
+  }
+
+  /* ── HR DIVIDER ── */
+  #sidebar hr {
+    display: block !important;
+    width: 100% !important;
+    margin: 0.4rem 0 !important;
+    border-color: rgba(255,255,255,0.12) !important;
+    opacity: 1 !important;
+  }
+
+  /* ── LOGOUT BUTTON ── */
+  #sidebar .btn-link {
+    color: rgba(255,255,255,0.85) !important;
+    text-decoration: none !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+    padding: 0.72rem 0.9rem !important;
+    border-radius: 10px !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.65rem !important;
+    white-space: nowrap;
+    background: transparent !important;
+    border: none !important;
+  }
+
+  #sidebar .btn-link:hover {
+    background: rgba(255,255,255,0.13) !important;
+    color: #fff !important;
+  }
+
+  /* ── MAIN CONTENT ── */
+  .flex-grow-1 {
+    width: 100% !important;
+    padding: 0.75rem !important;
+    overflow-x: hidden !important;
+  }
+
+  /* ── FOOTER ── */
+  footer .small {
+    font-size: 0.72rem !important;
+    line-height: 2 !important;
+  }
+}
+
+
+/* ================================================================
+   2. DASHBOARD
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  .main-content-analytics {
+    padding: 0 !important;
+  }
+
+  .row.g-4.mb-2 > .col-md-6 {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
+
+  .row.g-4.mb-2 .d-flex.align-items-center.p-4 {
+    padding: 0.85rem !important;
+  }
+
+  .row.g-4.mb-2 .d-flex.align-items-center.justify-content-center.me-4 {
+    width: 52px !important;
+    height: 52px !important;
+    min-width: 52px !important;
+    margin-right: 0.75rem !important;
+    border-radius: 14px !important;
+  }
+
+  .row.g-4.mb-2 .d-flex.align-items-center.justify-content-center.me-4 i {
+    font-size: 1.3rem !important;
+  }
+
+  .row.g-4.mb-2 h3 {
+    font-size: 1.7rem !important;
+  }
+
+  .d-flex.gap-4.mb-1,
+  .d-flex.gap-4 {
+    flex-wrap: wrap !important;
+    gap: 0.4rem !important;
+  }
+
+  .chart-card {
+    height: auto !important;
+    min-height: 260px;
+    margin-bottom: 1rem;
+  }
+
+  canvas {
+    height: 200px !important;
+  }
+
+  .chart-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 0.4rem;
+  }
+
+  .row.mb-4 > [class*="col-md"] {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 0.75rem;
+  }
+
+  .row > .col-md-6 {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 0.75rem;
+  }
+
+  .activity-icon {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 0.75rem !important;
+    flex-shrink: 0;
+  }
+
+  .section-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.6rem;
+  }
+
+  .section-header h2 { font-size: 1.15rem !important; }
+
+  .row.mb-4 > .col-md-4 {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 0.6rem;
+  }
+
+  /* Heatmap — hide scrollbar, keep scroll */
+  .heatmap-container {
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+  }
+  .heatmap-container::-webkit-scrollbar { display: none !important; }
+
+  #activityHeatmap { min-width: 480px; }
+
+  .reports-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  .report-card {
+    padding: 1rem !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  .export-formats {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+
+  .campaigns-table-card { padding: 0.75rem !important; }
+
+  .table-controls {
+    flex-direction: column !important;
+    gap: 0.5rem;
+  }
+
+  .search-box,
+  .filter-controls { width: 100% !important; }
+}
+
+
+/* ================================================================
+   3. ADMIN DASHBOARD
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  .dashboard-wrapper { padding: 16px !important; }
+  .dashboard-title { font-size: 18px !important; margin-bottom: 16px !important; }
+
+  .dashboard-wrapper .row.g-4 > .col-md-4 {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
+
+  .stat-card { padding: 16px !important; }
+  .stat-value { font-size: 22px !important; }
+
+  .section-card {
+    padding: 16px !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+  }
+  .section-card::-webkit-scrollbar { display: none !important; }
+
+  .modern-table { min-width: 560px; }
+  .modern-table td { padding: 10px 8px !important; font-size: 13px !important; }
+  .user-avatar { width: 28px !important; height: 28px !important; font-size: 12px !important; }
+}
+
+
+/* ================================================================
+   4. EMAIL GENERATOR
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  /* Step progress — hide scrollbar */
+  .step-progress {
+    gap: 4px !important;
+    overflow-x: auto !important;
+    padding-bottom: 4px;
+    scrollbar-width: none !important;
+  }
+  .step-progress::-webkit-scrollbar { display: none !important; }
+
+  .step-circle { width: 34px !important; height: 34px !important; font-size: 0.8rem !important; }
+  .step-label { font-size: 0.65rem !important; white-space: nowrap; }
+  .step-line { min-width: 20px !important; flex: 1 !important; }
+
+  .row.g-3 > .col-md-6.col-lg-4 {
+    width: 50% !important;
+    flex: 0 0 50% !important;
+    max-width: 50% !important;
+  }
+
+  .framework-card { padding: 0.6rem !important; font-size: 12px !important; }
+
+  .step-content .row > .col-md-6,
+  .step-content .row > .col-md-12 {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
+
+  .email-output, .email-result { font-size: 0.88rem !important; }
+}
+
+
+/* ================================================================
+   5. CAMPAIGN
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  /* Framework 2-col */
+  .row.g-3 > .col-md-6.col-lg-4 {
+    width: 50% !important;
+    flex: 0 0 50% !important;
+    max-width: 50% !important;
+  }
+
+  .framework-card { padding: 0.5rem !important; font-size: 12px !important; }
+  .card-body.p-4 { padding: 1rem !important; }
+
+  /* Card header + container padding */
+  .container.mt-4.mb-5 {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+}
+
+
+/* ================================================================
+   6. EMAIL LIST
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  .container.mt-4.mb-5 {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+  .card-header.d-flex.align-items-center.justify-content-between {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.6rem;
+  }
+
+  .card-header .d-flex.ms-auto,
+  .card-header form.d-flex { width: 100% !important; }
+
+  .card-header .form-control-sm { width: 100% !important; }
+
+  /* ── ALL columns visible, horizontal swipe ── */
+  .table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+  .table-responsive::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  #emails-table {
+    min-width: 600px !important;
+    width: max-content !important;
+  }
+
+  /* Remove old hide rule */
+  #emails-table thead th:nth-child(n+4),
+  #emails-table tbody td:nth-child(n+4) {
+    display: table-cell !important;
+  }
+
+  .card-body.px-4 { padding: 0.6rem !important; }
+
+  .pagination { flex-wrap: wrap; gap: 4px; }
+  .page-link { padding: 4px 8px !important; font-size: 0.8rem !important; }
+}
+
+/* ================================================================
+   7. LEAD LIST
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  .d-flex.justify-content-between.align-items-center.flex-wrap.gap-2.mx-4 {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    margin-left: 0.5rem !important;
+    margin-right: 0.5rem !important;
+  }
+
+  .d-flex.flex-wrap.gap-2.align-items-center {
+    flex-direction: column !important;
+    gap: 0.4rem !important;
+  }
+
+  #serviceFilter, #frameworkFilter,
+  #goalFilter, #lastConnectedFilter { width: 100% !important; }
+
+  .d-flex.justify-content-between > a.btn,
+  .d-flex.justify-content-between > button.btn {
+    font-size: 0.8rem;
+    padding: 5px 10px;
+  }
+
+  /* ── ALL columns visible, horizontal swipe ── */
+  .card-body .table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+  .card-body .table-responsive::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .card-body .table {
+    min-width: 700px !important;
+    width: max-content !important;
+  }
+
+  /* Remove old hide rule */
+  .card-body .table thead th:nth-child(n+4),
+  .card-body .table tbody td:nth-child(n+4) {
+    display: table-cell !important;
+  }
+}
+
+
+/* ================================================================
+   8. LEADS EMAIL LIST
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  .col-md-10.mt-3.mx-5,
+  .col-md-12.mt-3 {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .card.mb-4.mx-5 {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .card .row > .col-md-6 {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+
+/* ================================================================
+   9. EMAIL MESSAGE
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  .col-md-10.offset-md-1 {
+    width: 100% !important;
+    margin-left: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .d-flex.justify-content-between.align-items-center.mb-3 {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.5rem;
+  }
+
+  #scroll-to-reminders-btn { font-size: 0.8rem; padding: 5px 10px; }
+}
+
+
+/* ================================================================
+   10. IMPORT LEADS
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  .container.mt-4.mb-5[style*="max-width: 700px"] {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+  .card-body.p-4 { padding: 1rem !important; }
+
+  .table-responsive {
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+  }
+  .table-responsive::-webkit-scrollbar { display: none !important; }
+}
+
+
+/* ================================================================
+   11. SEARCH PEOPLE / COMPANY / LINKEDIN
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  /* Stack filter above results */
+  .people-search-shell,
+  .company-search-shell,
+  .linkedin-search-shell {
+    flex-direction: column !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Filter panel — collapsed by default, shown via mobile btn */
+  .filters-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: unset !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(0,0,0,0.08) !important;
+    position: relative !important;
+    overflow: hidden !important;
+    max-height: 0 !important;
+    transition: max-height 0.35s ease !important;
+    padding: 0 !important;
+  }
+
+  /* When filter is open (JS adds .filter-open to shell) */
+/* Open state — supports all class patterns */
+  .people-search-shell.filter-open .filters-panel,
+  .company-search-shell.filter-open .filters-panel,
+  .linkedin-search-shell.filter-open .filters-panel,
+  .filters-panel.mobile-open,
+  .filters-panel.show {
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+    padding: 1rem !important;
+    scrollbar-width: none !important;
+  }
+
+  .people-search-shell.filter-open .filters-panel::-webkit-scrollbar,
+  .company-search-shell.filter-open .filters-panel::-webkit-scrollbar,
+  .linkedin-search-shell.filter-open .filters-panel::-webkit-scrollbar,
+  .filters-panel.mobile-open::-webkit-scrollbar,
+  .filters-panel.show::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Mobile filter toggle bar — always visible */
+  .enrichment-topbar,
+  .results-header {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    padding: 0.6rem 0.75rem !important;
+    background: #fff;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    position: sticky;
+    top: 60px;
+    z-index: 100;
+  }
+
+  .mobile-filter-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: #f0eeff;
+    color: #4530a0;
+    border: 1px solid #c5b8f5;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  /* Results panel */
+  .results-panel {
+    width: 100% !important;
+    padding: 0.75rem 0.75rem !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Results header */
+  .results-header {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    align-items: center;
+  }
+
+  .results-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .results-header-right {
+    gap: 0.4rem !important;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .contact-btn, .save-list-btn {
+    font-size: 0.82rem !important;
+    padding: 6px 12px !important;
+    border-radius: 8px !important;
+  }
+
+  /* Results table — hide scrollbar, keep swipe */
+  .table-wrap {
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .table-wrap::-webkit-scrollbar { display: none !important; }
+
+  .results-table { min-width: 580px; }
+
+  /* Results pill / count */
+  .results-pill, .contact-pill {
+    font-size: 0.75rem !important;
+    padding: 3px 8px !important;
+  }
+
+  /* Search stats bar */
+  .results-meta {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    padding: 0.5rem 0 !important;
+  }
+}
+
+
+/* ================================================================
+   12. DATA ENRICHMENT
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  .enrichment-page { padding: 0.5rem !important; }
+
+  .enrichment-topbar {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    align-items: flex-start !important;
+  }
+
+  .enrichment-topbar-left { width: 100% !important; }
+  .enrichment-container { padding: 0.5rem !important; }
+
+  .upload-card, .info-card { padding: 1rem !important; }
+
+  .saved-list-row {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+
+  .saved-list-select { width: 100% !important; }
+
+  .theme-btn, .secondary-btn {
+    width: 100% !important;
+    text-align: center !important;
+  }
+}
+
+
+/* ================================================================
+   13. LIST VIEW
+   ================================================================ */
+
+@media (max-width: 991.98px) {
+
+  .lists-body { flex-direction: column !important; }
+
+  .lists-sidebar {
+    width: 100% !important;
+    min-width: unset !important;
+    max-width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    max-height: 280px;
+    overflow-y: auto !important;
+    scrollbar-width: none !important;
+  }
+  .lists-sidebar::-webkit-scrollbar { display: none !important; }
+
+  .lists-content { width: 100% !important; padding: 0.75rem !important; }
+  .lists-header { flex-wrap: wrap; gap: 0.5rem; }
+
+  .entry-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.5rem;
+    padding: 0.75rem !important;
+  }
+
+  .entry-meta {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .list-search-form, .list-search-input { width: 100% !important; }
+
+  .list-detail-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem;
+  }
+}
+
+
+/* ================================================================
+   14. PROFILE
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  .profile-layout { flex-direction: column !important; }
+  .profile-sidebar { display: none !important; }
+
+  .profile-navbar {
+    display: flex !important;
+    overflow-x: auto !important;
+    gap: 4px;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    width: 100%;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+  .profile-navbar::-webkit-scrollbar { display: none !important; }
+
+  .profile-navbar .nav-item {
+    white-space: nowrap;
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    flex-shrink: 0;
+  }
+
+  .profile-content { padding: 0 !important; width: 100% !important; }
+  .tab-section { padding: 0.75rem !important; }
+
+  .profile-content .row > .col-md-6 {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+
+/* ================================================================
+   15. SUPPORT
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  .container > .row.justify-content-center > .col-lg-12 {
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+  }
+
+  .support-form .d-flex.justify-content-end { justify-content: stretch !important; }
+  .support-form .btn { width: 100%; }
+}
+
+
+/* ================================================================
+   16. PRICING
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  .container.py-5 {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  .container.py-5 .row > [class*="col-md"],
+  .container.py-5 .row > [class*="col-lg"] {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 1rem;
+  }
+
+  .credit-grid { grid-template-columns: 1fr !important; }
+  .how-credits-work { padding: 30px 0 !important; border-radius: 0 !important; }
+  .credit-example { margin: 12px 10px 0 !important; }
+
+  .pricing-toggle, .billing-toggle {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+}
+
+
+/* ================================================================
+   17. LEARNING HUB
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  .main-header { padding: 2rem 1rem !important; }
+  .main-header h1 { font-size: 1.4rem !important; }
+  .main-header p { font-size: 0.9rem !important; }
+
+  .header-login-btn {
+    position: static !important;
+    margin-bottom: 1rem;
+    display: inline-block;
+  }
+
+  .card-grid { grid-template-columns: 1fr !important; }
+  .section-title { font-size: 1.3rem !important; margin: 1.5rem 0 1rem !important; }
+
+  .modal-overlay {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    padding-top: 0.75rem !important;
+  }
+
+  .modal, .qa-modal {
+    width: 100% !important;
+    max-height: 90vh !important;
+    border-radius: 12px !important;
+  }
+
+  .acc-btn { font-size: 0.88rem !important; padding: 0.75rem !important; }
+}
+
+
+/* ================================================================
+   18. LANDING PAGE
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  .navbar .container { padding: 0.5rem 1rem !important; }
+  .navbar-brand img { width: 100px !important; }
+  .navbar .btn { font-size: 0.8rem !important; padding: 6px 14px !important; }
+
+  section.text-center.py-5.bg-white h1 {
+    font-size: 1.7rem !important;
+    white-space: normal !important;
+  }
+
+  section.text-center.py-5.bg-white .d-flex.justify-content-center.gap-3 {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+  }
+
+  section .row.g-4 > .col-md-4 {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
+
+  section .row.align-items-center > .col-md-6 {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    text-align: center !important;
+  }
+
+  section .row.g-5 img {
+    width: 90% !important;
+    height: 180px !important;
+    object-fit: cover;
+  }
+
+  section .row.justify-content-center > .col-md-4 {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
+
+  footer .row.g-4 > [class*="col-md"] {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    text-align: center !important;
+  }
+
+  footer .d-flex.gap-3 { justify-content: center !important; }
+}
+
+@media (min-width: 576px) and (max-width: 767.98px) {
+  section .row.g-4 > .col-md-4 {
+    width: 50% !important;
+    flex: 0 0 50% !important;
+    max-width: 50% !important;
+  }
+}
+
+
+/* ================================================================
+   19. LOGIN
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  .col-md-6.d-flex.align-items-center.justify-content-center.bg-black {
+    min-height: 200px;
+    padding: 0.75rem !important;
+  }
+
+  .col-md-6.d-flex.flex-column.justify-content-center.p-5 {
+    padding: 1.5rem !important;
+  }
+}
+
+
+/* ================================================================
+   20. OTP / REGISTER
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  .row.justify-content-center.mt-5 { margin-top: 1.5rem !important; }
+
+  .col-lg-6.col-md-8 {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    padding: 0 0.5rem !important;
+  }
+}
+
+
+/* ================================================================
+   21. STATIC PAGES (Privacy / Terms / Refund)
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  .container h1, .container h2 { font-size: 1.3rem !important; }
+  .container p, .container li { font-size: 0.9rem !important; }
+}
+
+/* ================================================================
+   23. DROPDOWNS & SELECT OVERFLOW FIX
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  /* All select dropdowns — full width, no overflow */
+  select,
+  .form-select,
+  .form-control {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Native select option dropdown — prevent overflow */
+  select option {
+    white-space: normal !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100vw !important;
+  }
+
+  /* Bootstrap dropdown menus */
+  .dropdown-menu {
+    max-width: calc(100vw - 1.5rem) !important;
+    width: auto !important;
+    overflow-x: hidden !important;
+    white-space: normal !important;
+  }
+
+  .dropdown-item {
+    white-space: normal !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* Framework cards — email generator & campaign */
+  .framework-card {
+    overflow: hidden !important;
+    max-width: 100% !important;
+  }
+
+  /* Step content containers */
+  .step-content,
+  .card-body {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+  }
+
+  /* Leads page filters */
+  #serviceFilter,
+  #frameworkFilter,
+  #goalFilter,
+  #lastConnectedFilter,
+  #dateFilter {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Fix any container that overflows */
+  .container,
+  .container-fluid {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  /* Card overflow */
+  .card {
+    overflow: hidden !important;
+    max-width: 100% !important;
+  }
+
+  /* Row gutter fix */
+  .row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .col, [class*="col-"] {
+    padding-left: 0.4rem !important;
+    padding-right: 0.4rem !important;
+  }
+}
+@media (max-width: 860px) {
+  /* Prevent page-level horizontal scroll when select opens */
+  html {
+    overflow-x: hidden !important;
+  }
+
+  /* Clip any parent that might expand */
+  .flex-grow-1,
+  .container-fluid,
+  .row,
+  .col-12,
+  .card,
+  .card-body,
+  .step-content {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Select itself full width */
+  select,
+  .form-select {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+/* ================================================================
+   22. GLOBAL UTILITIES
+   ================================================================ */
+
+/* Disable hover scale on touch — prevents stuck-state */
+@media (hover: none) {
+  [onmouseover], .stat-card, .card {
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* Alert notifications */
+@media (max-width: 767.98px) {
+  .alert.position-fixed {
+    left: 0.75rem !important;
+    right: 0.75rem !important;
+    min-width: unset !important;
+    top: 10px !important;
+  }
+}
+
+/* Extra small phones */
+@media (max-width: 479.98px) {
+
+  .flex-grow-1 { padding: 0.5rem !important; }
+  .row.g-4.mb-2 h3 { font-size: 1.4rem !important; }
+  canvas { height: 170px !important; }
+  .stat-value { font-size: 20px !important; }
+
+  .row.g-3 > .col-md-6.col-lg-4 {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+
+@media (max-width: 860px) {
+  /* Clip select dropdown within viewport */  
+  .flex-grow-1,
+  .container-fluid {
+    overflow-x: clip !important;
+  }
+}

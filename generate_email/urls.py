@@ -2,6 +2,11 @@ from django.urls import path
 from .views import (GenerateEmailView, SendEmailView, EmailListView,EmailMessageView,
                     LeadListView, LeadEmailListView, campaign_view, email_open_pixel, export_target_audience_csv, import_leads, msgraph_webhook, CheckEmailHistoryView)
 
+from .views import (SearchPeopleView,EnrichPersonView,SelectPersonForEmailView,SearchPeopleByLinkdinView,SearchCompanyView,DataEnrichmentView,PeopleListView,
+                    GetSavedListsView,EnrichSavedListView,ExportSavedListCsvView,SavePeopleToListView,DownloadListCSVView,DeleteSavedListView,RemovePersonFromListView,
+                    SaveCompaniesToListView,RemoveCompanyFromListView,UseSavedListInCampaignView,SaveEnrichAndGoToCampaignView,SearchHistoryView)
+
+
 urlpatterns = [
     path("generate_email/", GenerateEmailView.as_view(), name="generate_email"),
     path("send_email/", SendEmailView.as_view(), name="send_email"),
@@ -16,4 +21,31 @@ urlpatterns = [
 
     path("import-leads/", import_leads, name="import_leads"),
     path("campaign/", campaign_view, name="campaign_view"),
+
+
+    path("search-people/", SearchPeopleView.as_view(), name="search_people"),
+    path("enrich-person/", EnrichPersonView.as_view(), name="enrich_person"),
+    path("select-person-for-email/", SelectPersonForEmailView.as_view(), name="select_person_for_email"),
+    path('search-by-linkdin/',SearchPeopleByLinkdinView.as_view(),name="search_by_linkdin"),
+    path('search-company/',SearchCompanyView.as_view(),name="search_company"),
+    path('data-enrichment/',DataEnrichmentView.as_view(),name="data_enrichment"),
+    path("list/",PeopleListView.as_view(),name='list_view'),
+    path("saved-lists/", GetSavedListsView.as_view(), name="get_saved_lists"),
+
+    path("saved-lists/enrich/", EnrichSavedListView.as_view(), name="enrich_saved_list"),
+    path("saved-lists/<int:list_id>/export-csv/", ExportSavedListCsvView.as_view(), name="export_saved_list_csv"),
+    path("saved-lists/use-in-campaign/",UseSavedListInCampaignView.as_view(),name="use_saved_list_in_campaign"),
+
+    path("save-enrich-campaign/", SaveEnrichAndGoToCampaignView.as_view(), name="save_enrich_campaign"),
+    # path("data-enrichment/", DataEnrichmentView.as_view(), name="data_enrichment"),
+
+    path("save-people-to-list/", SavePeopleToListView.as_view(), name="save_people_to_list"),
+    path("list/<int:list_id>/download-csv/", DownloadListCSVView.as_view(), name="download_list_csv"),
+    path("list/<int:list_id>/delete/", DeleteSavedListView.as_view(), name="delete_saved_list"),
+    path("list/<int:list_id>/entries/<int:entry_id>/remove/", RemovePersonFromListView.as_view(), name="remove_person_from_list"),
+    path("save-companies-to-list/", SaveCompaniesToListView.as_view(), name="save_companies_to_list"),
+    path("lists/<int:list_id>/remove-company/<int:company_id>/",RemoveCompanyFromListView.as_view(),name="remove_company_from_list"),
+
+    path("search-history/", SearchHistoryView.as_view(), name="search_history"),
+
 ]

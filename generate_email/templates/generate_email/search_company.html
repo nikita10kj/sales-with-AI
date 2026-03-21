@@ -1,0 +1,623 @@
+{% extends 'users/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'search/css/company_search.css' %}?v=8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+{% endblock extra_css %}
+
+{% block content %}
+<div class="col-12 search-page">
+    <div class="company-search-shell">
+
+        <!-- ═══════════════════════════════ LEFT SIDEBAR ═══════════════════════════════ -->
+        <div class="filters-panel">
+            <form method="POST" action="{% url 'search_company' %}" id="companySearchForm" class="filter-form">
+                {% csrf_token %}
+
+                <!-- keyword search at top -->
+                <div class="sidebar-search-box">
+                    <input type="text" name="name" placeholder="e.g. Google, Microsoft" value="{{ form.name|default:'' }}">
+                    <span class="sidebar-search-icon"><i class="fas fa-search"></i></span>
+                </div>
+
+                <!-- ── Company ── -->
+                <div class="filter-item">
+                    <button class="filter-toggle" type="button">
+                        <span class="filter-left">
+                            <span class="filter-icon fi-company"><i class="fas fa-building"></i></span>
+                            <span class="filter-label">Company</span>
+                            {% if form.company %}<span class="filter-count">1</span>{% endif %}
+                        </span>
+                        <i class="fas fa-chevron-down fi-chevron"></i>
+                    </button>
+                    <div class="filter-body">
+                        <div class="filter-field">
+                            <label for="companyInput">Company Name</label>
+                            <div class="tag-input-row">
+                                <div id="companyTags" class="tags-container"></div>
+                                <div class="tag-input-wrap">
+                                    <input type="text" id="companyInput" placeholder="e.g. Google, McKinley Rice">
+                                    <button type="button" class="add-tag-btn" id="addCompanyTag"><i class="fas fa-plus"></i></button>
+                                </div>
+                            </div>
+                            <input type="hidden" name="company" id="companyHidden" value="{{ form.company }}">
+                        </div>
+
+                        <div class="filter-field">
+                            <label for="industryInput">Company Industry</label>
+                            <div class="tag-input-row">
+                                <div id="industryTags" class="tags-container"></div>
+                                <div class="tag-input-wrap">
+                                    <input type="text" id="industryInput" placeholder="e.g. Technology">
+                                    <button type="button" class="add-tag-btn" id="addIndustryTag"><i class="fas fa-plus"></i></button>
+                                </div>
+                            </div>
+                            <input type="hidden" name="industry" id="industryHidden" value="{{ form.industry }}">
+                        </div>
+
+                        <div class="filter-field">
+                            <label for="company_market">Company Market</label>
+                            <input type="text" id="company_market" name="company_market" placeholder="e.g. B2B" value="{{ form.company_market }}" class="filter-text-input">
+                        </div>
+
+                        <div class="filter-field">
+                            <label for="companyLocationInput">Company Location</label>
+                            <div class="tag-input-row">
+                                <div id="companyLocationTags" class="tags-container"></div>
+                                <div class="tag-input-wrap">
+                                    <input type="text" id="companyLocationInput" placeholder="e.g. India, New York">
+                                    <button type="button" class="add-tag-btn" id="addCompanyLocationTag"><i class="fas fa-plus"></i></button>
+                                </div>
+                            </div>
+                            <input type="hidden" name="company_location" id="companyLocationHidden" value="{{ form.company_location }}">
+                        </div>
+
+                        <div class="filter-field">
+                            <label>Year Founded</label>
+                            <div class="range-fields">
+                                <input type="text" name="year_founded_min" placeholder="Min" value="{{ form.year_founded_min }}" class="filter-select">
+                                <span class="range-separator">to</span>
+                                <input type="text" name="year_founded_max" placeholder="Max" value="{{ form.year_founded_max }}" class="filter-select">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Company Lookalike ── -->
+                <div class="filter-item">
+                    <button class="filter-toggle" type="button">
+                        <span class="filter-left">
+                            <span class="filter-icon fi-lookalike"><i class="fas fa-copy"></i></span>
+                            <span class="filter-label">Company Lookalike</span>
+                        </span>
+                        <i class="fas fa-chevron-down fi-chevron"></i>
+                    </button>
+                    <div class="filter-body">
+                        <div class="filter-field">
+                            <label for="companySpecialitesInput">Specialities</label>
+                            <div class="tag-input-row">
+                                <div id="companySpecialitesTags" class="tags-container"></div>
+                                <div class="tag-input-wrap">
+                                    <input type="text" id="companySpecialitesInput" placeholder="e.g. AI">
+                                    <button type="button" class="add-tag-btn" id="addCompanySpecialitesTag"><i class="fas fa-plus"></i></button>
+                                </div>
+                            </div>
+                            <input type="hidden" name="company_specialites" id="companySpecialitesHidden" value="{{ form.company_specialites }}">
+                        </div>
+
+                        <div class="filter-field">
+                            <label for="employeeCountInput">Employee Count</label>
+                            <div class="tag-input-row">
+                                <div id="employeeCountTags" class="tags-container"></div>
+                                <div class="tag-input-wrap">
+                                    <input type="text" id="employeeCountInput" placeholder="e.g. 100-500">
+                                    <button type="button" class="add-tag-btn" id="addEmployeeCountTag"><i class="fas fa-plus"></i></button>
+                                </div>
+                            </div>
+                            <input type="hidden" name="employee_count" id="employeeCountHidden" value="{{ form.employee_count }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Revenue Signals ── -->
+                <div class="filter-item">
+                    <button class="filter-toggle" type="button">
+                        <span class="filter-left">
+                            <span class="filter-icon fi-revenue"><i class="fas fa-dollar-sign"></i></span>
+                            <span class="filter-label">Revenue Signals</span>
+                        </span>
+                        <i class="fas fa-chevron-down fi-chevron"></i>
+                    </button>
+                    <div class="filter-body">
+                        <div class="filter-field">
+                            <label>Revenue</label>
+                            <div class="range-fields">
+                                <input type="text" name="min_revenue" placeholder="Min" value="{{ form.min_revenue }}" class="filter-select">
+                                <span class="range-separator">to</span>
+                                <input type="text" name="max_revenue" placeholder="Max" value="{{ form.max_revenue }}" class="filter-select">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Hiring & Tech Signals ── -->
+                <div class="filter-item">
+                    <button class="filter-toggle" type="button">
+                        <span class="filter-left">
+                            <span class="filter-icon fi-tech"><i class="fas fa-microchip"></i></span>
+                            <span class="filter-label">Hiring &amp; Tech Signals</span>
+                        </span>
+                        <i class="fas fa-chevron-down fi-chevron"></i>
+                    </button>
+                    <div class="filter-body">
+                        <div class="filter-field">
+                            <label for="companyTechnologiesInput">Technologies Used</label>
+                            <div class="tag-input-row">
+                                <div id="companyTechnologiesTags" class="tags-container"></div>
+                                <div class="tag-input-wrap">
+                                    <input type="text" id="companyTechnologiesInput" placeholder="e.g. python, react">
+                                    <button type="button" class="add-tag-btn" id="addCompanyTechnologiesTag"><i class="fas fa-plus"></i></button>
+                                </div>
+                            </div>
+                            <input type="hidden" name="company_technologies" id="companyTechnologiesHidden" value="{{ form.company_technologies }}">
+                        </div>
+
+                        <div class="filter-field">
+                            <label>Technology Total Count</label>
+                            <div class="range-fields">
+                                <input type="text" name="min_technology_count" placeholder="Min" value="{{ form.min_technology_count }}" class="filter-select">
+                                <span class="range-separator">to</span>
+                                <input type="text" name="max_technology_count" placeholder="Max" value="{{ form.max_technology_count }}" class="filter-select">
+                            </div>
+                        </div>
+
+                        <div class="filter-field">
+                            <label for="jobPostsInput">Job Posts</label>
+                            <div class="tag-input-row">
+                                <div id="jobPostsTags" class="tags-container"></div>
+                                <div class="tag-input-wrap">
+                                    <input type="text" id="jobPostsInput" placeholder="e.g. engineer">
+                                    <button type="button" class="add-tag-btn" id="addJobPostsTag"><i class="fas fa-plus"></i></button>
+                                </div>
+                            </div>
+                            <input type="hidden" name="job_posts" id="jobPostsHidden" value="{{ form.job_posts }}">
+                        </div>
+
+                        <div class="filter-field">
+                            <label>Job Posting Count</label>
+                            <div class="range-fields">
+                                <input type="text" name="min_jobpost" placeholder="Min" value="{{ form.min_jobpost }}" class="filter-select">
+                                <span class="range-separator">to</span>
+                                <input type="text" name="max_jobpost" placeholder="Max" value="{{ form.max_jobpost }}" class="filter-select">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Footer: Search + Reset ── -->
+                <div class="sidebar-footer">
+                    <button type="submit" form="companySearchForm" class="sidebar-search-btn">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                    <a href="{% url 'search_company' %}" class="sidebar-reset-btn" title="Clear all filters">
+                        <i class="fas fa-redo"></i>
+                    </a>
+                </div>
+            </form>
+        </div><!-- /filters-panel -->
+
+        <!-- ═══════════════════════════════ RIGHT PANEL ═══════════════════════════════ -->
+        <div class="results-panel">
+            <div class="results-header">
+                <div class="results-header-left">
+                    <button class="mobile-filter-btn" type="button" id="mobileFilterBtn" style="display:none;">
+                        <i class="fas fa-filter"></i> Filters
+                    </button>
+                    <h2>Company Search</h2>
+                    <span class="results-pill">55M+</span>
+                </div>
+                <div class="results-header-right">
+                    <span class="contact-pill" id="contactPill">0/0</span>
+                    {% comment %} <button class="contact-btn" type="button">Export Now</button> {% endcomment %}
+                </div>
+            </div>
+
+            <div class="results-content">
+                {% if error %}
+                    <div class="error-box"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+                {% endif %}
+
+                {% if companies %}
+                    <div class="results-card">
+
+                        <!-- meta bar -->
+                        <div class="results-meta">
+                            <div class="results-meta-left">
+                                <input type="checkbox" id="selectAllRows">
+                                <i class="fas fa-chevron-down" style="font-size:11px; color:#aab0c4; cursor:pointer;"></i>
+                                <span id="selectedCountText">0 selected of {{ companies|length }} results</span>
+                            </div>
+                            <div class="results-meta-right">
+                                <button type="button" id="saveToListBtn" class="save-list-btn" style="display:none;">
+                                    <i class="fas fa-plus"></i> Save to List
+                                </button>
+                                <button type="button" class="save-unlock-btn">
+                                    <i class="fas fa-lock"></i> Save To Unlock
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- table -->
+                        <div class="table-wrap">
+                            <table class="results-table">
+                                <thead>
+                                    <tr>
+                                        <th class="col-chk"></th>
+                                        <th>Company</th>
+                                        <th>Description</th>
+                                        <th>HQ Location</th>
+                                        <th>Industry</th>
+                                        <th>Company Size</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for c in companies %}
+                                    <tr id="company-card-{{ forloop.counter }}">
+                                        <td class="col-chk">
+                                            <input type="checkbox" class="row-checkbox"
+                                                data-name="{{ c.name|default:''|escape }}"
+                                                data-linkedin_url="{{ c.linkedin_url|default:''|escape }}"
+                                                data-website="{{ c.website|default:''|escape }}"
+                                                data-industry="{{ c.industry|default:''|escape }}"
+                                                data-description="{{ c.description|default:''|escape }}"
+                                                data-company_size="{{ c.company_size|default:''|escape }}"
+                                                data-headquarter="{{ c.headquarter|default:''|escape }}">
+                                        </td>
+
+                                        <!-- Company: avatar + name -->
+                                        <td class="drawer-trigger">
+                                            <div class="profile-cell">
+
+                                                {% if c.linkedin_url %}
+                                                <a href="{{ c.linkedin_url }}" target="_blank" class="avatar-link" title="View on LinkedIn">
+                                                {% endif %}
+
+                                                    <div class="company-avatar {% if not c.logo_url %}fallback-avatar{% endif %}">
+
+                                                        {% if c.logo_url %}
+                                                            <img src="{{ c.logo_url }}" alt="Company Logo"
+                                                                onerror="this.style.display='none'; this.parentElement.classList.add('fallback-avatar');">
+                                                        {% endif %}
+
+                                                        <!-- Fallback UI (grey segmented avatar) -->
+                                                        <div class="avatar-placeholder">
+                                                            <span class="shape shape1"></span>
+                                                            <span class="shape shape2"></span>
+                                                        </div>
+
+                                                    </div>
+
+                                                {% if c.linkedin_url %}
+                                                </a>
+                                                {% endif %}
+
+                                                <div class="profile-info">
+                                                        <span class="profile-name drawer-trigger" data-tooltip="{{ c.name }}">
+                                                            {{ c.name|default:"—" }}
+                                                        </span>
+                                                        <a href="{{ c.linkedin_url }}" target="_blank" class="li-badge" title="LinkedIn">in</a>
+
+                                                </div>
+
+                                            </div>
+                                        </td>
+
+                                        <!-- Description -->
+                                        <td class="cell-truncate cell-desc drawer-trigger" {% if c.description %}{% endif %}>
+                                            {{ c.description|default:"—" }}
+                                        </td>
+
+                                        <!-- HQ Location -->
+                                        <td class="cell-truncate drawer-trigger" {% if c.headquarter %}data-tooltip="{{ c.headquarter }}"{% endif %}>
+                                            {% if c.headquarter %}
+                                            <span class="cell-icon"><i class="fas fa-map-marker-alt"></i></span>{{ c.headquarter }}
+                                            {% else %}—{% endif %}
+                                        </td>
+
+                                        <!-- Industry -->
+                                        <td class="cell-truncate drawer-trigger" {% if c.industry %}data-tooltip="{{ c.industry }}"{% endif %}>
+                                            {% if c.industry %}
+                                            <span class="cell-icon"><i class="fas fa-industry"></i></span>{{ c.industry }}
+                                            {% else %}—{% endif %}
+                                        </td>
+
+                                        <!-- Company Size -->
+                                        <td class="cell-truncate" {% if c.company_size %}data-tooltip="{{ c.company_size }} employees"{% endif %}>
+                                            {% if c.company_size %}
+                                            <span class="cell-icon"><i class="fas fa-users"></i></span>{{ c.company_size }}
+                                            {% else %}—{% endif %}
+                                        </td>
+
+                                        <!-- Actions -->
+                                        <td>
+                                            <div class="action-icons">
+                                                {% if c.linkedin_url %}
+                                                <a href="{{ c.linkedin_url }}" target="_blank" title="View LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                                                {% else %}
+                                                <button type="button" title="LinkedIn N/A" disabled><i class="fab fa-linkedin-in"></i></button>
+                                                {% endif %}
+                                                {% if c.website %}
+                                                <a href="{{ c.website }}" target="_blank" title="Visit Website"><i class="fas fa-external-link-alt"></i></a>
+                                                {% else %}
+                                                <button type="button" title="Website N/A" disabled><i class="fas fa-external-link-alt"></i></button>
+                                                {% endif %}
+                                                <button type="button" title="Save to List" class="single-save-btn"><i class="far fa-bookmark"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- pagination footer -->
+                        <div class="results-footer">
+                            <div class="results-footer-left">
+                                <span class="goto-label">Go to page</span>
+                                <span class="goto-page-wrap">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>1</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </span>
+                            </div>
+                            <div class="pagination-wrap">
+                                <span class="results-count-text">1–{{ companies|length }} of {{ companies|length }}</span>
+                                <button class="page-btn" type="button" title="Previous"><i class="fas fa-chevron-left"></i></button>
+                                <button class="page-btn" type="button" title="Next"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="empty-box">
+                        <i class="fas fa-building"></i>
+                        <p>No results yet. Use the filters on the left and hit <strong>Search</strong>.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div><!-- /results-panel -->
+
+    </div>
+</div>
+
+<!-- Profile Drawer -->
+<div id="companyDrawerOverlay" class="drawer-overlay"></div>
+<div id="companyDrawer" class="profile-drawer" data-company-name="" data-company-location="">
+    <div class="drawer-header">
+        <button id="closeCompanyDrawer" class="drawer-close-btn" title="Close">&times;</button>
+        <div style="display:flex; align-items:center; gap:10px; margin-left:auto;">
+            <a id="drawerViewEmployeesBtn"
+               href="#"
+               title="View Employees"
+               style="display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:600;
+                      color:#2f6df0; text-decoration:none; padding:6px 12px;
+                      border:1px solid #c5d8ff; border-radius:8px; background:#eef4ff;
+                      transition:background 0.18s, color 0.18s;"
+               onmouseover="this.style.background='#dbeeff'"
+               onmouseout="this.style.background='#eef4ff'">
+                <i class="fas fa-users" style="font-size:12px;"></i> View Employees
+            </a>
+            <button id="drawerSaveToListBtn" class="drawer-save-btn" title="Save to List">
+                <i class="far fa-bookmark"></i>
+            </button>
+        </div>
+    </div>
+    <div id="companyDrawerContent" class="drawer-body" style="background:#f5f6fa;">
+        <!-- populated by JS from pre-rendered divs below -->
+    </div>
+</div>
+
+<!-- Hidden form for redirecting to People Search with company+location filters -->
+<form id="viewEmployeesForm" method="POST" action="{% url 'search_people' %}" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="company" id="viewEmpCompany">
+    <input type="hidden" name="location" id="viewEmpLocation">
+</form>
+
+{% if companies %}
+<!-- ═══════════ PRE-RENDERED COMPANY PROFILES (hidden, used by drawer) ═══════════ -->
+{% for c in companies %}
+<div id="company-profile-{{ forloop.counter }}" class="company-profile-tpl" style="display:none;" aria-hidden="true">
+
+    <!-- Hero Card -->
+    <div style="background:#fff; margin:0 0 16px 0; border-bottom:1px solid #e8ebf2;">
+        <div class="drawer-hero" style="border-bottom:none;">
+            <div class="drawer-hero-top">
+                <div class="drawer-avatar" style="border-radius:10px; border:1px solid #e0e4f0; background:#fff; padding:4px;">
+                    {% if c.logo_url %}
+                        <img src="{{ c.logo_url }}" alt="{{ c.name }}" style="border-radius:6px; object-fit:contain;"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <span class="drawer-avatar-initials" style="display:none; color:#1a2038;">{{ c.name|default:"C"|slice:":1" }}</span>
+                    {% else %}
+                        <span class="drawer-avatar-initials" style="color:#1a2038;">{{ c.name|default:"C"|slice:":1" }}</span>
+                    {% endif %}
+                </div>
+                <div class="drawer-name-block">
+                    <div class="drawer-name">
+                        {% if c.linkedin_url %}
+                            <a href="{{ c.linkedin_url }}" target="_blank" style="color:inherit;text-decoration:none;">{{ c.name }}</a>
+                            <a href="{{ c.linkedin_url }}" target="_blank" class="li-badge" title="LinkedIn" style="text-decoration:none;">in</a>
+                        {% else %}
+                            {{ c.name }}
+                        {% endif %}
+                        {% if c.website %}
+                            <a href="{{ c.website }}" target="_blank" style="margin-left:6px; color:#6a7388; font-size:14px;"><i class="fas fa-link"></i></a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Meta rows: location, view profile -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div class="drawer-meta-item"><i class="fas fa-map-marker-alt"></i><span>{{ c.location_country|default:c.headquarter|default:"—" }}</span></div>
+                {% if c.linkedin_url %}
+                <a href="{{ c.linkedin_url }}" target="_blank" style="color:#2f6df0; font-size:12.5px; font-weight:600; text-decoration:none;">View Company Profile</a>
+                {% endif %}
+            </div>
+
+            <!-- Description -->
+            {% if c.description %}
+            <div style="background:#f4f5fb; border-radius:10px; border:1px solid #e8ebf2; padding:12px 14px;">
+                <div style="font-size:13px; color:#4c556f; line-height:1.6; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; line-clamp:3; -webkit-box-orient:vertical;" class="drawer-desc-content">
+                    {{ c.description }}
+                </div>
+                <button type="button" class="drawer-desc-toggle" style="border:none; background:none; color:#6a7388; font-size:13px; font-weight:500; cursor:pointer; padding:0; margin-top:8px; display:inline-flex; align-items:center; gap:6px; font-family:'Inter', sans-serif;">
+                    <i class="fas fa-chevron-down" style="font-size:10px; transition:transform 0.2s;"></i> <span class="toggle-text">Read More</span>
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Basic Details Section -->
+    <div style="background:#fff; border-top:1px solid #e8ebf2; border-bottom:1px solid #e8ebf2; margin-bottom:16px;">
+        <div class="drawer-section" style="border-bottom:none;">
+            <div style="font-size:16px; font-weight:700; color:#1a2038; margin-bottom:16px;">Basic Details</div>
+
+            <div style="display:grid; grid-template-columns:140px 1fr; gap:12px; font-size:13px; color:#4c556f;">
+                <!-- Company Size -->
+                <div style="display:flex; align-items:center; gap:8px; color:#6a7388;"><i class="far fa-user" style="width:14px; text-align:center;"></i> Company Size</div>
+                <div style="color:#1a2038;">{{ c.company_size|default:"—" }}</div>
+
+                <!-- HQ Location -->
+                <div style="display:flex; align-items:center; gap:8px; color:#6a7388;"><i class="fas fa-map-marker-alt" style="width:14px; text-align:center;"></i> HQ Location</div>
+                <div style="color:#1a2038;">{{ c.headquarter|default:"—" }}</div>
+
+                <!-- Industry -->
+                <div style="display:flex; align-items:center; gap:8px; color:#6a7388;"><i class="far fa-building" style="width:14px; text-align:center;"></i> Industry</div>
+                <div style="color:#1a2038;">{{ c.industry|default:"—" }}</div>
+
+                <!-- Website -->
+                <div style="display:flex; align-items:center; gap:8px; color:#6a7388;"><i class="fas fa-link" style="width:14px; text-align:center;"></i> Website</div>
+                <div style="color:#1a2038;">
+                    {% if c.website %}
+                    <a href="{{ c.website }}" target="_blank" style="color:#2f6df0; text-decoration:none;">{{ c.website }}</a>
+                    {% else %}—{% endif %}
+                </div>
+
+                <!-- Founded at -->
+                <div style="display:flex; align-items:center; gap:8px; color:#6a7388;"><i class="fas fa-history" style="width:14px; text-align:center;"></i> Founded at</div>
+                <div style="color:#1a2038;">{{ c.found_at|default:"—" }}</div>
+
+                <!-- Specialities -->
+                <div style="display:flex; align-items:center; gap:8px; color:#6a7388;"><i class="fas fa-hashtag" style="width:14px; text-align:center;"></i> Specialities</div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                    {% if c.specialties %}
+                        {% for sp in c.specialties %}
+                            <span style="background:#f0f3ff; color:#4c556f; padding:3px 8px; border-radius:6px; font-size:12px;">{{ sp }}</span>
+                        {% endfor %}
+                    {% else %}—{% endif %}
+                </div>
+
+                <!-- Tagline -->
+                <div style="display:flex; align-items:center; gap:8px; color:#6a7388;"><i class="far fa-compass" style="width:14px; text-align:center;"></i> Tagline</div>
+                <div style="color:#1a2038;">{{ c.tagline|default:"—" }}</div>
+
+                <!-- Revenue -->
+                <div style="display:flex; align-items:center; gap:8px; color:#6a7388;"><i class="fas fa-chart-line" style="width:14px; text-align:center;"></i> Revenue</div>
+                <div style="color:#1a2038;">{{ c.revenue|default:"—" }}</div>
+
+                <!-- LinkedIn Followers -->
+                <div style="display:flex; align-items:center; gap:8px; color:#6a7388;"><i class="fas fa-users" style="width:14px; text-align:center;"></i> LinkedIn Followers</div>
+                <div style="color:#1a2038;">{{ c.linkedin_followers|default:"—" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Potential Decision Makers -->
+    <div style="background:#fff; border-top:1px solid #e8ebf2; border-bottom:1px solid #e8ebf2; margin-bottom:16px;">
+        <div class="drawer-section" style="border-bottom:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div style="font-size:16px; font-weight:700; color:#1a2038;">Potential Decision Makers</div>
+                <a href="#"
+                   class="drawer-view-employees-link"
+                   data-company="{{ c.name|default:''|escape }}"
+                   data-location="{{ c.location_country|default:c.headquarter|default:''|escape }}"
+                   style="color:#2f6df0; font-size:12.5px; font-weight:600; text-decoration:none;">View All Employees</a>
+            </div>
+
+            {% if c.decision_makers %}
+                <div style="border:1px solid #e8ebf2; border-radius:10px; background:#fff; overflow:hidden;">
+                {% for dm in c.decision_makers %}
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid #e8ebf2;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div class="avatar-circle" style="width:40px; height:40px;">
+                                <span class="initials">{{ dm.name|default:"U"|slice:":1" }}</span>
+                            </div>
+                            <div>
+                                <div style="font-size:14px; font-weight:600; color:#1a2038;">{{ dm.name }}</div>
+                                <div style="font-size:13px; color:#6a7388; margin-top:2px;">{{ dm.title }}</div>
+                            </div>
+                        </div>
+                        <button class="single-save-btn" style="border:1px solid #dce0ea; background:#fff; border-radius:8px; width:34px; height:34px; color:#8a94b0; cursor:pointer;"><i class="far fa-bookmark"></i></button>
+                    </div>
+                {% endfor %}
+                </div>
+            {% else %}
+                <div class="drawer-no-data">No potential decision makers found</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+
+
+<!-- Save to List modal -->
+<div id="saveListModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:10000; align-items:center; justify-content:center;">
+    <div style="width:100%; max-width:450px; background:#fff; border-radius:18px; overflow:hidden; box-shadow:0 18px 50px rgba(0,0,0,0.18);">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 24px; border-bottom:1px solid #e8ebf2;">
+            <h3 style="margin:0; font-size:20px; font-weight:700;">Save to List</h3>
+            <button type="button" id="closeSaveListModal" style="border:none; background:none; font-size:24px; color:#8c93a3; cursor:pointer;">&times;</button>
+        </div>
+        <div style="padding:24px;">
+            <div style="display:flex; gap:10px; margin-bottom:22px;">
+                <button type="button" id="newListTab" style="flex:1; height:42px; border:none; border-radius:12px; background:#2f6df0; color:#fff; font-weight:700;">+ New List</button>
+                <button type="button" id="existingListTab" style="flex:1; height:42px; border:none; border-radius:12px; background:#eef0f4; color:#2e374d; font-weight:700;">Existing List</button>
+            </div>
+            <div id="newListSection">
+                <label style="display:block; margin-bottom:8px; font-weight:600;">List Name</label>
+                <input type="text" id="newListName" placeholder="Enter list name..." style="width:100%; height:44px; border:1px solid #cfd6e2; border-radius:12px; padding:0 14px;">
+            </div>
+            <div id="existingListSection" style="display:none;">
+                <label style="display:block; margin-bottom:8px; font-weight:600;">Select Existing List</label>
+                <select id="existingListSelect" style="width:100%; height:44px; border:1px solid #cfd6e2; border-radius:12px; padding:0 14px;">
+                    <option value="">Select a list</option>
+                </select>
+            </div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:12px; padding:16px 24px; border-top:1px solid #e8ebf2; background:#fafbfe;">
+            <button type="button" id="cancelSaveListBtn" style="padding:10px 18px; border:1px solid #ccd4e1; border-radius:12px; background:#fff; font-weight:700;">Cancel</button>
+            <button type="button" id="confirmSaveListBtn" style="padding:10px 18px; border:none; border-radius:12px; background:linear-gradient(90deg,#6276ea,#7c4fc8); color:#fff; font-weight:700;">Save to List</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast message -->
+<div id="customMessage" class="custom-message custom-message-success" style="display:none;">
+    <span id="customMessageText">Saved successfully.</span>
+    <button type="button" id="closeCustomMessage" class="custom-message-close">&times;</button>
+</div>
+{% endblock content %}
+
+{% block js %}
+{{ block.super }}
+<script>
+    const GET_SAVED_LISTS_URL = "{% url 'get_saved_lists' %}";
+    const SAVE_COMPANIES_TO_LIST_URL = "{% url 'save_companies_to_list' %}";
+</script>
+<script src="{% static 'search/js/company_search.js' %}?v=4"></script>
+{% endblock js %}
