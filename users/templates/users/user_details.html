@@ -222,3 +222,20 @@ document.getElementById('formAuthentication').addEventListener('submit', functio
 
 
 {% endblock %}
+
+{% block js %}
+{{ block.super }}
+<style>
+body > .d-flex {
+    align-items: stretch !important;
+}
+#sidebar,
+#sidebar.collapsed,
+#sidebar.hover-expand,
+#sidebar.no-hover {
+    min-height: 100vh !important;
+    height: 100% !important;
+    align-self: stretch !important;
+}
+</style>
+{% endblock %}

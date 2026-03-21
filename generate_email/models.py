@@ -144,4 +144,48 @@ class SavedCompanyEntry(models.Model):
 
     def __str__(self):
         return self.name or "Unnamed Company"
+    
+class SearchHistory(models.Model):
+    SEARCH_TYPE_CHOICES = [
+        ("people",   "People Search"),
+        ("company",  "Company Search"),
+        ("linkedin", "LinkedIn Search"),
+    ]
+
+    user         = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="search_history")
+    search_type  = models.CharField(max_length=20, choices=SEARCH_TYPE_CHOICES)
+    filters      = models.JSONField(default=dict)
+    results      = models.JSONField(default=list)
+    result_count = models.PositiveIntegerField(default=0)
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.get_search_type_display()} — {self.user} — {self.created_at:%Y-%m-%d %H:%M}"
+
+class GlobalSearchLog(models.Model):
+    SEARCH_TYPE_CHOICES = [
+        ("people",   "People Search"),
+        ("company",  "Company Search"),
+        ("linkedin", "LinkedIn Search"),
+    ]
+
+    user         = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="global_search_logs")
+    search_type  = models.CharField(max_length=20, choices=SEARCH_TYPE_CHOICES)
+    filters      = models.JSONField(default=dict)
+    results      = models.JSONField(default=list)
+    result_count = models.PositiveIntegerField(default=0)
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name     = "Global Search Log"
+        verbose_name_plural = "Global Search Logs"
+
+    def __str__(self):
+        return f"[{self.search_type}] {self.user} — {self.created_at:%Y-%m-%d %H:%M}"
+
+
 

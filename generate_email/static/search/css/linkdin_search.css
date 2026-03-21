@@ -1283,6 +1283,48 @@
 
 /* ── Small tablet (≤860px) ── */
 @media (max-width: 860px) {
+    */* existing rules same રહેશે... */
+
+    /* ADD: results-panel no overflow */
+    .results-panel {
+        overflow-x: hidden !important;
+        width: 100% !important;
+        min-width: unset !important;
+    }
+
+    /* ADD: table only 2 columns on mobile */
+    .results-table {
+        min-width: unset !important;
+        width: 100% !important;
+        table-layout: fixed !important;
+    }
+
+    /* Hide all columns except Profile (2nd) and Job Title (3rd) */
+    .results-table thead th:nth-child(1),
+    .results-table tbody td:nth-child(1) {
+        width: 30px !important;
+        padding: 8px 4px !important;
+    }
+
+    .results-table thead th:nth-child(2),
+    .results-table tbody td:nth-child(2) {
+        width: auto !important;
+        position: static !important;
+        box-shadow: none !important;
+    }
+
+    .results-table thead th:nth-child(3),
+    .results-table tbody td:nth-child(3) {
+        width: 120px !important;
+        max-width: 120px !important;
+    }
+
+    /* Hide columns 4 onwards */
+    .results-table thead th:nth-child(n+4),
+    .results-table tbody td:nth-child(n+4) {
+        display: none !important;
+    }
+
     .linkedin-search-shell {
         grid-template-columns: 1fr;
         grid-template-rows: auto 1fr;

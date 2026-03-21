@@ -697,7 +697,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 <script>
-document.addEventListener("DOMContentLoaded", function(){
+{% comment %} document.addEventListener("DOMContentLoaded", function(){
 
     const toggleBtn = document.getElementById("sidebarToggle");
     const sidebar = document.getElementById("sidebar");
@@ -706,6 +706,6 @@ document.addEventListener("DOMContentLoaded", function(){
         sidebar.classList.toggle("collapsed");
     });
 
-});
+}); {% endcomment %}
 </script>
 {% endblock js %}

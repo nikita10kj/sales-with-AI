@@ -673,8 +673,8 @@
     .footer-col ul li a { font-size: .875rem; color: #e4e7ec; transition: all .2s; }
     .footer-col ul li a:hover { color: var(--primary); padding-left: 4px; }
     .footer-bottom { 
-      border-top: 1px solid rgba(255,255,255,0.05); margin-top: 4rem; padding-top: 2rem; 
-      display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 1rem; 
+      border-top: 1px solid rgba(255,255,255,0.05); margin-top: -4rem; padding-top: 2rem;
+      display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 1rem;
       position: relative; z-index: 2;
     }
     .footer-copyright { font-size: .8125rem; color: #adb0b4; }
@@ -714,12 +714,12 @@
 /* Mobile view */
 @media (max-width:768px){
    .footer-copyright{
-    font-size:18px;   /* Mobile ma font moto */
+    font-size:10px;   /* Mobile ma font moto */
     text-align:center;
   }
 
   .built-by{
-    display:block;
+    display:inline;
     margin-top:6px;
 
   }
@@ -738,6 +738,19 @@
     /* Stagger delays */
     .d1 { transition-delay: .05s; } .d2 { transition-delay: .1s; } .d3 { transition-delay: .15s; }
     .d4 { transition-delay: .2s; }  .d5 { transition-delay: .25s; } .d6 { transition-delay: .3s; }
+
+@media (max-width: 768px) {
+  .hero-cta {
+    flex-direction: column;  
+    align-items: center;     
+  }
+
+  .hero-cta a {
+    width: 100%;
+    max-width: 260px;
+    text-align: center;
+  }
+}
   </style>
 </head>
 <body>

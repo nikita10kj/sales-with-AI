@@ -4,7 +4,7 @@ from .views import (GenerateEmailView, SendEmailView, EmailListView,EmailMessage
 
 from .views import (SearchPeopleView,EnrichPersonView,SelectPersonForEmailView,SearchPeopleByLinkdinView,SearchCompanyView,DataEnrichmentView,PeopleListView,
                     GetSavedListsView,EnrichSavedListView,ExportSavedListCsvView,SavePeopleToListView,DownloadListCSVView,DeleteSavedListView,RemovePersonFromListView,
-                    SaveCompaniesToListView,RemoveCompanyFromListView,UseSavedListInCampaignView)
+                    SaveCompaniesToListView,RemoveCompanyFromListView,UseSavedListInCampaignView,SaveEnrichAndGoToCampaignView,SearchHistoryView)
 
 
 urlpatterns = [
@@ -35,6 +35,8 @@ urlpatterns = [
     path("saved-lists/enrich/", EnrichSavedListView.as_view(), name="enrich_saved_list"),
     path("saved-lists/<int:list_id>/export-csv/", ExportSavedListCsvView.as_view(), name="export_saved_list_csv"),
     path("saved-lists/use-in-campaign/",UseSavedListInCampaignView.as_view(),name="use_saved_list_in_campaign"),
+
+    path("save-enrich-campaign/", SaveEnrichAndGoToCampaignView.as_view(), name="save_enrich_campaign"),
     # path("data-enrichment/", DataEnrichmentView.as_view(), name="data_enrichment"),
 
     path("save-people-to-list/", SavePeopleToListView.as_view(), name="save_people_to_list"),
@@ -43,4 +45,7 @@ urlpatterns = [
     path("list/<int:list_id>/entries/<int:entry_id>/remove/", RemovePersonFromListView.as_view(), name="remove_person_from_list"),
     path("save-companies-to-list/", SaveCompaniesToListView.as_view(), name="save_companies_to_list"),
     path("lists/<int:list_id>/remove-company/<int:company_id>/",RemoveCompanyFromListView.as_view(),name="remove_company_from_list"),
+
+    path("search-history/", SearchHistoryView.as_view(), name="search_history"),
+
 ]

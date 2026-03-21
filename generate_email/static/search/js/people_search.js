@@ -66,44 +66,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return cookieValue;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  SILENT BACKGROUND EMAIL ENRICHMENT
-    //  Fires after a successful "Save to List" — completely invisible to user.
-    //  Only enriches people who don't already have an email address.
-    // ─────────────────────────────────────────────────────────────────────────
-    function silentEnrichEmails(people) {
-        people.forEach(function (person) {
-            // Skip anyone who already has an email — no wasted API call
-            if (person.email && person.email.trim() !== "") return;
-
-            const formData = new FormData();
-            formData.append("csrfmiddlewaretoken",  getCookie("csrftoken"));
-            formData.append("linkedin_url",         person.linkedin            || "");
-            formData.append("first",                person.first               || "");
-            formData.append("last",                 person.last                || "");
-            formData.append("company",              person.company             || "");
-            formData.append("company_website",      person.company_website     || "");
-            formData.append("job_title",            person.job_title           || "");
-            formData.append("institution",          person.institution         || "");
-            formData.append("location",             person.location            || "");
-            formData.append("company_headquarter",  person.company_headquarter || "");
-            formData.append("card_id",              person.card_id             || "");
-            formData.append("enrich_type",          "email");
-
-            // Fire-and-forget: no await, no loader, no toast — user is unaware
-            fetch(ENRICH_PERSON_URL, {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken":      getCookie("csrftoken"),
-                    "X-Requested-With": "XMLHttpRequest"
-                },
-                body: formData
-            }).catch(function () {
-                // Swallow errors silently — this is a background operation
-            });
-        });
-    }
-
     function setupTagInput(config) {
         const input = document.getElementById(config.inputId);
         const addBtn = document.getElementById(config.addBtnId);
@@ -317,23 +279,19 @@ document.addEventListener("DOMContentLoaded", function () {
     function collectSelectedPeople() {
         const selected = [];
 
-        document.querySelectorAll(".row-checkbox:checked").forEach(function (cb, index) {
+        document.querySelectorAll(".row-checkbox:checked").forEach(function (cb) {
             selected.push({
-                first:               cb.getAttribute("data-first")               || "",
-                last:                cb.getAttribute("data-last")                || "",
-                linkedin:            cb.getAttribute("data-linkedin")            || "",
-                company:             cb.getAttribute("data-company")             || "",
-                company_website:     cb.getAttribute("data-company_website")     || "",
-                job_title:           cb.getAttribute("data-job_title")           || "",
-                institution:         cb.getAttribute("data-institution")         || "",
-                location:            cb.getAttribute("data-location")            || "",
+                first: cb.getAttribute("data-first") || "",
+                last: cb.getAttribute("data-last") || "",
+                linkedin: cb.getAttribute("data-linkedin") || "",
+                company: cb.getAttribute("data-company") || "",
+                company_website: cb.getAttribute("data-company_website") || "",
+                job_title: cb.getAttribute("data-job_title") || "",
+                institution: cb.getAttribute("data-institution") || "",
+                location: cb.getAttribute("data-location") || "",
                 company_headquarter: cb.getAttribute("data-company_headquarter") || "",
-                email:               cb.getAttribute("data-email")               || "",
-                phone:               cb.getAttribute("data-phone")               || "",
-                // card_id derived from the parent row's id e.g. "person-card-3" → "3"
-                card_id: (cb.closest("tr") || {}).id
-                    ? cb.closest("tr").id.replace("person-card-", "")
-                    : String(index + 1)
+                email: cb.getAttribute("data-email") || "",
+                phone: cb.getAttribute("data-phone") || ""
             });
         });
 
@@ -443,77 +401,132 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    if (confirmSaveListBtn) {
-        confirmSaveListBtn.addEventListener("click", async function () {
-            const selectedPeople = collectSelectedPeople();
+    // if (confirmSaveListBtn) {
+    //     confirmSaveListBtn.addEventListener("click", async function () {
+    //         const selectedPeople = collectSelectedPeople();
 
-            if (!selectedPeople.length) {
-                showMessage("Please select at least one person.", "error");
+    //         if (!selectedPeople.length) {
+    //             showMessage("Please select at least one person.", "error");
+    //             return;
+    //         }
+
+    //         const payload = {
+    //             list_type: activeListMode,
+    //             people: selectedPeople
+    //         };
+
+    //         if (activeListMode === "new") {
+    //             const listName = newListName ? newListName.value.trim() : "";
+    //             if (!listName) {
+    //                 showMessage("Please enter a list name.", "error");
+    //                 return;
+    //             }
+    //             payload.list_name = listName;
+    //         } else {
+    //             const listId = existingListSelect ? existingListSelect.value : "";
+    //             if (!listId) {
+    //                 showMessage("Please select an existing list.", "error");
+    //                 return;
+    //             }
+    //             payload.list_id = listId;
+    //         }
+
+    //         try {
+    //             confirmSaveListBtn.disabled = true;
+    //             confirmSaveListBtn.textContent = "Saving...";
+
+    //             const response = await fetch(SAVE_PEOPLE_TO_LIST_URL, {
+    //                 method: "POST",
+    //                 headers: {
+    //                     "Content-Type": "application/json",
+    //                     "X-CSRFToken": getCookie("csrftoken"),
+    //                     "X-Requested-With": "XMLHttpRequest"
+    //                 },
+    //                 body: JSON.stringify(payload)
+    //             });
+
+    //             const data = await response.json();
+
+    //             if (!data.success) {
+    //                 showMessage(data.error || "Could not save list.", "error");
+    //                 return;
+    //             }
+
+    //             showMessage(data.message || "Saved successfully.", "success");
+    //             closeModal();
+    //         } catch (error) {
+    //             console.error("Save list error:", error);
+    //             showMessage("Server error while saving list.", "error");
+    //         } finally {
+    //             confirmSaveListBtn.disabled = false;
+    //             confirmSaveListBtn.textContent = "Save to List";
+    //         }
+    //     });
+    // }
+
+    if (confirmSaveListBtn) {
+    confirmSaveListBtn.addEventListener("click", async function () {
+        const selectedPeople = collectSelectedPeople();
+
+        if (!selectedPeople.length) {
+            showMessage("Please select at least one person.", "error");
+            return;
+        }
+
+        const payload = { list_type: activeListMode, people: selectedPeople };
+
+        if (activeListMode === "new") {
+            const listName = newListName ? newListName.value.trim() : "";
+            if (!listName) { showMessage("Please enter a list name.", "error"); return; }
+            payload.list_name = listName;
+        } else {
+            const listId = existingListSelect ? existingListSelect.value : "";
+            if (!listId) { showMessage("Please select an existing list.", "error"); return; }
+            payload.list_id = listId;
+        }
+
+        try {
+            // ── Lock button, show enriching state ──
+            confirmSaveListBtn.disabled    = true;
+            confirmSaveListBtn.innerHTML   = `<span class="spinner-border spinner-border-sm me-2"></span>Saving & Enriching emails...`;
+
+            const response = await fetch(SAVE_ENRICH_CAMPAIGN_URL, {
+                method:  "POST",
+                headers: {
+                    "Content-Type":     "application/json",
+                    "X-CSRFToken":      getCookie("csrftoken"),
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (!data.success) {
+                showMessage(data.error || "Could not save list.", "error");
                 return;
             }
 
-            const payload = {
-                list_type: activeListMode,
-                people: selectedPeople
-            };
+            // ── Enrichment done — show result then redirect ──
+            confirmSaveListBtn.innerHTML = `✅ Done! Redirecting to campaign...`;
+            showMessage(data.message, "success");
+            closeModal();
 
-            if (activeListMode === "new") {
-                const listName = newListName ? newListName.value.trim() : "";
-                if (!listName) {
-                    showMessage("Please enter a list name.", "error");
-                    return;
-                }
-                payload.list_name = listName;
-            } else {
-                const listId = existingListSelect ? existingListSelect.value : "";
-                if (!listId) {
-                    showMessage("Please select an existing list.", "error");
-                    return;
-                }
-                payload.list_id = listId;
-            }
+            setTimeout(function () {
+                window.location.href = data.redirect_url;
+            }, 1500);
 
-            try {
-                confirmSaveListBtn.disabled = true;
-                confirmSaveListBtn.textContent = "Saving...";
-
-                const response = await fetch(SAVE_PEOPLE_TO_LIST_URL, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": getCookie("csrftoken"),
-                        "X-Requested-With": "XMLHttpRequest"
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json();
-
-                if (!data.success) {
-                    showMessage(data.error || "Could not save list.", "error");
-                    return;
-                }
-
-                // ── List saved successfully ──
-                showMessage(data.message || "Saved successfully.", "success");
-                closeModal();
-
-                // ── Silent background email enrichment ──────────────────────
-                // Kicks off immediately after save. User only sees the success
-                // toast above — enrichment runs invisibly in the background.
-                // People who already have an email are skipped automatically.
-                silentEnrichEmails(selectedPeople);
-                // ────────────────────────────────────────────────────────────
-
-            } catch (error) {
-                console.error("Save list error:", error);
-                showMessage("Server error while saving list.", "error");
-            } finally {
-                confirmSaveListBtn.disabled = false;
-                confirmSaveListBtn.textContent = "Save to List";
-            }
-        });
-    }
+        } catch (error) {
+            console.error("Save & enrich error:", error);
+            showMessage("Server error while saving list.", "error");
+        } finally {
+            // Only reset if redirect didn't happen (error case)
+            if (confirmSaveListBtn.innerHTML.includes("Redirecting")) return;
+            confirmSaveListBtn.disabled  = false;
+            confirmSaveListBtn.innerHTML = "Save to List";
+        }
+    });
+}
 
     function attachEnrichEvents() {
         function getRowData(cardRow) {
@@ -566,62 +579,129 @@ document.addEventListener("DOMContentLoaded", function () {
             `;
         }
 
+        // function renderExtraRow(cardRow, extraRow, csrfToken) {
+        //     if (!cardRow || !extraRow) return;
+
+        //     const person = getRowData(cardRow);
+
+        //     let contactHtml = "";
+
+        //     if (person.email) {
+        //         contactHtml += `
+        //             <div>
+        //                 <div style="font-weight:700; color:#20263d; margin-bottom:8px;">Email</div>
+        //                 <div style="padding:12px 14px; background:#fff; border:1px solid #dfe4ee; border-radius:12px; color:#44506a;">
+        //                     ${escapeHtml(person.email)}
+        //                 </div>
+        //             </div>
+        //         `;
+        //     }
+
+        //     if (person.phone) {
+        //         contactHtml += `
+        //             <div>
+        //                 <div style="font-weight:700; color:#20263d; margin-bottom:8px;">Phone</div>
+        //                 <div style="padding:12px 14px; background:#fff; border:1px solid #dfe4ee; border-radius:12px; color:#44506a;">
+        //                     ${escapeHtml(person.phone)}
+        //                 </div>
+        //             </div>
+        //         `;
+        //     }
+
+        //     if (!person.email && !person.phone) {
+        //         contactHtml = `
+        //             <div>
+        //                 <div style="padding:12px 14px; background:#fff; border:1px solid #dfe4ee; border-radius:12px; color:#44506a;">
+        //                     No contact information found
+        //                 </div>
+        //             </div>
+        //         `;
+        //     }
+
+        //     extraRow.innerHTML = `
+        //         <td colspan="11" style="background:#fafbfe; padding:0;">
+        //             <div style="padding:16px 18px;">
+        //                 <div style="display:grid; grid-template-columns: 1fr auto; gap:16px; align-items:start;">
+        //                     <div style="display:grid; gap:14px;">
+        //                         ${contactHtml}
+        //                     </div>
+        //                     <div style="display:flex; align-items:flex-end; height:100%;">
+        //                         ${buildSendEmailForm(person, csrfToken)}
+        //                     </div>
+        //                 </div>
+        //             </div>
+        //         </td>
+        //     `;
+
+        //     extraRow.style.display = "table-row";
+        // }
+
+
         function renderExtraRow(cardRow, extraRow, csrfToken) {
-            if (!cardRow || !extraRow) return;
+    if (!cardRow || !extraRow) return;
+    const person = getRowData(cardRow);
+    const cardId  = cardRow.id.replace("person-card-", "");
 
-            const person = getRowData(cardRow);
+    // ── Update Email column in the row ──
+    const emailCell = cardRow.parentElement
+        ? cardRow.parentElement.querySelector(`#person-card-${cardId}`)
+            ?.closest("tbody")
+            ?.querySelector(`#person-card-${cardId}`)
+        : null;
 
-            let contactHtml = "";
+    // Simpler: find by class on the same tr
+    const emailColCell = document.querySelector(`.email-col-${cardId}`);
+    const phoneColCell = document.querySelector(`.phone-col-${cardId}`);
 
-            if (person.email) {
-                contactHtml += `
-                    <div>
-                        <div style="font-weight:700; color:#20263d; margin-bottom:8px;">Email</div>
-                        <div style="padding:12px 14px; background:#fff; border:1px solid #dfe4ee; border-radius:12px; color:#44506a;">
-                            ${escapeHtml(person.email)}
-                        </div>
-                    </div>
-                `;
+    if (emailColCell && person.email) {
+        emailColCell.innerHTML = `
+            <span class="contact-col-pill contact-col-email">
+                <i class="far fa-envelope me-1"></i>${escapeHtml(person.email)}
+            </span>`;
+    }
+    if (phoneColCell && person.phone) {
+        phoneColCell.innerHTML = `
+            <span class="contact-col-pill contact-col-phone">
+                <i class="fas fa-phone-alt me-1" style="font-size:10px;"></i>${escapeHtml(person.phone)}
+            </span>`;
+    }
+
+    // ── Replace envelope icon with Send Email button if email now exists ──
+    if (person.email) {
+        const actionTd = cardRow.querySelector(".action-icons");
+        if (actionTd) {
+            const enrichEmailForm = actionTd.querySelector('.enrich-form input[name="enrich_type"][value="email"]');
+            if (enrichEmailForm) {
+                const oldForm = enrichEmailForm.closest("form");
+                if (oldForm) {
+                    const newForm = document.createElement("form");
+                    newForm.method = "POST";
+                    newForm.action = SELECT_PERSON_FOR_EMAIL_URL;
+                    newForm.className = "d-inline";
+                    newForm.innerHTML = `
+                        <input type="hidden" name="csrfmiddlewaretoken" value="${escapeHtml(csrfToken)}">
+                        <input type="hidden" name="first" value="${escapeHtml(person.first)}">
+                        <input type="hidden" name="last" value="${escapeHtml(person.last)}">
+                        <input type="hidden" name="linkedin" value="${escapeHtml(person.linkedin)}">
+                        <input type="hidden" name="company" value="${escapeHtml(person.company)}">
+                        <input type="hidden" name="company_website" value="${escapeHtml(person.company_website)}">
+                        <input type="hidden" name="job_title" value="${escapeHtml(person.job_title)}">
+                        <input type="hidden" name="institution" value="${escapeHtml(person.institution)}">
+                        <input type="hidden" name="location" value="${escapeHtml(person.location)}">
+                        <input type="hidden" name="company_headquarter" value="${escapeHtml(person.company_headquarter)}">
+                        <input type="hidden" name="email" value="${escapeHtml(person.email)}">
+                        <button type="submit" class="send-email-col-btn" title="Send Email">
+                            <i class="far fa-envelope me-1"></i> Send Email
+                        </button>`;
+                    oldForm.replaceWith(newForm);
+                }
             }
-
-            if (person.phone) {
-                contactHtml += `
-                    <div>
-                        <div style="font-weight:700; color:#20263d; margin-bottom:8px;">Phone</div>
-                        <div style="padding:12px 14px; background:#fff; border:1px solid #dfe4ee; border-radius:12px; color:#44506a;">
-                            ${escapeHtml(person.phone)}
-                        </div>
-                    </div>
-                `;
-            }
-
-            if (!person.email && !person.phone) {
-                contactHtml = `
-                    <div>
-                        <div style="padding:12px 14px; background:#fff; border:1px solid #dfe4ee; border-radius:12px; color:#44506a;">
-                            No contact information found
-                        </div>
-                    </div>
-                `;
-            }
-
-            extraRow.innerHTML = `
-                <td colspan="9" style="background:#fafbfe; padding:0;">
-                    <div style="padding:16px 18px;">
-                        <div style="display:grid; grid-template-columns: 1fr auto; gap:16px; align-items:start;">
-                            <div style="display:grid; gap:14px;">
-                                ${contactHtml}
-                            </div>
-                            <div style="display:flex; align-items:flex-end; height:100%;">
-                                ${buildSendEmailForm(person, csrfToken)}
-                            </div>
-                        </div>
-                    </div>
-                </td>
-            `;
-
-            extraRow.style.display = "table-row";
         }
+    }
+
+    // ── Hide the extra row (no longer needed) ──
+    extraRow.style.display = "none";
+}
 
         function getFirstEmail(person) {
             if (!person.emails || !person.emails.length) return "";
@@ -783,30 +863,74 @@ document.addEventListener("DOMContentLoaded", function () {
     overlay.className = "mobile-filter-overlay";
     document.body.appendChild(overlay);
 
-    if (mobileFilterBtn && filtersPanel) {
-        mobileFilterBtn.addEventListener("click", function() {
-            const isExpanded = filtersPanel.classList.contains("show");
-            
-            if (isExpanded) {
-                filtersPanel.classList.remove("show");
-                overlay.classList.remove("show");
-                mobileFilterBtn.classList.remove("active");
-                document.body.style.overflow = "";
-            } else {
-                filtersPanel.classList.add("show");
-                overlay.classList.add("show");
-                mobileFilterBtn.classList.add("active");
-                document.body.style.overflow = "hidden";
-            }
-        });
-
-        overlay.addEventListener("click", function() {
-            filtersPanel.classList.remove("show");
-            overlay.classList.remove("show");
-            mobileFilterBtn.classList.remove("active");
-            document.body.style.overflow = "";
-        });
+    if (mobileFilterBtn) {
+    if (window.innerWidth <= 860) {
+        mobileFilterBtn.style.display = "inline-flex";
+    } else {
+        mobileFilterBtn.style.display = "none";
     }
+}
+
+window.addEventListener("resize", function() {
+    if (!mobileFilterBtn) return;
+    if (window.innerWidth <= 860) {
+        mobileFilterBtn.style.display = "inline-flex";
+    } else {
+        mobileFilterBtn.style.display = "none";
+        if (filterOpen) closeFilter();
+    }
+});
+
+if (mobileFilterBtn && filtersPanel) {
+    var filterOpen = false;
+
+    function openFilter() {
+        filterOpen = true;
+        // setProperty correctly overrides CSS (including !important rules)
+        filtersPanel.style.setProperty("position", "fixed", "important");
+        filtersPanel.style.setProperty("left", "0", "important");
+        filtersPanel.style.setProperty("top", "0", "important");
+        filtersPanel.style.setProperty("width", "300px", "important");
+        filtersPanel.style.setProperty("height", "100vh", "important");
+        filtersPanel.style.setProperty("min-height", "100vh", "important");
+        filtersPanel.style.setProperty("overflow-y", "auto", "important");
+        filtersPanel.style.setProperty("padding", "0.75rem", "important");
+        filtersPanel.style.setProperty("z-index", "9500", "important");
+        filtersPanel.style.setProperty("max-height", "none", "important");
+        mobileFilterBtn.innerHTML = '<i class="fas fa-times"></i> Close';
+        overlay.classList.add("show");
+        document.body.style.overflow = "hidden";
+    }
+
+    function closeFilter() {
+        filterOpen = false;
+        // Remove all inline styles → CSS takes back control
+        filtersPanel.style.removeProperty("position");
+        filtersPanel.style.removeProperty("left");
+        filtersPanel.style.removeProperty("top");
+        filtersPanel.style.removeProperty("width");
+        filtersPanel.style.removeProperty("height");
+        filtersPanel.style.removeProperty("min-height");
+        filtersPanel.style.removeProperty("overflow-y");
+        filtersPanel.style.removeProperty("padding");
+        filtersPanel.style.removeProperty("z-index");
+        filtersPanel.style.removeProperty("max-height");
+        mobileFilterBtn.innerHTML = '<i class="fas fa-filter"></i> Filters';
+        overlay.classList.remove("show");
+        document.body.style.overflow = "";
+    }
+
+    mobileFilterBtn.addEventListener("click", function() {
+        if (filterOpen) { closeFilter(); } else { openFilter(); }
+    });
+
+    overlay.addEventListener("click", function() {
+        closeFilter();
+    });
+}
+
+
+    
 
     // ══════════════════════════════════════
     //  PROFILE DRAWER
@@ -1022,7 +1146,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 unlockBtn.disabled = false;
             }
         });
-
 
         // Click on drawer-trigger cells
         document.addEventListener("click", function (e) {

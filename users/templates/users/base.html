@@ -21,6 +21,9 @@
     <link href="{% static 'users/css/common.css' %}" rel="stylesheet">
     <link href="{% static 'users/css/analytics-styles.css' %}" rel="stylesheet">
     <link href="{% static 'users/css/styles.css' %}?v=13" rel="stylesheet">
+    <link href="{% static 'users/css/mobile-responsive.css' %}?v=13" rel="stylesheet">
+
+
 
     {% block extra_css %}{% endblock extra_css %}
 </head>
@@ -29,9 +32,14 @@
 <div class="d-flex">
 
     <div id="sidebar" class="sidebar d-flex flex-column p-3 {% if request.resolver_match.url_name == 'search_people' or request.resolver_match.url_name == 'search_company' or request.resolver_match.url_name == 'search_by_linkdin' or request.resolver_match.url_name == 'data_enrichment' %}collapsed hover-expand{% endif %}">
-        <button id="sidebarToggle" class="btn border-0 bg-transparent shadow-none">
+        {% comment %} <button id="sidebarToggle" class="btn border-0 bg-transparent shadow-none">
             <i class="fas fa-angle-right text-white"></i>
-        </button>
+        </button> {% endcomment %}
+
+        <button id="sidebarToggle" class="btn border-0 bg-transparent shadow-none">
+    <i class="fas fa-bars text-white d-md-none"></i>
+    <i class="fas fa-angle-right text-white d-none d-md-inline"></i>
+</button>
 
         <a href="{% url 'home' %}" class="mb-4 text-center d-block">
             <img src="{% static 'users/img/logo.png' %}" class="logo-full" width="140" />
@@ -90,6 +98,12 @@
             </li>
 
             <li>
+                <a href="{% url 'search_history' %}" class="nav-link {% if request.resolver_match.url_name == 'search_history' %}active-link{% endif %}">
+                    <i class="fas fa-history me-2"></i><span>Search History</span>
+                </a>
+            </li>
+
+            <li>
                 <a href="{% url 'generate_email' %}" class="nav-link {% if request.resolver_match.url_name == 'generate_email' %}active-link{% endif %}">
                     <i class="fas fa-envelope me-2"></i><span>Generator</span>
                 </a>
@@ -106,6 +120,8 @@
                     <i class="fas fa-envelope-open me-2"></i><span>Emails</span>
                 </a>
             </li>
+
+            
 
             <li>
                 <a href="{% url 'view-leads' %}" class="nav-link {% if request.resolver_match.url_name == 'view-leads' %}active-link{% endif %}">
@@ -229,62 +245,188 @@
     });
 </script>
 
-{% block js %}
+{% comment %} {% block js %}
 <script>
 document.addEventListener("DOMContentLoaded", function(){
-
+ 
     const toggleBtn = document.getElementById("sidebarToggle");
-    const sidebar = document.getElementById("sidebar");
-
-    toggleBtn.addEventListener("click", function(){
-
+    const sidebar   = document.getElementById("sidebar");
+ 
+    function isMobile() {
+        return window.innerWidth < 768;
+    }
+ 
+    toggleBtn.addEventListener("click", function(e){
+        e.stopPropagation();
+ 
+        if (isMobile()) {
+            sidebar.classList.toggle("mobile-open");
+            return;
+        }
+ 
+        // Desktop logic
         if (sidebar.classList.contains("hover-expand")) {
-            // Prospect & Enrich pages: button ALWAYS collapses to icon-only.
-            // Hover is the only expand preview — button just forces collapse + blocks hover.
             sidebar.classList.add("collapsed");
             sidebar.classList.add("no-hover");
-
-            // Close any open Bootstrap submenus
-            const openSubmenus = sidebar.querySelectorAll(".collapse.show");
-            openSubmenus.forEach(function(submenu) {
-                var bsCollapse = bootstrap.Collapse.getInstance(submenu);
-                if (bsCollapse) {
-                    bsCollapse.hide();
-                } else {
-                    submenu.classList.remove("show");
-                }
-            });
-
+            closeSubmenus();
         } else {
-            // All other pages: standard toggle
-            const isCollapsed = sidebar.classList.contains("collapsed");
-            if (isCollapsed) {
+            if (sidebar.classList.contains("collapsed")) {
                 sidebar.classList.remove("collapsed");
                 sidebar.classList.remove("no-hover");
             } else {
                 sidebar.classList.add("collapsed");
                 sidebar.classList.add("no-hover");
-
-                const openSubmenus = sidebar.querySelectorAll(".collapse.show");
-                openSubmenus.forEach(function(submenu) {
-                    var bsCollapse = bootstrap.Collapse.getInstance(submenu);
-                    if (bsCollapse) {
-                        bsCollapse.hide();
-                    } else {
-                        submenu.classList.remove("show");
-                    }
-                });
+                closeSubmenus();
             }
         }
     });
-
-    // Mouse leaves sidebar → clear no-hover so next hover works normally
+ 
+    function closeSubmenus() {
+        sidebar.querySelectorAll(".collapse.show").forEach(function(submenu) {
+            var bsCollapse = bootstrap.Collapse.getInstance(submenu);
+            if (bsCollapse) { bsCollapse.hide(); }
+            else { submenu.classList.remove("show"); }
+        });
+    }
+ 
+    // Desktop: mouse leave
     sidebar.addEventListener("mouseleave", function() {
-        sidebar.classList.remove("no-hover");
+        if (!isMobile()) {
+            sidebar.classList.remove("no-hover");
+        }
     });
-
+ 
+    // Mobile: click outside → close
+    document.addEventListener("click", function(e) {
+        if (isMobile() && sidebar.classList.contains("mobile-open")) {
+            if (!sidebar.contains(e.target)) {
+                sidebar.classList.remove("mobile-open");
+            }
+        }
+    });
+ 
+    // Resize → close mobile nav
+    window.addEventListener("resize", function() {
+        if (!isMobile()) {
+            sidebar.classList.remove("mobile-open");
+        }
+    });
+ 
+    // Nav link click → close mobile nav
+    sidebar.querySelectorAll(".nav-link:not([data-bs-toggle])").forEach(function(link) {
+        link.addEventListener("click", function() {
+            if (isMobile()) {
+                sidebar.classList.remove("mobile-open");
+            }
+        });
+    });
+ 
 });
 </script>
+{% endblock js %}
+
+</body>
+</html> {% endcomment %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+ 
+    const toggleBtn = document.getElementById("sidebarToggle");
+    const sidebar   = document.getElementById("sidebar");
+ 
+    function isMobile() {
+        return window.innerWidth < 768;
+    }
+ 
+    toggleBtn.addEventListener("click", function(e){
+        e.stopPropagation();
+ 
+        if (isMobile()) {
+            sidebar.classList.toggle("mobile-open");
+            return;
+        }
+ 
+        // Desktop logic
+        if (sidebar.classList.contains("hover-expand")) {
+            sidebar.classList.add("collapsed");
+            sidebar.classList.add("no-hover");
+            closeSubmenus();
+        } else {
+            if (sidebar.classList.contains("collapsed")) {
+                sidebar.classList.remove("collapsed");
+                sidebar.classList.remove("no-hover");
+            } else {
+                sidebar.classList.add("collapsed");
+                sidebar.classList.add("no-hover");
+                closeSubmenus();
+            }
+        }
+    });
+ 
+    function closeSubmenus() {
+        sidebar.querySelectorAll(".collapse.show").forEach(function(submenu) {
+            var bsCollapse = bootstrap.Collapse.getInstance(submenu);
+            if (bsCollapse) { bsCollapse.hide(); }
+            else { submenu.classList.remove("show"); }
+        });
+    }
+ 
+    // Desktop: mouse leave
+    sidebar.addEventListener("mouseleave", function() {
+        if (!isMobile()) {
+            sidebar.classList.remove("no-hover");
+        }
+    });
+ 
+    // Mobile: click outside → close
+    document.addEventListener("click", function(e) {
+        if (isMobile() && sidebar.classList.contains("mobile-open")) {
+            if (!sidebar.contains(e.target)) {
+                sidebar.classList.remove("mobile-open");
+            }
+        }
+    });
+ 
+    // Resize → close mobile nav
+    window.addEventListener("resize", function() {
+        if (!isMobile()) {
+            sidebar.classList.remove("mobile-open");
+        }
+    });
+ 
+    // Nav link click → close mobile nav
+    sidebar.querySelectorAll(".nav-link:not([data-bs-toggle])").forEach(function(link) {
+        link.addEventListener("click", function() {
+            if (isMobile()) {
+                sidebar.classList.remove("mobile-open");
+            }
+        });
+    });
+ 
+});
+</script>
+<script>
+// Native select dropdown overflow fix for mobile DevTools emulation
+(function() {
+    if (window.innerWidth > 860) return;
+    
+    function truncateSelectOptions() {
+        document.querySelectorAll("select").forEach(function(sel) {
+            const maxWidth = sel.offsetWidth || 200;
+            Array.from(sel.options).forEach(function(opt) {
+                if (opt.text.length > 25) {
+                    opt.setAttribute("data-full", opt.text);
+                    opt.text = opt.text.substring(0, 22) + "...";
+                }
+            });
+        });
+    }
+    
+    document.addEventListener("DOMContentLoaded", truncateSelectOptions);
+})();
+</script>
+{% block js %}
+
 {% endblock js %}
 
 </body>

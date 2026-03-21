@@ -10,7 +10,7 @@ from django.views.generic import FormView, View,TemplateView,ListView,DetailView
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from .genai_email import get_response
-from .models import TargetAudience, SentEmail, ReminderEmail, EmailSubscription
+from .models import TargetAudience, SentEmail, ReminderEmail, EmailSubscription,SearchHistory,GlobalSearchLog
 from users.models import ProductService, ActivityLog,Signature,UserWallet
 import json
 import datetime
@@ -361,6 +361,50 @@ class SearchPeopleByLinkdinView(View):
         request.session["error"] = error
         request.session["form"] = form
 
+        try:
+            filters_snapshot = {"linkedin_url": linkedin_url} if linkedin_url else {}
+
+            people_snapshot = [{
+                    "first":               p.get("first", ""),
+                    "last":                p.get("last", ""),
+                    "job_title":           p.get("job_title", ""),
+                    "company":             p.get("company", ""),
+                    "company_website":     p.get("company_website", ""),
+                    "location":            p.get("location", ""),
+                    "company_headquarter": p.get("company_headquarter", ""),
+                    "linkedin":            p.get("linkedin", ""),
+                    "photo":               p.get("photo", ""),
+                    "email":               p.get("emails", [{}])[0].get("email", "") if p.get("emails") else "",
+                    "phone":               p.get("phones", [{}])[0].get("number", "") if p.get("phones") else "",
+                    "institution":         p.get("institution", ""),
+                    "department":          p.get("department", ""),
+                    "experience":          p.get("experience", []),
+                    "all_education":       p.get("all_education", []),
+                    "skills_list":         p.get("skills_list", []),
+                    "total_experience":    p.get("total_experience", ""),
+                    "avg_tenure":          p.get("avg_tenure", ""),
+                    "cur_tenure":          p.get("cur_tenure", ""),
+                } for p in people]
+
+            SearchHistory.objects.create(
+                user=request.user,
+                search_type="linkedin",
+                filters=filters_snapshot,
+                results=people_snapshot,
+                result_count=len(people),
+            )
+
+            GlobalSearchLog.objects.create(
+                user=request.user,
+                search_type="linkedin",
+                filters=filters_snapshot,
+                results=people_snapshot,
+                result_count=len(people),
+            )
+
+        except Exception:
+            pass
+
         return redirect("search_by_linkdin")
 
 class SearchPeopleView(View):
@@ -650,6 +694,58 @@ class SearchPeopleView(View):
         request.session["error"] = error
         request.session["form"] = form
         request.session["pagination"] = pagination
+
+
+        try:
+            filters_snapshot = {k: v for k, v in {
+                "name": name, "company": company, "job_title": job_title,
+                "seniority": seniority, "skills": skills, "degree": degree,
+                "institution": institution, "location": location,
+                "industry": industry, "specialites": specialites,
+                "min_experience": min_experience, "max_experience": max_experience,
+                "is_decision_maker": is_decision_maker,
+            }.items() if v}
+
+            people_snapshot = [{
+                    "first":               p.get("first", ""),
+                    "last":                p.get("last", ""),
+                    "job_title":           p.get("job_title", ""),
+                    "company":             p.get("company", ""),
+                    "company_website":     p.get("company_website", ""),
+                    "location":            p.get("location", ""),
+                    "company_headquarter": p.get("company_headquarter", ""),
+                    "linkedin":            p.get("linkedin", ""),
+                    "photo":               p.get("photo", ""),
+                    "email":               p.get("emails", [{}])[0].get("email", "") if p.get("emails") else "",
+                    "phone":               p.get("phones", [{}])[0].get("number", "") if p.get("phones") else "",
+                    "institution":         p.get("institution", ""),
+                    "department":          p.get("department", ""),
+                    "experience":          p.get("experience", []),
+                    "all_education":       p.get("all_education", []),
+                    "skills_list":         p.get("skills_list", []),
+                    "total_experience":    p.get("total_experience", ""),
+                    "avg_tenure":          p.get("avg_tenure", ""),
+                    "cur_tenure":          p.get("cur_tenure", ""),
+                } for p in people]
+
+            SearchHistory.objects.create(
+                user=request.user,
+                search_type="people",
+                filters=filters_snapshot,
+                results=people_snapshot,
+                result_count=len(people),
+            )
+
+            GlobalSearchLog.objects.create(
+                user=request.user,
+                search_type="people",
+                filters=filters_snapshot,
+                results=people_snapshot,
+                result_count=len(people),
+            )
+
+        except Exception:
+            pass
         
         return redirect("search_people")
 
@@ -861,6 +957,63 @@ class EnrichPersonView(View):
                         "pending_enrichment": True
                     }
                 })
+            
+            # ── Update SearchHistory if this person exists in the last search ──
+            try:
+                from .models import SearchHistory
+                last_history = SearchHistory.objects.filter(
+                    user=request.user,
+                    search_type__in=["people", "linkedin"]
+                ).order_by("-created_at").first()
+
+                if last_history and last_history.results:
+                    updated = False
+                    for r in last_history.results:
+                        if r.get("linkedin", "").strip().lower() == linkedin_url.strip().lower():
+                            if enrich_email and item.get("emails"):
+                                emails = item.get("emails", [])
+                                first_email = emails[0].get("email", "") if isinstance(emails[0], dict) else str(emails[0])
+                                if first_email:
+                                    r["email"] = first_email
+                                    updated = True
+                            if enrich_phone and item.get("phones"):
+                                phones = item.get("phones", [])
+                                first_phone = phones[0].get("number", "") if isinstance(phones[0], dict) else str(phones[0])
+                                if first_phone:
+                                    r["phone"] = first_phone
+                                    updated = True
+                            break
+
+                    if updated:
+                        last_history.results = last_history.results  # trigger save
+                        SearchHistory.objects.filter(id=last_history.id).update(
+                            results=last_history.results
+                        )
+            except Exception:
+                pass
+
+            try:
+                from .models import GlobalSearchLog
+                last_log = GlobalSearchLog.objects.filter(
+                    user=request.user,
+                    search_type__in=["people", "linkedin"]
+                ).order_by("-created_at").first()
+
+                if last_log and last_log.results:
+                    for r in last_log.results:
+                        if r.get("linkedin", "").strip().lower() == linkedin_url.strip().lower():
+                            if enrich_email and item.get("emails"):
+                                emails = item.get("emails", [])
+                                fe = emails[0].get("email", "") if isinstance(emails[0], dict) else str(emails[0])
+                                if fe: r["email"] = fe
+                            if enrich_phone and item.get("phones"):
+                                phones = item.get("phones", [])
+                                fp = phones[0].get("number", "") if isinstance(phones[0], dict) else str(phones[0])
+                                if fp: r["phone"] = fp
+                            break
+                    GlobalSearchLog.objects.filter(id=last_log.id).update(results=last_log.results)
+            except Exception:
+                pass
 
             return JsonResponse({
                 "success": True,
@@ -1118,6 +1271,55 @@ class SearchCompanyView(View):
         request.session["error"] = error
         request.session["form"] = form
 
+        try:
+            filters_snapshot = {k: v for k, v in {
+                "company": company, "industry": industry,
+                "company_market": company_market,
+                "company_location": company_location,
+                "year_founded_min": year_founded_min,
+                "year_founded_max": year_founded_max,
+                "company_specialites": company_specialites,
+                "employee_count": employee_count,
+                "min_revenue": min_revenue, "max_revenue": max_revenue,
+                "company_technologies": company_technologies,
+            }.items() if v}
+
+            company_snapshot = [{
+                "name":             c.get("name", ""),
+                "linkedin_url":     c.get("linkedin_url", ""),
+                "website":          c.get("website", ""),
+                "industry":         c.get("industry", ""),
+                "description":      c.get("description", ""),
+                "company_size":     c.get("company_size", ""),
+                "headquarter":      c.get("headquarter", ""),
+                "logo_url":         c.get("logo_url", ""),
+                "tagline":          c.get("tagline", ""),
+                "revenue":          c.get("revenue", ""),
+                "linkedin_followers": c.get("linkedin_followers", ""),
+                "found_at":         c.get("found_at", ""),
+                "specialties":      c.get("specialties", []),
+                "location_country": c.get("location_country", ""),
+                "decision_makers":  c.get("decision_makers", []),
+            } for c in companies]
+
+            SearchHistory.objects.create(
+                user=request.user,
+                search_type="company",
+                filters=filters_snapshot,
+                results=company_snapshot,
+                result_count=len(companies),
+            )
+
+            GlobalSearchLog.objects.create(
+                user=request.user,
+                search_type="company",
+                filters=filters_snapshot,
+                results=company_snapshot,
+                result_count=len(companies),
+            )
+
+        except Exception:
+            pass
         return redirect("search_company")
         
 # class GetSavedListsView(LoginRequiredMixin, View):
@@ -1410,6 +1612,135 @@ class EnrichSavedListView(LoginRequiredMixin, View):
             "success": False,
             "error": message
         }, status=status_code)
+
+
+class SaveEnrichAndGoToCampaignView(LoginRequiredMixin, View):
+    MAX_POLLS      = 40
+    POLL_INTERVAL  = 3
+
+    def post(self, request, *args, **kwargs):
+        try:
+            body      = json.loads(request.body.decode("utf-8"))
+            list_type = body.get("list_type")
+            list_name = (body.get("list_name") or "").strip()
+            list_id   = body.get("list_id")
+            people    = body.get("people", [])
+
+            if not people:
+                return JsonResponse({"success": False, "error": "No people selected."}, status=400)
+
+            # ── 1. Save or get list ──────────────────────────────────────
+            if list_type == "new":
+                if not list_name:
+                    return JsonResponse({"success": False, "error": "List name is required."}, status=400)
+                saved_list, _ = SavedPeopleList.objects.get_or_create(
+                    user=request.user, name=list_name
+                )
+            elif list_type == "existing":
+                if not list_id:
+                    return JsonResponse({"success": False, "error": "Please select a list."}, status=400)
+                try:
+                    saved_list = SavedPeopleList.objects.get(id=list_id, user=request.user)
+                except SavedPeopleList.DoesNotExist:
+                    return JsonResponse({"success": False, "error": "List not found."}, status=404)
+            else:
+                return JsonResponse({"success": False, "error": "Invalid list type."}, status=400)
+
+            # ── 2. Save entries ──────────────────────────────────────────
+            for person in people:
+                SavedPeopleEntry.objects.update_or_create(
+                    saved_list=saved_list,
+                    linkedin=person.get("linkedin", ""),
+                    defaults={
+                        "first":               person.get("first", ""),
+                        "last":                person.get("last", ""),
+                        "company":             person.get("company", ""),
+                        "company_website":     person.get("company_website", ""),
+                        "job_title":           person.get("job_title", ""),
+                        "institution":         person.get("institution", ""),
+                        "location":            person.get("location", ""),
+                        "company_headquarter": person.get("company_headquarter", ""),
+                        "email":               person.get("email", ""),
+                        "phone":               person.get("phone", ""),
+                    }
+                )
+
+            # ── 3. Bulk enrich (only entries missing email) ──────────────
+            entries           = list(saved_list.entries.all())
+            bulk_data         = []
+            linkedin_to_entry = {}
+
+            for entry in entries:
+                if entry.email:
+                    continue
+                linkedin_raw = (entry.linkedin or "").strip()
+                if not linkedin_raw:
+                    continue
+                norm = normalize_linkedin_url(linkedin_raw)
+                linkedin_to_entry[norm] = entry
+                bulk_data.append({
+                    "linkedinUrl": linkedin_raw,
+                    "enrichEmail": True,
+                    "enrichPhone": False,
+                })
+
+            enriched_count = 0
+
+            if bulk_data:
+                start_resp    = redrob_start_bulk_enrichment(
+                    data=bulk_data,
+                    name=f"Bulk Enrichment - {saved_list.name}"
+                )
+                enrichment_id = (start_resp.get("data") or {}).get("id")
+
+                if enrichment_id:
+                    for _ in range(self.MAX_POLLS):
+                        resp   = redrob_get_enrichment(enrichment_id)
+                        data   = resp.get("data", {}) or {}
+                        status = data.get("status", "")
+                        items  = data.get("datas", []) or []
+
+                        if status == "FINISHED":
+                            for item in items:
+                                profile      = item.get("profile", {}) or {}
+                                linkedin_raw = (
+                                    profile.get("linkedin_url")
+                                    or item.get("linkedinUrl", "")
+                                )
+                                norm  = normalize_linkedin_url(linkedin_raw)
+                                entry = linkedin_to_entry.get(norm)
+                                if not entry:
+                                    continue
+                                emails = item.get("emails", []) or []
+                                if emails:
+                                    first_item = emails[0]
+                                    email_val  = (
+                                        first_item.get("email", "")
+                                        if isinstance(first_item, dict)
+                                        else str(first_item)
+                                    )
+                                    if email_val and entry.email != email_val:
+                                        entry.email = email_val
+                                        entry.save(update_fields=["email"])
+                                        enriched_count += 1
+                            break
+
+                        if status in {"FAILED", "ERROR", "CANCELLED"}:
+                            break
+
+                        time.sleep(self.POLL_INTERVAL)
+
+            campaign_url = reverse("campaign_view") + f"?list_id={saved_list.id}"
+            return JsonResponse({
+                "success":       True,
+                "message":       f"'{saved_list.name}' saved. {enriched_count} emails enriched.",
+                "redirect_url":  campaign_url,
+                "list_id":       saved_list.id,
+                "enriched_count": enriched_count,
+            })
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
         
 class ExportSavedListCsvView(LoginRequiredMixin, View):
     def get(self, request, list_id, *args, **kwargs):
@@ -1869,6 +2200,37 @@ class SelectPersonForEmailView(View):
         print(request.session["prefill_email_data"])
 
         return redirect("generate_email")
+
+class SearchHistoryView(LoginRequiredMixin, View):
+    template_name = "generate_email/search_history.html"
+
+    def get(self, request, *args, **kwargs):
+        search_type = request.GET.get("type", "")
+        histories   = SearchHistory.objects.filter(user=request.user)
+        if search_type:
+            histories = histories.filter(search_type=search_type)
+        return render(request, self.template_name, {
+            "histories":   histories[:100],
+            "search_type": search_type,
+        })
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            body = json.loads(request.body)
+            history_id = body.get("history_id")
+        except Exception:
+            history_id = None
+
+        if history_id:
+            # Delete single
+            deleted = SearchHistory.objects.filter(
+                id=history_id, user=request.user
+            ).delete()
+            return JsonResponse({"success": True, "deleted": deleted[0]})
+        else:
+            # Clear all
+            SearchHistory.objects.filter(user=request.user).delete()
+            return JsonResponse({"success": True})
         
 # Create your views here.
 ORG_DOMAIN = "jmsadvisory.in"
@@ -3493,45 +3855,388 @@ import json
 #     })
 
 
+# ----------------campaign 3 -----------------------
+
+# @login_required(login_url="login")
+# def campaign_view(request):
+
+#     if request.method == "GET" and not request.META.get("HTTP_REFERER"):
+#         return redirect("/")
+
+#     tags = AudienceTag.objects.filter(user=request.user)
+#     user_services = ProductService.objects.filter(user=request.user)
+#     signatures = Signature.objects.filter(user=request.user)
+
+#     google_accounts = SocialAccount.objects.filter(
+#         user=request.user,
+#         provider__in=["google", "microsoft"]
+#     )
+
+#     user_attachments = EmailAttachment.objects.filter(user=request.user)
+
+#     if request.method == "POST":
+
+#         # =========================
+#         # FORM DATA
+#         # =========================
+#         tag_id = request.POST.get("tag_id")
+#         service_name = request.POST.get("selected_service")
+#         framework = request.POST.get("framework")
+#         campaign_goal = request.POST.get("campaign_goal")
+#         signature_id = request.POST.get("signature_id")
+#         sent_from = request.POST.get("sent_from")
+#         schedule_time = request.POST.get("schedule_time")
+#         shuffle_accounts = request.POST.get("shuffle_accounts") == "on"
+#         saved_attachment_id = request.POST.get("saved_attachment")
+
+#         # =========================
+#         # VALIDATIONS
+#         # =========================
+#         if not tag_id or not service_name or not sent_from:
+#             messages.error(request, "Tag, Service and Sending Account are required")
+#             return redirect("campaign_view")
+
+#         selected_service = ProductService.objects.filter(
+#             service_name=service_name,
+#             user=request.user
+#         ).first()
+
+#         if not selected_service:
+#             messages.error(request, "Invalid service selected")
+#             return redirect("campaign_view")
+
+#         selected_account = SocialAccount.objects.filter(
+#             id=sent_from,
+#             user=request.user
+#         ).first()
+
+#         if not selected_account:
+#             messages.error(request, "Invalid sending account")
+#             return redirect("campaign_view")
+
+#         audiences = TargetAudience.objects.filter(
+#             user=request.user,
+#             tag_id=tag_id
+#         )
+
+#         if not audiences.exists():
+#             messages.error(request, "No leads found under selected tag")
+#             return redirect("campaign_view")
+
+#         # =========================
+#         # SIGNATURE
+#         # =========================
+#         signature_html = ""
+
+#         if signature_id:
+#             try:
+#                 signature_obj = Signature.objects.get(
+#                     id=signature_id,
+#                     user=request.user
+#                 )
+#             except Signature.DoesNotExist:
+#                 signature_obj = None
+#         else:
+#             signature_obj = Signature.objects.filter(
+#                 user=request.user,
+#             ).first()
+
+#         if signature_obj:
+#             signature_html = signature_obj.signature or ""
+
+#             if signature_obj.photo:
+#                 photo_url = request.build_absolute_uri(signature_obj.photo.url)
+
+#                 signature_html += f"""
+#                     <p>
+#                         <img src="{photo_url}"
+#                             alt="Signature Photo"
+#                             style="max-width:420px;margin-top:8px;width:100%;height:auto;display:block;">
+#                     </p>
+#                 """
+
+#         if not signature_html:
+#             signature_html = (
+#                 '<div style="margin:0;padding:0;line-height:1.4;">'
+#                 f'Best,<br>{request.user.full_name}'
+#                 '</div>'
+#             )
+
+#         # =========================
+#         # ATTACHMENT
+#         # =========================
+#         saved_obj = None
+#         attachment_file = None
+
+#         if saved_attachment_id:
+#             try:
+#                 saved_obj = EmailAttachment.objects.get(
+#                     id=saved_attachment_id,
+#                     user=request.user
+#                 )
+
+#                 attachment_file = saved_obj.file
+#                 attachment_file.open()
+#                 attachment_file.seek(0)
+
+#             except EmailAttachment.DoesNotExist:
+#                 saved_obj = None
+#                 attachment_file = None
+
+#         # =========================
+#         # SCHEDULED SEND
+#         # =========================
+#         if schedule_time:
+
+#             schedule_dt = parse_datetime(schedule_time)
+
+#             if schedule_dt and timezone.is_naive(schedule_dt):
+#                 schedule_dt = timezone.make_aware(schedule_dt)
+
+#             if not schedule_dt:
+#                 messages.error(request, "Invalid schedule time")
+#                 return redirect("campaign_view")
+
+#             for audience in audiences:
+#                 audience.campaign_goal = campaign_goal
+#                 audience.framework = framework
+#                 audience.selected_service = service_name
+
+#                 audience.save(update_fields=[
+#                     "campaign_goal",
+#                     "framework",
+#                     "selected_service"
+#                 ])
+
+#                 ai_raw = get_response(request.user, audience, selected_service)
+#                 ai_data = json.loads(ai_raw)
+
+#                 subject = ai_data["main_email"]["subject"]
+#                 message = ai_data["main_email"]["body"]
+
+#                 final_message = message
+#                 if signature_html:
+#                     final_message += "<br><br>" + signature_html
+
+#                 SentEmail.objects.create(
+#                     user=request.user,
+#                     target_audience=audience,
+#                     email=audience.email,
+#                     subject=subject,
+#                     message=final_message,
+#                     is_scheduled=True,
+#                     scheduled_at=schedule_dt,
+#                     sending_account=None if shuffle_accounts else selected_account,
+#                     attachment=saved_obj,
+#                     shuffle_accounts=shuffle_accounts
+#                 )
+
+#                 follow_ups = ai_data.get("follow_ups", [])
+#                 follow_up_days = [2, 4, 6, 8]
+
+#                 sent_email_obj = SentEmail.objects.filter(
+#                     user=request.user,
+#                     target_audience=audience
+#                 ).order_by("-created").first()
+
+#                 if sent_email_obj:
+#                     for i, follow in enumerate(follow_ups):
+
+#                         if i >= len(follow_up_days):
+#                             break
+
+#                         follow_body = follow.get("body", "")
+
+#                         if signature_html:
+#                             follow_body += "<br><br>" + signature_html
+
+#                         ReminderEmail.objects.create(
+#                             user=request.user,
+#                             target_audience=audience,
+#                             sent_email=sent_email_obj,
+#                             message_id=make_msgid(domain='sellsharp.co'),
+#                             email=audience.email,
+#                             subject=f"Re: {subject}",
+#                             message=follow_body,
+#                             send_at=(schedule_dt + timezone.timedelta(days=follow_up_days[i])).date(),
+#                             sent=False
+#                         )
+
+#             messages.success(request, "Campaign Scheduled Successfully")
+#             return redirect("campaign_view")
+
+#         # =========================
+#         # IMMEDIATE SEND
+#         # =========================
+#         else:
+
+#             account_list = list(google_accounts)
+
+#             for index, audience in enumerate(audiences):
+#                 audience.campaign_goal = campaign_goal
+#                 audience.framework = framework
+#                 audience.selected_service = service_name
+
+#                 audience.save(update_fields=[
+#                     "campaign_goal",
+#                     "framework",
+#                     "selected_service"
+#                 ])
+
+#                 if shuffle_accounts and account_list:
+#                     selected_account = account_list[index % len(account_list)]
+
+#                 ai_raw = get_response(request.user, audience, selected_service)
+#                 ai_data = json.loads(ai_raw)
+
+#                 subject = ai_data["main_email"]["subject"]
+#                 message = ai_data["main_email"]["body"]
+
+#                 final_message = message
+#                 if signature_html:
+#                     final_message += "<br><br>" + signature_html
+
+#                 main_email = {
+#                     "subject": subject,
+#                     "body": final_message
+#                 }
+
+#                 sendCampaignEmail(
+#                     request=request,
+#                     user=request.user,
+#                     target_audience=audience,
+#                     main_email=main_email,
+#                     selected_account=selected_account,
+#                     attachment=attachment_file
+#                 )
+
+#             messages.success(request, "Campaign Sent Successfully")
+#             return redirect("campaign_view")
+
+#     selected_tag_id = request.GET.get("tag_id") or request.POST.get("tag_id")
+
+#     return render(request, "generate_email/campaign.html", {
+#         "tags": tags,
+#         "user_services": user_services,
+#         "signatures": signatures,
+#         "google_accounts": google_accounts,
+#         "user_attachments": user_attachments,
+#         "selected_tag_id": str(selected_tag_id) if selected_tag_id else "",
+#     })
 
 
 @login_required(login_url="login")
 def campaign_view(request):
 
     if request.method == "GET" and not request.META.get("HTTP_REFERER"):
-        return redirect("/")
+        # allow redirect from save-enrich (has list_id param)
+        if not request.GET.get("list_id"):
+            return redirect("/")
 
-    tags = AudienceTag.objects.filter(user=request.user)
-    user_services = ProductService.objects.filter(user=request.user)
-    signatures = Signature.objects.filter(user=request.user)
-
-    google_accounts = SocialAccount.objects.filter(
+    tags             = AudienceTag.objects.filter(user=request.user)
+    user_services    = ProductService.objects.filter(user=request.user)
+    signatures       = Signature.objects.filter(user=request.user)
+    google_accounts  = SocialAccount.objects.filter(
         user=request.user,
         provider__in=["google", "microsoft"]
     )
-
     user_attachments = EmailAttachment.objects.filter(user=request.user)
+
+    # Only saved lists that have at least 1 enriched email
+    saved_lists = SavedPeopleList.objects.filter(
+        user=request.user
+    ).annotate(
+        email_count=Count("entries", filter=Q(entries__email__gt=""))
+    ).filter(email_count__gt=0)
 
     if request.method == "POST":
 
         # =========================
         # FORM DATA
         # =========================
-        tag_id = request.POST.get("tag_id")
-        service_name = request.POST.get("selected_service")
-        framework = request.POST.get("framework")
-        campaign_goal = request.POST.get("campaign_goal")
-        signature_id = request.POST.get("signature_id")
-        sent_from = request.POST.get("sent_from")
-        schedule_time = request.POST.get("schedule_time")
-        shuffle_accounts = request.POST.get("shuffle_accounts") == "on"
+        tag_id              = request.POST.get("tag_id", "").strip()
+        selected_list_id    = request.POST.get("selected_list_id", "").strip()
+        service_name        = request.POST.get("selected_service")
+        framework           = request.POST.get("framework")
+        campaign_goal       = request.POST.get("campaign_goal")
+        signature_id        = request.POST.get("signature_id")
+        sent_from           = request.POST.get("sent_from")
+        schedule_time       = request.POST.get("schedule_time")
+        shuffle_accounts    = request.POST.get("shuffle_accounts") == "on"
         saved_attachment_id = request.POST.get("saved_attachment")
+
+        # =========================
+        # RESOLVE AUDIENCE SOURCE
+        # saved list takes priority over tag if both selected
+        # =========================
+        audiences = None
+
+        if selected_list_id:
+            # ── Saved People List path ───────────────────────────────────
+            try:
+                saved_list = SavedPeopleList.objects.get(
+                    id=selected_list_id,
+                    user=request.user
+                )
+            except SavedPeopleList.DoesNotExist:
+                messages.error(request, "Selected list not found.")
+                return redirect("campaign_view")
+
+            entries_with_email = saved_list.entries.exclude(email="")
+
+            if not entries_with_email.exists():
+                messages.error(
+                    request,
+                    f"No enriched emails found in '{saved_list.name}'. "
+                    "Please enrich the list first."
+                )
+                return redirect("campaign_view")
+
+            # Create or reuse an AudienceTag for this saved list
+            tag_obj, _ = AudienceTag.objects.get_or_create(
+                user=request.user,
+                name=f"[List] {saved_list.name}"
+            )
+
+            # Upsert TargetAudience for each enriched entry
+            for entry in entries_with_email:
+                TargetAudience.objects.get_or_create(
+                    user=request.user,
+                    email=entry.email,
+                    tag=tag_obj,
+                    defaults={
+                        "receiver_first_name":   entry.first,
+                        "receiver_last_name":    entry.last,
+                        "receiver_linkedin_url": entry.linkedin,
+                        "company_url":           entry.company_website,
+                    }
+                )
+
+            audiences = TargetAudience.objects.filter(
+                user=request.user,
+                tag=tag_obj
+            )
+
+        elif tag_id:
+            # ── Existing AudienceTag path ────────────────────────────────
+            audiences = TargetAudience.objects.filter(
+                user=request.user,
+                tag_id=tag_id
+            )
 
         # =========================
         # VALIDATIONS
         # =========================
-        if not tag_id or not service_name or not sent_from:
-            messages.error(request, "Tag, Service and Sending Account are required")
+        if not service_name or not sent_from:
+            messages.error(request, "Service and Sending Account are required.")
+            return redirect("campaign_view")
+
+        if not selected_list_id and not tag_id:
+            messages.error(request, "Please select a Tag or a Saved List.")
+            return redirect("campaign_view")
+
+        if not audiences or not audiences.exists():
+            messages.error(request, "No leads found. Please check your Tag or Saved List.")
             return redirect("campaign_view")
 
         selected_service = ProductService.objects.filter(
@@ -3540,7 +4245,7 @@ def campaign_view(request):
         ).first()
 
         if not selected_service:
-            messages.error(request, "Invalid service selected")
+            messages.error(request, "Invalid service selected.")
             return redirect("campaign_view")
 
         selected_account = SocialAccount.objects.filter(
@@ -3549,16 +4254,7 @@ def campaign_view(request):
         ).first()
 
         if not selected_account:
-            messages.error(request, "Invalid sending account")
-            return redirect("campaign_view")
-
-        audiences = TargetAudience.objects.filter(
-            user=request.user,
-            tag_id=tag_id
-        )
-
-        if not audiences.exists():
-            messages.error(request, "No leads found under selected tag")
+            messages.error(request, "Invalid sending account.")
             return redirect("campaign_view")
 
         # =========================
@@ -3576,7 +4272,7 @@ def campaign_view(request):
                 signature_obj = None
         else:
             signature_obj = Signature.objects.filter(
-                user=request.user,
+                user=request.user
             ).first()
 
         if signature_obj:
@@ -3584,7 +4280,6 @@ def campaign_view(request):
 
             if signature_obj.photo:
                 photo_url = request.build_absolute_uri(signature_obj.photo.url)
-
                 signature_html += f"""
                     <p>
                         <img src="{photo_url}"
@@ -3603,7 +4298,7 @@ def campaign_view(request):
         # =========================
         # ATTACHMENT
         # =========================
-        saved_obj = None
+        saved_obj       = None
         attachment_file = None
 
         if saved_attachment_id:
@@ -3612,13 +4307,12 @@ def campaign_view(request):
                     id=saved_attachment_id,
                     user=request.user
                 )
-
                 attachment_file = saved_obj.file
                 attachment_file.open()
                 attachment_file.seek(0)
 
             except EmailAttachment.DoesNotExist:
-                saved_obj = None
+                saved_obj       = None
                 attachment_file = None
 
         # =========================
@@ -3632,26 +4326,24 @@ def campaign_view(request):
                 schedule_dt = timezone.make_aware(schedule_dt)
 
             if not schedule_dt:
-                messages.error(request, "Invalid schedule time")
+                messages.error(request, "Invalid schedule time.")
                 return redirect("campaign_view")
 
             for audience in audiences:
-                audience.campaign_goal = campaign_goal
-                audience.framework = framework
+                audience.campaign_goal    = campaign_goal
+                audience.framework        = framework
                 audience.selected_service = service_name
-
                 audience.save(update_fields=[
                     "campaign_goal",
                     "framework",
                     "selected_service"
                 ])
 
-                ai_raw = get_response(request.user, audience, selected_service)
+                ai_raw  = get_response(request.user, audience, selected_service)
                 ai_data = json.loads(ai_raw)
 
-                subject = ai_data["main_email"]["subject"]
-                message = ai_data["main_email"]["body"]
-
+                subject       = ai_data["main_email"]["subject"]
+                message       = ai_data["main_email"]["body"]
                 final_message = message
                 if signature_html:
                     final_message += "<br><br>" + signature_html
@@ -3669,7 +4361,7 @@ def campaign_view(request):
                     shuffle_accounts=shuffle_accounts
                 )
 
-                follow_ups = ai_data.get("follow_ups", [])
+                follow_ups     = ai_data.get("follow_ups", [])
                 follow_up_days = [2, 4, 6, 8]
 
                 sent_email_obj = SentEmail.objects.filter(
@@ -3679,12 +4371,10 @@ def campaign_view(request):
 
                 if sent_email_obj:
                     for i, follow in enumerate(follow_ups):
-
                         if i >= len(follow_up_days):
                             break
 
                         follow_body = follow.get("body", "")
-
                         if signature_html:
                             follow_body += "<br><br>" + signature_html
 
@@ -3696,25 +4386,25 @@ def campaign_view(request):
                             email=audience.email,
                             subject=f"Re: {subject}",
                             message=follow_body,
-                            send_at=(schedule_dt + timezone.timedelta(days=follow_up_days[i])).date(),
+                            send_at=(
+                                schedule_dt + timezone.timedelta(days=follow_up_days[i])
+                            ).date(),
                             sent=False
                         )
 
-            messages.success(request, "Campaign Scheduled Successfully")
+            messages.success(request, "Campaign Scheduled Successfully.")
             return redirect("campaign_view")
 
         # =========================
         # IMMEDIATE SEND
         # =========================
         else:
-
             account_list = list(google_accounts)
 
             for index, audience in enumerate(audiences):
-                audience.campaign_goal = campaign_goal
-                audience.framework = framework
+                audience.campaign_goal    = campaign_goal
+                audience.framework        = framework
                 audience.selected_service = service_name
-
                 audience.save(update_fields=[
                     "campaign_goal",
                     "framework",
@@ -3724,40 +4414,40 @@ def campaign_view(request):
                 if shuffle_accounts and account_list:
                     selected_account = account_list[index % len(account_list)]
 
-                ai_raw = get_response(request.user, audience, selected_service)
+                ai_raw  = get_response(request.user, audience, selected_service)
                 ai_data = json.loads(ai_raw)
 
-                subject = ai_data["main_email"]["subject"]
-                message = ai_data["main_email"]["body"]
-
+                subject       = ai_data["main_email"]["subject"]
+                message       = ai_data["main_email"]["body"]
                 final_message = message
                 if signature_html:
                     final_message += "<br><br>" + signature_html
-
-                main_email = {
-                    "subject": subject,
-                    "body": final_message
-                }
 
                 sendCampaignEmail(
                     request=request,
                     user=request.user,
                     target_audience=audience,
-                    main_email=main_email,
+                    main_email={"subject": subject, "body": final_message},
                     selected_account=selected_account,
                     attachment=attachment_file
                 )
 
-            messages.success(request, "Campaign Sent Successfully")
+            messages.success(request, "Campaign Sent Successfully.")
             return redirect("campaign_view")
 
-    selected_tag_id = request.GET.get("tag_id") or request.POST.get("tag_id")
+    # =========================
+    # GET
+    # =========================
+    selected_tag_id  = request.GET.get("tag_id") or request.POST.get("tag_id")
+    selected_list_id = request.GET.get("list_id", "")
 
     return render(request, "generate_email/campaign.html", {
-        "tags": tags,
-        "user_services": user_services,
-        "signatures": signatures,
-        "google_accounts": google_accounts,
+        "tags":             tags,
+        "saved_lists":      saved_lists,
+        "user_services":    user_services,
+        "signatures":       signatures,
+        "google_accounts":  google_accounts,
         "user_attachments": user_attachments,
-        "selected_tag_id": str(selected_tag_id) if selected_tag_id else "",
+        "selected_tag_id":  str(selected_tag_id) if selected_tag_id else "",
+        "selected_list_id": selected_list_id,
     })

@@ -475,12 +475,12 @@ function setActiveStep(stepNumber) {
         .classList.add("active");
 }
 
-const toggleBtn = document.getElementById("sidebarToggle");
+{% comment %} const toggleBtn = document.getElementById("sidebarToggle");
     const sidebar = document.getElementById("sidebar");
 
     toggleBtn.addEventListener("click", function(){
         sidebar.classList.toggle("collapsed");
-    })
+    }) {% endcomment %}
 
 window.addEventListener("load", function () {
     const prefillData = {

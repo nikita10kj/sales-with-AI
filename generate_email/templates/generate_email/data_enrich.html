@@ -305,14 +305,15 @@
 <div class="col-12 enrichment-page">
     <div class="enrichment-topbar">
         <div class="enrichment-topbar-left">
-            <button class="mobile-filter-btn" type="button" id="mobileFilterBtn" style="display:none;">
+            {% comment %} <button class="mobile-filter-btn" type="button" id="mobileFilterBtn" style="display:none;">
                 <i class="fas fa-filter"></i> Filters
-            </button>
+            </button> {% endcomment %}
             <i class="far fa-file-alt"></i>
             <span>Data Enrichment</span>
         </div>
         
     </div>
+    <br>
 
     <div class="enrichment-container">
         {% if error %}

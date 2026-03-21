@@ -3,448 +3,130 @@
 
 {% block extra_css %}
 <style>
-    .lists-page {
-        padding: 0;
-    }
+    .lists-page { padding: 0; }
+    .lists-shell { background: #f4f5f8; min-height: calc(100vh - 120px); border-radius: 0; overflow: hidden; }
+    .lists-header { background: linear-gradient(90deg, #6276ea, #7c4fc8); color: #fff; padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top-left-radius: 14px; border-top-right-radius: 14px; }
+    .lists-header-left { display: flex; align-items: center; gap: 12px; }
+    .lists-header-left i { font-size: 20px; }
+    .lists-header-title { font-size: 18px; font-weight: 700; margin: 0; }
+    .lists-count-pill { background: rgba(255,255,255,0.18); color: #fff; border-radius: 999px; padding: 6px 14px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+    .lists-body { display: grid; grid-template-columns: 320px 1fr; min-height: calc(100vh - 190px); }
+    .lists-sidebar { background: #f7f7fa; border-right: 1px solid #dfe3eb; padding: 16px 0 0; }
+    .lists-sidebar-title { padding: 0 16px 14px; font-size: 15px; font-weight: 600; color: #56627a; }
+    .list-items-wrap { padding: 0 14px 14px; }
+    .list-card { background: #fff; border: 2px solid #e1e5ee; border-radius: 14px; padding: 14px 14px 12px; transition: 0.2s ease; margin-bottom: 12px; }
+    .list-card.active { border-color: #2f6df0; background: #f7fbff; }
+    .list-card:hover { border-color: #2f6df0; }
+    .list-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .list-card-link { text-decoration: none; display: block; color: inherit; flex: 1; }
+    .list-card-name { font-size: 16px; font-weight: 700; color: #162033; margin: 0 0 8px; word-break: break-word; }
+    .list-card-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13px; color: #7c879d; }
+    .list-card-meta span { display: inline-flex; align-items: center; gap: 5px; }
+    .list-card-delete { color: #ff4d4f; font-size: 16px; margin-top: 2px; border: none; background: none; cursor: pointer; padding: 4px 6px; border-radius: 8px; transition: background 0.15s; }
+    .list-card-delete:hover { background: #fff0f0; opacity: 1; }
+    .lists-sidebar-empty { height: calc(100% - 40px); display: flex; align-items: flex-start; justify-content: center; text-align: center; padding: 46px 24px 24px; }
+    .empty-state-box { max-width: 240px; }
+    .empty-state-icon { font-size: 52px; color: #c3c9d4; margin-bottom: 14px; line-height: 1; }
+    .empty-state-title { font-size: 16px; font-weight: 500; color: #5a6478; margin-bottom: 8px; }
+    .empty-state-text { font-size: 14px; color: #6d778c; line-height: 1.6; margin: 0; }
+    .lists-content { padding: 24px; background: #f4f5f8; }
+    .list-detail-card { background: #fff; border: 1px solid #e1e5ee; border-radius: 18px; overflow: hidden; box-shadow: 0 6px 18px rgba(34,40,70,0.06); }
+    .list-detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 26px; border-bottom: 1px solid #e6eaf1; flex-wrap: wrap; }
+    .list-detail-title { margin: 0 0 6px; font-size: 18px; font-weight: 700; color: #162033; }
+    .list-detail-subtitle { margin: 0; font-size: 14px; color: #6f7b92; }
+    .download-btn { background: #10a33c; color: #fff; border: none; border-radius: 12px; padding: 12px 18px; font-size: 15px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .download-btn:hover { color: #fff; opacity: 0.95; }
+    .list-search-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .list-search-input { height: 42px; min-width: 240px; border: 1px solid #d5dbe7; border-radius: 12px; padding: 0 14px; outline: none; font-size: 14px; }
+    .list-search-btn { height: 42px; border: none; border-radius: 12px; padding: 0 16px; background: linear-gradient(90deg, #6276ea, #7c4fc8); color: #fff; font-weight: 700; cursor: pointer; }
+    .entry-section-title { padding: 20px 26px 10px; font-size: 16px; font-weight: 700; color: #162033; background: #fff; }
+    .entry-section-title.with-border { border-top: 1px solid #e9edf4; }
+    .entry-row { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(220px,1fr); gap: 20px; padding: 18px 26px; border-bottom: 1px solid #e9edf4; position: relative; }
+    .entry-row:last-child { border-bottom: none; }
+    .entry-left { display: flex; align-items: flex-start; gap: 16px; min-width: 0; }
+    .entry-avatar { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(90deg,#6276ea,#7c4fc8); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; flex-shrink: 0; text-transform: uppercase; }
+    .entry-info { min-width: 0; width: 100%; }
+    .entry-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+    .entry-name { font-size: 17px; font-weight: 700; color: #162033; margin: 0 0 4px; }
+    .entry-role { font-size: 14px; color: #42506b; margin: 0 0 8px; word-break: break-word; }
+    .entry-meta { font-size: 14px; color: #7b879c; line-height: 1.7; }
+    .entry-meta a { color: #5f74e8; text-decoration: none; word-break: break-all; }
+    .entry-remove-btn { border: none; background: none; color: #ff4d4f; font-size: 16px; cursor: pointer; position: absolute; top: 18px; right: 26px; padding: 4px 6px; border-radius: 8px; transition: background 0.15s; }
+    .entry-remove-btn:hover { background: #fff0f0; }
+    .entry-right { display: flex; align-items: center; justify-content: flex-start; font-size: 15px; color: #7b879c; word-break: break-word; }
+    .entry-right strong { color: #7b879c; font-weight: 500; }
+    .lists-content-empty { display: flex; align-items: center; justify-content: center; min-height: 400px; text-align: center; }
+    .lists-content-empty-inner { max-width: 320px; }
+    .lists-content-empty .empty-state-icon { font-size: 64px; margin-bottom: 18px; }
+    .lists-content-empty .empty-state-title { font-size: 18px; font-weight: 500; color: #5e6880; margin-bottom: 0; }
+    .message-box { padding: 16px 24px 0; }
+    .message-item { background: #eefbf1; color: #18794e; border: 1px solid #ccebd7; padding: 12px 14px; border-radius: 12px; margin-bottom: 12px; }
+    .no-entry-box { padding: 22px; text-align: center; color: #7b879c; }
 
-    .lists-shell {
-        background: #f4f5f8;
-        min-height: calc(100vh - 120px);
-        border-radius: 0;
+    /* ── Confirm Modal ── */
+    .ll-modal-overlay {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.38);
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    .ll-modal-overlay.active { display: flex; }
+    .ll-modal-box {
+        width: 100%; max-width: 400px;
+        background: #fff;
+        border-radius: 20px;
         overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        margin: 16px;
+        animation: llModalIn 0.2s ease;
     }
-
-    .lists-header {
-        background: linear-gradient(90deg, #6276ea, #7c4fc8);
-        color: #fff;
-        padding: 16px 22px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        border-top-left-radius: 14px;
-        border-top-right-radius: 14px;
+    @keyframes llModalIn {
+        from { opacity:0; transform:scale(0.95) translateY(10px); }
+        to   { opacity:1; transform:scale(1) translateY(0); }
     }
-
-    .lists-header-left {
-        display: flex;
-        align-items: center;
-        gap: 12px;
+    .ll-modal-body { padding: 28px 24px 20px; }
+    .ll-modal-icon {
+        width: 54px; height: 54px;
+        border-radius: 15px;
+        background: #ffebee;
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 16px;
     }
-
-    .lists-header-left i {
-        font-size: 20px;
+    .ll-modal-title { font-size: 18px; font-weight: 700; color: #1a2038; margin: 0 0 8px; }
+    .ll-modal-text { font-size: 13px; color: #6c757d; margin: 0; line-height: 1.6; }
+    .ll-modal-footer {
+        display: flex; justify-content: flex-end; gap: 12px;
+        padding: 16px 24px;
+        border-top: 1px solid #e8ebf2;
+        background: #fafbfe;
     }
-
-    .lists-header-title {
-        font-size: 18px;
-        font-weight: 700;
-        margin: 0;
+    .ll-btn-cancel {
+        padding: 10px 20px; border: 1px solid #ccd4e1;
+        border-radius: 12px; background: #fff;
+        font-weight: 700; font-size: 13px; cursor: pointer;
+        font-family: inherit;
+        transition: background 0.15s;
     }
-
-    .lists-count-pill {
-        background: rgba(255, 255, 255, 0.18);
-        color: #fff;
-        border-radius: 999px;
-        padding: 6px 14px;
-        font-size: 14px;
-        font-weight: 600;
-        white-space: nowrap;
+    .ll-btn-cancel:hover { background: #f4f5fb; }
+    .ll-btn-danger {
+        padding: 10px 20px; border: none;
+        border-radius: 12px; background: #e53935;
+        color: #fff; font-weight: 700; font-size: 13px;
+        cursor: pointer; font-family: inherit;
+        display: inline-flex; align-items: center; gap: 6px;
+        transition: opacity 0.15s;
     }
-
-    .lists-body {
-        display: grid;
-        grid-template-columns: 320px 1fr;
-        min-height: calc(100vh - 190px);
-    }
-
-    .lists-sidebar {
-        background: #f7f7fa;
-        border-right: 1px solid #dfe3eb;
-        padding: 16px 0 0;
-    }
-
-    .lists-sidebar-title {
-        padding: 0 16px 14px;
-        font-size: 15px;
-        font-weight: 600;
-        color: #56627a;
-    }
-
-    .list-items-wrap {
-        padding: 0 14px 14px;
-    }
-
-    .list-card {
-        background: #fff;
-        border: 2px solid #e1e5ee;
-        border-radius: 14px;
-        padding: 14px 14px 12px;
-        transition: 0.2s ease;
-        margin-bottom: 12px;
-    }
-
-    .list-card.active {
-        border-color: #2f6df0;
-        background: #f7fbff;
-    }
-
-    .list-card:hover {
-        border-color: #2f6df0;
-    }
-
-    .list-card-top {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 8px;
-    }
-
-    .list-card-link {
-        text-decoration: none;
-        display: block;
-        color: inherit;
-        flex: 1;
-    }
-
-    .list-card-name {
-        font-size: 16px;
-        font-weight: 700;
-        color: #162033;
-        margin: 0 0 8px;
-        word-break: break-word;
-    }
-
-    .list-card-meta {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-        font-size: 13px;
-        color: #7c879d;
-    }
-
-    .list-card-meta span {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-    }
-
-    .list-card-delete {
-        color: #ff4d4f;
-        font-size: 16px;
-        margin-top: 2px;
-        border: none;
-        background: none;
-        cursor: pointer;
-    }
-
-    .list-card-delete:hover {
-        opacity: 0.8;
-    }
-
-    .lists-sidebar-empty {
-        height: calc(100% - 40px);
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
-        text-align: center;
-        padding: 46px 24px 24px;
-    }
-
-    .empty-state-box {
-        max-width: 240px;
-    }
-
-    .empty-state-icon {
-        font-size: 52px;
-        color: #c3c9d4;
-        margin-bottom: 14px;
-        line-height: 1;
-    }
-
-    .empty-state-title {
-        font-size: 16px;
-        font-weight: 500;
-        color: #5a6478;
-        margin-bottom: 8px;
-    }
-
-    .empty-state-text {
-        font-size: 14px;
-        color: #6d778c;
-        line-height: 1.6;
-        margin: 0;
-    }
-
-    .lists-content {
-        padding: 24px;
-        background: #f4f5f8;
-    }
-
-    .list-detail-card {
-        background: #fff;
-        border: 1px solid #e1e5ee;
-        border-radius: 18px;
-        overflow: hidden;
-        box-shadow: 0 6px 18px rgba(34, 40, 70, 0.06);
-    }
-
-    .list-detail-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 16px;
-        padding: 20px 26px;
-        border-bottom: 1px solid #e6eaf1;
-        flex-wrap: wrap;
-    }
-
-    .list-detail-title {
-        margin: 0 0 6px;
-        font-size: 18px;
-        font-weight: 700;
-        color: #162033;
-    }
-
-    .list-detail-subtitle {
-        margin: 0;
-        font-size: 14px;
-        color: #6f7b92;
-    }
-
-    .download-btn {
-        background: #10a33c;
-        color: #fff;
-        border: none;
-        border-radius: 12px;
-        padding: 12px 18px;
-        font-size: 15px;
-        font-weight: 700;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        white-space: nowrap;
-    }
-
-    .download-btn:hover {
-        color: #fff;
-        opacity: 0.95;
-    }
-
-    .list-search-form {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .list-search-input {
-        height: 42px;
-        min-width: 240px;
-        border: 1px solid #d5dbe7;
-        border-radius: 12px;
-        padding: 0 14px;
-        outline: none;
-        font-size: 14px;
-    }
-
-    .list-search-btn {
-        height: 42px;
-        border: none;
-        border-radius: 12px;
-        padding: 0 16px;
-        background: linear-gradient(90deg, #6276ea, #7c4fc8);
-        color: #fff;
-        font-weight: 700;
-        cursor: pointer;
-    }
-
-    .entry-section-title {
-        padding: 20px 26px 10px;
-        font-size: 16px;
-        font-weight: 700;
-        color: #162033;
-        background: #fff;
-    }
-
-    .entry-section-title.with-border {
-        border-top: 1px solid #e9edf4;
-    }
-
-    .entry-row {
-        display: grid;
-        grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr);
-        gap: 20px;
-        padding: 18px 26px;
-        border-bottom: 1px solid #e9edf4;
-        position: relative;
-    }
-
-    .entry-row:last-child {
-        border-bottom: none;
-    }
-
-    .entry-left {
-        display: flex;
-        align-items: flex-start;
-        gap: 16px;
-        min-width: 0;
-    }
-
-    .entry-avatar {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        background: linear-gradient(90deg, #6276ea, #7c4fc8);
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        font-weight: 700;
-        flex-shrink: 0;
-        text-transform: uppercase;
-    }
-
-    .entry-info {
-        min-width: 0;
-        width: 100%;
-    }
-
-    .entry-top {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 14px;
-        flex-wrap: wrap;
-    }
-
-    .entry-name {
-        font-size: 17px;
-        font-weight: 700;
-        color: #162033;
-        margin: 0 0 4px;
-    }
-
-    .entry-role {
-        font-size: 14px;
-        color: #42506b;
-        margin: 0 0 8px;
-        word-break: break-word;
-    }
-
-    .entry-meta {
-        font-size: 14px;
-        color: #7b879c;
-        line-height: 1.7;
-    }
-
-    .entry-meta a {
-        color: #5f74e8;
-        text-decoration: none;
-        word-break: break-all;
-    }
-
-    .entry-remove-btn {
-        border: none;
-        background: none;
-        color: #ff4d4f;
-        font-size: 16px;
-        cursor: pointer;
-        position: absolute;
-        top: 18px;
-        right: 26px;
-    }
-
-    .entry-remove-btn:hover {
-        opacity: 0.8;
-    }
-
-    .entry-right {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        font-size: 15px;
-        color: #7b879c;
-        word-break: break-word;
-    }
-
-    .entry-right strong {
-        color: #7b879c;
-        font-weight: 500;
-    }
-
-    .lists-content-empty {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 400px;
-        text-align: center;
-    }
-
-    .lists-content-empty-inner {
-        max-width: 320px;
-    }
-
-    .lists-content-empty .empty-state-icon {
-        font-size: 64px;
-        margin-bottom: 18px;
-    }
-
-    .lists-content-empty .empty-state-title {
-        font-size: 18px;
-        font-weight: 500;
-        color: #5e6880;
-        margin-bottom: 0;
-    }
-
-    .message-box {
-        padding: 16px 24px 0;
-    }
-
-    .message-item {
-        background: #eefbf1;
-        color: #18794e;
-        border: 1px solid #ccebd7;
-        padding: 12px 14px;
-        border-radius: 12px;
-        margin-bottom: 12px;
-    }
-
-    .no-entry-box {
-        padding: 22px;
-        text-align: center;
-        color: #7b879c;
-    }
+    .ll-btn-danger:hover { opacity: 0.88; }
 
     @media (max-width: 992px) {
-        .lists-body {
-            grid-template-columns: 1fr;
-        }
-
-        .lists-sidebar {
-            border-right: none;
-            border-bottom: 1px solid #dfe3eb;
-        }
-
-        .lists-content {
-            padding: 18px;
-        }
-
-        .list-detail-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .entry-row {
-            grid-template-columns: 1fr;
-        }
-
-        .list-search-input {
-            min-width: 100%;
-        }
+        .lists-body { grid-template-columns: 1fr; }
+        .lists-sidebar { border-right: none; border-bottom: 1px solid #dfe3eb; }
+        .lists-content { padding: 18px; }
+        .list-detail-header { flex-direction: column; align-items: flex-start; }
+        .entry-row { grid-template-columns: 1fr; }
+        .list-search-input { min-width: 100%; }
     }
 </style>
 {% endblock extra_css %}
@@ -458,7 +140,6 @@
                 <i class="fas fa-users"></i>
                 <h2 class="lists-header-title">My Lists</h2>
             </div>
-
             <div class="lists-count-pill">
                 {{ lists|length|default:"0" }} List{{ lists|length|pluralize }}
             </div>
@@ -467,14 +148,14 @@
         {% if messages %}
         <div class="message-box">
             {% for message in messages %}
-            <div class="message-item">
-                {{ message }}
-            </div>
+            <div class="message-item">{{ message }}</div>
             {% endfor %}
         </div>
         {% endif %}
 
         <div class="lists-body">
+
+            <!-- ── Sidebar ── -->
             <div class="lists-sidebar">
                 <div class="lists-sidebar-title">All Lists</div>
 
@@ -486,21 +167,17 @@
                             <a href="{% url 'list_view' %}?list_id={{ item.id }}" class="list-card-link">
                                 <div class="list-card-name">{{ item.name }}</div>
                                 <div class="list-card-meta">
-                                    <span>
-                                        <i class="fas fa-link"></i>
-                                        {{ item.entries.count|add:item.company_entries.count }} item{{ item.entries.count|add:item.company_entries.count|pluralize }}
-                                    </span>
+                                    <span><i class="fas fa-link"></i>{{ item.entries.count|add:item.company_entries.count }} item{{ item.entries.count|add:item.company_entries.count|pluralize }}</span>
                                     <span><i class="far fa-calendar-alt"></i> {{ item.created_at|date:"n/j/Y" }}</span>
                                 </div>
                             </a>
-
-                            <form method="POST" action="{% url 'delete_saved_list' item.id %}"
-                                onsubmit="return confirm('Delete this list?');" style="margin:0;">
-                                {% csrf_token %}
-                                <button type="submit" class="list-card-delete">
-                                    <i class="far fa-trash-alt"></i>
-                                </button>
-                            </form>
+                            <!-- Delete list btn — triggers modal, no form submit -->
+                            <button type="button" class="list-card-delete ll-delete-list-btn"
+                                    data-action="{% url 'delete_saved_list' item.id %}"
+                                    data-name="{{ item.name|escape }}"
+                                    title="Delete list">
+                                <i class="far fa-trash-alt"></i>
+                            </button>
                         </div>
                     </div>
                     {% endfor %}
@@ -508,41 +185,32 @@
                 {% else %}
                 <div class="lists-sidebar-empty">
                     <div class="empty-state-box">
-                        <div class="empty-state-icon">
-                            <i class="fas fa-user-friends"></i>
-                        </div>
+                        <div class="empty-state-icon"><i class="fas fa-user-friends"></i></div>
                         <div class="empty-state-title">No lists created yet</div>
-                        <p class="empty-state-text">
-                            Save items from search results to create lists
-                        </p>
+                        <p class="empty-state-text">Save items from search results to create lists</p>
                     </div>
                 </div>
                 {% endif %}
             </div>
 
+            <!-- ── Content ── -->
             <div class="lists-content">
                 {% if selected_list %}
                 <div class="list-detail-card w-100">
                     <div class="list-detail-header">
                         <div>
                             <h3 class="list-detail-title">{{ selected_list.name }}</h3>
-                            <p class="list-detail-subtitle">
-                                Created on {{ selected_list.created_at|date:"F j, Y" }}
-                            </p>
+                            <p class="list-detail-subtitle">Created on {{ selected_list.created_at|date:"F j, Y" }}</p>
                         </div>
-
                         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                            <form method="GET" action="{% url 'list_view' %}" class="list-search-form"
-                                onsubmit="return false;">
+                            <form method="GET" action="{% url 'list_view' %}" class="list-search-form" onsubmit="return false;">
                                 <input type="hidden" name="list_id" value="{{ selected_list.id }}">
                                 <input type="text" id="liveSearchInput" name="q" value="{{ search_query }}"
-                                    placeholder="Search in this list" class="list-search-input" autocomplete="off">
+                                       placeholder="Search in this list" class="list-search-input" autocomplete="off">
                                 <button type="submit" class="list-search-btn">Search</button>
                             </form>
-
                             <a href="{% url 'download_list_csv' selected_list.id %}" class="download-btn">
-                                <i class="fas fa-download"></i>
-                                Download CSV
+                                <i class="fas fa-download"></i> Download CSV
                             </a>
                         </div>
                     </div>
@@ -551,217 +219,217 @@
                     <div id="entriesContainer">
 
                         {% if selected_entries %}
-                        <div class="entry-section-title">
-                            People
-                        </div>
-
+                        <div class="entry-section-title">People</div>
                         {% for person in selected_entries %}
-                        <div class="entry-row" data-search="
-                            {{ person.first|default:''|lower }}
-                            {{ person.last|default:''|lower }}
-                            {{ person.job_title|default:''|lower }}
-                            {{ person.company|default:''|lower }}
-                            {{ person.email|default:''|lower }}
-                            {{ person.location|default:''|lower }}
-                            {{ person.phone|default:''|lower }}
-                            {{ person.linkedin|default:''|lower }}
-                        ">
+                        <div class="entry-row" data-search="{{ person.first|default:''|lower }} {{ person.last|default:''|lower }} {{ person.job_title|default:''|lower }} {{ person.company|default:''|lower }} {{ person.email|default:''|lower }} {{ person.location|default:''|lower }} {{ person.phone|default:''|lower }} {{ person.linkedin|default:''|lower }}">
                             <div class="entry-left">
-                                <div class="entry-avatar">
-                                    {{ person.first|default:"U"|slice:":1" }}{{ person.last|default:""|slice:":1" }}
-                                </div>
-
+                                <div class="entry-avatar">{{ person.first|default:"U"|slice:":1" }}{{ person.last|default:""|slice:":1" }}</div>
                                 <div class="entry-info">
                                     <div class="entry-top">
                                         <div>
-                                            <h4 class="entry-name">
-                                                {{ person.first }} {{ person.last }}
-                                            </h4>
-
-                                            <p class="entry-role">
-                                                {{ person.job_title|default:"No title" }}
-                                                {% if person.company %} at {{ person.company }}{% endif %}
-                                            </p>
+                                            <h4 class="entry-name">{{ person.first }} {{ person.last }}</h4>
+                                            <p class="entry-role">{{ person.job_title|default:"No title" }}{% if person.company %} at {{ person.company }}{% endif %}</p>
                                         </div>
                                     </div>
-
                                     <div class="entry-meta">
-                                        {% if person.email %}
-                                        <div>Email: {{ person.email }}</div>
-                                        {% endif %}
-
-                                        {% if person.phone %}
-                                        <div><strong>Phone:</strong> {{ person.phone }}</div>
-                                        {% endif %}
-
-                                        {% if person.location %}
-                                        <div>Location: {{ person.location }}</div>
-                                        {% endif %}
-
-                                        {% if person.linkedin %}
-                                        <div>
-                                            LinkedIn:
-                                            <a href="{{ person.linkedin }}" target="_blank">{{ person.linkedin }}</a>
-                                        </div>
-                                        {% endif %}
+                                        {% if person.email %}<div>Email: {{ person.email }}</div>{% endif %}
+                                        {% if person.phone %}<div><strong>Phone:</strong> {{ person.phone }}</div>{% endif %}
+                                        {% if person.location %}<div>Location: {{ person.location }}</div>{% endif %}
+                                        {% if person.linkedin %}<div>LinkedIn: <a href="{{ person.linkedin }}" target="_blank">{{ person.linkedin }}</a></div>{% endif %}
                                     </div>
                                 </div>
                             </div>
-
-                            <form method="POST" action="{% url 'remove_person_from_list' selected_list.id person.id %}"
-                                onsubmit="return confirm('Remove this person from the list?');" style="margin:0;">
-                                {% csrf_token %}
-                                <button type="submit" class="entry-remove-btn">
-                                    <i class="far fa-trash-alt"></i>
-                                </button>
-                            </form>
+                            <!-- Remove person btn — modal trigger, no inline confirm -->
+                            <button type="button" class="entry-remove-btn ll-remove-person-btn"
+                                    data-action="{% url 'remove_person_from_list' selected_list.id person.id %}"
+                                    data-name="{{ person.first }} {{ person.last }}"
+                                    title="Remove from list">
+                                <i class="far fa-trash-alt"></i>
+                            </button>
                         </div>
                         {% endfor %}
                         {% endif %}
 
                         {% if selected_company_entries %}
-                        <div class="entry-section-title {% if selected_entries %}with-border{% endif %}">
-                            Companies
-                        </div>
-
+                        <div class="entry-section-title {% if selected_entries %}with-border{% endif %}">Companies</div>
                         {% for company in selected_company_entries %}
-                        <div class="entry-row" data-search="
-                            {{ company.name|default:''|lower }}
-                            {{ company.linkedin_url|default:''|lower }}
-                            {{ company.website|default:''|lower }}
-                            {{ company.industry|default:''|lower }}
-                            {{ company.domain|default:''|lower }}
-                            {{ company.revenue|default:''|lower }}
-                            {{ company.specialties|default:''|lower }}
-                            {{ company.headquarter|default:''|lower }}
-                            {{ company.location|default:''|lower }}
-                            {{ company.company_market|default:''|lower }}
-                        ">
+                        <div class="entry-row" data-search="{{ company.name|default:''|lower }} {{ company.linkedin_url|default:''|lower }} {{ company.website|default:''|lower }} {{ company.industry|default:''|lower }} {{ company.domain|default:''|lower }} {{ company.revenue|default:''|lower }} {{ company.specialties|default:''|lower }} {{ company.headquarter|default:''|lower }} {{ company.location|default:''|lower }} {{ company.company_market|default:''|lower }}">
                             <div class="entry-left">
-                                <div class="entry-avatar">
-                                    {{ company.name|default:"C"|slice:":1" }}
-                                </div>
-
+                                <div class="entry-avatar">{{ company.name|default:"C"|slice:":1" }}</div>
                                 <div class="entry-info">
                                     <div class="entry-top">
                                         <div>
-                                            <h4 class="entry-name">
-                                                {{ company.name|default:"Unnamed Company" }}
-                                            </h4>
-
-                                            <p class="entry-role">
-                                                {{ company.industry|default:"No industry" }}
-                                                {% if company.company_market %} • {{ company.company_market }}{% endif %}
-                                            </p>
+                                            <h4 class="entry-name">{{ company.name|default:"Unnamed Company" }}</h4>
+                                            <p class="entry-role">{{ company.industry|default:"No industry" }}{% if company.company_market %} • {{ company.company_market }}{% endif %}</p>
                                         </div>
                                     </div>
-
                                     <div class="entry-meta">
-                                        {% if company.website %}
-                                        <div>
-                                            Website:
-                                            <a href="{{ company.website }}" target="_blank">{{ company.website }}</a>
-                                        </div>
-                                        {% endif %}
-
-                                        {% if company.linkedin_url %}
-                                        <div>
-                                            LinkedIn:
-                                            <a href="{{ company.linkedin_url }}" target="_blank">{{ company.linkedin_url }}</a>
-                                        </div>
-                                        {% endif %}
-
-                                        {% if company.domain %}
-                                        <div>Domain: {{ company.domain }}</div>
-                                        {% endif %}
-
-                                        {% if company.revenue %}
-                                        <div>Revenue: {{ company.revenue }}</div>
-                                        {% endif %}
-
-                                        {% if company.specialties %}
-                                        <div>Specialties: {{ company.specialties }}</div>
-                                        {% endif %}
-
-                                        {% if company.headquarter %}
-                                        <div>Headquarter: {{ company.headquarter }}</div>
-                                        {% endif %}
-
-                                        {% if company.location %}
-                                        <div>Location: {{ company.location }}</div>
-                                        {% endif %}
+                                        {% if company.website %}<div>Website: <a href="{{ company.website }}" target="_blank">{{ company.website }}</a></div>{% endif %}
+                                        {% if company.linkedin_url %}<div>LinkedIn: <a href="{{ company.linkedin_url }}" target="_blank">{{ company.linkedin_url }}</a></div>{% endif %}
+                                        {% if company.domain %}<div>Domain: {{ company.domain }}</div>{% endif %}
+                                        {% if company.revenue %}<div>Revenue: {{ company.revenue }}</div>{% endif %}
+                                        {% if company.specialties %}<div>Specialties: {{ company.specialties }}</div>{% endif %}
+                                        {% if company.headquarter %}<div>Headquarter: {{ company.headquarter }}</div>{% endif %}
+                                        {% if company.location %}<div>Location: {{ company.location }}</div>{% endif %}
                                     </div>
                                 </div>
                             </div>
-
-                            <form method="POST" action="{% url 'remove_company_from_list' selected_list.id company.id %}"
-                                onsubmit="return confirm('Remove this company from the list?');" style="margin:0;">
-                                {% csrf_token %}
-                                <button type="submit" class="entry-remove-btn">
-                                    <i class="far fa-trash-alt"></i>
-                                </button>
-                            </form>
+                            <!-- Remove company btn — modal trigger -->
+                            <button type="button" class="entry-remove-btn ll-remove-company-btn"
+                                    data-action="{% url 'remove_company_from_list' selected_list.id company.id %}"
+                                    data-name="{{ company.name|default:'this company' }}"
+                                    title="Remove from list">
+                                <i class="far fa-trash-alt"></i>
+                            </button>
                         </div>
                         {% endfor %}
                         {% endif %}
 
                     </div>
-
-                    <div id="liveSearchEmpty" class="no-entry-box" style="display:none;">
-                        No matching items found in this list.
-                    </div>
+                    <div id="liveSearchEmpty" class="no-entry-box" style="display:none;">No matching items found in this list.</div>
                     {% else %}
-                    <div class="no-entry-box">
-                        No items found in this list.
-                    </div>
+                    <div class="no-entry-box">No items found in this list.</div>
                     {% endif %}
                 </div>
+
                 {% else %}
                 <div class="lists-content-empty">
                     <div class="lists-content-empty-inner">
-                        <div class="empty-state-icon">
-                            <i class="fas fa-user-friends"></i>
-                        </div>
+                        <div class="empty-state-icon"><i class="fas fa-user-friends"></i></div>
                         <div class="empty-state-title">Select a list to view details</div>
                     </div>
                 </div>
                 {% endif %}
             </div>
-        </div>
 
+        </div>
+    </div>
+</div>
+
+<!-- ══ HIDDEN CSRF FORM (used by modal to POST) ══ -->
+<form id="llConfirmForm" method="POST" style="display:none;">
+    {% csrf_token %}
+</form>
+
+<!-- ══ CONFIRM MODAL ══ -->
+<div id="llModal" class="ll-modal-overlay">
+    <div class="ll-modal-box">
+        <div class="ll-modal-body">
+            <div class="ll-modal-icon">
+                <i class="fas fa-trash-alt" style="font-size:22px; color:#e53935;"></i>
+            </div>
+            <h5 class="ll-modal-title" id="llModalTitle">Delete this list?</h5>
+            <p class="ll-modal-text" id="llModalText">This action cannot be undone.</p>
+        </div>
+        <div class="ll-modal-footer">
+            <button type="button" id="llCancelBtn" class="ll-btn-cancel">Cancel</button>
+            <button type="button" id="llConfirmBtn" class="ll-btn-danger">
+                <i class="fas fa-trash-alt"></i> <span id="llConfirmBtnText">Yes, Delete</span>
+            </button>
+        </div>
     </div>
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const input = document.getElementById("liveSearchInput");
-        const rows = document.querySelectorAll(".entry-row[data-search]");
-        const emptyBox = document.getElementById("liveSearchEmpty");
+document.addEventListener("DOMContentLoaded", function () {
 
-        if (!input || !rows.length) return;
+    // ── Live search ──
+    const input    = document.getElementById("liveSearchInput");
+    const rows     = document.querySelectorAll(".entry-row[data-search]");
+    const emptyBox = document.getElementById("liveSearchEmpty");
 
+    if (input && rows.length) {
         function filterEntries() {
             const query = input.value.trim().toLowerCase();
-            let visibleCount = 0;
-
-            rows.forEach(function (row) {
-                const text = (row.getAttribute("data-search") || "").toLowerCase();
-                const isMatch = query === "" || text.includes(query);
-
-                row.style.display = isMatch ? "grid" : "none";
-
-                if (isMatch) {
-                    visibleCount++;
-                }
+            let visible = 0;
+            rows.forEach(function(row) {
+                const match = query === "" || (row.getAttribute("data-search")||"").toLowerCase().includes(query);
+                row.style.display = match ? "grid" : "none";
+                if (match) visible++;
             });
-
-            if (emptyBox) {
-                emptyBox.style.display = visibleCount === 0 ? "block" : "none";
-            }
+            if (emptyBox) emptyBox.style.display = visible === 0 ? "block" : "none";
         }
-
         input.addEventListener("input", filterEntries);
         filterEntries();
+    }
+
+    // ── Modal logic ──
+    const modal          = document.getElementById("llModal");
+    const cancelBtn      = document.getElementById("llCancelBtn");
+    const confirmBtn     = document.getElementById("llConfirmBtn");
+    const confirmBtnText = document.getElementById("llConfirmBtnText");
+    const modalTitle     = document.getElementById("llModalTitle");
+    const modalText      = document.getElementById("llModalText");
+    const confirmForm    = document.getElementById("llConfirmForm");
+
+    let pendingAction = null;
+
+    function openModal(title, text, action) {
+        modalTitle.textContent    = title;
+        modalText.textContent     = text;
+        pendingAction             = action;
+        confirmBtnText.textContent = "Yes, Delete";
+        confirmBtn.disabled       = false;
+        modal.classList.add("active");
+    }
+
+    function closeModal() {
+        modal.classList.remove("active");
+        pendingAction = null;
+    }
+
+    cancelBtn.addEventListener("click", closeModal);
+    modal.addEventListener("click", function(e) {
+        if (e.target === modal) closeModal();
     });
+    document.addEventListener("keydown", function(e) {
+        if (e.key === "Escape") closeModal();
+    });
+
+    confirmBtn.addEventListener("click", function() {
+        if (!pendingAction) return;
+        confirmBtnText.textContent = "Deleting...";
+        confirmBtn.disabled = true;
+        confirmForm.action = pendingAction;
+        confirmForm.submit();
+    });
+
+    // ── Delete LIST ──
+    document.querySelectorAll(".ll-delete-list-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            const name = btn.getAttribute("data-name") || "this list";
+            openModal(
+                "Delete \"" + name + "\"?",
+                "All people and companies in this list will be permanently removed. This cannot be undone.",
+                btn.getAttribute("data-action")
+            );
+        });
+    });
+
+    // ── Remove PERSON from list ──
+    document.querySelectorAll(".ll-remove-person-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            const name = btn.getAttribute("data-name") || "this person";
+            openModal(
+                "Remove " + name + "?",
+                "This person will be removed from the list.",
+                btn.getAttribute("data-action")
+            );
+        });
+    });
+
+    // ── Remove COMPANY from list ──
+    document.querySelectorAll(".ll-remove-company-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            const name = btn.getAttribute("data-name") || "this company";
+            openModal(
+                "Remove " + name + "?",
+                "This company will be removed from the list.",
+                btn.getAttribute("data-action")
+            );
+        });
+    });
+
+});
 </script>
 {% endblock content %}

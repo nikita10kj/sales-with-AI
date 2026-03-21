@@ -766,7 +766,14 @@
 }
 
 /* Action icons */
-.action-icons { display: flex; align-items: center; gap: 10px; }
+/* .action-icons { display: flex; align-items: center; gap: 10px; } */
+
+.action-icons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+}
 .action-icons a,
 .action-icons button {
     display: inline-flex;
@@ -1478,8 +1485,181 @@
     .people-search-shell { grid-template-columns: 230px 1fr; }
 }
 @media (max-width: 860px) {
-    .people-search-shell { grid-template-columns: 1fr; }
-    .filters-panel { border-right: none; border-bottom: 1px solid #e4e8f0; max-height: none; }
-    .results-content { padding: 14px; }
-    .results-header { padding: 11px 14px; }
+    /* ADD: results-panel no overflow */
+    .results-panel {
+        overflow-x: hidden !important;
+        width: 100% !important;
+        min-width: unset !important;
+    }
+
+    /* ADD: table only 2 columns on mobile */
+    .results-table {
+        min-width: unset !important;
+        width: 100% !important;
+        table-layout: fixed !important;
+    }
+
+    /* Hide all columns except Profile (2nd) and Job Title (3rd) */
+    .results-table thead th:nth-child(1),
+    .results-table tbody td:nth-child(1) {
+        width: 30px !important;
+        padding: 8px 4px !important;
+    }
+
+    .results-table thead th:nth-child(2),
+    .results-table tbody td:nth-child(2) {
+        width: auto !important;
+        position: static !important;
+        box-shadow: none !important;
+    }
+
+    .results-table thead th:nth-child(3),
+    .results-table tbody td:nth-child(3) {
+        width: 120px !important;
+        max-width: 120px !important;
+    }
+
+    /* Hide columns 4 onwards */
+    .results-table thead th:nth-child(n+4),
+    .results-table tbody td:nth-child(n+4) {
+        display: none !important;
+    }
+
+    
+    .people-search-shell {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+    }
+
+    .filters-panel {
+        position: fixed !important;
+        top: 0 !important;
+        left: -100% !important;
+        width: 300px !important;
+        height: 100vh !important;
+        min-height: 100vh !important;
+        z-index: 9500;
+        border-right: 1px solid #e4e8f0 !important;
+        box-shadow: 4px 0 20px rgba(0,0,0,.12);
+        transition: left .28s cubic-bezier(.4,0,.2,1);
+    }
+    .filters-panel.mobile-open { left: 0 !important; }
+
+    .filters-panel-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(20,24,48,.35);
+        z-index: 9400;
+        backdrop-filter: blur(2px);
+    }
+    .filters-panel-overlay.active { display: block; }
+
+    .mobile-filter-btn {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 16px;
+        border: 1.5px solid #dce0ea;
+        border-radius: 9px;
+        background: #fff;
+        color: #22283d;
+        font-size: 13px;
+        font-weight: 700;
+        font-family: 'Inter', sans-serif;
+        cursor: pointer;
+        transition: all .15s;
+        margin-bottom: 12px;
+    }
+    .mobile-filter-btn i { color: #6276ea; }
+    .mobile-filter-btn:hover { background: #f0f2fd; border-color: #6276ea; }
+
+    .results-header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px 14px;
+        gap: 8px;
+    }
+    .results-header-right { flex-wrap: wrap; width: 100%; }
+    .results-content { padding: 12px 10px; }
+    .profile-drawer { width: 100% !important; max-width: 100vw !important; }
+}
+
+/* ── Mobile (≤600px) ── */
+@media (max-width: 600px) {
+    .results-header h2 { font-size: 15px; }
+    .results-header { padding: 10px; }
+    .results-content { padding: 8px 6px; }
+    .results-meta { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .results-meta-right { flex-wrap: wrap; gap: 6px; width: 100%; }
+    .save-list-btn,
+    .send-email-action-btn,
+    .save-unlock-btn { font-size: 12px; padding: 6px 10px; }
+    .results-footer { flex-direction: column; align-items: flex-start; }
+    .pagination-wrap { flex-wrap: wrap; }
+    .filters-panel { width: 90vw !important; }
+    .drawer-hero { padding: 14px 14px 12px; }
+    .drawer-section { padding: 12px 14px; }
+    .drawer-actions { padding: 10px 14px; flex-wrap: wrap; }
+}
+
+
+
+/* Blurred placeholder */
+.contact-col-blurred {
+    font-size: 12px;
+    color: #c8cfe0;
+    letter-spacing: 1px;
+    filter: blur(3.5px);
+    user-select: none;
+    display: inline-block;
+}
+
+/* Email pill */
+.contact-col-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    max-width: 170px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.contact-col-email { background:#e8f5e9; color:#2e7d32; }
+.contact-col-phone { background:#e3f2fd; color:#0d47a1; }
+
+/* Send Email button — matches your purple theme */
+/* Override square button size for Send Email button */
+.action-icons .send-email-col-btn,
+.action-icons form .send-email-col-btn {
+    width: auto !important;
+    height: 30px !important;
+    padding: 0 10px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+    border-radius: 8px !important;
+    border: none !important;
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+}
+.action-icons .send-email-col-btn:hover,
+.action-icons form .send-email-col-btn:hover {
+    opacity: 0.88 !important;
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+}
+
+/* Make Actions td wide enough */
+.results-table tbody td:last-child {
+    min-width: 160px !important;
+    white-space: nowrap !important;
 }

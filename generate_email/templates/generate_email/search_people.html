@@ -279,7 +279,7 @@
                 </div>
                 <div class="results-header-right">
                     <span class="contact-pill" id="contactPill">0/0</span>
-                    <button class="contact-btn" type="button">Contact Now</button>
+                    {% comment %} <button class="contact-btn" type="button">Contact Now</button> {% endcomment %}
                 </div>
             </div>
 
@@ -321,6 +321,8 @@
                                         <th>HQ Location</th>
                                         <th>Institution</th>
                                         <th>LinkedIn URL</th>
+                                        <th>Email</th>
+                                        <th>Contact</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -416,6 +418,7 @@
                                         </td>
 
                                         <!-- LinkedIn URL: clickable link -->
+                                        <!-- LinkedIn URL -->
                                         <td class="cell-truncate" {% if p.linkedin %}data-tooltip="{{ p.linkedin }}"{% endif %}>
                                             {% if p.linkedin %}
                                             <a href="{{ p.linkedin }}" target="_blank" class="linkedin-url-link">
@@ -424,42 +427,70 @@
                                             {% else %}—{% endif %}
                                         </td>
 
+                                        <!-- Email column -->
+                                        <!-- Email column -->
+                                        <td class="email-col-{{ forloop.counter }}" style="min-width:160px;">
+                                            {% if p.emails and p.emails.0.email %}
+                                            <span class="contact-col-pill contact-col-email">
+                                                <i class="far fa-envelope me-1"></i>{{ p.emails.0.email }}
+                                            </span>
+                                            {% else %}
+                                            <span class="contact-col-blurred">***@*****</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- Contact/Phone column -->
+                                        <td class="phone-col-{{ forloop.counter }}" style="min-width:130px;">
+                                            {% if p.phones and p.phones.0.number %}
+                                            <span class="contact-col-pill contact-col-phone">
+                                                <i class="fas fa-phone-alt me-1" style="font-size:10px;"></i>{{ p.phones.0.number }}
+                                            </span>
+                                            {% else %}
+                                            <span class="contact-col-blurred">***-****</span>
+                                            {% endif %}
+                                        </td>
+
                                         <!-- Actions -->
-                                        <td>
+                                        <td style="min-width:150px;">
                                             <div class="action-icons">
                                                 {% if p.emails and p.emails.0.email %}
-                                                    <form method="POST" action="{% url 'select_person_for_email' %}" class="d-inline">
-                                                        {% csrf_token %}
-                                                        <input type="hidden" name="first" value="{{ p.first|default:'' }}">
-                                                        <input type="hidden" name="last" value="{{ p.last|default:'' }}">
-                                                        <input type="hidden" name="linkedin" value="{{ p.linkedin|default:'' }}">
-                                                        <input type="hidden" name="company" value="{{ p.company|default:'' }}">
-                                                        <input type="hidden" name="company_website" value="{{ p.company_website|default:'' }}">
-                                                        <input type="hidden" name="job_title" value="{{ p.job_title|default:'' }}">
-                                                        <input type="hidden" name="institution" value="{{ p.institution|default:'' }}">
-                                                        <input type="hidden" name="location" value="{{ p.location|default:'' }}">
-                                                        <input type="hidden" name="company_headquarter" value="{{ p.company_headquarter|default:'' }}">
-                                                        <input type="hidden" name="email" value="{{ p.emails.0.email }}">
-                                                        <button type="submit" title="Send Email"><i class="far fa-envelope"></i></button>
-                                                    </form>
+                                                <!-- Has email → Send Email purple button -->
+                                                <form method="POST" action="{% url 'select_person_for_email' %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="first" value="{{ p.first|default:'' }}">
+                                                    <input type="hidden" name="last" value="{{ p.last|default:'' }}">
+                                                    <input type="hidden" name="linkedin" value="{{ p.linkedin|default:'' }}">
+                                                    <input type="hidden" name="company" value="{{ p.company|default:'' }}">
+                                                    <input type="hidden" name="company_website" value="{{ p.company_website|default:'' }}">
+                                                    <input type="hidden" name="job_title" value="{{ p.job_title|default:'' }}">
+                                                    <input type="hidden" name="institution" value="{{ p.institution|default:'' }}">
+                                                    <input type="hidden" name="location" value="{{ p.location|default:'' }}">
+                                                    <input type="hidden" name="company_headquarter" value="{{ p.company_headquarter|default:'' }}">
+                                                    <input type="hidden" name="email" value="{{ p.emails.0.email }}">
+                                                    <button type="submit" class="send-email-col-btn" title="Send Email">
+                                                        <i class="far fa-envelope me-1"></i> Send Email
+                                                    </button>
+                                                </form>
                                                 {% else %}
-                                                    <form method="POST" action="{% url 'enrich_person' %}" class="enrich-form d-inline">
-                                                        {% csrf_token %}
-                                                        <input type="hidden" name="linkedin_url" value="{{ p.linkedin }}">
-                                                        <input type="hidden" name="first" value="{{ p.first }}">
-                                                        <input type="hidden" name="last" value="{{ p.last }}">
-                                                        <input type="hidden" name="company" value="{{ p.company }}">
-                                                        <input type="hidden" name="company_website" value="{{ p.company_website }}">
-                                                        <input type="hidden" name="job_title" value="{{ p.job_title }}">
-                                                        <input type="hidden" name="institution" value="{{ p.institution }}">
-                                                        <input type="hidden" name="location" value="{{ p.location }}">
-                                                        <input type="hidden" name="company_headquarter" value="{{ p.company_headquarter }}">
-                                                        <input type="hidden" name="card_id" value="{{ forloop.counter }}">
-                                                        <input type="hidden" name="enrich_type" value="email">
-                                                        <button type="submit" title="Fetch Email"><i class="far fa-envelope"></i></button>
-                                                    </form>
+                                                <!-- No email → envelope icon to fetch -->
+                                                <form method="POST" action="{% url 'enrich_person' %}" class="enrich-form d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="linkedin_url" value="{{ p.linkedin }}">
+                                                    <input type="hidden" name="first" value="{{ p.first }}">
+                                                    <input type="hidden" name="last" value="{{ p.last }}">
+                                                    <input type="hidden" name="company" value="{{ p.company }}">
+                                                    <input type="hidden" name="company_website" value="{{ p.company_website }}">
+                                                    <input type="hidden" name="job_title" value="{{ p.job_title }}">
+                                                    <input type="hidden" name="institution" value="{{ p.institution }}">
+                                                    <input type="hidden" name="location" value="{{ p.location }}">
+                                                    <input type="hidden" name="company_headquarter" value="{{ p.company_headquarter }}">
+                                                    <input type="hidden" name="card_id" value="{{ forloop.counter }}">
+                                                    <input type="hidden" name="enrich_type" value="email">
+                                                    <button type="submit" title="Fetch Email"><i class="far fa-envelope"></i></button>
+                                                </form>
                                                 {% endif %}
 
+                                                <!-- Phone fetch always available -->
                                                 <form method="POST" action="{% url 'enrich_person' %}" class="enrich-form d-inline">
                                                     {% csrf_token %}
                                                     <input type="hidden" name="linkedin_url" value="{{ p.linkedin }}">
@@ -475,8 +506,10 @@
                                                     <input type="hidden" name="enrich_type" value="phone">
                                                     <button type="submit" title="Fetch Phone"><i class="fas fa-phone-alt"></i></button>
                                                 </form>
-                                                
-                                                <button type="button" title="Save to List" class="single-save-btn"><i class="far fa-bookmark"></i></button>
+
+                                                <button type="button" title="Save to List" class="single-save-btn">
+                                                    <i class="far fa-bookmark"></i>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -887,6 +920,7 @@
     const SAVE_PEOPLE_TO_LIST_URL = "{% url 'save_people_to_list' %}";
     const ENRICH_PERSON_URL = "{% url 'enrich_person' %}";
     const SELECT_PERSON_FOR_EMAIL_URL = "{% url 'select_person_for_email' %}";
+    const SAVE_ENRICH_CAMPAIGN_URL = "{% url 'save_enrich_campaign'%}"
 </script>
 <script src="{% static 'search/js/people_search.js' %}?v=14"></script>
 <script>
