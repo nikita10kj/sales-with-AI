@@ -747,3 +747,49 @@ body {
 #sidebar.collapsed.hover-expand:hover .logo-mini {
     display: none !important;
 }
+
+
+/* ================= LOGOUT ICON FIX ================= */
+#sidebar.collapsed li form .nav-link {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 14px 0 !important;
+    width: 100% !important;
+    background: none !important;
+    border: none !important;
+    color: rgba(255,255,255,0.8) !important;
+}
+
+#sidebar.collapsed li form .nav-link i {
+    margin: 0 !important;
+    width: auto !important;
+    min-width: unset !important;
+    font-size: 18px !important;
+}
+
+#sidebar.collapsed li form .nav-link span {
+    display: none !important;
+}
+
+#sidebar.collapsed li form {
+    display: flex !important;
+    justify-content: center !important;
+}  
+
+#sidebar.collapsed .sidebar-dropdown .nav-link {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 14px 0 !important;
+}
+
+#sidebar.collapsed .sidebar-dropdown .nav-link i.fa-search {
+    margin: 0 !important;
+    width: auto !important;
+    min-width: unset !important;
+}
+
+#sidebar.collapsed .sidebar-dropdown .nav-link i.fa-chevron-down {
+    display: none !important;
+} 

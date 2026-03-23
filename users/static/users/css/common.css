@@ -82,7 +82,7 @@ body {
 
 .sidebar .nav-link i {
   margin-right: 10px;
-  width: 40px;
+  width: auto;
 }
 
 /* Hover */

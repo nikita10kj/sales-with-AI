@@ -10,7 +10,7 @@ from django.views.generic import FormView, View,TemplateView,ListView,DetailView
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from .genai_email import get_response
-from .models import TargetAudience, SentEmail, ReminderEmail, EmailSubscription,SearchHistory,GlobalSearchLog
+from .models import TargetAudience, SentEmail, ReminderEmail, EmailSubscription,SearchHistory,GlobalSearchLog,UserSearchLimit
 from users.models import ProductService, ActivityLog,Signature,UserWallet
 import json
 import datetime
@@ -172,14 +172,18 @@ class SearchPeopleByLinkdinView(View):
     def get(self, request, *args, **kwargs):
         people = request.session.pop("people", [])
         error = request.session.pop("error", None)
+        limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+
         form = request.session.pop("form", {
             "linkedin_url": "",
         })
+        
 
         return render(request, self.template_name, {
             "people": people,
             "error": error,
             "form": form,
+            "search_limit": limit,
         })
 
     def post(self, request, *args, **kwargs):
@@ -414,6 +418,7 @@ class SearchPeopleView(View):
         people = request.session.pop("people", [])
         error = request.session.pop("error", None)
         pagination = request.session.pop("pagination", {})
+        limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
 
         form = request.session.pop("form", {
             "name": "",
@@ -435,6 +440,7 @@ class SearchPeopleView(View):
             "error": error,
             "form": form,
             "pagination": pagination,
+            "search_limit": limit,
         })
 
     def post(self, request, *args, **kwargs):
@@ -883,6 +889,25 @@ class EnrichPersonView(View):
                 "success": False,
                 "error": "LinkedIn URL is required."
             }, status=400)
+        
+        credit_cost = 1 if enrich_type == "email" else 3
+        limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+
+        if not limit.has_credits():
+            return JsonResponse({
+                "success":        False,
+                "limit_reached":  True,
+                "credits":        0,
+                "error":          "Your search credits are exhausted. Please contact admin to renew."
+            }, status=403)
+
+        if limit.credits < credit_cost:
+            return JsonResponse({
+                "success":        False,
+                "limit_reached":  True,
+                "credits":        limit.credits,
+                "error":          f"You need {credit_cost} credits for this action but only have {limit.credits}."
+            }, status=403)
 
         enrich_email = enrich_type == "email"
         enrich_phone = enrich_type == "phone"
@@ -1016,8 +1041,11 @@ class EnrichPersonView(View):
             except Exception:
                 pass
 
+            limit.deduct(credit_cost)
+
             return JsonResponse({
                 "success": True,
+                "credits": limit.credits,
                 "person": {
                     "first": first,
                     "last": last,
@@ -1046,6 +1074,7 @@ class SearchCompanyView(View):
     def get(self, request, *args, **kwargs):
         companies = request.session.pop("companies", [])
         error = request.session.pop("error", None)
+        limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
 
         form = request.session.pop("form", {
             "name": "",
@@ -1071,6 +1100,7 @@ class SearchCompanyView(View):
             "companies": companies,
             "error": error,
             "form": form,
+            "search_limit": limit,
         })
 
     def post(self, request, *args, **kwargs):
@@ -2210,9 +2240,12 @@ class SearchHistoryView(LoginRequiredMixin, View):
         histories   = SearchHistory.objects.filter(user=request.user)
         if search_type:
             histories = histories.filter(search_type=search_type)
+
+        limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
         return render(request, self.template_name, {
             "histories":   histories[:100],
             "search_type": search_type,
+            "search_limit": limit,
         })
 
     def delete(self, request, *args, **kwargs):
@@ -4214,8 +4247,9 @@ def campaign_view(request):
             )
 
             # Upsert TargetAudience for each enriched entry
+            # Upsert TargetAudience for each enriched entry
             for entry in entries_with_email:
-                TargetAudience.objects.get_or_create(
+                obj, created = TargetAudience.objects.get_or_create(
                     user=request.user,
                     email=entry.email,
                     tag=tag_obj,
@@ -4226,7 +4260,23 @@ def campaign_view(request):
                         "company_url":           entry.company_website,
                     }
                 )
-
+                # Always update these fields whether created or existing
+                obj.receiver_first_name   = entry.first or obj.receiver_first_name
+                obj.receiver_last_name    = entry.last or obj.receiver_last_name
+                obj.receiver_linkedin_url = entry.linkedin or obj.receiver_linkedin_url
+                obj.company_url           = entry.company_website or obj.company_url
+                obj.campaign_goal         = campaign_goal
+                obj.framework             = framework
+                obj.selected_service      = service_name
+                obj.save(update_fields=[
+                    "receiver_first_name",
+                    "receiver_last_name",
+                    "receiver_linkedin_url",
+                    "company_url",
+                    "campaign_goal",
+                    "framework",
+                    "selected_service",
+                ])
             audiences = TargetAudience.objects.filter(
                 user=request.user,
                 tag=tag_obj

@@ -7,123 +7,202 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-.sh-tab { display:inline-flex;align-items:center;padding:14px 22px;font-size:13px;font-weight:600;color:#6c757d;text-decoration:none;border-bottom:3px solid transparent;transition:color 0.15s,border-color 0.15s; }
-.sh-tab:hover { color:#667eea; }
-.sh-tab-active { color:#667eea !important;border-bottom-color:#667eea; }
+/* ── Tabs ── */
+.sh-tab{display:inline-flex;align-items:center;padding:14px 22px;font-size:13px;font-weight:600;color:#6c757d;text-decoration:none;border-bottom:3px solid transparent;transition:color .15s,border-color .15s;}
+.sh-tab:hover{color:#667eea;}
+.sh-tab-active{color:#667eea !important;border-bottom-color:#667eea;}
+.sh-tabs-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;}
+.sh-tabs-scroll::-webkit-scrollbar{display:none;}
 
-.sh-card { background:#fff;box-shadow:0 2px 12px rgba(0,0,0,0.055) !important;transition:box-shadow 0.2s ease,transform 0.2s ease; }
-.sh-card:hover { box-shadow:0 8px 32px rgba(102,126,234,0.13) !important;transform:translateY(-1px); }
+/* ── History list container ── */
+#historyList{width:100%;max-width:100%;overflow:hidden;}
 
-.sh-type-icon { width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0; }
-.sh-icon-people { background:#eef1ff;color:#667eea; }
-.sh-icon-company { background:#fff3e0;color:#f57c00; }
-.sh-icon-linkedin { background:#e3f2fd;color:#0a66c2; }
+/* ── Cards ── */
+.sh-card{
+    background:#fff;
+    box-shadow:0 2px 12px rgba(0,0,0,.055) !important;
+    margin-bottom:12px;
+    overflow:hidden;
+    width:100%;
+    max-width:100%;
+    contain:layout;
+}
+.sh-card:hover{box-shadow:0 8px 32px rgba(102,126,234,.13) !important;}
 
-.sh-badge { display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.3px;white-space:nowrap; }
-.sh-badge-people { background:#eef1ff;color:#667eea; }
-.sh-badge-company { background:#fff3e0;color:#f57c00; }
-.sh-badge-linkedin { background:#e3f2fd;color:#0a66c2; }
+/* ── Type icon ── */
+.sh-type-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.sh-icon-people{background:#eef1ff;color:#667eea;}
+.sh-icon-company{background:#fff3e0;color:#f57c00;}
+.sh-icon-linkedin{background:#e3f2fd;color:#0a66c2;}
 
-.sh-meta-pill { font-size:11px;color:#aab0c4;display:inline-flex;align-items:center;white-space:nowrap;flex-shrink:0; }
+/* ── Badges & pills ── */
+.sh-badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px;white-space:nowrap;}
+.sh-badge-people{background:#eef1ff;color:#667eea;}
+.sh-badge-company{background:#fff3e0;color:#f57c00;}
+.sh-badge-linkedin{background:#e3f2fd;color:#0a66c2;}
+.sh-meta-pill{font-size:11px;color:#aab0c4;display:inline-flex;align-items:center;white-space:nowrap;flex-shrink:0;}
 
-.sh-filter-chip { display:inline-flex;flex-direction:column;padding:4px 9px;background:#f4f5fb;border:1px solid #e8ebf2;border-radius:8px;line-height:1.4;max-width:180px; }
-.sh-filter-key { font-size:9px;color:#aab0c4;text-transform:uppercase;letter-spacing:0.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-.sh-filter-val { font-size:11px;font-weight:600;color:#2e374d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+/* ── Filter chips ── */
+.sh-filter-chip{display:inline-flex;flex-direction:column;padding:4px 9px;background:#f4f5fb;border:1px solid #e8ebf2;border-radius:8px;line-height:1.4;max-width:180px;}
+.sh-filter-key{font-size:9px;color:#aab0c4;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sh-filter-val{font-size:11px;font-weight:600;color:#2e374d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
-.sh-delete-btn { display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:#fff0f0;border:1px solid #ffd0d0;border-radius:8px;color:#e53935;font-size:11px;cursor:pointer;transition:background 0.15s,border-color 0.15s;flex-shrink:0; }
-.sh-delete-btn:hover { background:#ffe4e4;border-color:#e53935; }
+/* ── Buttons ── */
+.sh-delete-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:#fff0f0;border:1px solid #ffd0d0;border-radius:8px;color:#e53935;font-size:11px;cursor:pointer;transition:background .15s,border-color .15s;flex-shrink:0;}
+.sh-delete-btn:hover{background:#ffe4e4;border-color:#e53935;}
+.sh-toggle-btn{display:inline-flex;align-items:center;padding:6px 12px;background:#f4f5fb;color:#44506a;font-weight:700;font-size:12px;border-radius:10px;border:1px solid #e8ebf2;cursor:pointer;transition:.2s ease;white-space:nowrap;}
+.sh-toggle-btn:hover,.sh-toggle-btn.open{background:#eef1ff;color:#667eea;border-color:#d6dcf8;}
+.sh-rerun-btn{display:inline-flex;align-items:center;padding:6px 12px;background:#eef1ff;color:#667eea;font-weight:700;font-size:12px;border-radius:10px;text-decoration:none;border:1px solid #d6dcf8;transition:.2s ease;white-space:nowrap;}
+.sh-rerun-btn:hover{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-color:transparent;}
+.sh-save-list-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-weight:700;font-size:12px;border-radius:10px;border:none;cursor:pointer;}
 
-.sh-toggle-btn { display:inline-flex;align-items:center;padding:6px 12px;background:#f4f5fb;color:#44506a;font-weight:700;font-size:12px;border-radius:10px;border:1px solid #e8ebf2;cursor:pointer;transition:0.2s ease;white-space:nowrap; }
-.sh-toggle-btn:hover,.sh-toggle-btn.open { background:#eef1ff;color:#667eea;border-color:#d6dcf8; }
+/* ── Email/Phone pills ── */
+.sh-email-pill{display:inline-flex;align-items:center;padding:3px 9px;background:#e8f5e9;color:#2e7d32;border-radius:8px;font-size:11px;font-weight:600;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;}
+.sh-phone-pill{display:inline-flex;align-items:center;padding:3px 9px;background:#e3f2fd;color:#0d47a1;border-radius:8px;font-size:11px;font-weight:600;white-space:nowrap;}
+.sh-blurred{font-size:12px;color:#c8cfe0;letter-spacing:1px;filter:blur(3.5px);user-select:none;display:inline-block;}
 
-.sh-rerun-btn { display:inline-flex;align-items:center;padding:6px 12px;background:#eef1ff;color:#667eea;font-weight:700;font-size:12px;border-radius:10px;text-decoration:none;border:1px solid #d6dcf8;transition:0.2s ease;white-space:nowrap; }
-.sh-rerun-btn:hover { background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-color:transparent; }
-
-.sh-save-list-btn { display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-weight:700;font-size:12px;border-radius:10px;border:none;cursor:pointer; }
-
-.sh-empty-icon { width:76px;height:76px;border-radius:22px;background:#eef1ff;display:flex;align-items:center;justify-content:center; }
-.sh-start-btn { display:inline-flex;align-items:center;padding:10px 22px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff !important;font-weight:700;font-size:13px;border-radius:12px;text-decoration:none;transition:opacity 0.2s; }
-.sh-start-btn:hover { opacity:0.88; }
-.sh-start-btn-outline { background:#fff !important;color:#667eea !important;border:1.5px solid #d6dcf8; }
-.sh-start-btn-outline:hover { background:#eef1ff !important;opacity:1; }
-
-.sh-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.38);z-index:10000;align-items:center;justify-content:center; }
-.sh-modal-box { width:100%;max-width:400px;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.2);margin:16px; }
-.sh-modal-body { padding:28px 24px 20px; }
-.sh-modal-footer { display:flex;justify-content:flex-end;gap:12px;padding:16px 24px;border-top:1px solid #e8ebf2;background:#fafbfe; }
-.sh-modal-icon-wrap { width:54px;height:54px;border-radius:15px;background:#ffebee;display:flex;align-items:center;justify-content:center;margin-bottom:16px; }
-.sh-btn-cancel { padding:10px 20px;border:1px solid #ccd4e1;border-radius:12px;background:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit; }
-.sh-btn-cancel:hover { background:#f4f5fb; }
-.sh-btn-danger { padding:10px 20px;border:none;border-radius:12px;background:#e53935;color:#fff;font-weight:700;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit; }
-.sh-btn-danger:hover { opacity:0.88; }
-
-/* Email / Contact pills */
-.sh-email-pill { display:inline-flex;align-items:center;padding:3px 9px;background:#e8f5e9;color:#2e7d32;border-radius:8px;font-size:11px;font-weight:600;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis; }
-.sh-phone-pill { display:inline-flex;align-items:center;padding:3px 9px;background:#e3f2fd;color:#0d47a1;border-radius:8px;font-size:11px;font-weight:600;white-space:nowrap; }
-.sh-blurred { font-size:12px;color:#c8cfe0;letter-spacing:1px;filter:blur(3.5px);user-select:none;display:inline-block; }
-
-/* Send Email btn override */
+/* ── Send Email btn override ── */
 .action-icons .send-email-col-btn,
-.action-icons form .send-email-col-btn {
-    width:auto !important;height:30px !important;padding:0 10px !important;
-    font-size:11px !important;gap:4px !important;border-radius:8px !important;
+.action-icons form .send-email-col-btn{
+    width:auto !important;height:28px !important;padding:0 8px !important;
+    font-size:10.5px !important;gap:3px !important;border-radius:7px !important;
     border:none !important;background:linear-gradient(135deg,#667eea,#764ba2) !important;
     color:#fff !important;font-weight:700 !important;white-space:nowrap !important;
     display:inline-flex !important;align-items:center !important;flex-shrink:0 !important;
 }
 .action-icons .send-email-col-btn:hover,
-.action-icons form .send-email-col-btn:hover { opacity:0.88 !important; }
+.action-icons form .send-email-col-btn:hover{opacity:.88 !important;}
 
-.sh-tabs-scroll {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE */
+/* ── KEY FIX: Expanded results panel — strictly contained ── */
+.sh-results-panel{
+    width:100%;
+    max-width:100%;
+    overflow:hidden;
+    contain:layout;
+    border-top:1px solid #f0f2f8;
 }
-.sh-tabs-scroll::-webkit-scrollbar {
-    display: none; /* Chrome, Safari */
+.sh-results-inner{
+    padding:12px;
+    width:100%;
+    max-width:100%;
+    overflow:hidden;
+    box-sizing:border-box;
 }
+.sh-results-wrap{
+    width:100%;
+    max-width:100%;
+    overflow:hidden;
+    contain:layout;
+}
+.sh-results-wrap .table-wrap{
+    width:100%;
+    max-width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;
+    scrollbar-color:#dce2ee transparent;
+}
+.sh-results-wrap .table-wrap::-webkit-scrollbar{height:3px;}
+.sh-results-wrap .table-wrap::-webkit-scrollbar-thumb{background:#dce2ee;border-radius:999px;}
+.sh-results-wrap .results-table{
+    table-layout:auto !important;
+    width:max-content !important;
+    min-width:100% !important;
+    border-collapse:collapse;
+}
+.sh-results-wrap .results-table th,
+.sh-results-wrap .results-table td{
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    padding:9px 10px !important;
+    font-size:12.5px;
+    vertical-align:middle;
+}
+.sh-results-wrap .results-table th{font-size:10.5px;}
+/* Remove sticky inside history cards */
+.sh-results-wrap .results-table th.col-chk,
+.sh-results-wrap .results-table td.col-chk,
+.sh-results-wrap .results-table th:nth-child(2),
+.sh-results-wrap .results-table td:nth-child(2){position:static !important;box-shadow:none !important;}
+/* Comfortable column widths */
+.sh-results-wrap .results-table th:nth-child(1),
+.sh-results-wrap .results-table td:nth-child(1){width:36px;min-width:36px;}
+.sh-results-wrap .results-table th:nth-child(2),
+.sh-results-wrap .results-table td:nth-child(2){min-width:150px;}
+.sh-results-wrap .results-table th:nth-child(3),
+.sh-results-wrap .results-table td:nth-child(3){min-width:110px;}
+.sh-results-wrap .results-table th:nth-child(4),
+.sh-results-wrap .results-table td:nth-child(4){min-width:110px;}
+.sh-results-wrap .results-table th:nth-child(5),
+.sh-results-wrap .results-table td:nth-child(5){min-width:120px;}
+.sh-results-wrap .results-table th:nth-child(6),
+.sh-results-wrap .results-table td:nth-child(6){min-width:110px;}
+.sh-results-wrap .results-table th:nth-child(7),
+.sh-results-wrap .results-table td:nth-child(7){min-width:110px;}
+.sh-results-wrap .results-table th:nth-child(8),
+.sh-results-wrap .results-table td:nth-child(8){min-width:100px;}
+.sh-results-wrap .results-table th:nth-child(9),
+.sh-results-wrap .results-table td:nth-child(9){min-width:140px;}
+.sh-results-wrap .results-table th:nth-child(10),
+.sh-results-wrap .results-table td:nth-child(10){min-width:100px;}
+.sh-results-wrap .results-table th:nth-child(11),
+.sh-results-wrap .results-table td:nth-child(11){min-width:150px;}
 
-/* Mobile */
-@media (max-width: 600px) {
-    .sh-type-icon { width:36px !important;height:36px !important;font-size:13px !important;border-radius:10px !important; }
-    .sh-badge { font-size:10px !important;padding:2px 7px !important; }
-    .sh-meta-pill { font-size:10px !important; }
-    .sh-hide-xs { display:none !important; }
-    .sh-filter-chip { max-width:130px !important; }
-    .sh-filter-key { font-size:9px !important; }
-    .sh-filter-val { font-size:11px !important; }
-    .sh-toggle-btn,.sh-rerun-btn { padding:5px 9px !important;font-size:11px !important; }
-    .sh-delete-btn { width:28px !important;height:28px !important;font-size:11px !important; }
+/* ── Modals ── */
+.sh-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:10000;align-items:center;justify-content:center;}
+.sh-modal-box{width:100%;max-width:400px;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);margin:16px;}
+.sh-modal-body{padding:28px 24px 20px;}
+.sh-modal-footer{display:flex;justify-content:flex-end;gap:12px;padding:16px 24px;border-top:1px solid #e8ebf2;background:#fafbfe;}
+.sh-modal-icon-wrap{width:54px;height:54px;border-radius:15px;background:#ffebee;display:flex;align-items:center;justify-content:center;margin-bottom:16px;}
+.sh-btn-cancel{padding:10px 20px;border:1px solid #ccd4e1;border-radius:12px;background:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;}
+.sh-btn-cancel:hover{background:#f4f5fb;}
+.sh-btn-danger{padding:10px 20px;border:none;border-radius:12px;background:#e53935;color:#fff;font-weight:700;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit;}
+.sh-btn-danger:hover{opacity:.88;}
+
+/* ── Empty state ── */
+.sh-empty-icon{width:76px;height:76px;border-radius:22px;background:#eef1ff;display:flex;align-items:center;justify-content:center;}
+.sh-start-btn{display:inline-flex;align-items:center;padding:10px 22px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff !important;font-weight:700;font-size:13px;border-radius:12px;text-decoration:none;transition:opacity .2s;}
+.sh-start-btn:hover{opacity:.88;}
+.sh-start-btn-outline{background:#fff !important;color:#667eea !important;border:1.5px solid #d6dcf8;}
+.sh-start-btn-outline:hover{background:#eef1ff !important;opacity:1;}
+
+/* ── Mobile ── */
+@media(max-width:600px){
+    .sh-type-icon{width:36px !important;height:36px !important;font-size:13px !important;border-radius:10px !important;}
+    .sh-badge{font-size:10px !important;padding:2px 7px !important;}
+    .sh-meta-pill{font-size:10px !important;}
+    .sh-hide-xs{display:none !important;}
+    .sh-filter-chip{max-width:130px !important;}
+    .sh-toggle-btn,.sh-rerun-btn{padding:5px 9px !important;font-size:11px !important;}
+    .sh-delete-btn{width:28px !important;height:28px !important;font-size:11px !important;}
 }
 </style>
 {% endblock extra_css %}
 
 {% block content %}
-
-<div class="col-12" style="font-family:'Inter',sans-serif;">
-<div style="max-width:1300px; margin:24px auto; padding:0 16px 48px;">
+<div class="col-12" style="font-family:'Inter',sans-serif;overflow:hidden;max-width:100%;">
+<div style="max-width:1300px;margin:24px auto;padding:0 16px 48px;overflow:hidden;">
 
     <!-- ══ HEADER ══ -->
     <div class="card shadow border-0 rounded-4 overflow-hidden w-100 mb-4">
         <div class="card-header text-white py-4 d-flex align-items-center justify-content-between flex-wrap gap-3"
-             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+             style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
             <div class="d-flex align-items-center gap-3">
-                <i class="fas fa-history" style="font-size:28px; opacity:0.9;"></i>
+                <i class="fas fa-history" style="font-size:28px;opacity:.9;"></i>
                 <div>
                     <h5 class="mb-1 fw-semibold">Search History</h5>
-                    <small style="font-size:13px; opacity:0.85;">All your past searches — people, companies &amp; LinkedIn</small>
+                    <small style="font-size:13px;opacity:.85;">All your past searches — people, companies &amp; LinkedIn</small>
                 </div>
             </div>
             <button type="button" id="clearHistoryBtn"
                     class="btn btn-sm text-white d-flex align-items-center gap-2"
-                    style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); border-radius:10px; font-size:12px; padding:8px 14px;">
+                    style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:10px;font-size:12px;padding:8px 14px;">
                 <i class="fas fa-trash-alt"></i> Clear All
             </button>
         </div>
-        <!-- TABS -->
-        <div class="sh-tabs-scroll" style="background:#fafbfe; border-bottom:1px solid #e8ebf2;">
-    <div class="d-flex" style="white-space:nowrap; min-width:max-content;">
+        <div class="sh-tabs-scroll" style="background:#fafbfe;border-bottom:1px solid #e8ebf2;">
+            <div class="d-flex" style="white-space:nowrap;min-width:max-content;">
                 <a href="?type=" class="sh-tab {% if not search_type %}sh-tab-active{% endif %}"><i class="fas fa-layer-group me-1"></i> All</a>
                 <a href="?type=people" class="sh-tab {% if search_type == 'people' %}sh-tab-active{% endif %}"><i class="fas fa-user-friends me-1"></i> People</a>
                 <a href="?type=company" class="sh-tab {% if search_type == 'company' %}sh-tab-active{% endif %}"><i class="fas fa-building me-1"></i> Company</a>
@@ -134,127 +213,86 @@
 
     <!-- ══ HISTORY LIST ══ -->
     {% if histories %}
-    <div class="d-flex flex-column gap-3" id="historyList">
+    <div id="historyList">
         {% for h in histories %}
         <div class="card border-0 sh-card rounded-4">
 
             <!-- Card header -->
-<div class="card-body p-3">
-    <div class="d-flex align-items-start gap-3">
-
-        <!-- Type icon -->
-        <div class="sh-type-icon flex-shrink-0
-            {% if h.search_type == 'people' %}sh-icon-people
-            {% elif h.search_type == 'company' %}sh-icon-company
-            {% else %}sh-icon-linkedin{% endif %}">
-            {% if h.search_type == 'people' %}<i class="fas fa-user-friends"></i>
-            {% elif h.search_type == 'company' %}<i class="fas fa-building"></i>
-            {% else %}<i class="fab fa-linkedin-in"></i>{% endif %}
-        </div>
-
-        <!-- Main content -->
-        <div style="flex:1; min-width:0;">
-
-            <!-- Line 1: all meta in one horizontal line | delete btn -->
-            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
-                <div style="display:flex; align-items:center; gap:6px; flex-wrap:nowrap; overflow:hidden; min-width:0; flex:1;">
-                    <span class="sh-badge flex-shrink-0
-                        {% if h.search_type == 'people' %}sh-badge-people
-                        {% elif h.search_type == 'company' %}sh-badge-company
-                        {% else %}sh-badge-linkedin{% endif %}">
-                        {{ h.get_search_type_display }}
-                    </span>
-                    <span class="sh-meta-pill flex-shrink-0">
-                        <i class="fas fa-chart-bar me-1"></i>{{ h.result_count }} result{{ h.result_count|pluralize }}
-                    </span>
-                    <span class="sh-meta-pill sh-hide-xs flex-shrink-0">
-                        <i class="far fa-calendar-alt me-1"></i>{{ h.created_at|date:"M d, Y" }} · {{ h.created_at|date:"H:i" }}
-                    </span>
-                    <span class="sh-meta-pill flex-shrink-0">
-                        <i class="fas fa-clock me-1"></i>{{ h.created_at|timesince }} ago
-                    </span>
+            <div class="card-body p-3">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="sh-type-icon flex-shrink-0 {% if h.search_type == 'people' %}sh-icon-people{% elif h.search_type == 'company' %}sh-icon-company{% else %}sh-icon-linkedin{% endif %}">
+                        {% if h.search_type == 'people' %}<i class="fas fa-user-friends"></i>
+                        {% elif h.search_type == 'company' %}<i class="fas fa-building"></i>
+                        {% else %}<i class="fab fa-linkedin-in"></i>{% endif %}
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                        <!-- Line 1: meta + delete -->
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                            <div style="display:flex;align-items:center;gap:6px;overflow:hidden;min-width:0;flex:1;">
+                                <span class="sh-badge flex-shrink-0 {% if h.search_type == 'people' %}sh-badge-people{% elif h.search_type == 'company' %}sh-badge-company{% else %}sh-badge-linkedin{% endif %}">{{ h.get_search_type_display }}</span>
+                                <span class="sh-meta-pill flex-shrink-0"><i class="fas fa-chart-bar me-1"></i>{{ h.result_count }} result{{ h.result_count|pluralize }}</span>
+                                <span class="sh-meta-pill sh-hide-xs flex-shrink-0"><i class="far fa-calendar-alt me-1"></i>{{ h.created_at|date:"M d, Y" }} · {{ h.created_at|date:"H:i" }}</span>
+                                <span class="sh-meta-pill flex-shrink-0"><i class="fas fa-clock me-1"></i>{{ h.created_at|timesince }} ago</span>
+                            </div>
+                            <button type="button" class="sh-delete-btn flex-shrink-0" data-id="{{ h.id }}" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                        <!-- Line 2: filters -->
+                        {% if h.filters %}
+                        <div class="d-flex flex-wrap gap-1 mb-2">
+                            {% for key, value in h.filters.items %}
+                            <div class="sh-filter-chip"><span class="sh-filter-key">{{ key|cut:"_"|title }}</span><span class="sh-filter-val">{{ value }}</span></div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p style="font-size:11px;color:#aab0c4;font-style:italic;margin:0 0 8px;">No filters applied</p>
+                        {% endif %}
+                        <!-- Line 3: action buttons -->
+                        <div class="d-flex gap-2 flex-wrap">
+                            {% if h.results %}
+                            <button type="button" class="sh-toggle-btn" onclick="toggleResults(this,'results-{{ h.id }}')">
+                                <i class="fas fa-chevron-down me-1" style="font-size:10px;"></i>View Results
+                            </button>
+                            {% endif %}
+                            <a href="{% if h.search_type == 'people' %}{% url 'search_people' %}{% elif h.search_type == 'company' %}{% url 'search_company' %}{% else %}{% url 'search_by_linkdin' %}{% endif %}" class="sh-rerun-btn">
+                                <i class="fas fa-external-link-alt me-1" style="font-size:10px;"></i>Open Search
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <button type="button" class="sh-delete-btn flex-shrink-0"
-                        data-id="{{ h.id }}" title="Delete">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
             </div>
 
-            <!-- Line 2: filter chips -->
-            {% if h.filters %}
-            <div class="d-flex flex-wrap gap-1 mb-2">
-                {% for key, value in h.filters.items %}
-                <div class="sh-filter-chip">
-                    <span class="sh-filter-key">{{ key|cut:"_"|title }}</span>
-                    <span class="sh-filter-val">{{ value }}</span>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p style="font-size:11px; color:#aab0c4; font-style:italic; margin:0 0 8px;">No filters applied</p>
-            {% endif %}
-
-            <!-- Line 3: action buttons -->
-            <div class="d-flex gap-2 flex-wrap">
-                {% if h.results %}
-                <button type="button" class="sh-toggle-btn"
-                        onclick="toggleResults(this, 'results-{{ h.id }}')">
-                    <i class="fas fa-chevron-down me-1" style="font-size:10px;"></i>View Results
-                </button>
-                {% endif %}
-                <a href="{% if h.search_type == 'people' %}{% url 'search_people' %}{% elif h.search_type == 'company' %}{% url 'search_company' %}{% else %}{% url 'search_by_linkdin' %}{% endif %}"
-                   class="sh-rerun-btn">
-                    <i class="fas fa-external-link-alt me-1" style="font-size:10px;"></i>Open Search
-                </a>
-            </div>
-
-        </div>
-    </div>
-</div>
-
-            <!-- Expandable Results -->
+            <!-- Expandable Results — fully contained inside card -->
             {% if h.results %}
-            <div id="results-{{ h.id }}" style="display:none; background:#fafbfe; border-top:1px solid #f0f2f8;">
-                <div class="p-3">
+            <div id="results-{{ h.id }}" class="sh-results-panel" style="display:none;">
+                <div class="sh-results-inner">
 
                     {% if h.search_type == 'people' or h.search_type == 'linkedin' %}
-
                     <!-- Meta bar -->
-                    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#fff; border:1px solid #e8ebf2; border-radius:12px; margin-bottom:12px;">
-                        <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff;border:1px solid #e8ebf2;border-radius:10px;margin-bottom:10px;box-sizing:border-box;">
+                        <div style="display:flex;align-items:center;gap:8px;">
                             <input type="checkbox" class="sh-select-all" data-history="{{ h.id }}">
-                            <i class="fas fa-chevron-down" style="font-size:11px; color:#aab0c4;"></i>
-                            <span class="sh-selected-text-{{ h.id }}" style="font-size:13px; color:#6c757d;">0 selected of {{ h.results|length }} results</span>
+                            <span class="sh-selected-text-{{ h.id }}" style="font-size:12px;color:#6c757d;">0 selected of {{ h.results|length }} results</span>
                         </div>
-                        <button type="button" class="sh-save-list-btn" data-history="{{ h.id }}" style="display:none;">
-                            <i class="fas fa-plus"></i> Save to List
-                        </button>
+                        <button type="button" class="sh-save-list-btn" data-history="{{ h.id }}" style="display:none;"><i class="fas fa-plus"></i> Save to List</button>
                     </div>
 
-                    <!-- People table — 11 columns matching search_people -->
-                    <div class="table-wrap">
-                        <table class="results-table">
-                            <thead>
-                                <tr>
-                                    <th class="col-chk"></th>
-                                    <th>Profile</th>
-                                    <th>Job Title</th>
-                                    <th>Contact Location</th>
-                                    <th>Company</th>
-                                    <th>HQ Location</th>
-                                    <th>Institution</th>
-                                    <th>LinkedIn URL</th>
-                                    <th>Email</th>
-                                    <th>Contact</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for r in h.results %}
-                                {% with forloop.counter as rcount %}
-                                <tr id="sh-card-{{ h.id }}-{{ rcount }}">
-                                    <td class="col-chk">
-                                        <input type="checkbox" class="sh-row-checkbox"
+                    <!-- Table — contained scroll -->
+                    <div class="sh-results-wrap">
+                        <div class="table-wrap">
+                            <table class="results-table">
+                                <thead>
+                                    <tr>
+                                        <th class="col-chk"></th>
+                                        <th>Profile</th><th>Job Title</th><th>Contact Location</th>
+                                        <th>Company</th><th>HQ Location</th><th>Institution</th>
+                                        <th>LinkedIn URL</th><th>Email</th><th>Contact</th><th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for r in h.results %}{% with forloop.counter as rcount %}
+                                    <tr id="sh-card-{{ h.id }}-{{ rcount }}">
+                                        <td class="col-chk">
+                                            <input type="checkbox" class="sh-row-checkbox"
                                                data-history="{{ h.id }}"
                                                data-first="{{ r.first|default:''|escape }}"
                                                data-last="{{ r.last|default:''|escape }}"
@@ -267,150 +305,96 @@
                                                data-company_headquarter="{{ r.company_headquarter|default:''|escape }}"
                                                data-email="{{ r.email|default:''|escape }}"
                                                data-phone="{{ r.phone|default:''|escape }}">
-                                    </td>
-                                    <!-- Profile -->
-                                    <td>
-                                        <div class="profile-cell">
-                                            {% if r.linkedin %}<a href="{{ r.linkedin }}" target="_blank" class="avatar-link">{% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="profile-cell">
+                                                {% if r.linkedin %}<a href="{{ r.linkedin }}" target="_blank" class="avatar-link">{% endif %}
                                                 <div class="avatar-circle {% if not r.photo %}fallback-avatar{% endif %}">
-                                                    {% if r.photo %}<img src="{{ r.photo }}" alt="Photo" onerror="this.style.display='none'; this.parentElement.classList.add('fallback-avatar');">{% endif %}
+                                                    {% if r.photo %}<img src="{{ r.photo }}" alt="Photo" onerror="this.style.display='none';this.parentElement.classList.add('fallback-avatar');">{% endif %}
                                                     <span class="initials">{{ r.first|default:"U"|slice:":1" }}{{ r.last|default:""|slice:":1" }}</span>
                                                 </div>
-                                            {% if r.linkedin %}</a>{% endif %}
-                                            <div class="profile-info">
-                                                <span class="profile-name sh-p-drawer-trigger"
-                                                      data-hid="{{ h.id }}" data-rid="{{ rcount }}"
-                                                      data-tooltip="{{ r.first }} {{ r.last }}">{{ r.first }} {{ r.last }}</span>
-                                                {% if r.linkedin %}<a href="{{ r.linkedin }}" target="_blank" class="li-badge">in</a>{% endif %}
+                                                {% if r.linkedin %}</a>{% endif %}
+                                                <div class="profile-info">
+                                                    <span class="profile-name sh-p-drawer-trigger" data-hid="{{ h.id }}" data-rid="{{ rcount }}" data-tooltip="{{ r.first }} {{ r.last }}">{{ r.first }} {{ r.last }}</span>
+                                                    {% if r.linkedin %}<a href="{{ r.linkedin }}" target="_blank" class="li-badge">in</a>{% endif %}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td class="cell-truncate sh-p-drawer-trigger" data-hid="{{ h.id }}" data-rid="{{ rcount }}" data-tooltip="{{ r.job_title|default:'' }}">{{ r.job_title|default:"—" }}</td>
-                                    <td class="cell-truncate sh-p-drawer-trigger" data-hid="{{ h.id }}" data-rid="{{ rcount }}" {% if r.location %}data-tooltip="{{ r.location }}"{% endif %}>
-                                        {% if r.location %}<span class="cell-icon"><i class="fas fa-map-marker-alt"></i></span>{{ r.location }}{% else %}—{% endif %}
-                                    </td>
-                                    <td class="cell-truncate" {% if r.company %}data-tooltip="{{ r.company }}"{% endif %}>
-                                        {% if r.company %}{% if r.company_website %}<a href="{{ r.company_website }}" target="_blank" class="company-link"><span class="cell-icon"><i class="fas fa-building"></i></span>{{ r.company }}</a>{% else %}<span class="cell-icon"><i class="fas fa-building"></i></span>{{ r.company }}{% endif %}{% else %}—{% endif %}
-                                    </td>
-                                    <td class="cell-truncate sh-p-drawer-trigger" data-hid="{{ h.id }}" data-rid="{{ rcount }}" {% if r.company_headquarter %}data-tooltip="{{ r.company_headquarter }}"{% endif %}>
-                                        {% if r.company_headquarter %}<span class="cell-icon"><i class="fas fa-map-marker-alt"></i></span>{{ r.company_headquarter }}{% else %}—{% endif %}
-                                    </td>
-                                    <td class="cell-truncate" {% if r.institution %}data-tooltip="{{ r.institution }}"{% endif %}>
-                                        {% if r.institution %}<span class="cell-icon"><i class="fas fa-graduation-cap"></i></span>{{ r.institution }}{% else %}—{% endif %}
-                                    </td>
-                                    <td class="cell-truncate" {% if r.linkedin %}data-tooltip="{{ r.linkedin }}"{% endif %}>
-                                        {% if r.linkedin %}<a href="{{ r.linkedin }}" target="_blank" class="linkedin-url-link"><i class="fab fa-linkedin" style="color:#0a66c2; margin-right:5px;"></i>View Profile</a>{% else %}—{% endif %}
-                                    </td>
-
-                                    <!-- Email column -->
-                                    <td class="sh-email-col-{{ h.id }}-{{ rcount }}" style="min-width:150px;">
-                                        {% if r.email %}
-                                        <span class="sh-email-pill"><i class="far fa-envelope me-1"></i>{{ r.email }}</span>
-                                        {% else %}
-                                        <span class="sh-blurred">***@*****</span>
-                                        {% endif %}
-                                    </td>
-
-                                    <!-- Contact/Phone column -->
-                                    <td class="sh-phone-col-{{ h.id }}-{{ rcount }}" style="min-width:120px;">
-                                        {% if r.phone %}
-                                        <span class="sh-phone-pill"><i class="fas fa-phone-alt me-1" style="font-size:10px;"></i>{{ r.phone }}</span>
-                                        {% else %}
-                                        <span class="sh-blurred">***-****</span>
-                                        {% endif %}
-                                    </td>
-
-                                    <!-- Actions -->
-                                    <td style="min-width:150px; white-space:nowrap;">
-                                        <div class="action-icons" style="flex-wrap:nowrap; gap:5px;">
-                                            {% if r.email %}
-                                            <form method="POST" action="{% url 'select_person_for_email' %}" class="d-inline">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="first" value="{{ r.first|default:'' }}">
-                                                <input type="hidden" name="last" value="{{ r.last|default:'' }}">
-                                                <input type="hidden" name="linkedin" value="{{ r.linkedin|default:'' }}">
-                                                <input type="hidden" name="company" value="{{ r.company|default:'' }}">
-                                                <input type="hidden" name="company_website" value="{{ r.company_website|default:'' }}">
-                                                <input type="hidden" name="job_title" value="{{ r.job_title|default:'' }}">
-                                                <input type="hidden" name="institution" value="{{ r.institution|default:'' }}">
-                                                <input type="hidden" name="location" value="{{ r.location|default:'' }}">
-                                                <input type="hidden" name="company_headquarter" value="{{ r.company_headquarter|default:'' }}">
-                                                <input type="hidden" name="email" value="{{ r.email }}">
-                                                <button type="submit" class="send-email-col-btn" title="Send Email"><i class="far fa-envelope me-1"></i>Send Email</button>
-                                            </form>
-                                            {% else %}
-                                            <button type="button" class="sh-enrich-btn"
-                                                    title="Fetch Email"
-                                                    data-hid="{{ h.id }}" data-rid="{{ rcount }}"
-                                                    data-type="email"
-                                                    data-linkedin="{{ r.linkedin|default:'' }}"
-                                                    data-first="{{ r.first|default:'' }}"
-                                                    data-last="{{ r.last|default:'' }}"
-                                                    data-company="{{ r.company|default:'' }}"
-                                                    data-company_website="{{ r.company_website|default:'' }}"
-                                                    data-job_title="{{ r.job_title|default:'' }}"
-                                                    data-institution="{{ r.institution|default:'' }}"
-                                                    data-location="{{ r.location|default:'' }}"
-                                                    data-company_headquarter="{{ r.company_headquarter|default:'' }}">
-                                                <i class="far fa-envelope"></i>
-                                            </button>
-                                            {% endif %}
-
-                                            {% if r.phone %}
-                                            <button type="button" title="Phone fetched" disabled style="cursor:default;">
-                                                <i class="fas fa-phone-alt"></i>
-                                            </button>
-                                            {% else %}
-                                            <button type="button" class="sh-enrich-btn"
-                                                    title="Fetch Phone"
-                                                    data-hid="{{ h.id }}" data-rid="{{ rcount }}"
-                                                    data-type="phone"
-                                                    data-linkedin="{{ r.linkedin|default:'' }}"
-                                                    data-first="{{ r.first|default:'' }}"
-                                                    data-last="{{ r.last|default:'' }}"
-                                                    data-company="{{ r.company|default:'' }}"
-                                                    data-company_website="{{ r.company_website|default:'' }}"
-                                                    data-job_title="{{ r.job_title|default:'' }}"
-                                                    data-institution="{{ r.institution|default:'' }}"
-                                                    data-location="{{ r.location|default:'' }}"
-                                                    data-company_headquarter="{{ r.company_headquarter|default:'' }}">
-                                                <i class="fas fa-phone-alt"></i>
-                                            </button>
-                                            {% endif %}
-
-                                            <button type="button" class="sh-single-save-btn" title="Save to List"
-                                                    data-history="{{ h.id }}" data-rid="{{ rcount }}">
-                                                <i class="far fa-bookmark"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endwith %}
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                        </td>
+                                        <td class="cell-truncate sh-p-drawer-trigger" data-hid="{{ h.id }}" data-rid="{{ rcount }}" data-tooltip="{{ r.job_title|default:'' }}">{{ r.job_title|default:"—" }}</td>
+                                        <td class="cell-truncate sh-p-drawer-trigger" data-hid="{{ h.id }}" data-rid="{{ rcount }}" {% if r.location %}data-tooltip="{{ r.location }}"{% endif %}>{% if r.location %}<span class="cell-icon"><i class="fas fa-map-marker-alt"></i></span>{{ r.location }}{% else %}—{% endif %}</td>
+                                        <td class="cell-truncate" {% if r.company %}data-tooltip="{{ r.company }}"{% endif %}>{% if r.company %}{% if r.company_website %}<a href="{{ r.company_website }}" target="_blank" class="company-link"><span class="cell-icon"><i class="fas fa-building"></i></span>{{ r.company }}</a>{% else %}<span class="cell-icon"><i class="fas fa-building"></i></span>{{ r.company }}{% endif %}{% else %}—{% endif %}</td>
+                                        <td class="cell-truncate sh-p-drawer-trigger" data-hid="{{ h.id }}" data-rid="{{ rcount }}" {% if r.company_headquarter %}data-tooltip="{{ r.company_headquarter }}"{% endif %}>{% if r.company_headquarter %}<span class="cell-icon"><i class="fas fa-map-marker-alt"></i></span>{{ r.company_headquarter }}{% else %}—{% endif %}</td>
+                                        <td class="cell-truncate" {% if r.institution %}data-tooltip="{{ r.institution }}"{% endif %}>{% if r.institution %}<span class="cell-icon"><i class="fas fa-graduation-cap"></i></span>{{ r.institution }}{% else %}—{% endif %}</td>
+                                        <td>{% if r.linkedin %}<a href="{{ r.linkedin }}" target="_blank" class="linkedin-url-link"><i class="fab fa-linkedin" style="color:#0a66c2;margin-right:5px;"></i>View Profile</a>{% else %}—{% endif %}</td>
+                                        <td class="sh-email-col-{{ h.id }}-{{ rcount }}">{% if r.email %}<span class="sh-email-pill"><i class="far fa-envelope me-1"></i>{{ r.email }}</span>{% else %}<span class="sh-blurred">***@*****</span>{% endif %}</td>
+                                        <td class="sh-phone-col-{{ h.id }}-{{ rcount }}">{% if r.phone %}<span class="sh-phone-pill"><i class="fas fa-phone-alt me-1" style="font-size:10px;"></i>{{ r.phone }}</span>{% else %}<span class="sh-blurred">***-****</span>{% endif %}</td>
+                                        <td>
+                                            <div class="action-icons" style="flex-wrap:nowrap;gap:4px;">
+                                                {% if r.email %}
+                                                <form method="POST" action="{% url 'select_person_for_email' %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="first" value="{{ r.first|default:'' }}">
+                                                    <input type="hidden" name="last" value="{{ r.last|default:'' }}">
+                                                    <input type="hidden" name="linkedin" value="{{ r.linkedin|default:'' }}">
+                                                    <input type="hidden" name="company" value="{{ r.company|default:'' }}">
+                                                    <input type="hidden" name="company_website" value="{{ r.company_website|default:'' }}">
+                                                    <input type="hidden" name="job_title" value="{{ r.job_title|default:'' }}">
+                                                    <input type="hidden" name="institution" value="{{ r.institution|default:'' }}">
+                                                    <input type="hidden" name="location" value="{{ r.location|default:'' }}">
+                                                    <input type="hidden" name="company_headquarter" value="{{ r.company_headquarter|default:'' }}">
+                                                    <input type="hidden" name="email" value="{{ r.email }}">
+                                                    <button type="submit" class="send-email-col-btn" title="Send Email"><i class="far fa-envelope me-1"></i>Send Email</button>
+                                                </form>
+                                                {% else %}
+                                                <button type="button" class="sh-enrich-btn" title="Fetch Email"
+                                                        data-hid="{{ h.id }}" data-rid="{{ rcount }}" data-type="email"
+                                                        data-linkedin="{{ r.linkedin|default:'' }}"
+                                                        data-first="{{ r.first|default:'' }}" data-last="{{ r.last|default:'' }}"
+                                                        data-company="{{ r.company|default:'' }}" data-company_website="{{ r.company_website|default:'' }}"
+                                                        data-job_title="{{ r.job_title|default:'' }}" data-institution="{{ r.institution|default:'' }}"
+                                                        data-location="{{ r.location|default:'' }}" data-company_headquarter="{{ r.company_headquarter|default:'' }}">
+                                                    <i class="far fa-envelope"></i>
+                                                </button>
+                                                {% endif %}
+                                                {% if r.phone %}
+                                                <button type="button" title="Phone fetched" disabled style="cursor:default;"><i class="fas fa-phone-alt"></i></button>
+                                                {% else %}
+                                                <button type="button" class="sh-enrich-btn" title="Fetch Phone"
+                                                        data-hid="{{ h.id }}" data-rid="{{ rcount }}" data-type="phone"
+                                                        data-linkedin="{{ r.linkedin|default:'' }}"
+                                                        data-first="{{ r.first|default:'' }}" data-last="{{ r.last|default:'' }}"
+                                                        data-company="{{ r.company|default:'' }}" data-company_website="{{ r.company_website|default:'' }}"
+                                                        data-job_title="{{ r.job_title|default:'' }}" data-institution="{{ r.institution|default:'' }}"
+                                                        data-location="{{ r.location|default:'' }}" data-company_headquarter="{{ r.company_headquarter|default:'' }}">
+                                                    <i class="fas fa-phone-alt"></i>
+                                                </button>
+                                                {% endif %}
+                                                <button type="button" class="sh-single-save-btn" title="Save to List" data-history="{{ h.id }}" data-rid="{{ rcount }}"><i class="far fa-bookmark"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endwith %}{% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
-                    <!-- Hidden profile templates for drawer -->
-                    {% for r in h.results %}
-                    {% with forloop.counter as rcount %}
+                    <!-- Hidden profile templates -->
+                    {% for r in h.results %}{% with forloop.counter as rcount %}
                     <div id="sh-profile-{{ h.id }}-{{ rcount }}" class="person-profile-tpl" style="display:none;" aria-hidden="true">
                         <div class="drawer-hero">
                             <div class="drawer-hero-top">
                                 <div class="drawer-avatar">
-                                    {% if r.photo %}<img src="{{ r.photo }}" alt="{{ r.first }} {{ r.last }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"><span class="drawer-avatar-initials" style="display:none;">{{ r.first|default:"U"|slice:":1" }}{{ r.last|default:""|slice:":1" }}</span>{% else %}<span class="drawer-avatar-initials">{{ r.first|default:"U"|slice:":1" }}{{ r.last|default:""|slice:":1" }}</span>{% endif %}
+                                    {% if r.photo %}<img src="{{ r.photo }}" alt="{{ r.first }} {{ r.last }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><span class="drawer-avatar-initials" style="display:none;">{{ r.first|default:"U"|slice:":1" }}{{ r.last|default:""|slice:":1" }}</span>{% else %}<span class="drawer-avatar-initials">{{ r.first|default:"U"|slice:":1" }}{{ r.last|default:""|slice:":1" }}</span>{% endif %}
                                 </div>
                                 <div class="drawer-name-block">
-                                    <div class="drawer-name">
-                                        {% if r.linkedin %}<a href="{{ r.linkedin }}" target="_blank" style="color:inherit;text-decoration:none;">{{ r.first }} {{ r.last }}</a><a href="{{ r.linkedin }}" target="_blank" class="li-badge" style="text-decoration:none;">in</a>{% else %}{{ r.first }} {{ r.last }}{% endif %}
-                                    </div>
+                                    <div class="drawer-name">{% if r.linkedin %}<a href="{{ r.linkedin }}" target="_blank" style="color:inherit;text-decoration:none;">{{ r.first }} {{ r.last }}</a><a href="{{ r.linkedin }}" target="_blank" class="li-badge" style="text-decoration:none;">in</a>{% else %}{{ r.first }} {{ r.last }}{% endif %}</div>
                                     {% if r.job_title %}<div class="drawer-job">{{ r.job_title }}</div>{% endif %}
                                 </div>
                             </div>
                             <div class="drawer-meta-row">
                                 {% if r.location %}<div class="drawer-meta-item"><i class="fas fa-map-marker-alt"></i><span>{{ r.location }}</span></div>{% endif %}
                                 {% if r.company_headquarter %}<div class="drawer-meta-item"><i class="fas fa-map-pin"></i><span>{{ r.company_headquarter }}</span></div>{% endif %}
-                                {% if r.department %}<div class="drawer-meta-item"><i class="fas fa-sitemap"></i><span>{{ r.department }}</span></div>{% endif %}
                             </div>
                             <div class="drawer-tag-row">
                                 {% if r.company %}<span class="drawer-tag"><i class="fas fa-building"></i>{% if r.company_website %}<a href="{{ r.company_website }}" target="_blank" style="color:inherit;text-decoration:none;">{{ r.company }}</a>{% else %}{{ r.company }}{% endif %}</span>{% endif %}
@@ -418,51 +402,21 @@
                                 {% if r.linkedin %}<a href="{{ r.linkedin }}" target="_blank" class="drawer-tag li-tag" style="text-decoration:none;"><i class="fab fa-linkedin-in"></i>LinkedIn</a>{% endif %}
                             </div>
                         </div>
-
-                        <!-- Contacts -->
                         <div class="drawer-section">
                             <div class="drawer-section-title">Contacts</div>
                             <div class="drawer-contact-row">
                                 <div class="drawer-contact-left">
                                     <i class="far fa-envelope"></i>
-                                    {% if r.email %}
-                                    <span class="contact-val">{{ r.email }}</span>
-                                    {% else %}
-                                    <span class="contact-blurred">***@***</span>
-                                    <button class="drawer-unlock-link sh-enrich-drawer-btn" type="button"
-                                            data-hid="{{ h.id }}" data-rid="{{ rcount }}" data-type="email"
-                                            data-linkedin="{{ r.linkedin|default:'' }}"
-                                            data-first="{{ r.first|default:'' }}" data-last="{{ r.last|default:'' }}"
-                                            data-company="{{ r.company|default:'' }}" data-company_website="{{ r.company_website|default:'' }}"
-                                            data-job_title="{{ r.job_title|default:'' }}" data-institution="{{ r.institution|default:'' }}"
-                                            data-location="{{ r.location|default:'' }}" data-company_headquarter="{{ r.company_headquarter|default:'' }}">
-                                        Enrich email
-                                    </button>
-                                    {% endif %}
+                                    {% if r.email %}<span class="contact-val">{{ r.email }}</span>{% else %}<span class="contact-blurred">***@***</span><button class="drawer-unlock-link sh-enrich-drawer-btn" type="button" data-hid="{{ h.id }}" data-rid="{{ rcount }}" data-type="email" data-linkedin="{{ r.linkedin|default:'' }}" data-first="{{ r.first|default:'' }}" data-last="{{ r.last|default:'' }}" data-company="{{ r.company|default:'' }}" data-company_website="{{ r.company_website|default:'' }}" data-job_title="{{ r.job_title|default:'' }}" data-institution="{{ r.institution|default:'' }}" data-location="{{ r.location|default:'' }}" data-company_headquarter="{{ r.company_headquarter|default:'' }}">Enrich email</button>{% endif %}
                                 </div>
                             </div>
                             <div class="drawer-contact-row">
                                 <div class="drawer-contact-left">
-                                    <i class="fas fa-phone-alt" style="font-size:12px; margin-left:1px;"></i>
-                                    {% if r.phone %}
-                                    <span class="contact-val">{{ r.phone }}</span>
-                                    {% else %}
-                                    <span class="contact-blurred">**-***-***</span>
-                                    <button class="drawer-unlock-link sh-enrich-drawer-btn" type="button"
-                                            data-hid="{{ h.id }}" data-rid="{{ rcount }}" data-type="phone"
-                                            data-linkedin="{{ r.linkedin|default:'' }}"
-                                            data-first="{{ r.first|default:'' }}" data-last="{{ r.last|default:'' }}"
-                                            data-company="{{ r.company|default:'' }}" data-company_website="{{ r.company_website|default:'' }}"
-                                            data-job_title="{{ r.job_title|default:'' }}" data-institution="{{ r.institution|default:'' }}"
-                                            data-location="{{ r.location|default:'' }}" data-company_headquarter="{{ r.company_headquarter|default:'' }}">
-                                        Enrich Contact
-                                    </button>
-                                    {% endif %}
+                                    <i class="fas fa-phone-alt" style="font-size:12px;margin-left:1px;"></i>
+                                    {% if r.phone %}<span class="contact-val">{{ r.phone }}</span>{% else %}<span class="contact-blurred">**-***-***</span><button class="drawer-unlock-link sh-enrich-drawer-btn" type="button" data-hid="{{ h.id }}" data-rid="{{ rcount }}" data-type="phone" data-linkedin="{{ r.linkedin|default:'' }}" data-first="{{ r.first|default:'' }}" data-last="{{ r.last|default:'' }}" data-company="{{ r.company|default:'' }}" data-company_website="{{ r.company_website|default:'' }}" data-job_title="{{ r.job_title|default:'' }}" data-institution="{{ r.institution|default:'' }}" data-location="{{ r.location|default:'' }}" data-company_headquarter="{{ r.company_headquarter|default:'' }}">Enrich Contact</button>{% endif %}
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Work Experience -->
                         <div class="drawer-section">
                             <div class="drawer-section-title">Work Experience</div>
                             {% if r.total_experience or r.avg_tenure or r.cur_tenure %}
@@ -472,159 +426,82 @@
                                 {% if r.cur_tenure %}<div class="drawer-tenure-card"><div class="tenure-header"><i class="far fa-clock"></i> Current Tenure</div><div class="tenure-value">{{ r.cur_tenure }}</div></div>{% endif %}
                             </div>
                             {% endif %}
-                            {% if r.experience %}
-                                {% for exp in r.experience %}
-                                <div class="drawer-exp-item">
-                                    <div class="drawer-exp-icon">{% if exp.company_insights and exp.company_insights.logo %}<img src="{{ exp.company_insights.logo }}" alt="{{ exp.company }}" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=\'fas fa-building\'></i>'">{% else %}<i class="fas fa-building"></i>{% endif %}</div>
-                                    <div class="drawer-exp-body">
-                                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-                                            <div class="drawer-exp-title">{{ exp.title|default:"" }}</div>
-                                            {% if exp.date_from or exp.date_to %}<div class="drawer-exp-date">{{ exp.date_from|default:"" }}{% if exp.date_from and exp.date_to %} - {% endif %}{{ exp.date_to|default:"" }}</div>{% endif %}
-                                        </div>
-                                        <div class="drawer-exp-company">{% if exp.company_url %}<a href="{{ exp.company_url }}" target="_blank" style="color:inherit;text-decoration:none;">{{ exp.company }}{% if exp.location %} | {{ exp.location }}{% endif %}</a>{% else %}{{ exp.company }}{% if exp.location %} | {{ exp.location }}{% endif %}{% endif %}{% if exp.duration %}<span class="drawer-exp-duration">&middot; {{ exp.duration }}</span>{% endif %}</div>
-                                        {% if exp.company_insights %}
-                                        <div class="drawer-insights-content">
-                                            <div class="ci-title">Company Information</div>
-                                            <div class="ci-row"><div class="ci-label"><i class="far fa-user"></i> Company Size</div><div class="ci-value"><strong>{{ exp.company_insights.size }}</strong></div></div>
-                                            <div class="ci-row"><div class="ci-label"><i class="far fa-building"></i> Industry</div><div class="ci-value"><strong>{{ exp.company_insights.industry }}</strong></div></div>
-                                            <div class="ci-row"><div class="ci-label"><i class="far fa-chart-bar"></i> Revenue</div><div class="ci-value">{{ exp.company_insights.revenue }}</div></div>
-                                            {% if exp.company_insights.specialties %}<div class="ci-row ci-row-chips"><div class="ci-label"><i class="fas fa-hashtag"></i> Specialities</div><div class="ci-chips">{% for s in exp.company_insights.specialties %}<span class="ci-chip">{{ s }}</span>{% endfor %}</div></div>{% endif %}
-                                            <div class="ci-row"><div class="ci-label"><i class="far fa-calendar-alt"></i> Founded</div><div class="ci-value"><strong>{{ exp.company_insights.founded }}</strong></div></div>
-                                            <div class="ci-row"><div class="ci-label"><i class="fas fa-users"></i> LinkedIn Followers</div><div class="ci-value"><strong>{{ exp.company_insights.followers }}</strong></div></div>
-                                        </div>
-                                        <button class="drawer-insights-toggle" type="button" onclick="var c=this.previousElementSibling; c.classList.toggle('open'); this.classList.toggle('open'); this.innerHTML=c.classList.contains('open') ? 'Show Less <i class=\'fas fa-chevron-up\'></i>' : 'View Company Insights <i class=\'fas fa-chevron-down\'></i>';">View Company Insights <i class="fas fa-chevron-down"></i></button>
-                                        {% endif %}
-                                        {% if exp.description %}<ul class="drawer-exp-desc">{% for bullet in exp.description.splitlines %}{% if bullet.strip %}<li>{{ bullet.strip }}</li>{% endif %}{% endfor %}</ul>{% endif %}
-                                    </div>
+                            {% if r.experience %}{% for exp in r.experience %}
+                            <div class="drawer-exp-item">
+                                <div class="drawer-exp-icon">{% if exp.company_insights and exp.company_insights.logo %}<img src="{{ exp.company_insights.logo }}" alt="" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=\'fas fa-building\'></i>'">{% else %}<i class="fas fa-building"></i>{% endif %}</div>
+                                <div class="drawer-exp-body">
+                                    <div style="display:flex;justify-content:space-between;gap:8px;"><div class="drawer-exp-title">{{ exp.title|default:"" }}</div>{% if exp.date_from or exp.date_to %}<div class="drawer-exp-date">{{ exp.date_from|default:"" }}{% if exp.date_from and exp.date_to %} - {% endif %}{{ exp.date_to|default:"" }}</div>{% endif %}</div>
+                                    <div class="drawer-exp-company">{% if exp.company_url %}<a href="{{ exp.company_url }}" target="_blank" style="color:inherit;text-decoration:none;">{{ exp.company }}{% if exp.location %} | {{ exp.location }}{% endif %}</a>{% else %}{{ exp.company }}{% if exp.location %} | {{ exp.location }}{% endif %}{% endif %}{% if exp.duration %}<span class="drawer-exp-duration">&middot; {{ exp.duration }}</span>{% endif %}</div>
+                                    {% if exp.company_insights %}<div class="drawer-insights-content"><div class="ci-title">Company Information</div><div class="ci-row"><div class="ci-label"><i class="far fa-user"></i> Company Size</div><div class="ci-value"><strong>{{ exp.company_insights.size }}</strong></div></div><div class="ci-row"><div class="ci-label"><i class="far fa-building"></i> Industry</div><div class="ci-value"><strong>{{ exp.company_insights.industry }}</strong></div></div><div class="ci-row"><div class="ci-label"><i class="far fa-chart-bar"></i> Revenue</div><div class="ci-value">{{ exp.company_insights.revenue }}</div></div>{% if exp.company_insights.specialties %}<div class="ci-row ci-row-chips"><div class="ci-label"><i class="fas fa-hashtag"></i> Specialities</div><div class="ci-chips">{% for s in exp.company_insights.specialties %}<span class="ci-chip">{{ s }}</span>{% endfor %}</div></div>{% endif %}<div class="ci-row"><div class="ci-label"><i class="far fa-calendar-alt"></i> Founded</div><div class="ci-value"><strong>{{ exp.company_insights.founded }}</strong></div></div><div class="ci-row"><div class="ci-label"><i class="fas fa-users"></i> LinkedIn Followers</div><div class="ci-value"><strong>{{ exp.company_insights.followers }}</strong></div></div></div><button class="drawer-insights-toggle" type="button" onclick="var c=this.previousElementSibling;c.classList.toggle('open');this.classList.toggle('open');this.innerHTML=c.classList.contains('open')?'Show Less <i class=\'fas fa-chevron-up\'></i>':'View Company Insights <i class=\'fas fa-chevron-down\'></i>';">View Company Insights <i class="fas fa-chevron-down"></i></button>{% endif %}
+                                    {% if exp.description %}<ul class="drawer-exp-desc">{% for bullet in exp.description.splitlines %}{% if bullet.strip %}<li>{{ bullet.strip }}</li>{% endif %}{% endfor %}</ul>{% endif %}
                                 </div>
-                                {% endfor %}
-                            {% else %}<div class="drawer-no-data">No work experience available</div>{% endif %}
+                            </div>
+                            {% endfor %}{% else %}<div class="drawer-no-data">No work experience available</div>{% endif %}
                         </div>
-
-                        <!-- Education -->
                         <div class="drawer-section">
                             <div class="drawer-section-title">Education</div>
-                            {% if r.all_education %}{% for edu in r.all_education %}
-                            <div class="drawer-exp-item">
-                                <div class="drawer-exp-icon" style="background:#e8f0f9; border-color:#c5d9f0;"><i class="fas fa-graduation-cap" style="color:#1a73e8; font-size:18px;"></i></div>
-                                <div class="drawer-exp-body"><div class="drawer-exp-title">{{ edu.title|default:"" }}</div>{% if edu.major %}<div class="drawer-edu-major">{{ edu.major }}</div>{% endif %}</div>
-                            </div>
-                            {% endfor %}{% else %}<div class="drawer-no-data">No education data available</div>{% endif %}
+                            {% if r.all_education %}{% for edu in r.all_education %}<div class="drawer-exp-item"><div class="drawer-exp-icon" style="background:#e8f0f9;border-color:#c5d9f0;"><i class="fas fa-graduation-cap" style="color:#1a73e8;font-size:18px;"></i></div><div class="drawer-exp-body"><div class="drawer-exp-title">{{ edu.title|default:"" }}</div>{% if edu.major %}<div class="drawer-edu-major">{{ edu.major }}</div>{% endif %}</div></div>{% endfor %}{% else %}<div class="drawer-no-data">No education data available</div>{% endif %}
                         </div>
-
-                        <!-- Skills -->
                         <div class="drawer-section">
                             <div class="drawer-section-title">Skills</div>
                             {% if r.skills_list %}<div class="drawer-skills-wrap">{% for skill in r.skills_list %}<span class="drawer-skill-chip">{{ skill }}</span>{% endfor %}</div>{% else %}<div class="drawer-no-data">No skills available</div>{% endif %}
                         </div>
-
-                        <!-- Actions -->
                         <div class="drawer-actions" id="sh-drawer-actions-{{ h.id }}-{{ rcount }}">
-                            {% if r.email %}
-                            <form method="POST" action="{% url 'select_person_for_email' %}" class="d-inline" style="flex:1;">
-                                {% csrf_token %}
-                                <input type="hidden" name="first" value="{{ r.first|default:'' }}">
-                                <input type="hidden" name="last" value="{{ r.last|default:'' }}">
-                                <input type="hidden" name="linkedin" value="{{ r.linkedin|default:'' }}">
-                                <input type="hidden" name="company" value="{{ r.company|default:'' }}">
-                                <input type="hidden" name="company_website" value="{{ r.company_website|default:'' }}">
-                                <input type="hidden" name="job_title" value="{{ r.job_title|default:'' }}">
-                                <input type="hidden" name="institution" value="{{ r.institution|default:'' }}">
-                                <input type="hidden" name="location" value="{{ r.location|default:'' }}">
-                                <input type="hidden" name="company_headquarter" value="{{ r.company_headquarter|default:'' }}">
-                                <input type="hidden" name="email" value="{{ r.email }}">
-                                <button type="submit" class="drawer-action-btn primary" style="width:100%;"><i class="far fa-envelope"></i> Send Email</button>
-                            </form>
-                            {% else %}
-                            <button class="drawer-action-btn primary sh-drawer-send-placeholder" type="button" disabled
-                                    style="flex:1; opacity:.5; cursor:not-allowed;"
-                                    data-hid="{{ h.id }}" data-rid="{{ rcount }}"
-                                    data-first="{{ r.first|default:'' }}" data-last="{{ r.last|default:'' }}"
-                                    data-linkedin="{{ r.linkedin|default:'' }}" data-company="{{ r.company|default:'' }}"
-                                    data-company_website="{{ r.company_website|default:'' }}" data-job_title="{{ r.job_title|default:'' }}"
-                                    data-institution="{{ r.institution|default:'' }}" data-location="{{ r.location|default:'' }}"
-                                    data-company_headquarter="{{ r.company_headquarter|default:'' }}">
-                                <i class="far fa-envelope"></i> Send Email
-                            </button>
-                            {% endif %}
+                            {% if r.email %}<form method="POST" action="{% url 'select_person_for_email' %}" class="d-inline" style="flex:1;">{% csrf_token %}<input type="hidden" name="first" value="{{ r.first|default:'' }}"><input type="hidden" name="last" value="{{ r.last|default:'' }}"><input type="hidden" name="linkedin" value="{{ r.linkedin|default:'' }}"><input type="hidden" name="company" value="{{ r.company|default:'' }}"><input type="hidden" name="company_website" value="{{ r.company_website|default:'' }}"><input type="hidden" name="job_title" value="{{ r.job_title|default:'' }}"><input type="hidden" name="institution" value="{{ r.institution|default:'' }}"><input type="hidden" name="location" value="{{ r.location|default:'' }}"><input type="hidden" name="company_headquarter" value="{{ r.company_headquarter|default:'' }}"><input type="hidden" name="email" value="{{ r.email }}"><button type="submit" class="drawer-action-btn primary" style="width:100%;"><i class="far fa-envelope"></i> Send Email</button></form>
+                            {% else %}<button class="drawer-action-btn primary sh-drawer-send-placeholder" type="button" disabled style="flex:1;opacity:.5;cursor:not-allowed;" data-hid="{{ h.id }}" data-rid="{{ rcount }}" data-first="{{ r.first|default:'' }}" data-last="{{ r.last|default:'' }}" data-linkedin="{{ r.linkedin|default:'' }}" data-company="{{ r.company|default:'' }}" data-company_website="{{ r.company_website|default:'' }}" data-job_title="{{ r.job_title|default:'' }}" data-institution="{{ r.institution|default:'' }}" data-location="{{ r.location|default:'' }}" data-company_headquarter="{{ r.company_headquarter|default:'' }}"><i class="far fa-envelope"></i> Send Email</button>{% endif %}
                             {% if r.linkedin %}<a href="{{ r.linkedin }}" target="_blank" class="drawer-action-btn secondary" style="flex:1;"><i class="fab fa-linkedin-in"></i> LinkedIn</a>{% else %}<button class="drawer-action-btn secondary" type="button" disabled style="flex:1;opacity:.5;cursor:not-allowed;"><i class="fab fa-linkedin-in"></i> LinkedIn</button>{% endif %}
                         </div>
                     </div>
-                    {% endwith %}
-                    {% endfor %}
+                    {% endwith %}{% endfor %}
 
                     {% elif h.search_type == 'company' %}
-
                     <!-- Company meta bar -->
-                    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#fff; border:1px solid #e8ebf2; border-radius:12px; margin-bottom:12px;">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <input type="checkbox" class="sh-select-all" data-history="{{ h.id }}">
-                            <i class="fas fa-chevron-down" style="font-size:11px; color:#aab0c4;"></i>
-                            <span class="sh-selected-text-{{ h.id }}" style="font-size:13px; color:#6c757d;">0 selected of {{ h.results|length }} results</span>
-                        </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff;border:1px solid #e8ebf2;border-radius:10px;margin-bottom:10px;box-sizing:border-box;">
+                        <div style="display:flex;align-items:center;gap:8px;"><input type="checkbox" class="sh-select-all" data-history="{{ h.id }}"><span class="sh-selected-text-{{ h.id }}" style="font-size:12px;color:#6c757d;">0 selected of {{ h.results|length }} results</span></div>
                         <button type="button" class="sh-save-list-btn" data-history="{{ h.id }}" style="display:none;"><i class="fas fa-plus"></i> Save to List</button>
                     </div>
-
-                    <div class="table-wrap">
-                        <table class="results-table">
-                            <thead>
-                                <tr><th class="col-chk"></th><th>Company</th><th>Description</th><th>HQ Location</th><th>Industry</th><th>Company Size</th><th>Actions</th></tr>
-                            </thead>
-                            <tbody>
-                                {% for r in h.results %}{% with forloop.counter as rcount %}
-                                <tr id="sh-co-card-{{ h.id }}-{{ rcount }}">
-                                    <td class="col-chk"><input type="checkbox" class="sh-co-row-checkbox" data-history="{{ h.id }}" data-name="{{ r.name|default:''|escape }}" data-linkedin_url="{{ r.linkedin_url|default:''|escape }}" data-website="{{ r.website|default:''|escape }}" data-industry="{{ r.industry|default:''|escape }}" data-description="{{ r.description|default:''|escape }}" data-company_size="{{ r.company_size|default:''|escape }}" data-headquarter="{{ r.headquarter|default:''|escape }}"></td>
-                                    <td class="sh-co-drawer-trigger" data-hid="{{ h.id }}" data-rid="{{ rcount }}">
-                                        <div class="profile-cell">
-                                            {% if r.linkedin_url %}<a href="{{ r.linkedin_url }}" target="_blank" class="avatar-link">{% endif %}
-                                                <div class="company-avatar {% if not r.logo_url %}fallback-avatar{% endif %}">{% if r.logo_url %}<img src="{{ r.logo_url }}" alt="Logo" onerror="this.style.display='none'; this.parentElement.classList.add('fallback-avatar');">{% endif %}<div class="avatar-placeholder"><span class="shape shape1"></span><span class="shape shape2"></span></div></div>
-                                            {% if r.linkedin_url %}</a>{% endif %}
-                                            <div class="profile-info"><span class="profile-name" data-tooltip="{{ r.name }}">{{ r.name|default:"—" }}</span>{% if r.linkedin_url %}<a href="{{ r.linkedin_url }}" target="_blank" class="li-badge">in</a>{% endif %}</div>
-                                        </div>
-                                    </td>
-                                    <td class="cell-truncate cell-desc sh-co-drawer-trigger" data-hid="{{ h.id }}" data-rid="{{ rcount }}">{{ r.description|default:"—" }}</td>
-                                    <td class="cell-truncate sh-co-drawer-trigger" data-hid="{{ h.id }}" data-rid="{{ rcount }}" {% if r.headquarter %}data-tooltip="{{ r.headquarter }}"{% endif %}>{% if r.headquarter %}<span class="cell-icon"><i class="fas fa-map-marker-alt"></i></span>{{ r.headquarter }}{% else %}—{% endif %}</td>
-                                    <td class="cell-truncate sh-co-drawer-trigger" data-hid="{{ h.id }}" data-rid="{{ rcount }}" {% if r.industry %}data-tooltip="{{ r.industry }}"{% endif %}>{% if r.industry %}<span class="cell-icon"><i class="fas fa-industry"></i></span>{{ r.industry }}{% else %}—{% endif %}</td>
-                                    <td class="cell-truncate" {% if r.company_size %}data-tooltip="{{ r.company_size }} employees"{% endif %}>{% if r.company_size %}<span class="cell-icon"><i class="fas fa-users"></i></span>{{ r.company_size }}{% else %}—{% endif %}</td>
-                                    <td>
-                                        <div class="action-icons">
-                                            {% if r.linkedin_url %}<a href="{{ r.linkedin_url }}" target="_blank" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>{% else %}<button type="button" disabled><i class="fab fa-linkedin-in"></i></button>{% endif %}
-                                            {% if r.website %}<a href="{{ r.website }}" target="_blank" title="Website"><i class="fas fa-external-link-alt"></i></a>{% else %}<button type="button" disabled><i class="fas fa-external-link-alt"></i></button>{% endif %}
-                                            <button type="button" class="sh-co-single-save-btn" title="Save to List" data-history="{{ h.id }}" data-rid="{{ rcount }}"><i class="far fa-bookmark"></i></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endwith %}{% endfor %}
-                            </tbody>
-                        </table>
+                    <div class="sh-results-wrap">
+                        <div class="table-wrap">
+                            <table class="results-table">
+                                <thead><tr><th class="col-chk"></th><th>Company</th><th>Description</th><th>HQ Location</th><th>Industry</th><th>Company Size</th><th>Actions</th></tr></thead>
+                                <tbody>
+                                    {% for r in h.results %}{% with forloop.counter as rcount %}
+                                    <tr id="sh-co-card-{{ h.id }}-{{ rcount }}">
+                                        <td class="col-chk"><input type="checkbox" class="sh-co-row-checkbox" data-history="{{ h.id }}" data-name="{{ r.name|default:''|escape }}" data-linkedin_url="{{ r.linkedin_url|default:''|escape }}" data-website="{{ r.website|default:''|escape }}" data-industry="{{ r.industry|default:''|escape }}" data-description="{{ r.description|default:''|escape }}" data-company_size="{{ r.company_size|default:''|escape }}" data-headquarter="{{ r.headquarter|default:''|escape }}"></td>
+                                        <td class="sh-co-drawer-trigger" data-hid="{{ h.id }}" data-rid="{{ rcount }}">
+                                            <div class="profile-cell">
+                                                {% if r.linkedin_url %}<a href="{{ r.linkedin_url }}" target="_blank" class="avatar-link">{% endif %}<div class="company-avatar {% if not r.logo_url %}fallback-avatar{% endif %}">{% if r.logo_url %}<img src="{{ r.logo_url }}" alt="Logo" onerror="this.style.display='none';this.parentElement.classList.add('fallback-avatar');">{% endif %}<div class="avatar-placeholder"><span class="shape shape1"></span><span class="shape shape2"></span></div></div>{% if r.linkedin_url %}</a>{% endif %}
+                                                <div class="profile-info"><span class="profile-name" data-tooltip="{{ r.name }}">{{ r.name|default:"—" }}</span>{% if r.linkedin_url %}<a href="{{ r.linkedin_url }}" target="_blank" class="li-badge">in</a>{% endif %}</div>
+                                            </div>
+                                        </td>
+                                        <td class="cell-truncate sh-co-drawer-trigger" data-hid="{{ h.id }}" data-rid="{{ rcount }}">{{ r.description|default:"—" }}</td>
+                                        <td class="cell-truncate sh-co-drawer-trigger" data-hid="{{ h.id }}" data-rid="{{ rcount }}" {% if r.headquarter %}data-tooltip="{{ r.headquarter }}"{% endif %}>{% if r.headquarter %}<span class="cell-icon"><i class="fas fa-map-marker-alt"></i></span>{{ r.headquarter }}{% else %}—{% endif %}</td>
+                                        <td class="cell-truncate sh-co-drawer-trigger" data-hid="{{ h.id }}" data-rid="{{ rcount }}" {% if r.industry %}data-tooltip="{{ r.industry }}"{% endif %}>{% if r.industry %}<span class="cell-icon"><i class="fas fa-industry"></i></span>{{ r.industry }}{% else %}—{% endif %}</td>
+                                        <td class="cell-truncate">{% if r.company_size %}<span class="cell-icon"><i class="fas fa-users"></i></span>{{ r.company_size }}{% else %}—{% endif %}</td>
+                                        <td><div class="action-icons">{% if r.linkedin_url %}<a href="{{ r.linkedin_url }}" target="_blank" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>{% else %}<button type="button" disabled><i class="fab fa-linkedin-in"></i></button>{% endif %}{% if r.website %}<a href="{{ r.website }}" target="_blank" title="Website"><i class="fas fa-external-link-alt"></i></a>{% else %}<button type="button" disabled><i class="fas fa-external-link-alt"></i></button>{% endif %}<button type="button" class="sh-co-single-save-btn" title="Save to List" data-history="{{ h.id }}" data-rid="{{ rcount }}"><i class="far fa-bookmark"></i></button></div></td>
+                                    </tr>
+                                    {% endwith %}{% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-
-                    <!-- Hidden company profile templates -->
+                    <!-- Company drawer templates -->
                     {% for r in h.results %}{% with forloop.counter as rcount %}
                     <div id="sh-co-profile-{{ h.id }}-{{ rcount }}" class="company-profile-tpl" style="display:none;" aria-hidden="true">
-                        <div style="background:#fff; margin:0 0 16px 0; border-bottom:1px solid #e8ebf2;">
+                        <div style="background:#fff;margin:0 0 16px 0;border-bottom:1px solid #e8ebf2;">
                             <div class="drawer-hero" style="border-bottom:none;">
                                 <div class="drawer-hero-top">
-                                    <div class="drawer-avatar" style="border-radius:10px; border:1px solid #e0e4f0; background:#fff; padding:4px;">
-                                        {% if r.logo_url %}<img src="{{ r.logo_url }}" alt="{{ r.name }}" style="border-radius:6px;object-fit:contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"><span class="drawer-avatar-initials" style="display:none;color:#1a2038;">{{ r.name|default:"C"|slice:":1" }}</span>{% else %}<span class="drawer-avatar-initials" style="color:#1a2038;">{{ r.name|default:"C"|slice:":1" }}</span>{% endif %}
-                                    </div>
-                                    <div class="drawer-name-block">
-                                        <div class="drawer-name">{% if r.linkedin_url %}<a href="{{ r.linkedin_url }}" target="_blank" style="color:inherit;text-decoration:none;">{{ r.name }}</a><a href="{{ r.linkedin_url }}" target="_blank" class="li-badge" style="text-decoration:none;">in</a>{% else %}{{ r.name }}{% endif %}{% if r.website %}<a href="{{ r.website }}" target="_blank" style="margin-left:6px;color:#6a7388;font-size:14px;"><i class="fas fa-link"></i></a>{% endif %}</div>
-                                    </div>
+                                    <div class="drawer-avatar" style="border-radius:10px;border:1px solid #e0e4f0;background:#fff;padding:4px;">{% if r.logo_url %}<img src="{{ r.logo_url }}" alt="{{ r.name }}" style="border-radius:6px;object-fit:contain;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><span class="drawer-avatar-initials" style="display:none;color:#1a2038;">{{ r.name|default:"C"|slice:":1" }}</span>{% else %}<span class="drawer-avatar-initials" style="color:#1a2038;">{{ r.name|default:"C"|slice:":1" }}</span>{% endif %}</div>
+                                    <div class="drawer-name-block"><div class="drawer-name">{% if r.linkedin_url %}<a href="{{ r.linkedin_url }}" target="_blank" style="color:inherit;text-decoration:none;">{{ r.name }}</a><a href="{{ r.linkedin_url }}" target="_blank" class="li-badge" style="text-decoration:none;">in</a>{% else %}{{ r.name }}{% endif %}{% if r.website %}<a href="{{ r.website }}" target="_blank" style="margin-left:6px;color:#6a7388;font-size:14px;"><i class="fas fa-link"></i></a>{% endif %}</div></div>
                                 </div>
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                                     <div class="drawer-meta-item"><i class="fas fa-map-marker-alt"></i><span>{{ r.location_country|default:r.headquarter|default:"—" }}</span></div>
                                     {% if r.linkedin_url %}<a href="{{ r.linkedin_url }}" target="_blank" style="color:#2f6df0;font-size:12.5px;font-weight:600;text-decoration:none;">View Company Profile</a>{% endif %}
                                 </div>
-                                {% if r.description %}
-                                <div style="background:#f4f5fb; border-radius:10px; border:1px solid #e8ebf2; padding:12px 14px;">
-                                    <div style="font-size:13px;color:#4c556f;line-height:1.6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;line-clamp:3;-webkit-box-orient:vertical;" class="drawer-desc-content">{{ r.description }}</div>
-                                    <button type="button" class="drawer-desc-toggle" style="border:none;background:none;color:#6a7388;font-size:13px;font-weight:500;cursor:pointer;padding:0;margin-top:8px;display:inline-flex;align-items:center;gap:6px;font-family:'Inter',sans-serif;"><i class="fas fa-chevron-down" style="font-size:10px;transition:transform 0.2s;"></i><span class="toggle-text">Read More</span></button>
-                                </div>
-                                {% endif %}
+                                {% if r.description %}<div style="background:#f4f5fb;border-radius:10px;border:1px solid #e8ebf2;padding:12px 14px;"><div style="font-size:13px;color:#4c556f;line-height:1.6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;line-clamp:3;-webkit-box-orient:vertical;" class="drawer-desc-content">{{ r.description }}</div><button type="button" class="drawer-desc-toggle" style="border:none;background:none;color:#6a7388;font-size:13px;font-weight:500;cursor:pointer;padding:0;margin-top:8px;display:inline-flex;align-items:center;gap:6px;font-family:'Inter',sans-serif;"><i class="fas fa-chevron-down" style="font-size:10px;transition:transform .2s;"></i><span class="toggle-text">Read More</span></button></div>{% endif %}
                             </div>
                         </div>
-                        <div style="background:#fff; border-top:1px solid #e8ebf2; border-bottom:1px solid #e8ebf2; margin-bottom:16px;">
+                        <div style="background:#fff;border-top:1px solid #e8ebf2;border-bottom:1px solid #e8ebf2;margin-bottom:16px;">
                             <div class="drawer-section" style="border-bottom:none;">
                                 <div style="font-size:16px;font-weight:700;color:#1a2038;margin-bottom:16px;">Basic Details</div>
                                 <div style="display:grid;grid-template-columns:140px 1fr;gap:12px;font-size:13px;color:#4c556f;">
@@ -633,41 +510,29 @@
                                     <div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="far fa-building" style="width:14px;text-align:center;"></i> Industry</div><div style="color:#1a2038;">{{ r.industry|default:"—" }}</div>
                                     <div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="fas fa-link" style="width:14px;text-align:center;"></i> Website</div><div style="color:#1a2038;">{% if r.website %}<a href="{{ r.website }}" target="_blank" style="color:#2f6df0;text-decoration:none;">{{ r.website }}</a>{% else %}—{% endif %}</div>
                                     <div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="fas fa-history" style="width:14px;text-align:center;"></i> Founded at</div><div style="color:#1a2038;">{{ r.found_at|default:"—" }}</div>
-                                    <div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="fas fa-hashtag" style="width:14px;text-align:center;"></i> Specialities</div>
-                                    <div style="display:flex;flex-wrap:wrap;gap:6px;">{% if r.specialties %}{% for sp in r.specialties %}<span style="background:#f0f3ff;color:#4c556f;padding:3px 8px;border-radius:6px;font-size:12px;">{{ sp }}</span>{% endfor %}{% else %}—{% endif %}</div>
-                                    <div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="far fa-compass" style="width:14px;text-align:center;"></i> Tagline</div><div style="color:#1a2038;">{{ r.tagline|default:"—" }}</div>
+                                    <div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="fas fa-hashtag" style="width:14px;text-align:center;"></i> Specialities</div><div style="display:flex;flex-wrap:wrap;gap:6px;">{% if r.specialties %}{% for sp in r.specialties %}<span style="background:#f0f3ff;color:#4c556f;padding:3px 8px;border-radius:6px;font-size:12px;">{{ sp }}</span>{% endfor %}{% else %}—{% endif %}</div>
                                     <div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="fas fa-chart-line" style="width:14px;text-align:center;"></i> Revenue</div><div style="color:#1a2038;">{{ r.revenue|default:"—" }}</div>
                                     <div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="fas fa-users" style="width:14px;text-align:center;"></i> LinkedIn Followers</div><div style="color:#1a2038;">{{ r.linkedin_followers|default:"—" }}</div>
                                 </div>
                             </div>
                         </div>
-                        <div style="background:#fff; border-top:1px solid #e8ebf2; border-bottom:1px solid #e8ebf2; margin-bottom:16px;">
+                        <div style="background:#fff;border-top:1px solid #e8ebf2;border-bottom:1px solid #e8ebf2;margin-bottom:16px;">
                             <div class="drawer-section" style="border-bottom:none;">
                                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
                                     <div style="font-size:16px;font-weight:700;color:#1a2038;">Potential Decision Makers</div>
                                     <a href="#" class="sh-view-employees-link" data-company="{{ r.name|default:''|escape }}" data-location="{{ r.location_country|default:r.headquarter|default:''|escape }}" style="color:#2f6df0;font-size:12.5px;font-weight:600;text-decoration:none;">View All Employees</a>
                                 </div>
-                                {% if r.decision_makers %}
-                                <div style="border:1px solid #e8ebf2;border-radius:10px;background:#fff;overflow:hidden;">
-                                    {% for dm in r.decision_makers %}
-                                    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #e8ebf2;">
-                                        <div style="display:flex;align-items:center;gap:12px;">
-                                            <div class="avatar-circle" style="width:40px;height:40px;"><span class="initials">{{ dm.name|default:"U"|slice:":1" }}</span></div>
-                                            <div><div style="font-size:14px;font-weight:600;color:#1a2038;">{{ dm.name }}</div><div style="font-size:13px;color:#6a7388;margin-top:2px;">{{ dm.title }}</div></div>
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                                {% else %}<div class="drawer-no-data">No potential decision makers found</div>{% endif %}
+                                {% if r.decision_makers %}<div style="border:1px solid #e8ebf2;border-radius:10px;background:#fff;overflow:hidden;">{% for dm in r.decision_makers %}<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid #e8ebf2;"><div class="avatar-circle" style="width:40px;height:40px;"><span class="initials">{{ dm.name|default:"U"|slice:":1" }}</span></div><div><div style="font-size:14px;font-weight:600;color:#1a2038;">{{ dm.name }}</div><div style="font-size:13px;color:#6a7388;margin-top:2px;">{{ dm.title }}</div></div></div>{% endfor %}</div>{% else %}<div class="drawer-no-data">No potential decision makers found</div>{% endif %}
                             </div>
                         </div>
                     </div>
                     {% endwith %}{% endfor %}
-
                     {% endif %}
+
                 </div>
             </div>
             {% endif %}
+
         </div>
         {% endfor %}
     </div>
@@ -675,9 +540,9 @@
     {% else %}
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-body text-center py-5 px-4">
-            <div class="sh-empty-icon mx-auto mb-4"><i class="fas fa-history" style="font-size:30px; color:#667eea;"></i></div>
+            <div class="sh-empty-icon mx-auto mb-4"><i class="fas fa-history" style="font-size:30px;color:#667eea;"></i></div>
             <h5 class="fw-bold mb-2" style="color:#2e374d;">No search history yet</h5>
-            <p style="color:#aab0c4; font-size:13px; max-width:300px; margin:0 auto 28px; line-height:1.6;">Your searches will appear here automatically once you start searching.</p>
+            <p style="color:#aab0c4;font-size:13px;max-width:300px;margin:0 auto 28px;line-height:1.6;">Your searches will appear here automatically once you start searching.</p>
             <div class="d-flex justify-content-center gap-3 flex-wrap">
                 <a href="{% url 'search_people' %}" class="sh-start-btn"><i class="fas fa-user-friends me-2"></i> Search People</a>
                 <a href="{% url 'search_company' %}" class="sh-start-btn sh-start-btn-outline"><i class="fas fa-building me-2"></i> Search Companies</a>
@@ -704,10 +569,8 @@
 <div id="companyDrawer" class="profile-drawer">
     <div class="drawer-header">
         <button id="closeCompanyDrawer" class="drawer-close-btn" title="Close">&times;</button>
-        <div style="display:flex; align-items:center; gap:10px; margin-left:auto;">
-            <a id="shViewEmployeesBtn" href="#" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#2f6df0;text-decoration:none;padding:6px 12px;border:1px solid #c5d8ff;border-radius:8px;background:#eef4ff;">
-                <i class="fas fa-users" style="font-size:12px;"></i> View Employees
-            </a>
+        <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
+            <a id="shViewEmployeesBtn" href="#" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#2f6df0;text-decoration:none;padding:6px 12px;border:1px solid #c5d8ff;border-radius:8px;background:#eef4ff;"><i class="fas fa-users" style="font-size:12px;"></i> View Employees</a>
             <button id="coDrawerSaveToListBtn" class="drawer-save-btn" title="Save to List"><i class="far fa-bookmark"></i></button>
         </div>
     </div>
@@ -721,24 +584,15 @@
 </form>
 
 <!-- ══ SAVE TO LIST MODAL ══ -->
-<div id="saveListModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:10000; align-items:center; justify-content:center;">
-    <div style="width:100%; max-width:450px; background:#fff; border-radius:18px; overflow:hidden; box-shadow:0 18px 50px rgba(0,0,0,0.18);">
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 24px; border-bottom:1px solid #e8ebf2;">
-            <h3 style="margin:0; font-size:20px; font-weight:700;">Save to List</h3>
-            <button type="button" id="closeSaveListModal" style="border:none;background:none;font-size:24px;color:#8c93a3;cursor:pointer;">&times;</button>
-        </div>
+<div id="saveListModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:10000;align-items:center;justify-content:center;">
+    <div style="width:100%;max-width:450px;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.18);">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid #e8ebf2;"><h3 style="margin:0;font-size:20px;font-weight:700;">Save to List</h3><button type="button" id="closeSaveListModal" style="border:none;background:none;font-size:24px;color:#8c93a3;cursor:pointer;">&times;</button></div>
         <div style="padding:24px;">
-            <div style="display:flex; gap:10px; margin-bottom:22px;">
-                <button type="button" id="newListTab" style="flex:1;height:42px;border:none;border-radius:12px;background:#2f6df0;color:#fff;font-weight:700;">+ New List</button>
-                <button type="button" id="existingListTab" style="flex:1;height:42px;border:none;border-radius:12px;background:#eef0f4;color:#2e374d;font-weight:700;">Existing List</button>
-            </div>
+            <div style="display:flex;gap:10px;margin-bottom:22px;"><button type="button" id="newListTab" style="flex:1;height:42px;border:none;border-radius:12px;background:#2f6df0;color:#fff;font-weight:700;">+ New List</button><button type="button" id="existingListTab" style="flex:1;height:42px;border:none;border-radius:12px;background:#eef0f4;color:#2e374d;font-weight:700;">Existing List</button></div>
             <div id="newListSection"><label style="display:block;margin-bottom:8px;font-weight:600;">List Name</label><input type="text" id="newListName" placeholder="Enter list name..." style="width:100%;height:44px;border:1px solid #cfd6e2;border-radius:12px;padding:0 14px;"></div>
             <div id="existingListSection" style="display:none;"><label style="display:block;margin-bottom:8px;font-weight:600;">Select Existing List</label><select id="existingListSelect" style="width:100%;height:44px;border:1px solid #cfd6e2;border-radius:12px;padding:0 14px;"><option value="">Select a list</option></select></div>
         </div>
-        <div style="display:flex;justify-content:flex-end;gap:12px;padding:16px 24px;border-top:1px solid #e8ebf2;background:#fafbfe;">
-            <button type="button" id="cancelSaveListBtn" style="padding:10px 18px;border:1px solid #ccd4e1;border-radius:12px;background:#fff;font-weight:700;">Cancel</button>
-            <button type="button" id="confirmSaveListBtn" style="padding:10px 18px;border:none;border-radius:12px;background:linear-gradient(90deg,#6276ea,#7c4fc8);color:#fff;font-weight:700;">Save to List</button>
-        </div>
+        <div style="display:flex;justify-content:flex-end;gap:12px;padding:16px 24px;border-top:1px solid #e8ebf2;background:#fafbfe;"><button type="button" id="cancelSaveListBtn" style="padding:10px 18px;border:1px solid #ccd4e1;border-radius:12px;background:#fff;font-weight:700;">Cancel</button><button type="button" id="confirmSaveListBtn" style="padding:10px 18px;border:none;border-radius:12px;background:linear-gradient(90deg,#6276ea,#7c4fc8);color:#fff;font-weight:700;">Save to List</button></div>
     </div>
 </div>
 
@@ -760,36 +614,16 @@
 <!-- Clear confirm -->
 <div id="clearConfirmModal" class="sh-modal-overlay" style="display:none;">
     <div class="sh-modal-box">
-        <div class="sh-modal-body">
-            <div class="sh-modal-icon-wrap"><i class="fas fa-trash-alt" style="font-size:22px;color:#e53935;"></i></div>
-            <h5 class="fw-bold mb-2" style="color:#2e374d;">Clear all history?</h5>
-            <p style="font-size:13px;color:#6c757d;margin:0;line-height:1.6;">This will permanently delete all your search history.</p>
-        </div>
-        <div class="sh-modal-footer">
-            <button type="button" id="cancelClearBtn" class="sh-btn-cancel">Cancel</button>
-            <button type="button" id="confirmClearBtn" class="sh-btn-danger"><i class="fas fa-trash-alt me-1"></i> Yes, Clear All</button>
-        </div>
+        <div class="sh-modal-body"><div class="sh-modal-icon-wrap"><i class="fas fa-trash-alt" style="font-size:22px;color:#e53935;"></i></div><h5 class="fw-bold mb-2" style="color:#2e374d;">Clear all history?</h5><p style="font-size:13px;color:#6c757d;margin:0;line-height:1.6;">This will permanently delete all your search history.</p></div>
+        <div class="sh-modal-footer"><button type="button" id="cancelClearBtn" class="sh-btn-cancel">Cancel</button><button type="button" id="confirmClearBtn" class="sh-btn-danger"><i class="fas fa-trash-alt me-1"></i> Yes, Clear All</button></div>
     </div>
 </div>
 
-<!-- Delete single history confirm modal -->
+<!-- Delete single -->
 <div id="deleteHistoryModal" class="sh-modal-overlay" style="display:none;">
     <div class="sh-modal-box">
-        <div class="sh-modal-body">
-            <div class="sh-modal-icon-wrap">
-                <i class="fas fa-trash-alt" style="font-size:22px; color:#e53935;"></i>
-            </div>
-            <h5 class="fw-bold mb-2" style="color:#2e374d;">Delete this search?</h5>
-            <p style="font-size:13px; color:#6c757d; margin:0; line-height:1.6;">
-                This search record will be permanently removed from your history.
-            </p>
-        </div>
-        <div class="sh-modal-footer">
-            <button type="button" id="cancelDeleteHistoryBtn" class="sh-btn-cancel">Cancel</button>
-            <button type="button" id="confirmDeleteHistoryBtn" class="sh-btn-danger">
-                <i class="fas fa-trash-alt me-1"></i> Yes, Delete
-            </button>
-        </div>
+        <div class="sh-modal-body"><div class="sh-modal-icon-wrap"><i class="fas fa-trash-alt" style="font-size:22px;color:#e53935;"></i></div><h5 class="fw-bold mb-2" style="color:#2e374d;">Delete this search?</h5><p style="font-size:13px;color:#6c757d;margin:0;line-height:1.6;">This search record will be permanently removed from your history.</p></div>
+        <div class="sh-modal-footer"><button type="button" id="cancelDeleteHistoryBtn" class="sh-btn-cancel">Cancel</button><button type="button" id="confirmDeleteHistoryBtn" class="sh-btn-danger"><i class="fas fa-trash-alt me-1"></i> Yes, Delete</button></div>
     </div>
 </div>
 
@@ -803,229 +637,73 @@ const SELECT_PERSON_FOR_EMAIL_URL = "{% url 'select_person_for_email' %}";
 function getCookie(n){let v=null;if(document.cookie){document.cookie.split(";").forEach(c=>{c=c.trim();if(c.startsWith(n+"="))v=decodeURIComponent(c.substring(n.length+1));});}return v;}
 function escapeHtml(v){return String(v||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");}
 
-// Toast
 const customMessage=document.getElementById("customMessage"),customMessageText=document.getElementById("customMessageText"),closeCustomMessage=document.getElementById("closeCustomMessage");
 let cmt;
 function showMessage(msg,type="success"){if(!customMessage||!customMessageText)return;customMessageText.textContent=msg;customMessage.classList.remove("custom-message-success","custom-message-error");customMessage.classList.add(type==="error"?"custom-message-error":"custom-message-success");customMessage.style.display="block";clearTimeout(cmt);cmt=setTimeout(()=>customMessage.style.display="none",4000);}
 if(closeCustomMessage)closeCustomMessage.addEventListener("click",()=>{customMessage.style.display="none";clearTimeout(cmt);});
 
-function toggleResults(btn,panelId){const p=document.getElementById(panelId);if(!p)return;const o=p.style.display!=="none";p.style.display=o?"none":"block";btn.classList.toggle("open",!o);btn.innerHTML=o?'<i class="fas fa-chevron-down me-1" style="font-size:10px;"></i> View Results':'<i class="fas fa-chevron-up me-1" style="font-size:10px;"></i> Hide Results';}
-
-// ── Build POST send email form ──
-function buildSendEmailForm(person, csrfToken) {
-    const form = document.createElement("form");
-    form.method="POST"; form.action=SELECT_PERSON_FOR_EMAIL_URL;
-    form.className="d-inline"; form.style.flex="1";
-    const fields={csrfmiddlewaretoken:csrfToken,first:person.first||"",last:person.last||"",linkedin:person.linkedin||"",company:person.company||"",company_website:person.company_website||"",job_title:person.job_title||"",institution:person.institution||"",location:person.location||"",company_headquarter:person.company_headquarter||"",email:person.email||""};
-    Object.keys(fields).forEach(k=>{const i=document.createElement("input");i.type="hidden";i.name=k;i.value=fields[k];form.appendChild(i);});
-    const btn=document.createElement("button");btn.type="submit";btn.className="drawer-action-btn primary";btn.style.width="100%";btn.innerHTML='<i class="far fa-envelope"></i> Send Email';
-    form.appendChild(btn);return form;
+function toggleResults(btn,panelId){
+    const p=document.getElementById(panelId);if(!p)return;
+    const o=p.style.display!=="none";
+    p.style.display=o?"none":"block";
+    btn.classList.toggle("open",!o);
+    btn.innerHTML=o?'<i class="fas fa-chevron-down me-1" style="font-size:10px;"></i>View Results':'<i class="fas fa-chevron-up me-1" style="font-size:10px;"></i>Hide Results';
 }
 
-// ══ ENRICH (email OR phone) — handles both table buttons and drawer buttons ══
-document.addEventListener("click", async function(e) {
-    const btn = e.target.closest(".sh-enrich-btn, .sh-enrich-drawer-btn");
-    if (!btn) return;
+function buildSendEmailForm(person,csrfToken){const form=document.createElement("form");form.method="POST";form.action=SELECT_PERSON_FOR_EMAIL_URL;form.className="d-inline";form.style.flex="1";const fields={csrfmiddlewaretoken:csrfToken,first:person.first||"",last:person.last||"",linkedin:person.linkedin||"",company:person.company||"",company_website:person.company_website||"",job_title:person.job_title||"",institution:person.institution||"",location:person.location||"",company_headquarter:person.company_headquarter||"",email:person.email||""};Object.keys(fields).forEach(k=>{const i=document.createElement("input");i.type="hidden";i.name=k;i.value=fields[k];form.appendChild(i);});const btn=document.createElement("button");btn.type="submit";btn.className="drawer-action-btn primary";btn.style.width="100%";btn.innerHTML='<i class="far fa-envelope"></i> Send Email';form.appendChild(btn);return form;}
 
-    const hid      = btn.getAttribute("data-hid");
-    const rid      = btn.getAttribute("data-rid");
-    const enrichType = btn.getAttribute("data-type") || "email";
-    const linkedin = btn.getAttribute("data-linkedin") || "";
-
-    if (!linkedin) { showMessage("No LinkedIn URL for this person.", "error"); return; }
-
-    const origHTML = btn.innerHTML;
-    btn.innerHTML  = '<i class="fas fa-spinner fa-spin"></i>';
-    btn.disabled   = true;
-
-    const loader = document.getElementById("enrichLoader");
-    if (loader) loader.style.display = "flex";
-
-    const fd = new FormData();
-    fd.append("csrfmiddlewaretoken", getCookie("csrftoken"));
-    fd.append("linkedin_url",        linkedin);
-    fd.append("first",               btn.getAttribute("data-first")               || "");
-    fd.append("last",                btn.getAttribute("data-last")                || "");
-    fd.append("company",             btn.getAttribute("data-company")             || "");
-    fd.append("company_website",     btn.getAttribute("data-company_website")     || "");
-    fd.append("job_title",           btn.getAttribute("data-job_title")           || "");
-    fd.append("institution",         btn.getAttribute("data-institution")         || "");
-    fd.append("location",            btn.getAttribute("data-location")            || "");
-    fd.append("company_headquarter", btn.getAttribute("data-company_headquarter") || "");
-    fd.append("card_id",             rid);
-    fd.append("enrich_type",         enrichType);
-
-    try {
-        const resp = await fetch(ENRICH_PERSON_URL, {
-            method:"POST",
-            headers:{"X-CSRFToken":getCookie("csrftoken"),"X-Requested-With":"XMLHttpRequest"},
-            body: fd
-        });
-        const data = await resp.json();
-        if (loader) loader.style.display = "none";
-
+// ENRICH
+document.addEventListener("click",async function(e){
+    const btn=e.target.closest(".sh-enrich-btn,.sh-enrich-drawer-btn");if(!btn)return;
+    const hid=btn.getAttribute("data-hid"),rid=btn.getAttribute("data-rid"),enrichType=btn.getAttribute("data-type")||"email",linkedin=btn.getAttribute("data-linkedin")||"";
+    if(!linkedin){showMessage("No LinkedIn URL for this person.","error");return;}
+    const origHTML=btn.innerHTML;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';btn.disabled=true;
+    const loader=document.getElementById("enrichLoader");if(loader)loader.style.display="flex";
+    const fd=new FormData();
+    fd.append("csrfmiddlewaretoken",getCookie("csrftoken"));fd.append("linkedin_url",linkedin);
+    fd.append("first",btn.getAttribute("data-first")||"");fd.append("last",btn.getAttribute("data-last")||"");
+    fd.append("company",btn.getAttribute("data-company")||"");fd.append("company_website",btn.getAttribute("data-company_website")||"");
+    fd.append("job_title",btn.getAttribute("data-job_title")||"");fd.append("institution",btn.getAttribute("data-institution")||"");
+    fd.append("location",btn.getAttribute("data-location")||"");fd.append("company_headquarter",btn.getAttribute("data-company_headquarter")||"");
+    fd.append("card_id",rid);fd.append("enrich_type",enrichType);
+    try{
+        const resp=await fetch(ENRICH_PERSON_URL,{method:"POST",headers:{"X-CSRFToken":getCookie("csrftoken"),"X-Requested-With":"XMLHttpRequest"},body:fd});
+        const data=await resp.json();if(loader)loader.style.display="none";
         if (!data.success) {
-            showMessage(data.error || "Could not fetch contact.", "error");
+            if (data.limit_reached) {
+                slShowModal(data.credits || 0);
+            } else {
+                showMessage(data.error || "Could not fetch contact.", "error");
+            }
             btn.innerHTML = origHTML; btn.disabled = false; return;
         }
 
-        const person  = data.person || {};
-        const emails  = person.emails || [];
-        const phones  = person.phones || [];
-        const firstEmail = typeof emails[0]==="string" ? emails[0] : (emails[0]&&emails[0].email ? emails[0].email : "");
-        const firstPhone = typeof phones[0]==="string" ? phones[0] : (phones[0]&&phones[0].number ? phones[0].number : "");
-
-        // Build full person data from button attributes
-        const personData = {
-            first:               btn.getAttribute("data-first")               || "",
-            last:                btn.getAttribute("data-last")                || "",
-            linkedin:            linkedin,
-            company:             btn.getAttribute("data-company")             || "",
-            company_website:     btn.getAttribute("data-company_website")     || "",
-            job_title:           btn.getAttribute("data-job_title")           || "",
-            institution:         btn.getAttribute("data-institution")         || "",
-            location:            btn.getAttribute("data-location")            || "",
-            company_headquarter: btn.getAttribute("data-company_headquarter") || "",
-            email:               firstEmail,
-            phone:               firstPhone,
-        };
-
-        // ── Update checkbox data attributes ──
-        const allCbs = document.querySelectorAll(`.sh-row-checkbox[data-history="${hid}"]`);
-        const cb = allCbs[parseInt(rid) - 1];
-        if (cb) {
-            if (firstEmail) cb.setAttribute("data-email", firstEmail);
-            if (firstPhone) cb.setAttribute("data-phone", firstPhone);
+        // Update credit count if returned
+        if (typeof data.credits === 'number') {
+            slUpdatePill(data.credits);
         }
-        if (currentPDrawerPerson) {
-            if (firstEmail) currentPDrawerPerson.email = firstEmail;
-            if (firstPhone) currentPDrawerPerson.phone = firstPhone;
-        }
-
-        // ── Update Email column in table ──
-        if (firstEmail) {
-            const emailCol = document.querySelector(`.sh-email-col-${hid}-${rid}`);
-            if (emailCol) emailCol.innerHTML = `<span class="sh-email-pill"><i class="far fa-envelope me-1"></i>${escapeHtml(firstEmail)}</span>`;
-        }
-
-        // ── Update Phone column in table ──
-        if (firstPhone) {
-            const phoneCol = document.querySelector(`.sh-phone-col-${hid}-${rid}`);
-            if (phoneCol) phoneCol.innerHTML = `<span class="sh-phone-pill"><i class="fas fa-phone-alt me-1" style="font-size:10px;"></i>${escapeHtml(firstPhone)}</span>`;
-        }
-
-        // ── Update action buttons in table row ──
-        const tableRow = document.getElementById(`sh-card-${hid}-${rid}`);
-        if (tableRow) {
-            const actionDiv = tableRow.querySelector(".action-icons");
-            if (actionDiv) {
-                if (firstEmail && enrichType === "email") {
-                    // Replace envelope enrich btn with Send Email form
-                    const emailEnrichBtn = actionDiv.querySelector('.sh-enrich-btn[data-type="email"]');
-                    if (emailEnrichBtn) {
-                        const newForm = document.createElement("form");
-                        newForm.method = "POST"; newForm.action = SELECT_PERSON_FOR_EMAIL_URL;
-                        newForm.className = "d-inline";
-                        newForm.innerHTML = `
-                            <input type="hidden" name="csrfmiddlewaretoken" value="${escapeHtml(getCookie('csrftoken'))}">
-                            <input type="hidden" name="first" value="${escapeHtml(personData.first)}">
-                            <input type="hidden" name="last" value="${escapeHtml(personData.last)}">
-                            <input type="hidden" name="linkedin" value="${escapeHtml(personData.linkedin)}">
-                            <input type="hidden" name="company" value="${escapeHtml(personData.company)}">
-                            <input type="hidden" name="company_website" value="${escapeHtml(personData.company_website)}">
-                            <input type="hidden" name="job_title" value="${escapeHtml(personData.job_title)}">
-                            <input type="hidden" name="institution" value="${escapeHtml(personData.institution)}">
-                            <input type="hidden" name="location" value="${escapeHtml(personData.location)}">
-                            <input type="hidden" name="company_headquarter" value="${escapeHtml(personData.company_headquarter)}">
-                            <input type="hidden" name="email" value="${escapeHtml(firstEmail)}">
-                            <button type="submit" class="send-email-col-btn" title="Send Email"><i class="far fa-envelope me-1"></i>Send Email</button>`;
-                        emailEnrichBtn.replaceWith(newForm);
-                    }
-                }
-                if (firstPhone && enrichType === "phone") {
-                    // Replace phone enrich btn with disabled fetched btn
-                    const phoneEnrichBtn = actionDiv.querySelector('.sh-enrich-btn[data-type="phone"]');
-                    if (phoneEnrichBtn) {
-                        const disabledBtn = document.createElement("button");
-                        disabledBtn.type = "button"; disabledBtn.title = "Phone fetched";
-                        disabledBtn.disabled = true; disabledBtn.style.cursor = "default";
-                        disabledBtn.innerHTML = '<i class="fas fa-phone-alt"></i>';
-                        phoneEnrichBtn.replaceWith(disabledBtn);
-                    }
-                }
-            }
-        }
-
-        // ── Update live drawer contact rows ──
-        const drawerContactRows = profileDrawerContent ? profileDrawerContent.querySelectorAll(".drawer-contact-row") : [];
-        drawerContactRows.forEach(row => {
-            const enrichDrawerBtn = row.querySelector(".sh-enrich-drawer-btn");
-            if (!enrichDrawerBtn) return;
-            const rowType = enrichDrawerBtn.getAttribute("data-type");
-            if (rowType === "email" && firstEmail) {
-                const cl = row.querySelector(".drawer-contact-left");
-                if (cl) cl.innerHTML = `<i class="far fa-envelope"></i> <span class="contact-val">${escapeHtml(firstEmail)}</span>`;
-            }
-            if (rowType === "phone" && firstPhone) {
-                const cl = row.querySelector(".drawer-contact-left");
-                if (cl) cl.innerHTML = `<i class="fas fa-phone-alt" style="font-size:12px;margin-left:1px;"></i> <span class="contact-val">${escapeHtml(firstPhone)}</span>`;
-            }
-        });
-
-        // ── Replace Send Email placeholder in drawer if email fetched ──
-        if (firstEmail && enrichType === "email") {
-            const placeholder = profileDrawerContent ? profileDrawerContent.querySelector(".sh-drawer-send-placeholder") : null;
-            if (placeholder) {
-                personData.email = firstEmail;
-                const newForm = buildSendEmailForm(personData, getCookie("csrftoken"));
-                placeholder.replaceWith(newForm);
-            }
-        }
-
-        // ── Update hidden profile template ──
-        const tpl = document.getElementById(`sh-profile-${hid}-${rid}`);
-        if (tpl) {
-            if (firstEmail && enrichType === "email") {
-                const blurred = tpl.querySelector(".drawer-contact-row .drawer-contact-left .contact-blurred");
-                if (blurred) { blurred.className="contact-val"; blurred.textContent=firstEmail; }
-                const enrichTplBtn = tpl.querySelector('.sh-enrich-drawer-btn[data-type="email"]');
-                if (enrichTplBtn) enrichTplBtn.remove();
-                // Update Send Email in template actions
-                const tplActions = tpl.querySelector(".drawer-actions");
-                if (tplActions) {
-                    const ph = tplActions.querySelector(".sh-drawer-send-placeholder");
-                    if (ph) {
-                        personData.email = firstEmail;
-                        const nf = buildSendEmailForm(personData, getCookie("csrftoken"));
-                        ph.replaceWith(nf);
-                    }
-                }
-            }
-            if (firstPhone && enrichType === "phone") {
-                // Find phone contact row in template
-                const phoneRows = tpl.querySelectorAll(".drawer-contact-row");
-                phoneRows.forEach(row => {
-                    const eb = row.querySelector('.sh-enrich-drawer-btn[data-type="phone"]');
-                    if (eb) {
-                        const cl = row.querySelector(".drawer-contact-left");
-                        if (cl) cl.innerHTML = `<i class="fas fa-phone-alt" style="font-size:12px;margin-left:1px;"></i> <span class="contact-val">${escapeHtml(firstPhone)}</span>`;
-                        eb.remove();
-                    }
-                });
-            }
-        }
-
-        showMessage(enrichType === "email" ? "Email fetched successfully!" : "Phone fetched successfully!", "success");
-
-    } catch(err) {
-        if(loader) loader.style.display="none";
-        btn.innerHTML=origHTML; btn.disabled=false;
-        showMessage("Server error while fetching contact.", "error");
-        console.error(err);
-    }
+        const person=data.person||{},emails=person.emails||[],phones=person.phones||[];
+        const firstEmail=typeof emails[0]==="string"?emails[0]:(emails[0]&&emails[0].email?emails[0].email:"");
+        const firstPhone=typeof phones[0]==="string"?phones[0]:(phones[0]&&phones[0].number?phones[0].number:"");
+        const personData={first:btn.getAttribute("data-first")||"",last:btn.getAttribute("data-last")||"",linkedin:linkedin,company:btn.getAttribute("data-company")||"",company_website:btn.getAttribute("data-company_website")||"",job_title:btn.getAttribute("data-job_title")||"",institution:btn.getAttribute("data-institution")||"",location:btn.getAttribute("data-location")||"",company_headquarter:btn.getAttribute("data-company_headquarter")||"",email:firstEmail,phone:firstPhone};
+        const allCbs=document.querySelectorAll(`.sh-row-checkbox[data-history="${hid}"]`);
+        const cb=allCbs[parseInt(rid)-1];
+        if(cb){if(firstEmail)cb.setAttribute("data-email",firstEmail);if(firstPhone)cb.setAttribute("data-phone",firstPhone);}
+        if(currentPDrawerPerson){if(firstEmail)currentPDrawerPerson.email=firstEmail;if(firstPhone)currentPDrawerPerson.phone=firstPhone;}
+        if(firstEmail){const ec=document.querySelector(`.sh-email-col-${hid}-${rid}`);if(ec)ec.innerHTML=`<span class="sh-email-pill"><i class="far fa-envelope me-1"></i>${escapeHtml(firstEmail)}</span>`;}
+        if(firstPhone){const pc=document.querySelector(`.sh-phone-col-${hid}-${rid}`);if(pc)pc.innerHTML=`<span class="sh-phone-pill"><i class="fas fa-phone-alt me-1" style="font-size:10px;"></i>${escapeHtml(firstPhone)}</span>`;}
+        const tableRow=document.getElementById(`sh-card-${hid}-${rid}`);
+        if(tableRow){const actionDiv=tableRow.querySelector(".action-icons");if(actionDiv){if(firstEmail&&enrichType==="email"){const eb=actionDiv.querySelector('.sh-enrich-btn[data-type="email"]');if(eb){const nf=document.createElement("form");nf.method="POST";nf.action=SELECT_PERSON_FOR_EMAIL_URL;nf.className="d-inline";nf.innerHTML=`<input type="hidden" name="csrfmiddlewaretoken" value="${escapeHtml(getCookie('csrftoken'))}"><input type="hidden" name="first" value="${escapeHtml(personData.first)}"><input type="hidden" name="last" value="${escapeHtml(personData.last)}"><input type="hidden" name="linkedin" value="${escapeHtml(personData.linkedin)}"><input type="hidden" name="company" value="${escapeHtml(personData.company)}"><input type="hidden" name="company_website" value="${escapeHtml(personData.company_website)}"><input type="hidden" name="job_title" value="${escapeHtml(personData.job_title)}"><input type="hidden" name="institution" value="${escapeHtml(personData.institution)}"><input type="hidden" name="location" value="${escapeHtml(personData.location)}"><input type="hidden" name="company_headquarter" value="${escapeHtml(personData.company_headquarter)}"><input type="hidden" name="email" value="${escapeHtml(firstEmail)}"><button type="submit" class="send-email-col-btn" title="Send Email"><i class="far fa-envelope me-1"></i>Send Email</button>`;eb.replaceWith(nf);}}if(firstPhone&&enrichType==="phone"){const pb=actionDiv.querySelector('.sh-enrich-btn[data-type="phone"]');if(pb){const db=document.createElement("button");db.type="button";db.title="Phone fetched";db.disabled=true;db.style.cursor="default";db.innerHTML='<i class="fas fa-phone-alt"></i>';pb.replaceWith(db);}}}}
+        const drawerContactRows=profileDrawerContent?profileDrawerContent.querySelectorAll(".drawer-contact-row"):[];
+        drawerContactRows.forEach(row=>{const eb=row.querySelector(".sh-enrich-drawer-btn");if(!eb)return;const rt=eb.getAttribute("data-type");if(rt==="email"&&firstEmail){const cl=row.querySelector(".drawer-contact-left");if(cl)cl.innerHTML=`<i class="far fa-envelope"></i> <span class="contact-val">${escapeHtml(firstEmail)}</span>`;}if(rt==="phone"&&firstPhone){const cl=row.querySelector(".drawer-contact-left");if(cl)cl.innerHTML=`<i class="fas fa-phone-alt" style="font-size:12px;margin-left:1px;"></i> <span class="contact-val">${escapeHtml(firstPhone)}</span>`;}});
+        if(firstEmail&&enrichType==="email"){const ph=profileDrawerContent?profileDrawerContent.querySelector(".sh-drawer-send-placeholder"):null;if(ph){personData.email=firstEmail;const nf=buildSendEmailForm(personData,getCookie("csrftoken"));ph.replaceWith(nf);}}
+        const tpl=document.getElementById(`sh-profile-${hid}-${rid}`);
+        if(tpl){if(firstEmail&&enrichType==="email"){const bl=tpl.querySelector(".drawer-contact-row .drawer-contact-left .contact-blurred");if(bl){bl.className="contact-val";bl.textContent=firstEmail;}const et=tpl.querySelector('.sh-enrich-drawer-btn[data-type="email"]');if(et)et.remove();const ta=tpl.querySelector(".drawer-actions");if(ta){const ph=ta.querySelector(".sh-drawer-send-placeholder");if(ph){personData.email=firstEmail;const nf=buildSendEmailForm(personData,getCookie("csrftoken"));ph.replaceWith(nf);}}}if(firstPhone&&enrichType==="phone"){tpl.querySelectorAll(".drawer-contact-row").forEach(row=>{const eb=row.querySelector('.sh-enrich-drawer-btn[data-type="phone"]');if(eb){const cl=row.querySelector(".drawer-contact-left");if(cl)cl.innerHTML=`<i class="fas fa-phone-alt" style="font-size:12px;margin-left:1px;"></i> <span class="contact-val">${escapeHtml(firstPhone)}</span>`;eb.remove();}});}}
+        showMessage(enrichType==="email"?"Email fetched successfully!":"Phone fetched successfully!","success");
+    }catch(err){if(loader)loader.style.display="none";btn.innerHTML=origHTML;btn.disabled=false;showMessage("Server error.","error");console.error(err);}
 });
 
-// ══ MODAL ══
+// MODAL
 const saveListModal=document.getElementById("saveListModal"),closeSaveListModal=document.getElementById("closeSaveListModal"),cancelSaveListBtn=document.getElementById("cancelSaveListBtn"),confirmSaveListBtn=document.getElementById("confirmSaveListBtn"),newListTab=document.getElementById("newListTab"),existingListTab=document.getElementById("existingListTab"),newListSection=document.getElementById("newListSection"),existingListSection=document.getElementById("existingListSection"),newListName=document.getElementById("newListName"),existingListSelect=document.getElementById("existingListSelect");
 let activeListMode="new",pendingPeopleForSave=[],pendingCompaniesForSave=[],saveMode="people";
 function openModal(){if(saveListModal)saveListModal.style.display="flex";}
@@ -1037,107 +715,39 @@ if(cancelSaveListBtn)cancelSaveListBtn.addEventListener("click",closeModal);
 if(newListTab)newListTab.addEventListener("click",()=>setTab("new"));
 if(existingListTab)existingListTab.addEventListener("click",async()=>{setTab("existing");await loadExistingLists();});
 
-if(confirmSaveListBtn){
-    confirmSaveListBtn.addEventListener("click",async function(){
-        if(saveMode==="people"){
-            if(!pendingPeopleForSave.length){showMessage("Please select at least one person.","error");return;}
-            const payload={list_type:activeListMode,people:pendingPeopleForSave};
-            if(activeListMode==="new"){const n=newListName?newListName.value.trim():"";if(!n){showMessage("Please enter a list name.","error");return;}payload.list_name=n;}
-            else{const id=existingListSelect?existingListSelect.value:"";if(!id){showMessage("Please select an existing list.","error");return;}payload.list_id=id;}
-            try{confirmSaveListBtn.disabled=true;confirmSaveListBtn.innerHTML=`<span class="spinner-border spinner-border-sm me-2"></span>Saving & Enriching...`;
-            const r=await fetch(SAVE_ENRICH_CAMPAIGN_URL,{method:"POST",headers:{"Content-Type":"application/json","X-CSRFToken":getCookie("csrftoken"),"X-Requested-With":"XMLHttpRequest"},body:JSON.stringify(payload)});
-            const d=await r.json();if(!d.success){showMessage(d.error||"Could not save.","error");return;}
-            confirmSaveListBtn.innerHTML=`✅ Done! Redirecting...`;showMessage(d.message,"success");closeModal();setTimeout(()=>window.location.href=d.redirect_url,1500);}
-            catch(e){showMessage("Server error.","error");}
-            finally{if(confirmSaveListBtn.innerHTML.includes("Redirecting"))return;confirmSaveListBtn.disabled=false;confirmSaveListBtn.innerHTML="Save to List";}
-        } else {
-            if(!pendingCompaniesForSave.length){showMessage("Please select at least one company.","error");return;}
-            const payload={list_type:activeListMode,companies:pendingCompaniesForSave};
-            if(activeListMode==="new"){const n=newListName?newListName.value.trim():"";if(!n){showMessage("Please enter a list name.","error");return;}payload.list_name=n;}
-            else{const id=existingListSelect?existingListSelect.value:"";if(!id){showMessage("Please select an existing list.","error");return;}payload.list_id=id;}
-            try{confirmSaveListBtn.disabled=true;confirmSaveListBtn.textContent="Saving...";
-            const r=await fetch(SAVE_COMPANIES_TO_LIST_URL,{method:"POST",headers:{"Content-Type":"application/json","X-CSRFToken":getCookie("csrftoken"),"X-Requested-With":"XMLHttpRequest"},body:JSON.stringify(payload)});
-            const d=await r.json();if(!d.success){showMessage(d.error||"Could not save.","error");return;}showMessage(d.message||"Saved.","success");closeModal();}
-            catch(e){showMessage("Server error.","error");}
-            finally{confirmSaveListBtn.disabled=false;confirmSaveListBtn.textContent="Save to List";}
-        }
-    });
-}
+if(confirmSaveListBtn){confirmSaveListBtn.addEventListener("click",async function(){
+    if(saveMode==="people"){
+        if(!pendingPeopleForSave.length){showMessage("Please select at least one person.","error");return;}
+        const payload={list_type:activeListMode,people:pendingPeopleForSave};
+        if(activeListMode==="new"){const n=newListName?newListName.value.trim():"";if(!n){showMessage("Please enter a list name.","error");return;}payload.list_name=n;}else{const id=existingListSelect?existingListSelect.value:"";if(!id){showMessage("Please select an existing list.","error");return;}payload.list_id=id;}
+        try{confirmSaveListBtn.disabled=true;confirmSaveListBtn.innerHTML=`<span class="spinner-border spinner-border-sm me-2"></span>Saving & Enriching...`;
+        const r=await fetch(SAVE_ENRICH_CAMPAIGN_URL,{method:"POST",headers:{"Content-Type":"application/json","X-CSRFToken":getCookie("csrftoken"),"X-Requested-With":"XMLHttpRequest"},body:JSON.stringify(payload)});
+        const d=await r.json();if(!d.success){showMessage(d.error||"Could not save.","error");return;}
+        confirmSaveListBtn.innerHTML=`✅ Done! Redirecting...`;showMessage(d.message,"success");closeModal();setTimeout(()=>window.location.href=d.redirect_url,1500);}
+        catch(e){showMessage("Server error.","error");}finally{if(confirmSaveListBtn.innerHTML.includes("Redirecting"))return;confirmSaveListBtn.disabled=false;confirmSaveListBtn.innerHTML="Save to List";}
+    }else{
+        if(!pendingCompaniesForSave.length){showMessage("Please select at least one company.","error");return;}
+        const payload={list_type:activeListMode,companies:pendingCompaniesForSave};
+        if(activeListMode==="new"){const n=newListName?newListName.value.trim():"";if(!n){showMessage("Please enter a list name.","error");return;}payload.list_name=n;}else{const id=existingListSelect?existingListSelect.value:"";if(!id){showMessage("Please select an existing list.","error");return;}payload.list_id=id;}
+        try{confirmSaveListBtn.disabled=true;confirmSaveListBtn.textContent="Saving...";
+        const r=await fetch(SAVE_COMPANIES_TO_LIST_URL,{method:"POST",headers:{"Content-Type":"application/json","X-CSRFToken":getCookie("csrftoken"),"X-Requested-With":"XMLHttpRequest"},body:JSON.stringify(payload)});
+        const d=await r.json();if(!d.success){showMessage(d.error||"Could not save.","error");return;}showMessage(d.message||"Saved.","success");closeModal();}
+        catch(e){showMessage("Server error.","error");}finally{confirmSaveListBtn.disabled=false;confirmSaveListBtn.textContent="Save to List";}
+    }
+});}
 
 document.addEventListener("DOMContentLoaded",function(){
-    // Select-all
-    document.querySelectorAll(".sh-select-all").forEach(sa=>{
-        const hid=sa.getAttribute("data-history");
-        sa.addEventListener("change",function(){
-            document.querySelectorAll(`.sh-row-checkbox[data-history="${hid}"],.sh-co-row-checkbox[data-history="${hid}"]`).forEach(cb=>cb.checked=sa.checked);
-            updatePeopleSelUI(hid);updateCoSelUI(hid);
-        });
-    });
+    document.querySelectorAll(".sh-select-all").forEach(sa=>{const hid=sa.getAttribute("data-history");sa.addEventListener("change",function(){document.querySelectorAll(`.sh-row-checkbox[data-history="${hid}"],.sh-co-row-checkbox[data-history="${hid}"]`).forEach(cb=>cb.checked=sa.checked);updatePeopleSelUI(hid);updateCoSelUI(hid);});});
     document.querySelectorAll(".sh-row-checkbox").forEach(cb=>cb.addEventListener("change",()=>updatePeopleSelUI(cb.getAttribute("data-history"))));
     document.querySelectorAll(".sh-co-row-checkbox").forEach(cb=>cb.addEventListener("change",()=>updateCoSelUI(cb.getAttribute("data-history"))));
-
-    // Bulk save buttons
-    document.querySelectorAll(".sh-save-list-btn").forEach(btn=>{
-        btn.addEventListener("click",async function(){
-            const hid=btn.getAttribute("data-history");
-            const isCo=document.querySelector(`.sh-co-row-checkbox[data-history="${hid}"]`);
-            if(isCo){saveMode="company";pendingCompaniesForSave=collectComp(hid);}else{saveMode="people";pendingPeopleForSave=collectPeople(hid);}
-            const pending=saveMode==="company"?pendingCompaniesForSave:pendingPeopleForSave;
-            if(!pending.length){showMessage("Please select at least one.","error");return;}
-            await loadExistingLists();setTab("new");openModal();
-        });
-    });
-
-    // People single bookmark
-    document.addEventListener("click",function(e){
-        const btn=e.target.closest(".sh-single-save-btn");if(!btn)return;
-        const hid=btn.getAttribute("data-history"),rid=parseInt(btn.getAttribute("data-rid"))-1;
-        document.querySelectorAll(`.sh-row-checkbox[data-history="${hid}"]`).forEach(cb=>cb.checked=false);
-        const cbs=document.querySelectorAll(`.sh-row-checkbox[data-history="${hid}"]`);if(cbs[rid])cbs[rid].checked=true;
-        updatePeopleSelUI(hid);saveMode="people";pendingPeopleForSave=collectPeople(hid);
-        loadExistingLists().then(()=>{setTab("new");openModal();});
-    });
-
-    // Company single bookmark
-    document.addEventListener("click",function(e){
-        const btn=e.target.closest(".sh-co-single-save-btn");if(!btn)return;
-        const hid=btn.getAttribute("data-history"),rid=parseInt(btn.getAttribute("data-rid"))-1;
-        document.querySelectorAll(`.sh-co-row-checkbox[data-history="${hid}"]`).forEach(cb=>cb.checked=false);
-        const cbs=document.querySelectorAll(`.sh-co-row-checkbox[data-history="${hid}"]`);if(cbs[rid])cbs[rid].checked=true;
-        updateCoSelUI(hid);saveMode="company";pendingCompaniesForSave=collectComp(hid);
-        loadExistingLists().then(()=>{setTab("new");openModal();});
-    });
-
-    // People drawer save btn
-    const pSaveBtn=document.getElementById("drawerSaveToListBtn");
-    if(pSaveBtn)pSaveBtn.addEventListener("click",async function(){if(!currentPDrawerPerson)return;saveMode="people";pendingPeopleForSave=[currentPDrawerPerson];await loadExistingLists();setTab("new");openModal();});
-
-    // Company drawer save btn
-    const coSaveBtn=document.getElementById("coDrawerSaveToListBtn");
-    if(coSaveBtn)coSaveBtn.addEventListener("click",async function(){if(!currentCoDrawerCompany)return;saveMode="company";pendingCompaniesForSave=[currentCoDrawerCompany];await loadExistingLists();setTab("new");openModal();});
-
-    // View Employees
-    const veb=document.getElementById("shViewEmployeesBtn");
-    if(veb)veb.addEventListener("click",e=>{e.preventDefault();document.getElementById("shViewEmployeesForm").submit();});
-
-    // View All Employees link
-    document.addEventListener("click",function(e){
-        const link=e.target.closest(".sh-view-employees-link");if(!link)return;
-        e.preventDefault();
-        document.getElementById("shViewEmpCompany").value=link.getAttribute("data-company")||"";
-        document.getElementById("shViewEmpLocation").value=link.getAttribute("data-location")||"";
-        document.getElementById("shViewEmployeesForm").submit();
-    });
-
-    // Desc toggle
-    document.addEventListener("click",function(e){
-        const t=e.target.closest(".drawer-desc-toggle");if(!t)return;
-        const dc=t.previousElementSibling;if(!dc)return;
-        const icon=t.querySelector("i"),text=t.querySelector(".toggle-text");
-        const isExp=(dc.style.webkitLineClamp==="unset");
-        if(isExp){dc.style.webkitLineClamp="3";dc.style.lineClamp="3";if(icon)icon.style.transform="rotate(0deg)";if(text)text.textContent="Read More";}
-        else{dc.style.webkitLineClamp="unset";dc.style.lineClamp="unset";if(icon)icon.style.transform="rotate(180deg)";if(text)text.textContent="Read Less";}
-    });
+    document.querySelectorAll(".sh-save-list-btn").forEach(btn=>{btn.addEventListener("click",async function(){const hid=btn.getAttribute("data-history");const isCo=document.querySelector(`.sh-co-row-checkbox[data-history="${hid}"]`);if(isCo){saveMode="company";pendingCompaniesForSave=collectComp(hid);}else{saveMode="people";pendingPeopleForSave=collectPeople(hid);}const pending=saveMode==="company"?pendingCompaniesForSave:pendingPeopleForSave;if(!pending.length){showMessage("Please select at least one.","error");return;}await loadExistingLists();setTab("new");openModal();});});
+    document.addEventListener("click",function(e){const btn=e.target.closest(".sh-single-save-btn");if(!btn)return;const hid=btn.getAttribute("data-history"),rid=parseInt(btn.getAttribute("data-rid"))-1;document.querySelectorAll(`.sh-row-checkbox[data-history="${hid}"]`).forEach(cb=>cb.checked=false);const cbs=document.querySelectorAll(`.sh-row-checkbox[data-history="${hid}"]`);if(cbs[rid])cbs[rid].checked=true;updatePeopleSelUI(hid);saveMode="people";pendingPeopleForSave=collectPeople(hid);loadExistingLists().then(()=>{setTab("new");openModal();});});
+    document.addEventListener("click",function(e){const btn=e.target.closest(".sh-co-single-save-btn");if(!btn)return;const hid=btn.getAttribute("data-history"),rid=parseInt(btn.getAttribute("data-rid"))-1;document.querySelectorAll(`.sh-co-row-checkbox[data-history="${hid}"]`).forEach(cb=>cb.checked=false);const cbs=document.querySelectorAll(`.sh-co-row-checkbox[data-history="${hid}"]`);if(cbs[rid])cbs[rid].checked=true;updateCoSelUI(hid);saveMode="company";pendingCompaniesForSave=collectComp(hid);loadExistingLists().then(()=>{setTab("new");openModal();});});
+    const pSaveBtn=document.getElementById("drawerSaveToListBtn");if(pSaveBtn)pSaveBtn.addEventListener("click",async function(){if(!currentPDrawerPerson)return;saveMode="people";pendingPeopleForSave=[currentPDrawerPerson];await loadExistingLists();setTab("new");openModal();});
+    const coSaveBtn=document.getElementById("coDrawerSaveToListBtn");if(coSaveBtn)coSaveBtn.addEventListener("click",async function(){if(!currentCoDrawerCompany)return;saveMode="company";pendingCompaniesForSave=[currentCoDrawerCompany];await loadExistingLists();setTab("new");openModal();});
+    const veb=document.getElementById("shViewEmployeesBtn");if(veb)veb.addEventListener("click",e=>{e.preventDefault();document.getElementById("shViewEmployeesForm").submit();});
+    document.addEventListener("click",function(e){const link=e.target.closest(".sh-view-employees-link");if(!link)return;e.preventDefault();document.getElementById("shViewEmpCompany").value=link.getAttribute("data-company")||"";document.getElementById("shViewEmpLocation").value=link.getAttribute("data-location")||"";document.getElementById("shViewEmployeesForm").submit();});
+    document.addEventListener("click",function(e){const t=e.target.closest(".drawer-desc-toggle");if(!t)return;const dc=t.previousElementSibling;if(!dc)return;const icon=t.querySelector("i"),text=t.querySelector(".toggle-text");const isExp=(dc.style.webkitLineClamp==="unset");if(isExp){dc.style.webkitLineClamp="3";dc.style.lineClamp="3";if(icon)icon.style.transform="rotate(0deg)";if(text)text.textContent="Read More";}else{dc.style.webkitLineClamp="unset";dc.style.lineClamp="unset";if(icon)icon.style.transform="rotate(180deg)";if(text)text.textContent="Read Less";}});
 });
 
 function updatePeopleSelUI(hid){const cbs=document.querySelectorAll(`.sh-row-checkbox[data-history="${hid}"]`);const cc=Array.from(cbs).filter(c=>c.checked).length,tc=cbs.length;const t=document.querySelector(`.sh-selected-text-${hid}`);if(t)t.textContent=`${cc} selected of ${tc} results`;const b=document.querySelector(`.sh-save-list-btn[data-history="${hid}"]`);if(b)b.style.display=cc>0?"inline-flex":"none";const sa=document.querySelector(`.sh-select-all[data-history="${hid}"]`);if(sa)sa.checked=tc>0&&cc===tc;}
@@ -1145,146 +755,75 @@ function updateCoSelUI(hid){const cbs=document.querySelectorAll(`.sh-co-row-chec
 function collectPeople(hid){const s=[];document.querySelectorAll(`.sh-row-checkbox[data-history="${hid}"]:checked`).forEach((cb,i)=>{s.push({first:cb.getAttribute("data-first")||"",last:cb.getAttribute("data-last")||"",linkedin:cb.getAttribute("data-linkedin")||"",company:cb.getAttribute("data-company")||"",company_website:cb.getAttribute("data-company_website")||"",job_title:cb.getAttribute("data-job_title")||"",institution:cb.getAttribute("data-institution")||"",location:cb.getAttribute("data-location")||"",company_headquarter:cb.getAttribute("data-company_headquarter")||"",email:cb.getAttribute("data-email")||"",phone:cb.getAttribute("data-phone")||"",card_id:String(i+1)});});return s;}
 function collectComp(hid){const s=[];document.querySelectorAll(`.sh-co-row-checkbox[data-history="${hid}"]:checked`).forEach(cb=>{s.push({name:cb.getAttribute("data-name")||"",linkedin_url:cb.getAttribute("data-linkedin_url")||"",website:cb.getAttribute("data-website")||"",industry:cb.getAttribute("data-industry")||"",description:cb.getAttribute("data-description")||"",company_size:cb.getAttribute("data-company_size")||"",headquarter:cb.getAttribute("data-headquarter")||""});});return s;}
 
-// ══ PEOPLE DRAWER ══
+// PEOPLE DRAWER
 const pDrawer=document.getElementById("profileDrawer"),pDrawerOverlay=document.getElementById("profileDrawerOverlay"),pCloseBtn=document.getElementById("closeProfileDrawer"),profileDrawerContent=document.getElementById("profileDrawerContent");
 let currentPDrawerPerson=null;
 function openPDrawer(){pDrawerOverlay.classList.add("active");pDrawer.classList.add("open");document.body.style.overflow="hidden";}
 function closePDrawer(){pDrawerOverlay.classList.remove("active");pDrawer.classList.remove("open");document.body.style.overflow="";currentPDrawerPerson=null;}
 if(pCloseBtn)pCloseBtn.addEventListener("click",closePDrawer);
 if(pDrawerOverlay)pDrawerOverlay.addEventListener("click",closePDrawer);
+document.addEventListener("click",function(e){const trigger=e.target.closest(".sh-p-drawer-trigger");if(!trigger)return;if(e.target.closest("a"))return;const hid=trigger.getAttribute("data-hid"),rid=trigger.getAttribute("data-rid");if(!hid||!rid)return;const tpl=document.getElementById(`sh-profile-${hid}-${rid}`);if(!tpl)return;profileDrawerContent.innerHTML=tpl.innerHTML;const allCbs=document.querySelectorAll(`.sh-row-checkbox[data-history="${hid}"]`);const cb=allCbs[parseInt(rid)-1];if(cb)currentPDrawerPerson={first:cb.getAttribute("data-first")||"",last:cb.getAttribute("data-last")||"",linkedin:cb.getAttribute("data-linkedin")||"",company:cb.getAttribute("data-company")||"",company_website:cb.getAttribute("data-company_website")||"",job_title:cb.getAttribute("data-job_title")||"",institution:cb.getAttribute("data-institution")||"",location:cb.getAttribute("data-location")||"",company_headquarter:cb.getAttribute("data-company_headquarter")||"",email:cb.getAttribute("data-email")||"",phone:cb.getAttribute("data-phone")||"",card_id:rid};openPDrawer();});
 
-document.addEventListener("click",function(e){
-    const trigger=e.target.closest(".sh-p-drawer-trigger");if(!trigger)return;if(e.target.closest("a"))return;
-    const hid=trigger.getAttribute("data-hid"),rid=trigger.getAttribute("data-rid");if(!hid||!rid)return;
-    const tpl=document.getElementById(`sh-profile-${hid}-${rid}`);if(!tpl)return;
-    profileDrawerContent.innerHTML=tpl.innerHTML;
-    const allCbs=document.querySelectorAll(`.sh-row-checkbox[data-history="${hid}"]`);
-    const cb=allCbs[parseInt(rid)-1];
-    if(cb)currentPDrawerPerson={first:cb.getAttribute("data-first")||"",last:cb.getAttribute("data-last")||"",linkedin:cb.getAttribute("data-linkedin")||"",company:cb.getAttribute("data-company")||"",company_website:cb.getAttribute("data-company_website")||"",job_title:cb.getAttribute("data-job_title")||"",institution:cb.getAttribute("data-institution")||"",location:cb.getAttribute("data-location")||"",company_headquarter:cb.getAttribute("data-company_headquarter")||"",email:cb.getAttribute("data-email")||"",phone:cb.getAttribute("data-phone")||"",card_id:rid};
-    openPDrawer();
-});
-
-// ══ COMPANY DRAWER ══
+// COMPANY DRAWER
 const coDrawer=document.getElementById("companyDrawer"),coDrawerOverlay=document.getElementById("companyDrawerOverlay"),coCloseBtn=document.getElementById("closeCompanyDrawer"),coDrawerContent=document.getElementById("companyDrawerContent");
 let currentCoDrawerCompany=null;
 function openCoDrawer(){coDrawerOverlay.classList.add("active");coDrawer.classList.add("open");document.body.style.overflow="hidden";}
 function closeCoDrawer(){coDrawerOverlay.classList.remove("active");coDrawer.classList.remove("open");document.body.style.overflow="";currentCoDrawerCompany=null;}
 if(coCloseBtn)coCloseBtn.addEventListener("click",closeCoDrawer);
 if(coDrawerOverlay)coDrawerOverlay.addEventListener("click",closeCoDrawer);
-
-document.addEventListener("click",function(e){
-    const trigger=e.target.closest(".sh-co-drawer-trigger");if(!trigger)return;if(e.target.closest("a"))return;
-    const hid=trigger.getAttribute("data-hid"),rid=trigger.getAttribute("data-rid");if(!hid||!rid)return;
-    const tpl=document.getElementById(`sh-co-profile-${hid}-${rid}`);if(!tpl)return;
-    coDrawerContent.innerHTML=tpl.innerHTML;
-    const allCbs=document.querySelectorAll(`.sh-co-row-checkbox[data-history="${hid}"]`);
-    const cb=allCbs[parseInt(rid)-1];
-    if(cb){currentCoDrawerCompany={name:cb.getAttribute("data-name")||"",linkedin_url:cb.getAttribute("data-linkedin_url")||"",website:cb.getAttribute("data-website")||"",industry:cb.getAttribute("data-industry")||"",company_size:cb.getAttribute("data-company_size")||"",headquarter:cb.getAttribute("data-headquarter")||""};
-    document.getElementById("shViewEmpCompany").value=cb.getAttribute("data-name")||"";
-    document.getElementById("shViewEmpLocation").value=cb.getAttribute("data-headquarter")||"";}
-    const dc=coDrawerContent.querySelector(".drawer-desc-content"),dt=coDrawerContent.querySelector(".drawer-desc-toggle");
-    if(dc&&dt&&dc.scrollHeight<=dc.clientHeight)dt.style.display="none";
-    openCoDrawer();
-});
-
+document.addEventListener("click",function(e){const trigger=e.target.closest(".sh-co-drawer-trigger");if(!trigger)return;if(e.target.closest("a"))return;const hid=trigger.getAttribute("data-hid"),rid=trigger.getAttribute("data-rid");if(!hid||!rid)return;const tpl=document.getElementById(`sh-co-profile-${hid}-${rid}`);if(!tpl)return;coDrawerContent.innerHTML=tpl.innerHTML;const allCbs=document.querySelectorAll(`.sh-co-row-checkbox[data-history="${hid}"]`);const cb=allCbs[parseInt(rid)-1];if(cb){currentCoDrawerCompany={name:cb.getAttribute("data-name")||"",linkedin_url:cb.getAttribute("data-linkedin_url")||"",website:cb.getAttribute("data-website")||"",industry:cb.getAttribute("data-industry")||"",company_size:cb.getAttribute("data-company_size")||"",headquarter:cb.getAttribute("data-headquarter")||""};document.getElementById("shViewEmpCompany").value=cb.getAttribute("data-name")||"";document.getElementById("shViewEmpLocation").value=cb.getAttribute("data-headquarter")||"";}const dc=coDrawerContent.querySelector(".drawer-desc-content"),dt=coDrawerContent.querySelector(".drawer-desc-toggle");if(dc&&dt&&dc.scrollHeight<=dc.clientHeight)dt.style.display="none";openCoDrawer();});
 document.addEventListener("keydown",function(e){if(e.key==="Escape"){closePDrawer();closeCoDrawer();}});
 
-// ══ CLEAR HISTORY ══
+// CLEAR HISTORY
 const chb=document.getElementById("clearHistoryBtn"),ccm=document.getElementById("clearConfirmModal"),ccb=document.getElementById("cancelClearBtn"),cob=document.getElementById("confirmClearBtn");
 if(chb)chb.addEventListener("click",()=>ccm.style.display="flex");
 if(ccb)ccb.addEventListener("click",()=>ccm.style.display="none");
 if(ccm)ccm.addEventListener("click",e=>{if(e.target===ccm)ccm.style.display="none";});
-if(cob){cob.addEventListener("click",async function(){
-    cob.innerHTML='<i class="fas fa-spinner fa-spin me-1"></i> Clearing...';cob.disabled=true;
-    try{const r=await fetch(window.location.pathname,{method:"DELETE",headers:{"X-CSRFToken":getCookie("csrftoken"),"X-Requested-With":"XMLHttpRequest"}});const d=await r.json();if(d.success){ccm.style.display="none";showAlert("Search history cleared successfully.","success");setTimeout(()=>location.reload(),1200);}}
-    catch(e){showAlert("Failed to clear.","danger");}
-    finally{cob.innerHTML='<i class="fas fa-trash-alt me-1"></i> Yes, Clear All';cob.disabled=false;}
+if(cob){cob.addEventListener("click",async function(){cob.innerHTML='<i class="fas fa-spinner fa-spin me-1"></i> Clearing...';cob.disabled=true;try{const r=await fetch(window.location.pathname,{method:"DELETE",headers:{"X-CSRFToken":getCookie("csrftoken"),"X-Requested-With":"XMLHttpRequest"}});const d=await r.json();if(d.success){ccm.style.display="none";showMessage("Search history cleared.","success");setTimeout(()=>location.reload(),1200);}}catch(e){showMessage("Failed to clear.","error");}finally{cob.innerHTML='<i class="fas fa-trash-alt me-1"></i> Yes, Clear All';cob.disabled=false;}});}
+
+// DELETE SINGLE
+let pendingDeleteId=null,pendingDeleteBtn=null,pendingDeleteCard=null;
+const deleteHistoryModal=document.getElementById("deleteHistoryModal"),cancelDeleteHistoryBtn=document.getElementById("cancelDeleteHistoryBtn"),confirmDeleteHistoryBtn=document.getElementById("confirmDeleteHistoryBtn");
+document.addEventListener("click",function(e){const btn=e.target.closest(".sh-delete-btn");if(!btn)return;pendingDeleteId=btn.getAttribute("data-id");pendingDeleteBtn=btn;pendingDeleteCard=btn.closest(".sh-card");deleteHistoryModal.style.display="flex";});
+if(cancelDeleteHistoryBtn)cancelDeleteHistoryBtn.addEventListener("click",function(){deleteHistoryModal.style.display="none";pendingDeleteId=null;pendingDeleteBtn=null;pendingDeleteCard=null;});
+if(deleteHistoryModal)deleteHistoryModal.addEventListener("click",function(e){if(e.target===deleteHistoryModal){deleteHistoryModal.style.display="none";pendingDeleteId=null;pendingDeleteBtn=null;pendingDeleteCard=null;}});
+if(confirmDeleteHistoryBtn){confirmDeleteHistoryBtn.addEventListener("click",async function(){
+    if(!pendingDeleteId)return;
+    const origHTML=confirmDeleteHistoryBtn.innerHTML;
+    confirmDeleteHistoryBtn.innerHTML='<i class="fas fa-spinner fa-spin me-1"></i> Deleting...';confirmDeleteHistoryBtn.disabled=true;
+    try{
+        const resp=await fetch(window.location.pathname,{method:"DELETE",headers:{"X-CSRFToken":getCookie("csrftoken"),"X-Requested-With":"XMLHttpRequest","Content-Type":"application/json"},body:JSON.stringify({history_id:pendingDeleteId})});
+        const data=await resp.json();deleteHistoryModal.style.display="none";
+        if(data.success){
+            if(pendingDeleteCard){
+                const h=pendingDeleteCard.offsetHeight;
+                pendingDeleteCard.style.transition="none";pendingDeleteCard.style.overflow="hidden";pendingDeleteCard.style.height=h+"px";
+                void pendingDeleteCard.offsetHeight;
+                pendingDeleteCard.style.transition="all 0.3s ease";
+                pendingDeleteCard.style.opacity="0";pendingDeleteCard.style.height="0";
+                pendingDeleteCard.style.marginBottom="0";pendingDeleteCard.style.border="none";pendingDeleteCard.style.boxShadow="none";
+                setTimeout(()=>{pendingDeleteCard.remove();if(document.querySelectorAll(".sh-card").length===0)location.reload();},320);
+            }
+            showMessage("Search deleted.","success");
+        }else{showMessage(data.error||"Could not delete.","error");}
+    }catch(err){deleteHistoryModal.style.display="none";showMessage("Server error.","error");}
+    finally{confirmDeleteHistoryBtn.innerHTML=origHTML;confirmDeleteHistoryBtn.disabled=false;pendingDeleteId=null;pendingDeleteBtn=null;pendingDeleteCard=null;}
 });}
 
-// ══ DELETE SINGLE HISTORY ══
-// ══ DELETE SINGLE HISTORY ══
-let pendingDeleteId   = null;
-let pendingDeleteBtn  = null;
-let pendingDeleteCard = null;
 
-const deleteHistoryModal      = document.getElementById("deleteHistoryModal");
-const cancelDeleteHistoryBtn  = document.getElementById("cancelDeleteHistoryBtn");
-const confirmDeleteHistoryBtn = document.getElementById("confirmDeleteHistoryBtn");
+// Credit system for history page
+let slCredits = {{ search_limit.credits|default:50 }};
 
-// Open modal when trash clicked
-document.addEventListener("click", function(e) {
-    const btn = e.target.closest(".sh-delete-btn");
-    if (!btn) return;
-    pendingDeleteId   = btn.getAttribute("data-id");
-    pendingDeleteBtn  = btn;
-    pendingDeleteCard = btn.closest(".sh-card");
-    deleteHistoryModal.style.display = "flex";
-});
-
-// Cancel
-if (cancelDeleteHistoryBtn) {
-    cancelDeleteHistoryBtn.addEventListener("click", function() {
-        deleteHistoryModal.style.display = "none";
-        pendingDeleteId = null; pendingDeleteBtn = null; pendingDeleteCard = null;
-    });
+function slUpdatePill(newCredits) {
+    slCredits = newCredits;
 }
 
-// Close on backdrop click
-if (deleteHistoryModal) {
-    deleteHistoryModal.addEventListener("click", function(e) {
-        if (e.target === deleteHistoryModal) {
-            deleteHistoryModal.style.display = "none";
-            pendingDeleteId = null; pendingDeleteBtn = null; pendingDeleteCard = null;
-        }
-    });
-}
-
-// Confirm delete
-if (confirmDeleteHistoryBtn) {
-    confirmDeleteHistoryBtn.addEventListener("click", async function() {
-        if (!pendingDeleteId) return;
-
-        const origHTML = confirmDeleteHistoryBtn.innerHTML;
-        confirmDeleteHistoryBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Deleting...';
-        confirmDeleteHistoryBtn.disabled = true;
-
-        try {
-            const resp = await fetch(window.location.pathname, {
-                method: "DELETE",
-                headers: {
-                    "X-CSRFToken": getCookie("csrftoken"),
-                    "X-Requested-With": "XMLHttpRequest",
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ history_id: pendingDeleteId })
-            });
-
-            const data = await resp.json();
-            deleteHistoryModal.style.display = "none";
-
-            if (data.success) {
-                if (pendingDeleteCard) {
-                    pendingDeleteCard.style.transition = "opacity 0.3s ease, transform 0.3s ease";
-                    pendingDeleteCard.style.opacity = "0";
-                    pendingDeleteCard.style.transform = "translateX(30px)";
-                    setTimeout(() => {
-                        pendingDeleteCard.remove();
-                        if (document.querySelectorAll(".sh-card").length === 0) location.reload();
-                    }, 300);
-                }
-                showMessage("Search deleted.", "success");
-            } else {
-                showMessage(data.error || "Could not delete.", "error");
-            }
-        } catch(err) {
-            deleteHistoryModal.style.display = "none";
-            showMessage("Server error.", "error");
-        } finally {
-            confirmDeleteHistoryBtn.innerHTML = origHTML;
-            confirmDeleteHistoryBtn.disabled = false;
-            pendingDeleteId = null; pendingDeleteBtn = null; pendingDeleteCard = null;
-        }
-    });
+function slShowModal(credits) {
+    slCredits = credits;
+    const modal = document.getElementById('slModal');
+    const mc = document.getElementById('slModalCredits');
+    if (mc) mc.textContent = credits;
+    if (modal) modal.classList.add('active');
 }
 </script>
 
