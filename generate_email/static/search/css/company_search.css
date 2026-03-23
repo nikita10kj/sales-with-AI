@@ -365,6 +365,7 @@
     flex-wrap: wrap;
     min-height: 52px;
     border-radius: 15px;
+    margin-left: 15px;
 }
 .results-header-left { display: flex; align-items: center; gap: 10px; }
 .results-header h2 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -.2px; }

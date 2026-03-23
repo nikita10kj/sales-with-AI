@@ -164,8 +164,15 @@
                     <select name="sent_from" class="form-select" required>
                         {% for acc in google_accounts %}
                             <option value="{{ acc.id }}">
-                                {{ acc.extra_data.email }} ({{ acc.provider|title }})
-                            </option>
+                                {% if acc.provider == "google" %}
+                                🟢 {{ acc.extra_data.email }}
+                                {% elif acc.provider == "microsoft" %}
+                                🔵 {{ acc.extra_data.userPrincipalName|default:acc.extra_data.mail }}
+                                {% else %}
+                                    {{ acc.uid }}
+                                {% endif %}
+                                ({{ acc.provider|title }})
+                        </option>
                         {% endfor %}
                     </select>
                 </div>

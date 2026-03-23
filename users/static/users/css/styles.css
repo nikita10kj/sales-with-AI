@@ -642,8 +642,6 @@ body {
     display: inline !important;
 }
 
-/* NOTE: submenu (People/Company/LinkedIn/Data Enrichment) intentionally NOT shown on hover */
-
 /* Show the Bootstrap collapse wrapper and submenu on hover */
 #sidebar.collapsed.hover-expand:not(.no-hover):hover .collapse {
     display: block !important;
@@ -750,6 +748,66 @@ body {
 
 
 /* ================= LOGOUT ICON FIX ================= */
+
+/* Make form behave like list item */
+#sidebar li form {
+    width: 100%;
+}
+
+/* Make button EXACTLY like nav-link */
+#sidebar li form button.nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    padding: 10px 15px;
+    border-radius: 10px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.8);
+    transition: all 0.2s ease;
+}
+
+/* Hover same as menu */
+#sidebar li form button.nav-link:hover {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+}
+
+/* ICON spacing (expanded) */
+#sidebar li form button.nav-link i {
+    font-size: 18px;
+    min-width: 24px;
+    margin-right: 0.5rem;
+}
+
+/* TEXT */
+#sidebar li form button.nav-link span {
+    font-weight: 500;
+}
+
+/* ================= COLLAPSED ================= */
+
+#sidebar.collapsed li form button.nav-link {
+    justify-content: center;
+    padding: 14px 0;
+}
+
+/* Hide text */
+#sidebar.collapsed li form button.nav-link span {
+    display: none;
+}
+
+/* Center icon perfectly */
+#sidebar.collapsed li form button.nav-link i {
+    margin: 0;
+}
+
+/* Remove weird spacing from form wrapper */
+#sidebar.collapsed li form {
+    display: flex;
+    justify-content: center;
+}
 #sidebar.collapsed li form .nav-link {
     display: flex !important;
     justify-content: center !important;
@@ -775,7 +833,7 @@ body {
 #sidebar.collapsed li form {
     display: flex !important;
     justify-content: center !important;
-}  
+}
 
 #sidebar.collapsed .sidebar-dropdown .nav-link {
     display: flex !important;
@@ -792,4 +850,116 @@ body {
 
 #sidebar.collapsed .sidebar-dropdown .nav-link i.fa-chevron-down {
     display: none !important;
-} 
+}
+
+/* ================= HOVER EXPAND - LOGOUT FIX ================= */
+
+/* Show logout text on hover-expand */
+#sidebar.collapsed.hover-expand:not(.no-hover):hover li form button.nav-link {
+    justify-content: flex-start !important;
+    padding: 10px 15px !important;
+}
+
+#sidebar.collapsed.hover-expand:not(.no-hover):hover li form button.nav-link span {
+    display: inline !important;
+}
+
+#sidebar.collapsed.hover-expand:not(.no-hover):hover li form button.nav-link i {
+    margin-right: 0.5rem !important;
+    min-width: 24px !important;
+}
+
+#sidebar.collapsed.hover-expand:not(.no-hover):hover li form {
+    justify-content: flex-start !important;
+}
+
+/* ================= SUBMENU VERTICAL LINE ================= */
+
+/* The vertical line on the left */
+#sidebar .submenu {
+    position: relative;
+    padding-left: 20px !important;
+    margin-left: 15px !important;
+    border-left: 2px solid rgba(255, 255, 255, 0.3);
+    list-style: none;
+}
+
+/* Each submenu item gets a small horizontal connector */
+#sidebar .submenu li {
+    position: relative;
+    text-align: left !important;  /* CENTER override fix */
+}
+
+#sidebar .submenu li::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: 50%;
+    width: 14px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-50%);
+}
+
+/* Active item line brighter */
+#sidebar .submenu li:has(.active-link)::before {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+/* Submenu link - LEFT aligned */
+#sidebar .submenu .nav-link {
+    padding: 8px 10px !important;
+    font-size: 14px;
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.75);
+    justify-content: flex-start !important;  /* CENTER override fix */
+    text-align: left !important;
+}
+
+#sidebar .submenu .nav-link:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.12);
+    padding-left: 14px !important;
+}
+
+/* ---- Collapsed: hide everything ---- */
+#sidebar.collapsed .submenu {
+    border-left: none !important;
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+}
+
+#sidebar.collapsed .submenu li {
+    text-align: center !important;
+}
+
+#sidebar.collapsed .submenu li::before {
+    display: none !important;
+}
+
+/* ---- Hover-expand: restore left align ---- */
+#sidebar.collapsed.hover-expand:not(.no-hover):hover .submenu {
+    padding-left: 20px !important;
+    margin-left: 15px !important;
+    border-left: 2px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+#sidebar.collapsed.hover-expand:not(.no-hover):hover .submenu li {
+    text-align: left !important;
+}
+
+#sidebar.collapsed.hover-expand:not(.no-hover):hover .submenu li::before {
+    display: block !important;
+}
+
+#sidebar.collapsed.hover-expand:not(.no-hover):hover .submenu .nav-link {
+    justify-content: flex-start !important;
+    padding: 8px 10px !important;
+}
+
+
+/* Logout button hover - submenu rule override fix */
+#sidebar li form button.nav-link:hover {
+    background: rgba(255,255,255,0.15) !important;
+    color: #fff !important;
+}
