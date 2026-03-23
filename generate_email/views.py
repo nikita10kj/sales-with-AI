@@ -58,6 +58,15 @@ class BlockDirectAccessMixin:
 def normalize_linkedin_url(url: str) -> str:
     return (url or "").strip().lower().rstrip("/")
 
+def get_search_limit(user):
+    """Get or create UserSearchLimit for user. Always returns the object."""
+    limit, _ = UserSearchLimit.objects.get_or_create(
+        user=user,
+        defaults={"credits": 50}
+    )
+    return limit
+
+
 
 #     return latest.token
 def get_latest_microsoft_token(user):
@@ -1495,6 +1504,19 @@ class EnrichSavedListView(LoginRequiredMixin, View):
                     "total_people": len(entries),
                     "updated_count": 0,
                 })
+            
+            sl, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+            people_to_enrich = len(bulk_data)
+            credit_cost      = people_to_enrich * 1
+
+            if sl.credits < credit_cost:
+                return self.error_response(
+                    f"Need {credit_cost} credits to enrich {people_to_enrich} "
+                    f"people but you only have {sl.credits}. Contact admin to renew.",
+                    403
+                )
+            # ══════════════════════════════════════════════
+
 
             start_resp = redrob_start_bulk_enrichment(
                 data=bulk_data,
@@ -1514,6 +1536,14 @@ class EnrichSavedListView(LoginRequiredMixin, View):
                 enrichment_items=enrichment_items
             )
 
+
+            # ══════════════════════════════════════════════
+            # DEDUCT CREDITS — only for actually enriched
+            # ══════════════════════════════════════════════
+            if updated_count > 0:
+                sl.deduct(updated_count)
+            # ══════════════════════════════════════════════
+
             return JsonResponse({
                 "success": True,
                 "message": f"Enrichment completed. {updated_count} contacts updated.",
@@ -1521,6 +1551,7 @@ class EnrichSavedListView(LoginRequiredMixin, View):
                 "list_name": saved_list.name,
                 "total_people": len(entries),
                 "updated_count": updated_count,
+                "credits":       sl.credits,
             })
 
         except requests.HTTPError as e:
@@ -1718,7 +1749,23 @@ class SaveEnrichAndGoToCampaignView(LoginRequiredMixin, View):
             enriched_count = 0
 
             if bulk_data:
-                start_resp    = redrob_start_bulk_enrichment(
+                # ══════════════════════════════════════════════
+                # CREDIT CHECK — each email costs 1 credit
+                # ══════════════════════════════════════════════
+                sl, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+                people_to_enrich = len(bulk_data)
+                credit_cost      = people_to_enrich * 1
+
+                if sl.credits < credit_cost:
+                    return JsonResponse({
+                        "success":       False,
+                        "limit_reached": True,
+                        "credits":       sl.credits,
+                        "needed":        credit_cost,
+                        "error":         f"Need {credit_cost} credits to enrich {people_to_enrich} people but you only have {sl.credits}. Contact admin to renew."
+                    }, status=403)
+                
+                start_resp = redrob_start_bulk_enrichment(
                     data=bulk_data,
                     name=f"Bulk Enrichment - {saved_list.name}"
                 )
@@ -1726,10 +1773,10 @@ class SaveEnrichAndGoToCampaignView(LoginRequiredMixin, View):
 
                 if enrichment_id:
                     for _ in range(self.MAX_POLLS):
-                        resp   = redrob_get_enrichment(enrichment_id)
-                        data   = resp.get("data", {}) or {}
+                        resp = redrob_get_enrichment(enrichment_id)
+                        data = resp.get("data", {}) or {}
                         status = data.get("status", "")
-                        items  = data.get("datas", []) or []
+                        items = data.get("datas", []) or []
 
                         if status == "FINISHED":
                             for item in items:
@@ -1761,6 +1808,13 @@ class SaveEnrichAndGoToCampaignView(LoginRequiredMixin, View):
 
                         time.sleep(self.POLL_INTERVAL)
 
+                # ══════════════════════════════════════════════
+                # DEDUCT CREDITS — only for actually enriched
+                # ══════════════════════════════════════════════
+                if enriched_count > 0:
+                    sl.deduct(enriched_count)  # deduct only what was actually enriched
+                # ══════════════════════════════════════════════
+            sl.refresh_from_db()
             campaign_url = reverse("campaign_view") + f"?list_id={saved_list.id}"
             return JsonResponse({
                 "success":       True,
@@ -1768,6 +1822,7 @@ class SaveEnrichAndGoToCampaignView(LoginRequiredMixin, View):
                 "redirect_url":  campaign_url,
                 "list_id":       saved_list.id,
                 "enriched_count": enriched_count,
+                "credits":        sl.credits,
             })
 
         except Exception as e:
@@ -3365,8 +3420,8 @@ def get_conversation_id(user, msg_id):
 
 @csrf_exempt
 def email_open_pixel(request, uid):
-    if request.method == "GET" and not request.META.get("HTTP_REFERER"):
-        return redirect("/")
+    # if request.method == "GET" and not request.META.get("HTTP_REFERER"):
+    #     return redirect("/")
 
     #  Ignore admin / logged-in users
     if request.user.is_authenticated:

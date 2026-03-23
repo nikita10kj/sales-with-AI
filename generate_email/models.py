@@ -4,6 +4,8 @@ from users.models import CustomUser,EmailAttachment
 from django.core.validators import EmailValidator
 import uuid
 from allauth.socialaccount.models import SocialAccount
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class AudienceTag(models.Model):
@@ -218,6 +220,19 @@ class UserSearchLimit(models.Model):
 
     def __str__(self):
         return f"{self.user} — {self.credits} credits"
+    
+
+@receiver(post_save, sender='users.CustomUser')
+def create_search_limit_for_new_user(sender, instance, created, **kwargs):
+    """
+    Only runs when a brand new user is created.
+    Existing users are NOT affected.
+    """
+    if created:
+        UserSearchLimit.objects.get_or_create(
+            user=instance,
+            defaults={"credits": 50}
+        )
 
 
 

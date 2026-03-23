@@ -220,7 +220,7 @@ def refresh_microsoft_token(user):
         print("Error refreshing Microsoft token:", e)
         return None
 
-def send_microsoft_email(user, to_email, subject, html_body,selected_account=None,attachment=None):
+def send_microsoft_email(user, to_email, subject, html_body,selected_account=None,attachment=None,sender_email=None):
     # Fetch all Microsoft tokens for the user
     tokens = SocialToken.objects.filter(
         account__user=user, account__provider='microsoft').order_by('-expires_at')
@@ -769,14 +769,25 @@ def sendCampaignEmail(request, user, target_audience, main_email, selected_accou
     # =========================
     # MICROSOFT
     # =========================
-    elif provider == 'microsoft':
+    # elif provider == 'microsoft':
 
+    #     send_microsoft_email(
+    #         to_email=email,
+    #         subject=subject,
+    #         html_body=message,
+    #         selected_account=selected_account,
+    #         sender_email=sender_email,  # ✅ pass correct sender
+    #         attachment=attachment
+    #     )
+
+    elif provider == 'microsoft':
         send_microsoft_email(
+            user=user,          # ✅ add user back — the function requires it
             to_email=email,
             subject=subject,
             html_body=message,
             selected_account=selected_account,
-            sender_email=sender_email,  # ✅ pass correct sender
+            sender_email=sender_email,
             attachment=attachment
         )
 
