@@ -956,7 +956,7 @@ class SupportView(BlockDirectAccessMixin,LoginRequiredMixin, FormView):
         email_msg = EmailMessage(            
             subject=f"[Support] {subject}",            
             body=message,            
-            to=["jmsadvisory1@gmail.com"],            
+            to=["resumate1nfo1@gmail.com"],            
             reply_to=[email],        
             )        
         email_msg.send(fail_silently=False)        

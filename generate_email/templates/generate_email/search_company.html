@@ -219,6 +219,13 @@
                     <span class="results-pill">55M+</span>
                 </div>
                 <div class="results-header-right">
+                    {% if search_limit %}
+                    <span class="sl-credit-pill {% if search_limit.credits == 0 %}zero{% elif search_limit.credits <= 10 %}low{% endif %}"
+                        id="slCreditPill">
+                        <i class="fas fa-bolt"></i>
+                        <span id="slCreditCount">{{ search_limit.credits }}</span> credits
+                    </span>
+                    {% endif %}
                     <span class="contact-pill" id="contactPill">0/0</span>
                     {% comment %} <button class="contact-btn" type="button">Export Now</button> {% endcomment %}
                 </div>
@@ -611,6 +618,117 @@
     <span id="customMessageText">Saved successfully.</span>
     <button type="button" id="closeCustomMessage" class="custom-message-close">&times;</button>
 </div>
+
+
+<!-- ══ SEARCH CREDIT LIMIT MODAL ══ -->
+<div id="slModal" class="sl-modal-overlay">
+    <div class="sl-modal-box">
+        <div class="sl-modal-header">
+            <div class="sl-modal-icon"><i class="fas fa-bolt"></i></div>
+            <h4>Credits Exhausted</h4>
+            <p>You've used all your search credits</p>
+        </div>
+        <div class="sl-modal-body">
+            <div class="sl-modal-info">
+                <div class="sl-modal-info-card">
+                    <div class="val" id="slModalCredits">0</div>
+                    <div class="lbl">Credits Remaining</div>
+                </div>
+                <div class="sl-modal-info-card">
+                    <div class="val">₹0</div>
+                    <div class="lbl">Cost to Renew</div>
+                </div>
+            </div>
+            <p style="font-size:13px;color:#6a7388;text-align:center;margin:0;">
+                Email enrichment costs <strong>1 credit</strong>.<br>
+                Phone/contact enrichment costs <strong>3 credits</strong>.<br><br>
+                Contact your administrator to renew your credits.
+            </p>
+        </div>
+        <div class="sl-modal-footer">
+            <a href="{% url 'pricing' %}" class="sl-btn-primary">
+                <i class="fas fa-arrow-up"></i> View Upgrade Plans
+            </a>
+            <button type="button" class="sl-btn-secondary" onclick="document.getElementById('slModal').classList.remove('active')">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Credit system ──
+let slCredits = {{ search_limit.credits|default:50 }};
+
+function slUpdatePill(newCredits) {
+    slCredits = newCredits;
+    const pill  = document.getElementById('slCreditPill');
+    const count = document.getElementById('slCreditCount');
+    if (count) count.textContent = newCredits;
+    if (pill) {
+        pill.classList.remove('low', 'zero');
+        if (newCredits === 0)       pill.classList.add('zero');
+        else if (newCredits <= 10)  pill.classList.add('low');
+    }
+}
+
+function slShowModal(credits) {
+    const modal = document.getElementById('slModal');
+    const mc    = document.getElementById('slModalCredits');
+    if (mc)    mc.textContent = credits;
+    if (modal) modal.classList.add('active');
+}
+
+// Close modal on overlay click
+document.getElementById('slModal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+});
+
+// Close on Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') document.getElementById('slModal').classList.remove('active');
+});
+
+// ── Intercept enrich AJAX responses ──
+// The people_search.js (or inline JS) uses fetch() to call ENRICH_PERSON_URL.
+// We patch the global fetch to intercept limit_reached responses.
+(function() {
+    const _fetch = window.fetch;
+    window.fetch = async function(...args) {
+        const response = await _fetch(...args);
+
+        // Only intercept calls to enrich endpoint
+        const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '';
+        if (!url.includes('enrich')) return response;
+
+        // Clone so we can read body without consuming it
+        const clone = response.clone();
+        try {
+            const data = await clone.json();
+
+            // Update credit pill if server returned credits
+            if (typeof data.credits === 'number') {
+                slUpdatePill(data.credits);
+            }
+
+            // Show modal if limit reached
+            if (data.limit_reached) {
+                slShowModal(data.credits || 0);
+            }
+        } catch(e) { /* not JSON, ignore */ }
+
+        return response;
+    };
+})();
+
+// ── Show modal immediately if already at 0 on page load ──
+{% if search_limit and search_limit.credits == 0 %}
+document.addEventListener('DOMContentLoaded', function() {
+    // Only show on enrich attempts, not on page load
+    // (User can still browse, just can't enrich)
+});
+{% endif %}
+</script>
 {% endblock content %}
 
 {% block js %}
