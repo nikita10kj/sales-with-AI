@@ -2858,7 +2858,8 @@ class EmailListView(BlockDirectAccessMixin,LoginRequiredMixin, ListView):
 
         qs = (
         SentEmail.objects
-        .filter(user=self.request.user)
+        .filter(user=self.request.user,is_scheduled=False)
+
         .select_related('target_audience')
         .annotate(next_reminder_date=Subquery(next_reminder))
         .order_by('-created')
@@ -4543,17 +4544,50 @@ def campaign_view(request):
                 if signature_html:
                     final_message += "<br><br>" + signature_html
 
-                sendCampaignEmail(
+                main_email = {
+                    "subject": subject,
+                    "body": final_message
+                }
+
+                sent_email_obj = sendCampaignEmail(
                     request=request,
                     user=request.user,
                     target_audience=audience,
-                    main_email={"subject": subject, "body": final_message},
+                    main_email=main_email,
                     selected_account=selected_account,
                     attachment=attachment_file
                 )
 
-            messages.success(request, "Campaign Sent Successfully.")
+                # ── Follow-up reminders for immediate send ──
+                follow_ups = ai_data.get("follow_ups", [])
+                follow_up_days = [2, 4, 6, 8]
+                today = timezone.now().date()
+
+                for i, follow in enumerate(follow_ups):
+                    if i >= len(follow_up_days):
+                        break
+
+                    follow_body = follow.get("body", "")
+                    if signature_html:
+                        follow_body += "<br><br>" + signature_html
+
+                    send_at = today + timezone.timedelta(days=follow_up_days[i])
+
+                    ReminderEmail.objects.create(
+                        user=request.user,
+                        target_audience=audience,
+                        sent_email=sent_email_obj,
+                        message_id=make_msgid(domain='sellsharp.co'),
+                        email=audience.email,
+                        subject=f"Re: {subject}",
+                        message=follow_body,
+                        send_at=send_at,
+                        sent=False
+                    )
+
+            messages.success(request, "Campaign Sent Successfully")
             return redirect("campaign_view")
+
 
     # =========================
     # GET
@@ -4561,13 +4595,21 @@ def campaign_view(request):
     selected_tag_id  = request.GET.get("tag_id") or request.POST.get("tag_id")
     selected_list_id = request.GET.get("list_id", "")
 
+    # All campaign emails (scheduled pending + recently sent)
+    scheduled_emails = (
+        SentEmail.objects
+        .filter(user=request.user, is_scheduled=True)
+        .select_related("target_audience", "sending_account")
+        .order_by("scheduled_at")
+    )
     return render(request, "generate_email/campaign.html", {
-        "tags":             tags,
+        "tags": tags,
         "saved_lists":      saved_lists,
-        "user_services":    user_services,
-        "signatures":       signatures,
-        "google_accounts":  google_accounts,
+        "user_services": user_services,
+        "signatures": signatures,
+        "google_accounts": google_accounts,
         "user_attachments": user_attachments,
-        "selected_tag_id":  str(selected_tag_id) if selected_tag_id else "",
+        "selected_tag_id": str(selected_tag_id) if selected_tag_id else "",
+        "scheduled_emails":scheduled_emails,
         "selected_list_id": selected_list_id,
     })

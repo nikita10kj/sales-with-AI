@@ -49,7 +49,7 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <span class="utc-time" data-utc="{{ email.created|date:'c' }}"></span>
+                                    <span class="utc-time" data-utc="{% if email.scheduled_at %}{{ email.scheduled_at|date:'c' }}{% else %}{{ email.created|date:'c' }}{% endif %}"></span>
                                 </td>
                                 <td>
                                     {% if email.next_reminder_date %}

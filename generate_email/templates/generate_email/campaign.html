@@ -4,17 +4,111 @@
 <div class="container mt-4 mb-5" style="max-width:1400px;">
     <div class="card shadow border-0 rounded-4 overflow-hidden w-100">
 
-        <!-- Header -->
-        <div class="card-header text-white py-4 d-flex align-items-center"
+       <!-- Header -->
+        <div class="card-header text-white py-4 d-flex align-items-center justify-content-between"
             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-            <i class="fas fa-mail-bulk me-2" style="font-size:30px;"></i>
-            <div>
-                <h5 class="mb-1 fw-semibold">Campaign</h5>
-                <small style="font-size:13px; opacity:0.85;">
-                    Configure your campaign and launch with precision
-                </small>
+
+            <div class="d-flex align-items-center">
+                <i class="fas fa-mail-bulk me-2" style="font-size:30px;"></i>
+                <div>
+                    <h5 class="mb-1 fw-semibold">Campaign</h5>
+                    <small style="font-size:13px; opacity:0.85;">
+                        Configure your campaign and launch with precision
+                    </small>
+                </div>
+            </div>
+
+
+        <!-- Notification Bell Icon -->
+            {% if scheduled_emails %}
+            <button type="button"
+                    id="scheduleNotifBtn"
+                    class="btn position-relative p-0 border-0 bg-transparent"
+                    title="Scheduled Emails">
+                <i class="fas fa-bell text-white" style="font-size:22px;"></i>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                      style="font-size:10px; min-width:18px; padding:3px 6px;">
+                    {{ scheduled_emails|length }}
+                </span>
+            </button>
+            {% endif %}
+        </div>
+
+        <!-- Scheduled Popup -->
+        {% if scheduled_emails %}
+        <div id="scheduledPopup"
+             style="display:none; position:fixed; top:70px; right:20px; width:700px;
+                    background:#fff; border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.18);
+                    border:1px solid #ffc107; z-index:9999;">
+            <div class="px-4 py-3">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h6 class="mb-0 fw-semibold" style="color:#856404; font-size:13px;">
+                        <i class="fas fa-calendar-check me-1"></i>
+                        Campaign Schedule &nbsp;
+                        <span class="badge rounded-pill bg-warning text-dark" style="font-size:11px;">
+                            {{ scheduled_emails|length }} Total
+                        </span>
+                    </h6>
+                    <button type="button" id="closeSchedulePopup"
+                            class="btn-close" style="font-size:10px;"></button>
+                </div>
+                <div class="table-responsive" style="max-height:300px; overflow-y:auto;">
+                    <table class="table table-sm table-hover mb-0 align-middle" style="font-size:12px;">
+                        <thead style="background:#fff3cd; position:sticky; top:0; z-index:1;">
+                            <tr>
+                                <th class="ps-2">To</th>
+                                <th>Subject</th>
+                                <th>Scheduled At</th>
+                                <th>From</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for em in scheduled_emails %}
+                        <tr>
+                            <td class="ps-2">
+                                <span class="fw-semibold">
+                                    {{ em.target_audience.receiver_first_name }}
+                                    {{ em.target_audience.receiver_last_name }}
+                                </span>
+                                <br>
+                                <small class="text-muted">{{ em.email }}</small>
+                            </td>
+                            <td>{{ em.subject|truncatechars:40 }}</td>
+                            <td style="white-space:nowrap;">
+                                {{ em.scheduled_at|date:"d M Y, h:i A" }}
+                            </td>
+                            
+                            <td style="white-space:nowrap;">
+                                {% if em.sending_account %}
+                                    {% if em.sending_account.provider == "google" %}
+                                        🟢 {{ em.sending_account.extra_data.email }}
+                                    {% elif em.sending_account.provider == "microsoft" %}
+                                        🔵 {{ em.sending_account.extra_data.userPrincipalName|default:em.sending_account.extra_data.mail }}
+                                    {% else %}
+                                        {{ em.sending_account.uid }}
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">Shuffle</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
+
+        <script>
+        document.getElementById('scheduleNotifBtn').addEventListener('click', function () {
+            const popup = document.getElementById('scheduledPopup');
+            popup.style.display = popup.style.display === 'none' ? 'block' : 'none';
+        });
+        document.getElementById('closeSchedulePopup').addEventListener('click', function () {
+            document.getElementById('scheduledPopup').style.display = 'none';
+        });
+        </script>
+        {% endif %}
 
         <div class="card-body p-4">
 
