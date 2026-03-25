@@ -32,9 +32,15 @@ from email import encoders
 import mimetypes
 from users.models import EmailAttachment         
 from googleapiclient.errors import HttpError
+import logging
+
+logger = logging.getLogger(__name__)
 
 class MicrosoftEmailSendError(Exception):
     pass
+class GoogleEmailSendError(Exception):
+    pass
+
 
 # def get_user_provider(user):
 #     """
@@ -219,6 +225,107 @@ def refresh_microsoft_token(user):
     except Exception as e:
         print("Error refreshing Microsoft token:", e)
         return None
+    
+def get_latest_microsoft_token(user):
+    try:
+        token = SocialToken.objects.filter(
+            account__user=user,
+            account__provider="microsoft"
+        ).first()
+
+        if not token:
+            return None
+
+        if token.expires_at and token.expires_at <= timezone.now():
+            new_token = refresh_microsoft_token(user)
+            if not new_token:
+                logger.warning(
+                    "Microsoft token refresh failed for user_id=%s",
+                    user.id
+                )
+                return None
+            return new_token
+
+        return token.token
+
+    except Exception:
+        logger.exception("Microsoft token lookup failed")
+        return None
+    
+
+def get_message_details(user, msg_id):
+
+    access_token = get_latest_microsoft_token(user)
+
+    if not access_token:
+        logger.warning(
+            "MS Graph webhook: no access token for user_id=%s",
+            user.id
+        )
+        return None
+
+
+    url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}?$select=internetMessageHeaders"
+    headers = {"Authorization": f"Bearer {access_token}"}
+
+    try:
+        resp = requests.get(url, headers=headers)
+        resp.raise_for_status()
+
+        data = resp.json()
+
+        # Extract 'in-reply-to' message header
+        in_reply_to = ""
+        for header in data.get("internetMessageHeaders", []):
+            if header["name"].lower() in ["in-reply-to", "references"]:
+                in_reply_to = header['value']
+
+        if not in_reply_to:
+            return None
+
+        # Query original conversation
+        base_url = f"https://graph.microsoft.com/v1.0/me/messages?$filter=internetMessageId eq '{in_reply_to}'"
+        resp1 = requests.get(base_url, headers=headers)
+        resp1.raise_for_status()
+        return resp1.json()
+
+    except requests.HTTPError as e:
+        if e.response.status_code == 404:
+            return None
+        raise
+
+import requests
+import time
+
+def get_conversation_id(user, msg_id):
+    access_token = get_latest_microsoft_token(user)
+    if not access_token:
+        return None
+ 
+    url = f"https://graph.microsoft.com/v1.0/me/messages/{msg_id}"
+    headers = {"Authorization": f"Bearer {access_token}"}
+
+    retries = 3
+
+    for attempt in range(retries):
+        resp = requests.get(url, headers=headers)
+
+        if resp.status_code == 429:
+            retry_after = int(resp.headers.get("Retry-After", 2))
+            time.sleep(retry_after)
+            continue
+
+        if resp.status_code == 404:
+            return None
+
+        if resp.status_code != 200:
+            return None
+
+        data = resp.json()
+        return data.get("conversationId")
+
+    return None
+
 
 def send_microsoft_email(user, to_email, subject, html_body,selected_account=None,attachment=None,sender_email=None):
     # Fetch all Microsoft tokens for the user
@@ -403,7 +510,7 @@ def sendReminderEmail(reminder_email):
             clicked_count=0,
             replied_count=0,
         )
-        track_url = f"https://sellsharp.co{reverse('track-email-open', args=[sent_email.uid])}"
+        track_url = f"https://sellsharp.co{reverse('email_open_pixel', args=[sent_email.uid])}"
 
         message += f"<img src='{track_url}' width='1' height='1' style='display:none;' />"
 
