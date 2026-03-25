@@ -31,6 +31,22 @@ def send_reminder_email(er):
     er.sent = True
     er.save()
 
+# def send_reminder_email(er):
+#     print("🚀 START sending reminder:", er.id, er.email)
+
+#     try:
+#         sendReminderEmail(er)
+
+#         er.sent = True
+#         er.save(update_fields=["sent"])
+
+#         print(f"✅ SUCCESS: Reminder sent to {er.email}")
+
+#     except Exception as e:
+#         print(f"❌ FAILED: Reminder (id={er.id}) error: {e}")
+#         import traceback
+#         traceback.print_exc()
+
 def send_reminders():
     today = timezone.now().date()
 
@@ -111,7 +127,7 @@ if __name__ == "__main__":
 #             er.save()
 
 
-from .views import sendGeneratedEmail  # or move logic here if better
+# from .views import sendGeneratedEmail  # or move logic here if better
 
 # @shared_task
 # def send_scheduled_email(user_id, target_audience_id, main_email, request_data):
@@ -124,6 +140,70 @@ from .views import sendGeneratedEmail  # or move logic here if better
 #
 #     dummy_request = DummyRequest()
 #     sendGeneratedEmail(dummy_request, user, target, main_email)
+
+from django.conf import settings
+from .utils import get_message_details, get_conversation_id
+
+def process_msgraph_change(change):
+    """Process a single MS Graph webhook change in background thread."""
+
+    if change.get("clientState") != settings.MS_GRAPH_CLIENT_STATE:
+        return
+
+    msg_id = change.get("resourceData", {}).get("id")
+    sub_id = change.get("subscriptionId")
+
+    if not msg_id or not sub_id:
+        return
+
+    try:
+        sub = EmailSubscription.objects.get(subscription_id=sub_id)
+        user = sub.user
+    except EmailSubscription.DoesNotExist:
+        return
+
+    try:
+        message_data = get_message_details(user, msg_id)
+    except Exception as e:
+        print(f"Graph API error while getting message details: {e}")
+        return
+
+    if not message_data or not isinstance(message_data, dict):
+        print("MS Graph webhook returned invalid message data")
+        return
+
+    value_list = message_data.get("value", [])
+    if not value_list:
+        return
+
+    in_reply_to = value_list[0].get("conversationId")
+    if not in_reply_to:
+        return
+
+    emails = SentEmail.objects.filter(
+        user=user,
+        reminder_email__isnull=False
+    ).distinct()
+
+    stop_ids = []
+    for email in emails:
+        sent_msg_id = email.message_id
+        if not sent_msg_id or not sent_msg_id.startswith("AA"):
+            continue
+        try:
+            from .utils import get_conversation_id
+            conversation_id = get_conversation_id(user, sent_msg_id)
+        except Exception as e:
+            print(f"Graph API error: {e}")
+            continue
+
+        if conversation_id == in_reply_to:
+            stop_ids.append(email.id)
+
+    # Bulk update — one DB query instead of one per email
+    if stop_ids:
+        SentEmail.objects.filter(id__in=stop_ids).update(stop_reminder=True)
+        print(f"Stopped reminders for {len(stop_ids)} emails")
 
 
 
