@@ -176,7 +176,7 @@ class EmailMarketingApp {
         mainCard.dataset.emailId = "main_email"; // <-- Assign emailId here
         mainCard.innerHTML = `
           <div class="email-header">
-              <h5 class="email-title">${main.title}</h5>
+              <h5 class="email-title">${this.generatedEmails.framework}</h5>
               <div class="email-actions">
                   <button class="btn btn-sm btn-outline-primary" onclick="app.editEmail(this)">
                       <i class="fas fa-edit"></i> Edit

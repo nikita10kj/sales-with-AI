@@ -800,6 +800,53 @@ class RefundPolicyView(BlockDirectAccessMixin,View):
 
     def get(self, request):
         return render(request, self.template_name)
+
+class ContactUsView(View):
+    template_name='users/contact_us.html'
+
+    def get(self, request):
+        return render(request, self.template_name)
+    
+    def post(self, request):
+        name = request.POST.get('name', '')
+        email = request.POST.get('email', '')
+        phone = request.POST.get('phone', '')
+        subject = request.POST.get('subject', '')
+        message = request.POST.get('message', '')
+        
+        if name and email and subject and message:
+            try:
+                # Send email notification to admin
+                admin_email = 'harshil@jmsadvisory.in'
+                email_body = f"""
+                New Contact Us Message from SellSharp Website:
+                
+                Name: {name}
+                Email: {email}
+                Phone: {phone if phone else 'Not provided'}
+                Subject: {subject}
+                
+                Message:
+                {message}
+                """
+                
+                email_msg = EmailMessage(
+                    subject=f"New Contact Form Submission: {subject}",
+                    body=email_body,
+                    from_email='noreply@sellsharp.co',
+                    to=[admin_email],
+                    reply_to=[email]
+                )
+                email_msg.send(fail_silently=True)
+                
+                messages.success(request, 'Thank you! Your message has been sent successfully. We will get back to you soon.')
+            except Exception as e:
+                messages.warning(request, 'Your message was received, but we had an issue sending it. Please try emailing us directly at info@jmsadvisory.in')
+        else:
+            messages.error(request, 'Please fill in all required fields.')
+        
+        return render(request, self.template_name)
+
 class PricingView(BlockDirectAccessMixin,View):
     template_name = "users/pricing.html"
 
