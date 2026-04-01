@@ -684,7 +684,7 @@ OUTPUT RULES:
         framework_value = getattr(target, "framework", None)
  
     # Only set if it exists and is not empty
-    main_email["framework"] = (framework_value or "").strip()
+    data["framework"] = (framework_value or "").strip()
  
     def clean_signature(text):
         if not text:
