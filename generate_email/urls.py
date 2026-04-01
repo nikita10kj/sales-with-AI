@@ -1,10 +1,11 @@
 from django.urls import path
-from .views import (GenerateEmailView, SendEmailView, EmailListView,EmailMessageView,
+from .views import (CheckBulkEnrichmentView, GenerateEmailView, SendEmailView, EmailListView,EmailMessageView,
                     LeadListView, LeadEmailListView, campaign_view, email_open_pixel, export_target_audience_csv, import_leads, msgraph_webhook, CheckEmailHistoryView)
 
-from .views import (SearchPeopleView,EnrichPersonView,SelectPersonForEmailView,SearchPeopleByLinkdinView,SearchCompanyView,DataEnrichmentView,PeopleListView,
+from .views import (SearchPeopleView,EnrichPersonView,CheckEnrichmentView,SelectPersonForEmailView,SearchPeopleByLinkdinView,SearchCompanyView,DataEnrichmentView,PeopleListView,
                     GetSavedListsView,EnrichSavedListView,ExportSavedListCsvView,SavePeopleToListView,DownloadListCSVView,DeleteSavedListView,RemovePersonFromListView,
-                    SaveCompaniesToListView,RemoveCompanyFromListView,UseSavedListInCampaignView,SaveEnrichAndGoToCampaignView,SearchHistoryView)
+                    SaveCompaniesToListView,RemoveCompanyFromListView,UseSavedListInCampaignView,SaveEnrichAndGoToCampaignView,SearchHistoryView,
+                    AiParseSearchView)
 
 
 urlpatterns = [
@@ -24,7 +25,11 @@ urlpatterns = [
 
 
     path("search-people/", SearchPeopleView.as_view(), name="search_people"),
+    path("ai-parse-search/", AiParseSearchView.as_view(), name="ai_parse_search"),
     path("enrich-person/", EnrichPersonView.as_view(), name="enrich_person"),
+    path("check-enrichment/<uuid:request_id>/", CheckEnrichmentView.as_view(), name="check_enrichment"),
+    path("enrich/bulk-status/", CheckBulkEnrichmentView.as_view(), name="check_bulk_enrichment"),
+    # path("get-email/", get_email, name="get_email"),
     path("select-person-for-email/", SelectPersonForEmailView.as_view(), name="select_person_for_email"),
     path('search-by-linkdin/',SearchPeopleByLinkdinView.as_view(),name="search_by_linkdin"),
     path('search-company/',SearchCompanyView.as_view(),name="search_company"),
@@ -48,4 +53,8 @@ urlpatterns = [
 
     path("search-history/", SearchHistoryView.as_view(), name="search_history"),
 
+    # path("webhook/redrob/", RedrobWebhookView.as_view())
+
 ]
+
+

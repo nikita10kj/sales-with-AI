@@ -23,12 +23,17 @@
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    height: calc(100vh - 40px) !important;
-    min-height: calc(100vh - 40px) !important;
-    position: sticky !important;
-    top: 0 !important;
-    align-self: flex-start !important;
+    height: calc(100vh - 56px);
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    scrollbar-width: thin;
+    scrollbar-color: #dce2ee transparent;
 }
+.filters-panel::-webkit-scrollbar { width: 4px; }
+.filters-panel::-webkit-scrollbar-track { background: transparent; }
+.filters-panel::-webkit-scrollbar-thumb { background: #dce2ee; border-radius: 999px; }
+.filters-panel::-webkit-scrollbar-thumb:hover { background: #b8c0d8; }
 
 /* ── Keyword search bar ── */
 .sidebar-search-box {
@@ -293,6 +298,10 @@
     padding: 12px 14px;
     border-top: 1px solid #edf0f6;
     background: #fff;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    flex-shrink: 0;
 }
 .sidebar-search-btn {
     flex: 1;

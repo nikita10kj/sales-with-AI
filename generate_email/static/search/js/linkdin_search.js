@@ -267,191 +267,248 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // ── Enrich (email/phone fetch) events ──
-    function attachEnrichEvents() {
+function attachEnrichEvents() {
 
-        function getFirstEmail(person) {
-            if (!person.emails || !person.emails.length) return "";
-            return typeof person.emails[0] === "string"
-                ? person.emails[0]
-                : (person.emails[0].email || "");
+    function applyEnrichmentToRow(cardRow, cardId, email, phone, csrfToken) {
+        // 1. Update email column cell
+        if (email) {
+            const emailColCell = document.querySelector(".email-col-" + cardId);
+            if (emailColCell) {
+                emailColCell.innerHTML =
+                    '<span class="contact-col-pill contact-col-email">'
+                    + '<i class="far fa-envelope me-1"></i>'
+                    + escapeHtml(email)
+                    + '</span>';
+            }
         }
 
-        function getFirstPhone(person) {
-            if (!person.phones || !person.phones.length) return "";
-            return typeof person.phones[0] === "string"
-                ? person.phones[0]
-                : (person.phones[0].number || "");
+        // 2. Update phone column cell
+        if (phone) {
+            const phoneColCell = document.querySelector(".phone-col-" + cardId);
+            if (phoneColCell) {
+                phoneColCell.innerHTML =
+                    '<span class="contact-col-pill contact-col-phone">'
+                    + '<i class="fas fa-phone-alt me-1" style="font-size:10px;"></i>'
+                    + escapeHtml(phone)
+                    + '</span>';
+            }
         }
 
-        function getRowData(cardRow) {
-            if (!cardRow) return {};
+        // 3. Replace email enrich-form with Send Email button
+        if (email) {
+            const actionTd = cardRow.querySelector(".action-icons");
+            if (actionTd) {
+                const enrichTypeInput = actionTd.querySelector('.enrich-form input[name="enrich_type"][value="email"]');
+                if (enrichTypeInput) {
+                    const oldForm = enrichTypeInput.closest("form");
+                    if (oldForm) {
+                        const cb = cardRow.querySelector(".row-checkbox");
+                        const newForm = document.createElement("form");
+                        newForm.method = "POST";
+                        newForm.action = SELECT_PERSON_FOR_EMAIL_URL;
+                        newForm.className = "d-inline";
+                        newForm.innerHTML =
+                            '<input type="hidden" name="csrfmiddlewaretoken" value="' + escapeHtml(csrfToken) + '">'
+                            + '<input type="hidden" name="first"               value="' + escapeHtml(cb ? cb.getAttribute("data-first") || "" : "") + '">'
+                            + '<input type="hidden" name="last"                value="' + escapeHtml(cb ? cb.getAttribute("data-last") || "" : "") + '">'
+                            + '<input type="hidden" name="linkedin"            value="' + escapeHtml(cb ? cb.getAttribute("data-linkedin") || "" : "") + '">'
+                            + '<input type="hidden" name="company"             value="' + escapeHtml(cb ? cb.getAttribute("data-company") || "" : "") + '">'
+                            + '<input type="hidden" name="company_website"     value="' + escapeHtml(cb ? cb.getAttribute("data-company_website") || "" : "") + '">'
+                            + '<input type="hidden" name="job_title"           value="' + escapeHtml(cb ? cb.getAttribute("data-job_title") || "" : "") + '">'
+                            + '<input type="hidden" name="institution"         value="' + escapeHtml(cb ? cb.getAttribute("data-institution") || "" : "") + '">'
+                            + '<input type="hidden" name="location"            value="' + escapeHtml(cb ? cb.getAttribute("data-location") || "" : "") + '">'
+                            + '<input type="hidden" name="company_headquarter" value="' + escapeHtml(cb ? cb.getAttribute("data-company_headquarter") || "" : "") + '">'
+                            + '<input type="hidden" name="email"               value="' + escapeHtml(email) + '">'
+                            + '<button type="submit" class="send-email-col-btn" title="Send Email">'
+                            + '<i class="far fa-envelope me-1"></i> Send Email</button>';
+                        oldForm.replaceWith(newForm);
+                    }
+                }
+            }
+        }
+
+        // 4. Sync drawer template
+        const profileTpl = document.getElementById("person-profile-" + cardId);
+        if (profileTpl) {
             const cb = cardRow.querySelector(".row-checkbox");
-            if (!cb) return {};
-            return {
-                first:               cb.getAttribute("data-first") || "",
-                last:                cb.getAttribute("data-last") || "",
-                linkedin:            cb.getAttribute("data-linkedin") || "",
-                company:             cb.getAttribute("data-company") || "",
-                company_website:     cb.getAttribute("data-company_website") || "",
-                job_title:           cb.getAttribute("data-job_title") || "",
-                institution:         cb.getAttribute("data-institution") || "",
-                location:            cb.getAttribute("data-location") || "",
-                company_headquarter: cb.getAttribute("data-company_headquarter") || "",
-                email:               cb.getAttribute("data-email") || "",
-                phone:               cb.getAttribute("data-phone") || ""
-            };
+
+            if (email) {
+                const contactRows = profileTpl.querySelectorAll(".drawer-contact-row");
+                if (contactRows[0]) {
+                    const blurredEl = contactRows[0].querySelector(".contact-blurred");
+                    if (blurredEl) {
+                        blurredEl.className = "contact-val";
+                        blurredEl.textContent = email;
+                    }
+                    const unlockBtn = contactRows[0].querySelector(".drawer-unlock-link");
+                    if (unlockBtn) unlockBtn.remove();
+                }
+                const tplSendBtn = profileTpl.querySelector(".drawer-action-btn.primary");
+                if (tplSendBtn && tplSendBtn.disabled) {
+                    const tplForm = document.createElement("form");
+                    tplForm.method = "POST";
+                    tplForm.action = SELECT_PERSON_FOR_EMAIL_URL;
+                    tplForm.className = "d-inline";
+                    tplForm.style.flex = "1";
+                    tplForm.innerHTML =
+                        '<input type="hidden" name="csrfmiddlewaretoken" value="' + escapeHtml(csrfToken) + '">'
+                        + '<input type="hidden" name="first"               value="' + escapeHtml(cb ? cb.getAttribute("data-first") || "" : "") + '">'
+                        + '<input type="hidden" name="last"                value="' + escapeHtml(cb ? cb.getAttribute("data-last") || "" : "") + '">'
+                        + '<input type="hidden" name="linkedin"            value="' + escapeHtml(cb ? cb.getAttribute("data-linkedin") || "" : "") + '">'
+                        + '<input type="hidden" name="company"             value="' + escapeHtml(cb ? cb.getAttribute("data-company") || "" : "") + '">'
+                        + '<input type="hidden" name="company_website"     value="' + escapeHtml(cb ? cb.getAttribute("data-company_website") || "" : "") + '">'
+                        + '<input type="hidden" name="job_title"           value="' + escapeHtml(cb ? cb.getAttribute("data-job_title") || "" : "") + '">'
+                        + '<input type="hidden" name="institution"         value="' + escapeHtml(cb ? cb.getAttribute("data-institution") || "" : "") + '">'
+                        + '<input type="hidden" name="location"            value="' + escapeHtml(cb ? cb.getAttribute("data-location") || "" : "") + '">'
+                        + '<input type="hidden" name="company_headquarter" value="' + escapeHtml(cb ? cb.getAttribute("data-company_headquarter") || "" : "") + '">'
+                        + '<input type="hidden" name="email"               value="' + escapeHtml(email) + '">'
+                        + '<button type="submit" class="drawer-action-btn primary" style="width:100%;"><i class="far fa-envelope"></i> Send Email</button>';
+                    tplSendBtn.replaceWith(tplForm);
+                }
+            }
+
+            if (phone) {
+                const contactRows = profileTpl.querySelectorAll(".drawer-contact-row");
+                if (contactRows[1]) {
+                    const blurredEl = contactRows[1].querySelector(".contact-blurred");
+                    if (blurredEl) {
+                        blurredEl.className = "contact-val";
+                        blurredEl.textContent = phone;
+                    }
+                    const unlockBtn = contactRows[1].querySelector(".drawer-unlock-link");
+                    if (unlockBtn) unlockBtn.remove();
+                }
+            }
         }
+    }
 
-        function buildSendEmailForm(person, csrfToken) {
-            if (!person.email) {
-                return `<button type="button" class="send-email-action-btn" disabled><i class="far fa-envelope"></i> Send Email</button>`;
+    document.querySelectorAll(".enrich-form").forEach(function (form) {
+        form.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const csrfTokenInput = form.querySelector("[name=csrfmiddlewaretoken]");
+            const csrfToken = csrfTokenInput ? csrfTokenInput.value : getCookie("csrftoken");
+            const cardId = formData.get("card_id");
+            const enrichType = formData.get("enrich_type") || "email";
+
+            const cardRow = document.getElementById("person-card-" + cardId);
+            if (!cardRow) return;
+
+            const rowCheckbox = cardRow.querySelector(".row-checkbox");
+            const existingEmail = rowCheckbox ? (rowCheckbox.getAttribute("data-email") || "") : "";
+            const existingPhone = rowCheckbox ? (rowCheckbox.getAttribute("data-phone") || "") : "";
+
+            // Already have data — just update UI
+            if (enrichType === "email" && existingEmail) {
+                applyEnrichmentToRow(cardRow, cardId, existingEmail, existingPhone, csrfToken);
+                return;
             }
-            return `
-                <form method="POST" action="${SELECT_PERSON_FOR_EMAIL_URL}" class="d-inline">
-                    <input type="hidden" name="csrfmiddlewaretoken" value="${escapeHtml(csrfToken)}">
-                    <input type="hidden" name="first" value="${escapeHtml(person.first || "")}">
-                    <input type="hidden" name="last" value="${escapeHtml(person.last || "")}">
-                    <input type="hidden" name="linkedin" value="${escapeHtml(person.linkedin || "")}">
-                    <input type="hidden" name="company" value="${escapeHtml(person.company || "")}">
-                    <input type="hidden" name="company_website" value="${escapeHtml(person.company_website || "")}">
-                    <input type="hidden" name="job_title" value="${escapeHtml(person.job_title || "")}">
-                    <input type="hidden" name="institution" value="${escapeHtml(person.institution || "")}">
-                    <input type="hidden" name="location" value="${escapeHtml(person.location || "")}">
-                    <input type="hidden" name="company_headquarter" value="${escapeHtml(person.company_headquarter || "")}">
-                    <input type="hidden" name="email" value="${escapeHtml(person.email || "")}">
-                    <button type="submit" class="send-email-action-btn"><i class="far fa-envelope"></i> Send Email</button>
-                </form>
-            `;
-        }
-
-        function renderExtraRow(cardRow, extraRow, csrfToken) {
-            if (!cardRow || !extraRow) return;
-            const person = getRowData(cardRow);
-
-            let contactHtml = "";
-
-            if (person.email) {
-                contactHtml += `
-                    <div>
-                        <div style="font-weight:700; color:#20263d; margin-bottom:8px;">Email</div>
-                        <div style="padding:12px 14px; background:#fff; border:1px solid #dfe4ee; border-radius:12px; color:#44506a;">
-                            ${escapeHtml(person.email)}
-                        </div>
-                    </div>
-                `;
+            if (enrichType === "phone" && existingPhone) {
+                applyEnrichmentToRow(cardRow, cardId, existingEmail, existingPhone, csrfToken);
+                return;
             }
 
-            if (person.phone) {
-                contactHtml += `
-                    <div>
-                        <div style="font-weight:700; color:#20263d; margin-bottom:8px;">Phone</div>
-                        <div style="padding:12px 14px; background:#fff; border:1px solid #dfe4ee; border-radius:12px; color:#44506a;">
-                            ${escapeHtml(person.phone)}
-                        </div>
-                    </div>
-                `;
-            }
+            if (loader) loader.style.display = "flex";
 
-            if (!person.email && !person.phone) {
-                contactHtml = `
-                    <div>
-                        <div style="padding:12px 14px; background:#fff; border:1px solid #dfe4ee; border-radius:12px; color:#44506a;">
-                            No contact information found
-                        </div>
-                    </div>
-                `;
-            }
+            try {
+                const response = await fetch(form.action || ENRICH_PERSON_URL, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": csrfToken,
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: formData
+                });
 
-            extraRow.innerHTML = `
-                <td colspan="9" style="background:#fafbfe; padding:0;">
-                    <div style="padding:16px 18px;">
-                        <div style="display:grid; grid-template-columns: 1fr auto; gap:16px; align-items:start;">
-                            <div style="display:grid; gap:14px;">
-                                ${contactHtml}
-                            </div>
-                            <div style="display:flex; align-items:flex-end; height:100%;">
-                                ${buildSendEmailForm(person, csrfToken)}
-                            </div>
-                        </div>
-                    </div>
-                </td>
-            `;
+                const data = await response.json();
 
-            extraRow.style.display = "table-row";
-        }
-
-        document.querySelectorAll(".enrich-form").forEach(function (form) {
-            form.addEventListener("submit", async function (e) {
-                e.preventDefault();
-
-                const formData = new FormData(form);
-                const csrfTokenInput = form.querySelector("[name=csrfmiddlewaretoken]");
-                const csrfToken = csrfTokenInput ? csrfTokenInput.value : "";
-                const cardId = formData.get("card_id");
-                const enrichType = formData.get("enrich_type") || "email";
-
-                const cardRow = document.getElementById(`person-card-${cardId}`);
-                const extraRow = document.getElementById(`person-extra-${cardId}`);
-
-                if (!cardRow || !extraRow) return;
-
-                const rowCheckbox = cardRow.querySelector(".row-checkbox");
-                const existingEmail = rowCheckbox ? (rowCheckbox.getAttribute("data-email") || "") : "";
-                const existingPhone = rowCheckbox ? (rowCheckbox.getAttribute("data-phone") || "") : "";
-
-                if ((enrichType === "email" && existingEmail) || (enrichType === "phone" && existingPhone)) {
-                    renderExtraRow(cardRow, extraRow, csrfToken);
+                if (!data.success) {
+                    if (loader) loader.style.display = "none";
+                    showMessage(data.error || "Something went wrong.", "error");
                     return;
                 }
 
-                if (loader) loader.style.display = "flex";
+                // ── Webhook polling flow ──
+                if (data.pending && data.request_id) {
+                    const requestId = data.request_id;
+                    let resolved = false;
 
-                try {
-                    const response = await fetch(form.action || ENRICH_PERSON_URL, {
-                        method: "POST",
-                        headers: {
-                            "X-CSRFToken": csrfToken,
-                            "X-Requested-With": "XMLHttpRequest"
-                        },
-                        body: formData
-                    });
+                    for (let attempt = 0; attempt < 40; attempt++) {
+                        await new Promise(function (res) { setTimeout(res, 3000); });
 
-                    const data = await response.json();
-                    if (loader) loader.style.display = "none";
+                        let checkResp, checkData;
+                        try {
+                            const pollUrl = CHECK_ENRICHMENT_URL.replace("PLACEHOLDER", requestId);
+                            checkResp = await fetch(pollUrl, {
+                                method: "GET",
+                                headers: { "X-Requested-With": "XMLHttpRequest" }
+                            });
+                            checkData = await checkResp.json();
+                        } catch (pollErr) {
+                            console.warn("[Poll] fetch error:", pollErr);
+                            continue;
+                        }
 
-                    if (!data.success) {
-                        showMessage(data.error || "Something went wrong.", "error");
-                        return;
+                        if (!checkData.pending) {
+                            const existingEmail2 = rowCheckbox ? (rowCheckbox.getAttribute("data-email") || "") : "";
+                            const existingPhone2 = rowCheckbox ? (rowCheckbox.getAttribute("data-phone") || "") : "";
+                            const fe = checkData.email || existingEmail2;
+                            const fp = checkData.phone || existingPhone2;
+
+                            if (rowCheckbox) {
+                                if (fe) rowCheckbox.setAttribute("data-email", fe);
+                                if (fp) rowCheckbox.setAttribute("data-phone", fp);
+                            }
+
+                            applyEnrichmentToRow(cardRow, cardId, fe, fp, getCookie("csrftoken"));
+
+                            if (loader) loader.style.display = "none";
+
+                            if (!fe && !fp) {
+                                showMessage("No contact info found.", "error");
+                            } else {
+                                showMessage("Contact info fetched!", "success");
+                            }
+
+                            resolved = true;
+                            break;
+                        }
                     }
 
-                    const person = data.person || {};
-                    const firstEmail = getFirstEmail(person);
-                    const firstPhone = getFirstPhone(person);
-
-                    if (rowCheckbox) {
-                        rowCheckbox.setAttribute("data-first", person.first || "");
-                        rowCheckbox.setAttribute("data-last", person.last || "");
-                        rowCheckbox.setAttribute("data-linkedin", person.linkedin || "");
-                        rowCheckbox.setAttribute("data-company", person.company || "");
-                        rowCheckbox.setAttribute("data-company_website", person.company_website || "");
-                        rowCheckbox.setAttribute("data-job_title", person.job_title || "");
-                        rowCheckbox.setAttribute("data-institution", person.institution || "");
-                        rowCheckbox.setAttribute("data-location", person.location || "");
-                        rowCheckbox.setAttribute("data-company_headquarter", person.company_headquarter || "");
-                        // ── Preserve existing contact if API returns empty ──
-                        rowCheckbox.setAttribute("data-email", firstEmail || existingEmail);
-                        rowCheckbox.setAttribute("data-phone", firstPhone || existingPhone);
-                    }
-
-                    renderExtraRow(cardRow, extraRow, csrfToken);
-                } catch (error) {
                     if (loader) loader.style.display = "none";
-                    showMessage("Server error. Please try again.", "error");
-                    console.error(error);
+                    if (!resolved) {
+                        showMessage("Enrichment taking too long. Try again.", "error");
+                    }
+                    return;
                 }
-            });
+
+                // ── Direct response (no webhook) ──
+                if (loader) loader.style.display = "none";
+                const person = data.person || {};
+                const emails = person.emails || [];
+                const phones = person.phones || [];
+                const firstEmail = typeof emails[0] === "string" ? emails[0] : (emails[0] && emails[0].email ? emails[0].email : "");
+                const firstPhone = typeof phones[0] === "string" ? phones[0] : (phones[0] && phones[0].number ? phones[0].number : "");
+
+                const fe = firstEmail || existingEmail;
+                const fp = firstPhone || existingPhone;
+
+                if (rowCheckbox) {
+                    if (fe) rowCheckbox.setAttribute("data-email", fe);
+                    if (fp) rowCheckbox.setAttribute("data-phone", fp);
+                }
+
+                applyEnrichmentToRow(cardRow, cardId, fe, fp, csrfToken);
+
+            } catch (error) {
+                if (loader) loader.style.display = "none";
+                showMessage("Server error while fetching contact.", "error");
+                console.error(error);
+            }
         });
-    }
+    });
+}
 
     // ── Global Tooltip ──
     const tooltipEl = document.createElement("div");

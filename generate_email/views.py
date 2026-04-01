@@ -44,9 +44,166 @@ redrob_search_by_linkedin_url,
 redrob_search_by_company,
 )
 
-from .models import SavedPeopleList, SavedPeopleEntry,SavedCompanyEntry
+from .models import SavedPeopleList, SavedPeopleEntry,SavedCompanyEntry,EnrichmentRequest
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+import os
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
+
+def _webhook_url():
+    return os.environ.get("REDROB_WEBHOOK_URL", "").strip() or None
+ 
+ 
+def _deduct_credits(user, count):
+    """Deduct `count` credits from the user's limit. Returns the updated object."""
+    sl, _ = UserSearchLimit.objects.get_or_create(user=user)
+    if count > 0:
+        sl.deduct(count)
+    return sl
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class RedrobWebhookView(View):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            print("🔥 WEBHOOK HIT:", data)
+
+        except Exception as e:
+            print("❌ Invalid JSON:", e)
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+        datas = data.get("datas") or data.get("data", {}).get("datas", [])
+
+        if not datas:
+            print("⚠️ No datas found")
+            return JsonResponse({"error": "No data"}, status=400)
+
+        updated_count = 0
+
+        for item in datas:
+            try:
+                # 🔑 Get request_id from customFields
+                request_id = item.get("customFields", {}).get("request_id")
+
+                if not request_id:
+                    print("⚠️ Missing request_id, skipping...")
+                    continue
+
+                enrichment = EnrichmentRequest.objects.filter(
+                    request_id=request_id
+                ).first()
+
+                if not enrichment:
+                    print(f"⚠️ No DB record for request_id: {request_id}")
+                    continue
+
+                # ✅ Extract emails
+                emails = item.get("emails", [])
+                phones = item.get("phones", [])
+
+                first_email = ""
+                if emails:
+                    first_email = emails[0].get("email", "")
+
+                first_phone = ""
+                if phones:
+                    first_phone = phones[0].get("number", "")
+
+                
+
+                # ✅ Update DB
+                enrichment.status = data.get("status", "")
+                enrichment.emails = emails
+                enrichment.phones = phones
+                enrichment.save()
+
+                print(f"✅ Updated: {request_id} | Email: {first_email}")
+
+                updated_count += 1
+
+            except Exception as e:
+                print("❌ Error processing item:", e)
+                continue
+
+        return JsonResponse({
+            "success": True,
+            "updated": updated_count
+        })
+# ─── Azure OpenAI: parse natural language query → search filters ───────────────
+class AiParseSearchView(View):
+    """
+    POST { "query": "dubai ceo fintech" }
+    Returns JSON { "location": "Dubai", "job_title": "CEO", "industry": "Fintech", ... }
+    """
+
+    def post(self, request, *args, **kwargs):
+        try:
+            body = json.loads(request.body)
+            query = body.get("query", "").strip()
+        except Exception:
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+        if not query:
+            return JsonResponse({"error": "Query is empty"}, status=400)
+
+        api_key  = os.environ.get("OPENAI_API_KEY", "").strip().strip("'\"")
+        endpoint = os.environ.get("ENDPOINT_URL", "").strip().strip("'\"")
+
+        if not api_key or not endpoint:
+            return JsonResponse({"error": "Azure OpenAI not configured"}, status=500)
+
+        # Build the Azure OpenAI Chat Completions URL
+        # Uses model: gpt-35-turbo (deployment name may differ)
+        deployment  = "gpt-4o-mini"
+        api_version = "2024-02-01"
+        url = f"{endpoint.rstrip('/')}/openai/deployments/{deployment}/chat/completions?api-version={api_version}"
+
+        system_prompt = (
+            "You are a search filter extractor for a B2B people search tool. "
+            "Given a free-text query from the user, extract structured search filters. "
+            "Return ONLY a valid JSON object with these keys (all optional, omit if not mentioned): "
+            "location, job_title, company, industry, skills, name, seniority, degree, institution. "
+            "Values should be plain strings. If multiple values exist for a field, join with comma. "
+            "Examples: "
+            "Query: 'dubai ceo' → {\"location\": \"Dubai\", \"job_title\": \"CEO\"} "
+            "Query: 'software engineer london fintech 5 years' → {\"location\": \"London\", \"job_title\": \"Software Engineer\", \"industry\": \"Fintech\"} "
+            "Return ONLY the JSON, no explanation."
+        )
+
+        headers = {
+            "Content-Type": "application/json",
+            "api-key": api_key,
+        }
+        payload = {
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user",   "content": query},
+            ],
+            "temperature": 0,
+            "max_tokens": 200,
+        }
+
+        try:
+            resp = requests.post(url, headers=headers, json=payload, timeout=15)
+            resp.raise_for_status()
+            content = resp.json()["choices"][0]["message"]["content"].strip()
+            # Strip markdown code fences if present
+            if content.startswith("```"):
+                content = content.split("```")[1]
+                if content.startswith("json"):
+                    content = content[4:]
+            filters = json.loads(content)
+            return JsonResponse({"success": True, "filters": filters})
+        except requests.HTTPError as e:
+            return JsonResponse({"error": f"Azure API error {e.response.status_code}: {e.response.text}"}, status=500)
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "AI returned non-JSON response", "raw": content}, status=500)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
 
 
 class BlockDirectAccessMixin:
@@ -765,7 +922,7 @@ class SearchPeopleView(View):
         
         return redirect("search_people")
 
-
+# -----------working -----------------
 # class EnrichPersonView(View):
 #     def post(self, request, *args, **kwargs):
 #         linkedin_url = request.POST.get("linkedin_url", "").strip()
@@ -777,19 +934,42 @@ class SearchPeopleView(View):
 #         institution = request.POST.get("institution", "").strip()
 #         location = request.POST.get("location", "").strip()
 #         company_headquarter = request.POST.get("company_headquarter", "").strip()
+#         enrich_type = request.POST.get("enrich_type", "email").strip()
 
 #         if not linkedin_url:
 #             return JsonResponse({
 #                 "success": False,
 #                 "error": "LinkedIn URL is required."
 #             }, status=400)
+        
+#         credit_cost = 1 if enrich_type == "email" else 3
+#         limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+
+#         if not limit.has_credits():
+#             return JsonResponse({
+#                 "success":        False,
+#                 "limit_reached":  True,
+#                 "credits":        0,
+#                 "error":          "Your search credits are exhausted. Please contact admin to renew."
+#             }, status=403)
+
+#         if limit.credits < credit_cost:
+#             return JsonResponse({
+#                 "success":        False,
+#                 "limit_reached":  True,
+#                 "credits":        limit.credits,
+#                 "error":          f"You need {credit_cost} credits for this action but only have {limit.credits}."
+#             }, status=403)
+
+#         enrich_email = enrich_type == "email"
+#         enrich_phone = enrich_type == "phone"
 
 #         try:
 #             start_resp = redrob_start_bulk_enrichment(
 #                 data=[{
 #                     "linkedinUrl": linkedin_url,
-#                     "enrichEmail": True,
-#                     "enrichPhone": False,
+#                     "enrichEmail": enrich_email,
+#                     "enrichPhone": enrich_phone,
 #                 }],
 #                 name="Single Person Enrichment"
 #             )
@@ -855,9 +1035,69 @@ class SearchPeopleView(View):
 #                         "pending_enrichment": True
 #                     }
 #                 })
+            
+#             # ── Update SearchHistory if this person exists in the last search ──
+#             try:
+#                 from .models import SearchHistory
+#                 last_history = SearchHistory.objects.filter(
+#                     user=request.user,
+#                     search_type__in=["people", "linkedin"]
+#                 ).order_by("-created_at").first()
+
+#                 if last_history and last_history.results:
+#                     updated = False
+#                     for r in last_history.results:
+#                         if r.get("linkedin", "").strip().lower() == linkedin_url.strip().lower():
+#                             if enrich_email and item.get("emails"):
+#                                 emails = item.get("emails", [])
+#                                 first_email = emails[0].get("email", "") if isinstance(emails[0], dict) else str(emails[0])
+#                                 if first_email:
+#                                     r["email"] = first_email
+#                                     updated = True
+#                             if enrich_phone and item.get("phones"):
+#                                 phones = item.get("phones", [])
+#                                 first_phone = phones[0].get("number", "") if isinstance(phones[0], dict) else str(phones[0])
+#                                 if first_phone:
+#                                     r["phone"] = first_phone
+#                                     updated = True
+#                             break
+
+#                     if updated:
+#                         last_history.results = last_history.results  # trigger save
+#                         SearchHistory.objects.filter(id=last_history.id).update(
+#                             results=last_history.results
+#                         )
+#             except Exception:
+#                 pass
+
+#             try:
+#                 from .models import GlobalSearchLog
+#                 last_log = GlobalSearchLog.objects.filter(
+#                     user=request.user,
+#                     search_type__in=["people", "linkedin"]
+#                 ).order_by("-created_at").first()
+
+#                 if last_log and last_log.results:
+#                     for r in last_log.results:
+#                         if r.get("linkedin", "").strip().lower() == linkedin_url.strip().lower():
+#                             if enrich_email and item.get("emails"):
+#                                 emails = item.get("emails", [])
+#                                 fe = emails[0].get("email", "") if isinstance(emails[0], dict) else str(emails[0])
+#                                 if fe: r["email"] = fe
+#                             if enrich_phone and item.get("phones"):
+#                                 phones = item.get("phones", [])
+#                                 fp = phones[0].get("number", "") if isinstance(phones[0], dict) else str(phones[0])
+#                                 if fp: r["phone"] = fp
+#                             break
+#                     GlobalSearchLog.objects.filter(id=last_log.id).update(results=last_log.results)
+#             except Exception:
+#                 pass
+
+#             limit.deduct(credit_cost)
 
 #             return JsonResponse({
 #                 "success": True,
+#                 "credits": limit.credits,
 #                 "person": {
 #                     "first": first,
 #                     "last": last,
@@ -880,202 +1120,139 @@ class SearchPeopleView(View):
 #                 "error": f"Server error: {str(e)}"
 #             }, status=500)
 
+import uuid
 class EnrichPersonView(View):
-    def post(self, request, *args, **kwargs):
+
+    def post(self, request):
+        
+
         linkedin_url = request.POST.get("linkedin_url", "").strip()
-        first = request.POST.get("first", "").strip()
-        last = request.POST.get("last", "").strip()
-        company = request.POST.get("company", "").strip()
-        company_website = request.POST.get("company_website", "").strip()
-        job_title = request.POST.get("job_title", "").strip()
-        institution = request.POST.get("institution", "").strip()
-        location = request.POST.get("location", "").strip()
-        company_headquarter = request.POST.get("company_headquarter", "").strip()
+        if not linkedin_url:
+            return JsonResponse({"success": False, "error": "LinkedIn URL is required"}, status=400)
+
+        # Person context fields
+        first = request.POST.get("first", "")
+        last = request.POST.get("last", "")
+        company = request.POST.get("company", "")
+        job_title = request.POST.get("job_title", "")
+        institution = request.POST.get("institution", "")
+        location = request.POST.get("location", "")
+        company_headquarter = request.POST.get("company_headquarter", "")
+        company_website = request.POST.get("company_website", "")
         enrich_type = request.POST.get("enrich_type", "email").strip()
 
-        if not linkedin_url:
-            return JsonResponse({
-                "success": False,
-                "error": "LinkedIn URL is required."
-            }, status=400)
-        
-        credit_cost = 1 if enrich_type == "email" else 3
-        limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+        print("[EnrichPersonView] LinkedIn URL:", linkedin_url)
 
-        if not limit.has_credits():
-            return JsonResponse({
-                "success":        False,
-                "limit_reached":  True,
-                "credits":        0,
-                "error":          "Your search credits are exhausted. Please contact admin to renew."
-            }, status=403)
+        # STEP 1: Create DB record
+        request_id = uuid.uuid4()
+        EnrichmentRequest.objects.create(
+            user=request.user,
+            request_id=request_id,
+            linkedin=linkedin_url,
+            status="PENDING",
+            enrich_type=enrich_type,
+        )
 
-        if limit.credits < credit_cost:
-            return JsonResponse({
-                "success":        False,
-                "limit_reached":  True,
-                "credits":        limit.credits,
-                "error":          f"You need {credit_cost} credits for this action but only have {limit.credits}."
-            }, status=403)
+        webhook_url = os.environ.get("REDROB_WEBHOOK_URL", "").strip() or None
+        print("[EnrichPersonView] Webhook URL:", webhook_url)
 
+        enrich_type = request.POST.get("enrich_type", "email").strip()
         enrich_email = enrich_type == "email"
         enrich_phone = enrich_type == "phone"
 
+        # STEP 3: Start enrichment on Redrob
         try:
+
             start_resp = redrob_start_bulk_enrichment(
+                name="Single Person Enrichment",
+                webhookUrl=webhook_url,
                 data=[{
                     "linkedinUrl": linkedin_url,
                     "enrichEmail": enrich_email,
                     "enrichPhone": enrich_phone,
-                }],
-                name="Single Person Enrichment"
+                    "customFields": {
+                        "request_id": str(request_id),
+                        "enrich_type": enrich_type,
+                    }
+                }]
             )
-
-            enrichment_id = start_resp.get("data", {}).get("id")
-
-            if not enrichment_id:
-                return JsonResponse({
-                    "success": True,
-                    "person": {
-                        "first": first,
-                        "last": last,
-                        "linkedin": linkedin_url,
-                        "company": company,
-                        "company_website": company_website,
-                        "job_title": job_title,
-                        "institution": institution,
-                        "location": location,
-                        "company_headquarter": company_headquarter,
-                        "emails": [],
-                        "phones": [],
-                        "pending_enrichment": True
-                    }
-                })
-
-            enrichment_result = None
-            item = {}
-
-            for _ in range(25):
-                enrichment_resp = redrob_get_enrichment(enrichment_id)
-                data = enrichment_resp.get("data", {}) or {}
-                status = data.get("status", "")
-                datas = data.get("datas", []) or []
-
-                if status == "FINISHED":
-                    if datas:
-                        item = datas[0] or {}
-                        enrichment_result = enrichment_resp
-                        break
-                elif status in {"FAILED", "ERROR", "CANCELLED"}:
-                    return JsonResponse({
-                        "success": False,
-                        "error": f"Enrichment failed with status: {status}"
-                    }, status=500)
-
-                time.sleep(2)
-
-            if not enrichment_result:
-                return JsonResponse({
-                    "success": True,
-                    "person": {
-                        "first": first,
-                        "last": last,
-                        "linkedin": linkedin_url,
-                        "company": company,
-                        "company_website": company_website,
-                        "job_title": job_title,
-                        "institution": institution,
-                        "location": location,
-                        "company_headquarter": company_headquarter,
-                        "emails": [],
-                        "phones": [],
-                        "pending_enrichment": True
-                    }
-                })
-            
-            # ── Update SearchHistory if this person exists in the last search ──
-            try:
-                from .models import SearchHistory
-                last_history = SearchHistory.objects.filter(
-                    user=request.user,
-                    search_type__in=["people", "linkedin"]
-                ).order_by("-created_at").first()
-
-                if last_history and last_history.results:
-                    updated = False
-                    for r in last_history.results:
-                        if r.get("linkedin", "").strip().lower() == linkedin_url.strip().lower():
-                            if enrich_email and item.get("emails"):
-                                emails = item.get("emails", [])
-                                first_email = emails[0].get("email", "") if isinstance(emails[0], dict) else str(emails[0])
-                                if first_email:
-                                    r["email"] = first_email
-                                    updated = True
-                            if enrich_phone and item.get("phones"):
-                                phones = item.get("phones", [])
-                                first_phone = phones[0].get("number", "") if isinstance(phones[0], dict) else str(phones[0])
-                                if first_phone:
-                                    r["phone"] = first_phone
-                                    updated = True
-                            break
-
-                    if updated:
-                        last_history.results = last_history.results  # trigger save
-                        SearchHistory.objects.filter(id=last_history.id).update(
-                            results=last_history.results
-                        )
-            except Exception:
-                pass
-
-            try:
-                from .models import GlobalSearchLog
-                last_log = GlobalSearchLog.objects.filter(
-                    user=request.user,
-                    search_type__in=["people", "linkedin"]
-                ).order_by("-created_at").first()
-
-                if last_log and last_log.results:
-                    for r in last_log.results:
-                        if r.get("linkedin", "").strip().lower() == linkedin_url.strip().lower():
-                            if enrich_email and item.get("emails"):
-                                emails = item.get("emails", [])
-                                fe = emails[0].get("email", "") if isinstance(emails[0], dict) else str(emails[0])
-                                if fe: r["email"] = fe
-                            if enrich_phone and item.get("phones"):
-                                phones = item.get("phones", [])
-                                fp = phones[0].get("number", "") if isinstance(phones[0], dict) else str(phones[0])
-                                if fp: r["phone"] = fp
-                            break
-                    GlobalSearchLog.objects.filter(id=last_log.id).update(results=last_log.results)
-            except Exception:
-                pass
-
-            limit.deduct(credit_cost)
-
-            return JsonResponse({
-                "success": True,
-                "credits": limit.credits,
-                "person": {
-                    "first": first,
-                    "last": last,
-                    "linkedin": linkedin_url,
-                    "company": company,
-                    "company_website": company_website,
-                    "job_title": job_title,
-                    "institution": institution,
-                    "location": location,
-                    "company_headquarter": company_headquarter,
-                    "emails": item.get("emails", []) or [],
-                    "phones": item.get("phones", []) or [],
-                    "pending_enrichment": False
-                }
-            })
-
         except Exception as e:
-            return JsonResponse({
-                "success": False,
-                "error": f"Server error: {str(e)}"
-            }, status=500)
+            print("[EnrichPersonView] Enrichment start failed:", e)
+            return JsonResponse({"success": False, "error": f"Failed to start enrichment: {e}"}, status=500)
+
+        enrichment_id = (
+            start_resp.get("data", {}).get("id")
+            or start_resp.get("id")
+        )
+
+        if not enrichment_id:
+            print("[EnrichPersonView] No enrichment_id from Redrob:", start_resp)
+            return JsonResponse({"success": False, "error": "Could not start enrichment (no ID returned)."}, status=500)
+
+        print(f"[EnrichPersonView] Enrichment started. ID={enrichment_id}, request_id={request_id}")
+
+        # STEP 4: Return immediately — frontend will poll CheckEnrichmentView
+        return JsonResponse({
+            "success": True,
+            "pending": True,
+            "request_id": str(request_id),
+            "person": {
+                "first": first,
+                "last": last,
+                "linkedin": linkedin_url,
+                "company": company,
+                "company_website": company_website,
+                "job_title": job_title,
+                "institution": institution,
+                "location": location,
+                "company_headquarter": company_headquarter,
+                "emails": [],
+                "phones": [],
+            },
+        })
+
+
+class CheckEnrichmentView(View):
+    def get(self, request, request_id):
+        # Use .first() instead of .get() to avoid DoesNotExist exception
+        enrichment = EnrichmentRequest.objects.filter(
+            request_id=request_id,
+            user=request.user,
+        ).first()
+
+        if not enrichment:
+            return JsonResponse({"success": False, "error": "Enrichment not found."}, status=404)
+
+        if enrichment.status not in ("FINISHED", "FAILED", "ERROR"):
+            return JsonResponse({"success": True, "pending": True, "status": enrichment.status})
+
+        emails = enrichment.emails or []
+        phones = enrichment.phones or []
+        first_email = emails[0].get("email", "") if emails and isinstance(emails[0], dict) else (emails[0] if emails else "")
+        first_phone = phones[0].get("number", "") if phones and isinstance(phones[0], dict) else (phones[0] if phones else "")
+
+        # Deduct credits only once
+        if not enrichment.credits_deducted and (first_email or first_phone):
+            try:
+                limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+                if limit.has_credits():
+                    limit.deduct(1)
+                EnrichmentRequest.objects.filter(
+                    request_id=request_id
+                ).update(credits_deducted=True)
+            except Exception:
+                pass
+
+        return JsonResponse({
+            "success": True,
+            "pending": False,
+            "status":  enrichment.status,
+            "email":   first_email,
+            "phone":   first_phone,
+            "emails":  emails,
+            "phones":  phones,
+            "enrich_type": enrichment.enrich_type,
+        })
 
 class SearchCompanyView(View):
     template_name = "generate_email/search_company.html"
@@ -1468,218 +1645,602 @@ class SavePeopleToListView(LoginRequiredMixin, View):
                 "error": str(e)
             }, status=500)
         
-class EnrichSavedListView(LoginRequiredMixin, View):
-    MAX_POLLS = 30
-    POLL_INTERVAL_SECONDS = 3
+# class EnrichSavedListView(LoginRequiredMixin, View):
+#     MAX_POLLS = 30
+#     POLL_INTERVAL_SECONDS = 3
 
+#     def post(self, request, *args, **kwargs):
+#         try:
+#             body = json.loads(request.body.decode("utf-8"))
+#             list_id = body.get("list_id")
+
+#             if not list_id:
+#                 return self.error_response("List ID is required.", 400)
+
+#             try:
+#                 saved_list = SavedPeopleList.objects.prefetch_related("entries").get(
+#                     id=list_id,
+#                     user=request.user
+#                 )
+#             except SavedPeopleList.DoesNotExist:
+#                 return self.error_response("List not found.", 404)
+
+#             entries = list(saved_list.entries.all())
+
+#             if not entries:
+#                 return self.error_response("This list is empty.", 400)
+
+#             linkedin_to_entry, bulk_data = self.build_bulk_data(entries)
+
+#             if not bulk_data:
+#                 return JsonResponse({
+#                     "success": True,
+#                     "message": "All contacts in this list already have email or valid LinkedIn URL is missing.",
+#                     "list_id": saved_list.id,
+#                     "list_name": saved_list.name,
+#                     "total_people": len(entries),
+#                     "updated_count": 0,
+#                 })
+            
+#             sl, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+#             people_to_enrich = len(bulk_data)
+#             credit_cost      = people_to_enrich * 1
+
+#             if sl.credits < credit_cost:
+#                 return self.error_response(
+#                     f"Need {credit_cost} credits to enrich {people_to_enrich} "
+#                     f"people but you only have {sl.credits}. Contact admin to renew.",
+#                     403
+#                 )
+#             # ══════════════════════════════════════════════
+
+
+#             start_resp = redrob_start_bulk_enrichment(
+#                 data=bulk_data,
+#                 name=f"Bulk Email Enrichment - {saved_list.name}"
+#             )
+
+#             enrichment_id = (start_resp.get("data") or {}).get("id")
+#             if not enrichment_id:
+#                 return self.error_response("No enrichment ID returned from API.", 500)
+
+#             enrichment_items = self.poll_enrichment_result(enrichment_id)
+#             if isinstance(enrichment_items, JsonResponse):
+#                 return enrichment_items
+
+#             updated_count = self.update_entries_from_results(
+#                 linkedin_to_entry=linkedin_to_entry,
+#                 enrichment_items=enrichment_items
+#             )
+
+
+#             # ══════════════════════════════════════════════
+#             # DEDUCT CREDITS — only for actually enriched
+#             # ══════════════════════════════════════════════
+#             if updated_count > 0:
+#                 sl.deduct(updated_count)
+#             # ══════════════════════════════════════════════
+
+#             return JsonResponse({
+#                 "success": True,
+#                 "message": f"Enrichment completed. {updated_count} contacts updated.",
+#                 "list_id": saved_list.id,
+#                 "list_name": saved_list.name,
+#                 "total_people": len(entries),
+#                 "updated_count": updated_count,
+#                 "credits":       sl.credits,
+#             })
+
+#         except requests.HTTPError as e:
+#             status_code = e.response.status_code if e.response is not None else 500
+#             response_text = e.response.text if e.response is not None else str(e)
+#             return self.error_response(
+#                 f"API error {status_code}: {response_text}",
+#                 500
+#             )
+#         except Exception as e:
+#             return self.error_response(f"Server error: {str(e)}", 500)
+
+#     def build_bulk_data(self, entries):
+#         linkedin_to_entry = {}
+#         bulk_data = []
+
+#         for entry in entries:
+#             # skip already enriched people
+#             if entry.email:
+#                 continue
+
+#             linkedin_raw = (entry.linkedin or "").strip()
+#             linkedin_normalized = normalize_linkedin_url(linkedin_raw)
+
+#             if not linkedin_raw:
+#                 continue
+
+#             linkedin_to_entry[linkedin_normalized] = entry
+#             bulk_data.append({
+#                 "linkedinUrl": linkedin_raw,
+#                 "enrichEmail": True,
+#                 "enrichPhone": False,
+#             })
+
+#         return linkedin_to_entry, bulk_data
+
+#     def poll_enrichment_result(self, enrichment_id):
+#         for _ in range(self.MAX_POLLS):
+#             enrichment_resp = redrob_get_enrichment(enrichment_id)
+#             data = enrichment_resp.get("data", {}) or {}
+#             status = data.get("status", "")
+#             items = data.get("datas", []) or []
+
+#             if status == "FINISHED":
+#                 return items
+
+#             if status in {"FAILED", "ERROR", "CANCELLED"}:
+#                 return self.error_response(
+#                     f"Enrichment failed with status: {status}",
+#                     500
+#                 )
+
+#             time.sleep(self.POLL_INTERVAL_SECONDS)
+
+#         return self.error_response(
+#             "Enrichment is still processing. Please try again later.",
+#             500
+#         )
+
+#     def update_entries_from_results(self, linkedin_to_entry, enrichment_items):
+#         updated_count = 0
+
+#         for item in enrichment_items:
+#             profile = item.get("profile", {}) or {}
+#             linkedin_raw = (
+#                 profile.get("linkedin_url")
+#                 or item.get("linkedinUrl")
+#                 or ""
+#             )
+#             linkedin_normalized = normalize_linkedin_url(linkedin_raw)
+
+#             if not linkedin_normalized:
+#                 continue
+
+#             entry = linkedin_to_entry.get(linkedin_normalized)
+#             if not entry:
+#                 continue
+
+#             first_email = self.extract_first_email(item.get("emails", []) or [])
+#             first_phone = self.extract_first_phone(item.get("phones", []) or [])
+
+#             changed_fields = []
+
+#             if first_email and entry.email != first_email:
+#                 entry.email = first_email
+#                 changed_fields.append("email")
+
+#             if first_phone and entry.phone != first_phone:
+#                 entry.phone = first_phone
+#                 changed_fields.append("phone")
+
+#             if changed_fields:
+#                 entry.save(update_fields=changed_fields)
+#                 updated_count += 1
+
+#         return updated_count
+
+#     def extract_first_email(self, emails):
+#         if not emails:
+#             return ""
+
+#         first_item = emails[0]
+#         if isinstance(first_item, dict):
+#             return first_item.get("email", "") or ""
+
+#         return str(first_item)
+
+#     def extract_first_phone(self, phones):
+#         if not phones:
+#             return ""
+
+#         first_item = phones[0]
+#         if isinstance(first_item, dict):
+#             return first_item.get("number", "") or ""
+
+#         return str(first_item)
+
+#     def error_response(self, message, status_code=400):
+#         return JsonResponse({
+#             "success": False,
+#             "error": message
+#         }, status=status_code)
+
+
+# class SaveEnrichAndGoToCampaignView(LoginRequiredMixin, View):
+#     MAX_POLLS      = 40
+#     POLL_INTERVAL  = 3
+
+#     def post(self, request, *args, **kwargs):
+#         try:
+#             body      = json.loads(request.body.decode("utf-8"))
+#             list_type = body.get("list_type")
+#             list_name = (body.get("list_name") or "").strip()
+#             list_id   = body.get("list_id")
+#             people    = body.get("people", [])
+
+#             if not people:
+#                 return JsonResponse({"success": False, "error": "No people selected."}, status=400)
+
+#             # ── 1. Save or get list ──────────────────────────────────────
+#             if list_type == "new":
+#                 if not list_name:
+#                     return JsonResponse({"success": False, "error": "List name is required."}, status=400)
+#                 saved_list, _ = SavedPeopleList.objects.get_or_create(
+#                     user=request.user, name=list_name
+#                 )
+#             elif list_type == "existing":
+#                 if not list_id:
+#                     return JsonResponse({"success": False, "error": "Please select a list."}, status=400)
+#                 try:
+#                     saved_list = SavedPeopleList.objects.get(id=list_id, user=request.user)
+#                 except SavedPeopleList.DoesNotExist:
+#                     return JsonResponse({"success": False, "error": "List not found."}, status=404)
+#             else:
+#                 return JsonResponse({"success": False, "error": "Invalid list type."}, status=400)
+
+#             # ── 2. Save entries ──────────────────────────────────────────
+#             for person in people:
+#                 SavedPeopleEntry.objects.update_or_create(
+#                     saved_list=saved_list,
+#                     linkedin=person.get("linkedin", ""),
+#                     defaults={
+#                         "first":               person.get("first", ""),
+#                         "last":                person.get("last", ""),
+#                         "company":             person.get("company", ""),
+#                         "company_website":     person.get("company_website", ""),
+#                         "job_title":           person.get("job_title", ""),
+#                         "institution":         person.get("institution", ""),
+#                         "location":            person.get("location", ""),
+#                         "company_headquarter": person.get("company_headquarter", ""),
+#                         "email":               person.get("email", ""),
+#                         "phone":               person.get("phone", ""),
+#                     }
+#                 )
+
+#             # ── 3. Bulk enrich (only entries missing email) ──────────────
+#             entries           = list(saved_list.entries.all())
+#             bulk_data         = []
+#             linkedin_to_entry = {}
+
+#             for entry in entries:
+#                 if entry.email:
+#                     continue
+#                 linkedin_raw = (entry.linkedin or "").strip()
+#                 if not linkedin_raw:
+#                     continue
+#                 norm = normalize_linkedin_url(linkedin_raw)
+#                 linkedin_to_entry[norm] = entry
+#                 bulk_data.append({
+#                     "linkedinUrl": linkedin_raw,
+#                     "enrichEmail": True,
+#                     "enrichPhone": False,
+#                 })
+
+#             enriched_count = 0
+
+#             if bulk_data:
+#                 # ══════════════════════════════════════════════
+#                 # CREDIT CHECK — each email costs 1 credit
+#                 # ══════════════════════════════════════════════
+#                 sl, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+#                 people_to_enrich = len(bulk_data)
+#                 credit_cost      = people_to_enrich * 1
+
+#                 if sl.credits < credit_cost:
+#                     return JsonResponse({
+#                         "success":       False,
+#                         "limit_reached": True,
+#                         "credits":       sl.credits,
+#                         "needed":        credit_cost,
+#                         "error":         f"Need {credit_cost} credits to enrich {people_to_enrich} people but you only have {sl.credits}. Contact admin to renew."
+#                     }, status=403)
+                
+#                 start_resp = redrob_start_bulk_enrichment(
+#                     data=bulk_data,
+#                     name=f"Bulk Enrichment - {saved_list.name}"
+#                 )
+#                 enrichment_id = (start_resp.get("data") or {}).get("id")
+
+#                 if enrichment_id:
+#                     for _ in range(self.MAX_POLLS):
+#                         resp = redrob_get_enrichment(enrichment_id)
+#                         data = resp.get("data", {}) or {}
+#                         status = data.get("status", "")
+#                         items = data.get("datas", []) or []
+
+#                         if status == "FINISHED":
+#                             for item in items:
+#                                 profile      = item.get("profile", {}) or {}
+#                                 linkedin_raw = (
+#                                     profile.get("linkedin_url")
+#                                     or item.get("linkedinUrl", "")
+#                                 )
+#                                 norm  = normalize_linkedin_url(linkedin_raw)
+#                                 entry = linkedin_to_entry.get(norm)
+#                                 if not entry:
+#                                     continue
+#                                 emails = item.get("emails", []) or []
+#                                 if emails:
+#                                     first_item = emails[0]
+#                                     email_val  = (
+#                                         first_item.get("email", "")
+#                                         if isinstance(first_item, dict)
+#                                         else str(first_item)
+#                                     )
+#                                     if email_val and entry.email != email_val:
+#                                         entry.email = email_val
+#                                         entry.save(update_fields=["email"])
+#                                         enriched_count += 1
+#                             break
+
+#                         if status in {"FAILED", "ERROR", "CANCELLED"}:
+#                             break
+
+#                         time.sleep(self.POLL_INTERVAL)
+
+#                 # ══════════════════════════════════════════════
+#                 # DEDUCT CREDITS — only for actually enriched
+#                 # ══════════════════════════════════════════════
+#                 if enriched_count > 0:
+#                     sl.deduct(enriched_count)  # deduct only what was actually enriched
+#                 # ══════════════════════════════════════════════
+#             sl.refresh_from_db()
+#             campaign_url = reverse("campaign_view") + f"?list_id={saved_list.id}"
+#             return JsonResponse({
+#                 "success":       True,
+#                 "message":       f"'{saved_list.name}' saved. {enriched_count} emails enriched.",
+#                 "redirect_url":  campaign_url,
+#                 "list_id":       saved_list.id,
+#                 "enriched_count": enriched_count,
+#                 "credits":        sl.credits,
+#             })
+
+#         except Exception as e:
+#             return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EnrichSavedListView  — webhook-based
+# ─────────────────────────────────────────────────────────────────────────────
+ 
+class EnrichSavedListView(LoginRequiredMixin, View):
+ 
     def post(self, request, *args, **kwargs):
         try:
-            body = json.loads(request.body.decode("utf-8"))
+            body    = json.loads(request.body.decode("utf-8"))
             list_id = body.get("list_id")
-
-            if not list_id:
-                return self.error_response("List ID is required.", 400)
-
-            try:
-                saved_list = SavedPeopleList.objects.prefetch_related("entries").get(
-                    id=list_id,
-                    user=request.user
-                )
-            except SavedPeopleList.DoesNotExist:
-                return self.error_response("List not found.", 404)
-
-            entries = list(saved_list.entries.all())
-
-            if not entries:
-                return self.error_response("This list is empty.", 400)
-
-            linkedin_to_entry, bulk_data = self.build_bulk_data(entries)
-
-            if not bulk_data:
-                return JsonResponse({
-                    "success": True,
-                    "message": "All contacts in this list already have email or valid LinkedIn URL is missing.",
-                    "list_id": saved_list.id,
-                    "list_name": saved_list.name,
-                    "total_people": len(entries),
-                    "updated_count": 0,
-                })
-            
-            sl, _ = UserSearchLimit.objects.get_or_create(user=request.user)
-            people_to_enrich = len(bulk_data)
-            credit_cost      = people_to_enrich * 1
-
-            if sl.credits < credit_cost:
-                return self.error_response(
-                    f"Need {credit_cost} credits to enrich {people_to_enrich} "
-                    f"people but you only have {sl.credits}. Contact admin to renew.",
-                    403
-                )
-            # ══════════════════════════════════════════════
-
-
-            start_resp = redrob_start_bulk_enrichment(
-                data=bulk_data,
-                name=f"Bulk Email Enrichment - {saved_list.name}"
+        except Exception:
+            return self._err("Invalid JSON.", 400)
+ 
+        if not list_id:
+            return self._err("List ID is required.", 400)
+ 
+        try:
+            saved_list = SavedPeopleList.objects.prefetch_related("entries").get(
+                id=list_id, user=request.user
             )
-
-            enrichment_id = (start_resp.get("data") or {}).get("id")
-            if not enrichment_id:
-                return self.error_response("No enrichment ID returned from API.", 500)
-
-            enrichment_items = self.poll_enrichment_result(enrichment_id)
-            if isinstance(enrichment_items, JsonResponse):
-                return enrichment_items
-
-            updated_count = self.update_entries_from_results(
-                linkedin_to_entry=linkedin_to_entry,
-                enrichment_items=enrichment_items
-            )
-
-
-            # ══════════════════════════════════════════════
-            # DEDUCT CREDITS — only for actually enriched
-            # ══════════════════════════════════════════════
-            if updated_count > 0:
-                sl.deduct(updated_count)
-            # ══════════════════════════════════════════════
-
+        except SavedPeopleList.DoesNotExist:
+            return self._err("List not found.", 404)
+ 
+        entries = list(saved_list.entries.all())
+        if not entries:
+            return self._err("This list is empty.", 400)
+ 
+        # ── Collect entries that still need enrichment ──────────────────────
+        to_enrich = [e for e in entries if not e.email and (e.linkedin or "").strip()]
+ 
+        if not to_enrich:
             return JsonResponse({
-                "success": True,
-                "message": f"Enrichment completed. {updated_count} contacts updated.",
-                "list_id": saved_list.id,
-                "list_name": saved_list.name,
+                "success":      True,
+                "message":      "All contacts already have emails.",
+                "list_id":      saved_list.id,
+                "list_name":    saved_list.name,
                 "total_people": len(entries),
-                "updated_count": updated_count,
-                "credits":       sl.credits,
+                "pending":      False,
+                "request_ids":  [],
             })
-
-        except requests.HTTPError as e:
-            status_code = e.response.status_code if e.response is not None else 500
-            response_text = e.response.text if e.response is not None else str(e)
-            return self.error_response(
-                f"API error {status_code}: {response_text}",
-                500
+ 
+        # ── Credit check ────────────────────────────────────────────────────
+        sl, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+        credit_cost = len(to_enrich)
+ 
+        if sl.credits < credit_cost:
+            return self._err(
+                f"Need {credit_cost} credits for {len(to_enrich)} people "
+                f"but you only have {sl.credits}. Contact admin to renew.",
+                403,
             )
-        except Exception as e:
-            return self.error_response(f"Server error: {str(e)}", 500)
+ 
+        webhook_url = _webhook_url()
+        request_ids = []
+        errors      = []
+        bulk_data   = []
+ 
+        for entry in to_enrich:
+            req_id = uuid.uuid4()
+ 
+            # Save DB record so the webhook can look it up
+            EnrichmentRequest.objects.create(
+                user        = request.user,
+                request_id  = req_id,
+                linkedin    = entry.linkedin.strip(),
+                status      = "PENDING",
+                enrich_type = "email",
+            )
 
-    def build_bulk_data(self, entries):
-        linkedin_to_entry = {}
-        bulk_data = []
-
-        for entry in entries:
-            # skip already enriched people
-            if entry.email:
-                continue
-
-            linkedin_raw = (entry.linkedin or "").strip()
-            linkedin_normalized = normalize_linkedin_url(linkedin_raw)
-
-            if not linkedin_raw:
-                continue
-
-            linkedin_to_entry[linkedin_normalized] = entry
             bulk_data.append({
-                "linkedinUrl": linkedin_raw,
+                "linkedinUrl": entry.linkedin.strip(),
                 "enrichEmail": True,
                 "enrichPhone": False,
+                "customFields": {
+                    "request_id":  str(req_id),
+                    "enrich_type": "email",
+                    "entry_id":    entry.pk,
+                },
             })
 
-        return linkedin_to_entry, bulk_data
+            request_ids.append(str(req_id))
 
-    def poll_enrichment_result(self, enrichment_id):
-        for _ in range(self.MAX_POLLS):
-            enrichment_resp = redrob_get_enrichment(enrichment_id)
-            data = enrichment_resp.get("data", {}) or {}
-            status = data.get("status", "")
-            items = data.get("datas", []) or []
+        try:
+            redrob_start_bulk_enrichment(
+                name       = f"List Enrichment – {saved_list.name}",
+                webhookUrl = webhook_url,
+                data       = bulk_data,   # ✅ ALL PEOPLE HERE
+            )
 
-            if status == "FINISHED":
-                return items
+        except Exception as exc:
+            # Mark ALL as failed
+            EnrichmentRequest.objects.filter(
+                request_id__in=request_ids
+            ).update(status="FAILED")
 
-            if status in {"FAILED", "ERROR", "CANCELLED"}:
-                return self.error_response(
-                    f"Enrichment failed with status: {status}",
-                    500
+            return self._err(
+                f"Failed to start enrichment: {str(exc)}",
+                500
+            )
+            
+ 
+        return JsonResponse({
+            "success":      True,
+            "pending":      True,
+            "message":      (
+                f"Enrichment started for {len(request_ids)} contacts."
+                + (f" {len(errors)} failed to start." if errors else "")
+            ),
+            "list_id":      saved_list.id,
+            "list_name":    saved_list.name,
+            "total_people": len(entries),
+            "request_ids":  request_ids,
+            # total credits that WILL be deducted (deduction happens in webhook)
+            "credit_cost":  len(request_ids),
+        })
+ 
+    @staticmethod
+    def _err(msg, status=400):
+        return JsonResponse({"success": False, "error": msg}, status=status)
+ 
+ 
+# ─────────────────────────────────────────────────────────────────────────────
+# CheckBulkEnrichmentView  — frontend polls this to track list-level progress
+# Accepts:
+#   ?request_ids=uuid1,uuid2,...          (returned by EnrichSavedListView /
+#                                          SaveEnrichAndGoToCampaignView)
+#   ?linkedin_urls=url1,url2,...          (matches the linkedinUrl field in the
+#                                          multi-URL bulk payload)
+#   Both params may be combined; request_ids take priority when present.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class CheckBulkEnrichmentView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+
+        # ── 1. Parse inputs — mirrors the multi-LinkedIn-URL bulk payload ────
+        raw_ids      = request.GET.get("request_ids", "")
+        raw_linkedin = request.GET.get("linkedin_urls", "")
+
+        request_ids   = [r.strip() for r in raw_ids.split(",")     if r.strip()]
+        linkedin_urls = [u.strip() for u in raw_linkedin.split(",") if u.strip()]
+
+        if not request_ids and not linkedin_urls:
+            return JsonResponse(
+                {"success": False, "error": "Provide request_ids or linkedin_urls."},
+                status=400,
+            )
+
+        # ── 2. Build queryset — matching the linkedinUrl / request_id fields
+        #       used in the bulk enrichment payload ──────────────────────────
+        if request_ids:
+            qs    = EnrichmentRequest.objects.filter(
+                        request_id__in=request_ids,
+                        user=request.user,
+                    )
+            total = len(request_ids)
+        else:
+            # linkedin_urls path — matches the `linkedinUrl` key of each
+            # entry in the bulk_data payload from the enrich views
+            qs    = EnrichmentRequest.objects.filter(
+                        linkedin__in=linkedin_urls,
+                        user=request.user,
+                    )
+            total = len(linkedin_urls)
+
+        items      = []
+        done_count = 0
+
+        for er in qs:
+            is_done = er.status in ("FINISHED", "FAILED", "ERROR")
+            emails  = er.emails or []
+            phones  = er.phones or []
+
+            first_email = (
+                emails[0].get("email", "") if emails and isinstance(emails[0], dict)
+                else (emails[0] if emails else "")
+            )
+            first_phone = (
+                phones[0].get("number", "") if phones and isinstance(phones[0], dict)
+                else (phones[0] if phones else "")
+            )
+
+            # ── Write back to SavedPeopleEntry if not yet done ──────────────
+            # (webhook logic)
+            if is_done and not er.credits_deducted:
+                if first_email or first_phone:
+                    (SavedPeopleEntry.objects
+                     .filter(
+                         saved_list__user=request.user,
+                         linkedin__iexact=er.linkedin,
+                     )
+                     .update(
+                         **{k: v for k, v in {
+                             "email": first_email or None,
+                             "phone": first_phone or None,
+                         }.items() if v}
+                     ))
+
+                    # Deduct 1 credit per successfully enriched person
+                    try:
+                        sl, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+                        sl.deduct(1)
+                    except Exception:
+                        pass
+
+                EnrichmentRequest.objects.filter(request_id=er.request_id).update(
+                    credits_deducted=True
                 )
 
-            time.sleep(self.POLL_INTERVAL_SECONDS)
+            if is_done:
+                done_count += 1
 
-        return self.error_response(
-            "Enrichment is still processing. Please try again later.",
-            500
-        )
+            items.append({
+                "request_id": str(er.request_id),
+                "status":     er.status,
+                "linkedin":   er.linkedin,     # echoes the linkedinUrl field
+                "email":      first_email,
+                "phone":      first_phone,
+                "done":       is_done,
+            })
 
-    def update_entries_from_results(self, linkedin_to_entry, enrichment_items):
-        updated_count = 0
-
-        for item in enrichment_items:
-            profile = item.get("profile", {}) or {}
-            linkedin_raw = (
-                profile.get("linkedin_url")
-                or item.get("linkedinUrl")
-                or ""
-            )
-            linkedin_normalized = normalize_linkedin_url(linkedin_raw)
-
-            if not linkedin_normalized:
-                continue
-
-            entry = linkedin_to_entry.get(linkedin_normalized)
-            if not entry:
-                continue
-
-            first_email = self.extract_first_email(item.get("emails", []) or [])
-            first_phone = self.extract_first_phone(item.get("phones", []) or [])
-
-            changed_fields = []
-
-            if first_email and entry.email != first_email:
-                entry.email = first_email
-                changed_fields.append("email")
-
-            if first_phone and entry.phone != first_phone:
-                entry.phone = first_phone
-                changed_fields.append("phone")
-
-            if changed_fields:
-                entry.save(update_fields=changed_fields)
-                updated_count += 1
-
-        return updated_count
-
-    def extract_first_email(self, emails):
-        if not emails:
-            return ""
-
-        first_item = emails[0]
-        if isinstance(first_item, dict):
-            return first_item.get("email", "") or ""
-
-        return str(first_item)
-
-    def extract_first_phone(self, phones):
-        if not phones:
-            return ""
-
-        first_item = phones[0]
-        if isinstance(first_item, dict):
-            return first_item.get("number", "") or ""
-
-        return str(first_item)
-
-    def error_response(self, message, status_code=400):
         return JsonResponse({
-            "success": False,
-            "error": message
-        }, status=status_code)
-
-
+            "success":  True,
+            "total":    total,
+            "done":     done_count,
+            "all_done": done_count >= total,
+            "items":    items,
+        })
+ 
+ 
+# ─────────────────────────────────────────────────────────────────────────────
+# SaveEnrichAndGoToCampaignView  — webhook-based
+# ─────────────────────────────────────────────────────────────────────────────
+ 
 class SaveEnrichAndGoToCampaignView(LoginRequiredMixin, View):
-    MAX_POLLS      = 40
-    POLL_INTERVAL  = 3
-
+ 
     def post(self, request, *args, **kwargs):
         try:
             body      = json.loads(request.body.decode("utf-8"))
@@ -1687,146 +2248,141 @@ class SaveEnrichAndGoToCampaignView(LoginRequiredMixin, View):
             list_name = (body.get("list_name") or "").strip()
             list_id   = body.get("list_id")
             people    = body.get("people", [])
-
-            if not people:
-                return JsonResponse({"success": False, "error": "No people selected."}, status=400)
-
-            # ── 1. Save or get list ──────────────────────────────────────
-            if list_type == "new":
-                if not list_name:
-                    return JsonResponse({"success": False, "error": "List name is required."}, status=400)
-                saved_list, _ = SavedPeopleList.objects.get_or_create(
-                    user=request.user, name=list_name
-                )
-            elif list_type == "existing":
-                if not list_id:
-                    return JsonResponse({"success": False, "error": "Please select a list."}, status=400)
-                try:
-                    saved_list = SavedPeopleList.objects.get(id=list_id, user=request.user)
-                except SavedPeopleList.DoesNotExist:
-                    return JsonResponse({"success": False, "error": "List not found."}, status=404)
-            else:
-                return JsonResponse({"success": False, "error": "Invalid list type."}, status=400)
-
-            # ── 2. Save entries ──────────────────────────────────────────
-            for person in people:
-                SavedPeopleEntry.objects.update_or_create(
-                    saved_list=saved_list,
-                    linkedin=person.get("linkedin", ""),
-                    defaults={
-                        "first":               person.get("first", ""),
-                        "last":                person.get("last", ""),
-                        "company":             person.get("company", ""),
-                        "company_website":     person.get("company_website", ""),
-                        "job_title":           person.get("job_title", ""),
-                        "institution":         person.get("institution", ""),
-                        "location":            person.get("location", ""),
-                        "company_headquarter": person.get("company_headquarter", ""),
-                        "email":               person.get("email", ""),
-                        "phone":               person.get("phone", ""),
-                    }
-                )
-
-            # ── 3. Bulk enrich (only entries missing email) ──────────────
-            entries           = list(saved_list.entries.all())
-            bulk_data         = []
-            linkedin_to_entry = {}
-
-            for entry in entries:
-                if entry.email:
-                    continue
-                linkedin_raw = (entry.linkedin or "").strip()
-                if not linkedin_raw:
-                    continue
-                norm = normalize_linkedin_url(linkedin_raw)
-                linkedin_to_entry[norm] = entry
-                bulk_data.append({
-                    "linkedinUrl": linkedin_raw,
-                    "enrichEmail": True,
-                    "enrichPhone": False,
-                })
-
-            enriched_count = 0
-
-            if bulk_data:
-                # ══════════════════════════════════════════════
-                # CREDIT CHECK — each email costs 1 credit
-                # ══════════════════════════════════════════════
-                sl, _ = UserSearchLimit.objects.get_or_create(user=request.user)
-                people_to_enrich = len(bulk_data)
-                credit_cost      = people_to_enrich * 1
-
-                if sl.credits < credit_cost:
-                    return JsonResponse({
-                        "success":       False,
-                        "limit_reached": True,
-                        "credits":       sl.credits,
-                        "needed":        credit_cost,
-                        "error":         f"Need {credit_cost} credits to enrich {people_to_enrich} people but you only have {sl.credits}. Contact admin to renew."
-                    }, status=403)
-                
-                start_resp = redrob_start_bulk_enrichment(
-                    data=bulk_data,
-                    name=f"Bulk Enrichment - {saved_list.name}"
-                )
-                enrichment_id = (start_resp.get("data") or {}).get("id")
-
-                if enrichment_id:
-                    for _ in range(self.MAX_POLLS):
-                        resp = redrob_get_enrichment(enrichment_id)
-                        data = resp.get("data", {}) or {}
-                        status = data.get("status", "")
-                        items = data.get("datas", []) or []
-
-                        if status == "FINISHED":
-                            for item in items:
-                                profile      = item.get("profile", {}) or {}
-                                linkedin_raw = (
-                                    profile.get("linkedin_url")
-                                    or item.get("linkedinUrl", "")
-                                )
-                                norm  = normalize_linkedin_url(linkedin_raw)
-                                entry = linkedin_to_entry.get(norm)
-                                if not entry:
-                                    continue
-                                emails = item.get("emails", []) or []
-                                if emails:
-                                    first_item = emails[0]
-                                    email_val  = (
-                                        first_item.get("email", "")
-                                        if isinstance(first_item, dict)
-                                        else str(first_item)
-                                    )
-                                    if email_val and entry.email != email_val:
-                                        entry.email = email_val
-                                        entry.save(update_fields=["email"])
-                                        enriched_count += 1
-                            break
-
-                        if status in {"FAILED", "ERROR", "CANCELLED"}:
-                            break
-
-                        time.sleep(self.POLL_INTERVAL)
-
-                # ══════════════════════════════════════════════
-                # DEDUCT CREDITS — only for actually enriched
-                # ══════════════════════════════════════════════
-                if enriched_count > 0:
-                    sl.deduct(enriched_count)  # deduct only what was actually enriched
-                # ══════════════════════════════════════════════
-            sl.refresh_from_db()
-            campaign_url = reverse("campaign_view") + f"?list_id={saved_list.id}"
+        except Exception:
+            return JsonResponse({"success": False, "error": "Invalid JSON."}, status=400)
+ 
+        if not people:
+            return JsonResponse({"success": False, "error": "No people selected."}, status=400)
+ 
+        # ── 1. Resolve / create list ────────────────────────────────────────
+        if list_type == "new":
+            if not list_name:
+                return JsonResponse({"success": False, "error": "List name is required."}, status=400)
+            saved_list, _ = SavedPeopleList.objects.get_or_create(
+                user=request.user, name=list_name
+            )
+        elif list_type == "existing":
+            if not list_id:
+                return JsonResponse({"success": False, "error": "Please select a list."}, status=400)
+            try:
+                saved_list = SavedPeopleList.objects.get(id=list_id, user=request.user)
+            except SavedPeopleList.DoesNotExist:
+                return JsonResponse({"success": False, "error": "List not found."}, status=404)
+        else:
+            return JsonResponse({"success": False, "error": "Invalid list type."}, status=400)
+ 
+        # ── 2. Upsert people into the list ──────────────────────────────────
+        for person in people:
+            SavedPeopleEntry.objects.update_or_create(
+                saved_list = saved_list,
+                linkedin   = person.get("linkedin", ""),
+                defaults   = {
+                    "first":               person.get("first", ""),
+                    "last":                person.get("last", ""),
+                    "company":             person.get("company", ""),
+                    "company_website":     person.get("company_website", ""),
+                    "job_title":           person.get("job_title", ""),
+                    "institution":         person.get("institution", ""),
+                    "location":            person.get("location", ""),
+                    "company_headquarter": person.get("company_headquarter", ""),
+                    "email":               person.get("email", ""),
+                    "phone":               person.get("phone", ""),
+                },
+            )
+ 
+        # ── 3. Determine who still needs enrichment ─────────────────────────
+        entries   = list(saved_list.entries.all())
+        to_enrich = [e for e in entries if not e.email and (e.linkedin or "").strip()]
+ 
+        campaign_url = reverse("campaign_view") + f"?list_id={saved_list.id}"
+ 
+        # Nobody left to enrich → redirect straight away
+        if not to_enrich:
             return JsonResponse({
                 "success":       True,
-                "message":       f"'{saved_list.name}' saved. {enriched_count} emails enriched.",
+                "pending":       False,
+                "message":       f"'{saved_list.name}' saved. All contacts already have emails.",
                 "redirect_url":  campaign_url,
                 "list_id":       saved_list.id,
-                "enriched_count": enriched_count,
-                "credits":        sl.credits,
+                "request_ids":   [],
+            })
+ 
+        # ── 4. Credit check ─────────────────────────────────────────────────
+        sl, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+        credit_cost = len(to_enrich)
+ 
+        if sl.credits < credit_cost:
+            return JsonResponse({
+                "success":       False,
+                "limit_reached": True,
+                "credits":       sl.credits,
+                "needed":        credit_cost,
+                "error":         (
+                    f"Need {credit_cost} credits to enrich {len(to_enrich)} people "
+                    f"but you only have {sl.credits}. Contact admin to renew."
+                ),
+            }, status=403)
+ 
+        # ── 5. Fire enrichment jobs (one per person, webhook-based) ─────────
+        webhook_url = _webhook_url()
+        bulk_data = []
+        request_ids = []
+        errors      = []
+ 
+        for entry in to_enrich:
+            req_id = uuid.uuid4()
+ 
+            EnrichmentRequest.objects.create(
+                user        = request.user,
+                request_id  = req_id,
+                linkedin    = entry.linkedin.strip(),
+                status      = "PENDING",
+                enrich_type = "email",
+            )
+
+            bulk_data.append({
+                "linkedinUrl": entry.linkedin.strip(),
+                "enrichEmail": True,
+                "enrichPhone": False,
+                "customFields": {
+                    "request_id": str(req_id),
+                    "entry_id": entry.pk,
+                },
             })
 
-        except Exception as e:
-            return JsonResponse({"success": False, "error": str(e)}, status=500)
+            request_ids.append(str(req_id))
+ 
+        try:
+            redrob_start_bulk_enrichment(
+                name=f"Campaign Enrichment – {saved_list.name}",
+                webhookUrl=webhook_url,
+                data=bulk_data,
+            )
+
+        except Exception as exc:
+            # mark ALL as failed
+            EnrichmentRequest.objects.filter(
+                request_id__in=request_ids
+            ).update(status="FAILED")
+
+            return JsonResponse({
+                "success": False,
+                "error": f"Failed to start enrichment: {str(exc)}"
+            }, status=500)
+    
+        return JsonResponse({
+            "success":      True,
+            "pending":      True,
+            "message":      (
+                f"'{saved_list.name}' saved. Enriching {len(request_ids)} contacts…"
+                + (f" {len(errors)} failed to start." if errors else "")
+            ),
+            "redirect_url": campaign_url,
+            "list_id":      saved_list.id,
+            "request_ids":  request_ids,
+            "credit_cost":  len(request_ids),
+        })
+ 
         
 class ExportSavedListCsvView(LoginRequiredMixin, View):
     def get(self, request, list_id, *args, **kwargs):
@@ -1871,6 +2427,8 @@ class ExportSavedListCsvView(LoginRequiredMixin, View):
             ])
 
         return response
+
+
     
 class DataEnrichmentView(LoginRequiredMixin, View):
     template_name = "generate_email/data_enrich.html"
@@ -4548,6 +5106,7 @@ def campaign_view(request):
         # =========================
         else:
             account_list = list(google_accounts)
+            send_errors  = []
 
             for index, audience in enumerate(audiences):
                 audience.campaign_goal    = campaign_goal
@@ -4576,14 +5135,18 @@ def campaign_view(request):
                     "body": final_message
                 }
 
-                sent_email_obj = sendCampaignEmail(
-                    request=request,
-                    user=request.user,
-                    target_audience=audience,
-                    main_email=main_email,
-                    selected_account=selected_account,
-                    attachment=attachment_file
-                )
+                try:
+                    sent_email_obj = sendCampaignEmail(
+                        request=request,
+                        user=request.user,
+                        target_audience=audience,
+                        main_email=main_email,
+                        selected_account=selected_account,
+                        attachment=attachment_file
+                    )
+                except Exception as e:
+                    send_errors.append(f"{audience.email}: {e}")
+                    continue   # skip follow-ups for this contact, try next
 
                 # ── Follow-up reminders for immediate send ──
                 follow_ups = ai_data.get("follow_ups", [])
@@ -4612,7 +5175,15 @@ def campaign_view(request):
                         sent=False
                     )
 
-            messages.success(request, "Campaign Sent Successfully")
+            if send_errors:
+                error_summary = "; ".join(send_errors)
+                messages.error(
+                    request,
+                    f"Some emails failed to send — {error_summary}. "
+                    "Check the server logs for details."
+                )
+            else:
+                messages.success(request, "Campaign Sent Successfully")
             return redirect("campaign_view")
 
 

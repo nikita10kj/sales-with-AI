@@ -147,6 +147,23 @@ class SavedCompanyEntry(models.Model):
     def __str__(self):
         return self.name or "Unnamed Company"
     
+
+class EnrichmentRequest(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    request_id = models.UUIDField(unique=True)
+
+    linkedin = models.URLField()
+
+    status = models.CharField(max_length=50, default="PENDING")
+    enrich_type = models.CharField(max_length=20, default="email")
+    emails = models.JSONField(default=list, blank=True)
+    phones = models.JSONField(default=list, blank=True)
+
+    credits_deducted = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    
 class SearchHistory(models.Model):
     SEARCH_TYPE_CHOICES = [
         ("people",   "People Search"),

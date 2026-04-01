@@ -595,6 +595,127 @@
     background: #e8f0f9;
 }
 
+/* ── Contact column pills (email / phone shown in table) ── */
+
+.contact-col-email {
+    background: #eef3ff;
+    color: #3a56c7;
+    border: 1px solid #c8d4f5;
+}
+.contact-col-phone {
+    background: #edfaf3;
+    color: #1a7a4a;
+    border: 1px solid #b2dfc8;
+}
+/* Blurred placeholder */
+.contact-col-blurred {
+    font-size: 12px;
+    color: #c8cfe0;
+    letter-spacing: 1px;
+    filter: blur(3.5px);
+    user-select: none;
+    display: inline-block;
+}
+
+/* Email pill */
+.contact-col-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    /* white-space: nowrap;
+    max-width: 170px;
+    overflow: hidden;
+    text-overflow: ellipsis; */
+
+    white-space: normal;      /* allow wrapping */
+    overflow: visible;   /* break long emails */
+    max-width: none;
+}
+.contact-col-email { background:#e8f5e9; color:#2e7d32; }
+.contact-col-phone { background:#e3f2fd; color:#0d47a1; }
+
+/* Override square button size for Send Email button */
+.action-icons .send-email-col-btn,
+.action-icons form .send-email-col-btn {
+    width: auto !important;
+    height: 30px !important;
+    padding: 0 10px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+    border-radius: 8px !important;
+    border: none !important;
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+}
+.action-icons .send-email-col-btn:hover,
+.action-icons form .send-email-col-btn:hover {
+    opacity: 0.88 !important;
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+}
+
+/* Make Actions td wide enough */
+.results-table tbody td:last-child {
+    min-width: 160px !important;
+    white-space: nowrap !important;
+}
+
+/* ── Send Email button inside table action column ── */
+.send-email-col-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #6276ea, #7c4fc8);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity .15s, transform .12s;
+}
+.send-email-col-btn:hover { opacity: .88; transform: translateY(-1px); }
+
+/* ── Drawer unlock/enrich button ── */
+.drawer-unlock-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 11px;
+    border: 1.5px solid #c4ccf5;
+    border-radius: 999px;
+    background: #eef1ff;
+    color: #5263c5;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.drawer-unlock-link:hover {
+    background: #dde4ff;
+    border-color: #8898e8;
+    color: #3a4db5;
+}
+.drawer-unlock-link:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
 /* Pagination footer */
 .results-footer {
     display: flex;
@@ -1496,4 +1617,3 @@
     transition: background .15s;
 }
 .sl-btn-secondary:hover { background: #f4f5fb; color: #44506a; }
-

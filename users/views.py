@@ -211,6 +211,8 @@ class HomeView(LoginRequiredMixin, TemplateView):
         ).count()
             labels.append(date.strftime("%b %d"))
 
+            today_open_rate = (today_opened / today_sent * 100) if today_sent > 0 else 0
+
         # Get campaign types data
         campaign_data = campaign_types.values('framework').annotate(count=Count('framework')).order_by('-count')
 
@@ -256,6 +258,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
             "last_month_sent": last_month_sent,
             "open_rate": round(open_rate, 1),
             "today_opened": today_opened,
+            "today_open_rate": round(today_open_rate, 1),
             "read_emails": read_emails,
             "unread_emails": unread_emails,
             "read_percentage": round(read_percentage, 1),

@@ -127,7 +127,7 @@ body {
 
 .step:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: white;
+  color: rgb(55, 44, 176);
 }
 
 .step.active {
@@ -499,16 +499,22 @@ body {
 /* ================= SIDEBAR BASE ================= */
 #sidebar {
     width: 260px;
-    height: auto;
+    height: 100vh;
     position: sticky;
     top: 0;
     align-self: flex-start;
     flex-shrink: 0;
     transition: width 0.25s ease;
     z-index: 100;
-    /* overflow-y: auto; Allow scrolling within sidebar if needed */
+    overflow-y: auto;
     overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+#sidebar::-webkit-scrollbar {
+    display: none;
 }
 
 /* ================= COLLAPSED ================= */
