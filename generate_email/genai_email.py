@@ -244,29 +244,85 @@ def scrape_target_intel(linkedin_url, website_url):
         "recent_activity": "",
         "growth_signals": "",
         "pain_points": "",
-        "tech_stack": ""
+        "tech_stack": "",
+        "primary_signal": "",
+        "supporting_signal": ""
     }
-
+ 
     try:
         resp = requests.get(website_url, timeout=10)
         soup = BeautifulSoup(resp.text, "html.parser")
-
-        text = " ".join(p.get_text() for p in soup.find_all("p")[:10])
+ 
+        # Get clean text
+        paragraphs = soup.find_all("p")
+        text = " ".join(p.get_text() for p in paragraphs[:20]).lower()
+ 
         data["company_overview"] = text[:600]
-
-        if any(k in text.lower() for k in ["launch", "scaling", "expanding", "hiring"]):
-            data["growth_signals"] = "Scaling or expansion signals detected."
-
-        if any(k in text.lower() for k in ["manual", "inefficient", "time-consuming", "struggle"]):
-            data["pain_points"] = "Operational inefficiencies detected."
-
+ 
+        # =========================
+        # 🔥 PRIMARY SIGNAL (STRONGEST)
+        # =========================
+        if any(k in text for k in ["hiring", "careers", "join our team", "we are hiring"]):
+            data["primary_signal"] = "Active hiring and team expansion."
+ 
+        elif any(k in text for k in ["launch", "new product", "introducing", "release"]):
+            data["primary_signal"] = "New product or service launch activity."
+ 
+        elif any(k in text for k in ["expand", "expanding", "global presence", "international"]):
+            data["primary_signal"] = "Business expansion into new markets."
+ 
+        elif any(k in text for k in ["platform", "automation", "ai", "software"]):
+            data["primary_signal"] = "Technology-driven operations or platform-based delivery."
+ 
+        else:
+            data["primary_signal"] = "Ongoing business operations with steady growth."
+ 
+        # =========================
+        # 🔥 SUPPORTING SIGNAL
+        # =========================
+        if any(k in text for k in ["clients", "customers", "trusted by", "partners"]):
+            data["supporting_signal"] = "Serving multiple clients or customer segments."
+ 
+        elif any(k in text for k in ["industries", "solutions", "services"]):
+            data["supporting_signal"] = "Multiple service offerings across industries."
+ 
+        elif any(k in text for k in ["custom", "tailored", "end-to-end"]):
+            data["supporting_signal"] = "Customized solutions for different business needs."
+ 
+        else:
+            data["supporting_signal"] = "Standard service delivery model."
+ 
+        # =========================
+        # 🔥 ADDITIONAL (GROWTH SIGNAL)
+        # =========================
+        if any(k in text for k in ["scale", "scaling", "growth", "fast-growing"]):
+            data["growth_signals"] = "Indications of scaling operations."
+ 
+        elif any(k in text for k in ["enterprise", "large clients", "global"]):
+            data["growth_signals"] = "Targeting enterprise or large-scale customers."
+ 
+        elif any(k in text for k in ["efficient", "optimize", "automation"]):
+            data["growth_signals"] = "Focus on improving efficiency or automation."
+ 
+        else:
+            data["growth_signals"] = "No strong external growth signals detected."
+ 
+        # =========================
+        # Pain points (optional but useful)
+        # =========================
+        if any(k in text for k in ["manual", "inefficient", "time-consuming", "challenge"]):
+            data["pain_points"] = "Operational inefficiencies present."
+ 
     except Exception:
-        pass
-
+        # fallback (important for stability)
+        data["primary_signal"] = "Business operations ongoing."
+        data["supporting_signal"] = "Standard service model."
+        data["growth_signals"] = "No clear growth signal."
+ 
+    # LinkedIn placeholder
     data["recent_activity"] = "Recent LinkedIn activity indicates growth focus."
-
+ 
     return data
-
 
 # =========================
 # MAIN EMAIL GENERATOR
@@ -296,223 +352,273 @@ def get_response(user, target, selected_service):
 
     system_prompt = """
  
-You are a senior B2B outbound strategist writing natural, personalized cold emails.
+You are a senior B2B outbound strategist.
  
-The email must read like a real message from one professional to another.
+You write cold emails that feel like they were written after understanding the company, not generated.
  
-Do NOT write marketing copy.
+You NEVER fabricate facts.
+You NEVER pretend to know something you don’t.
  
-Do NOT write AI-style language.
+If real personalization is not available, you gracefully stay general without sounding fake.
  
-PERSONALIZATION SOURCE
+Frameworks (AIDA, PAS, BAB, STAR, ACCA, MAGIC) are used ONLY to guide thinking.
+They must NEVER be visible or mechanical.
  
-You only have the target company's website information.
- 
-You must analyze the website text to understand:
- 
-• what the company does
-• services offered
-• products or solutions
-• industries served
-• target customers
-• technologies mentioned
- 
-OPENING PARAGRAPH RULE
- 
-The first 2–3 lines MUST be personalized.
- 
-These lines must:
- 
-1. reference what the company actually does
-2. connect that to realistic operational challenges
-3. sound like an observation about their business
- 
-Example structure:
- 
-Observation about company work
-↓
-Typical challenge companies like this face
-↓
-Impact of that challenge
- 
-PERSONALIZATION TEST
- 
-If the company name could be replaced with another company and the sentence still works, the sentence is NOT personalized.
- 
-Rewrite until it references something specific about the business.
- 
-FORBIDDEN GENERIC PHRASES
- 
-Do NOT use phrases like:
- 
-I noticed your company
-focus on growth
-scaling operations
-leading provider
-innovative solutions
-unlock
-enhance
-boost
-supercharge
-transform
-seamless integration
-pivotal moment
-fast paced environment
-end to end solutions
-drive efficiency
-maximize productivity
- 
-These phrases make emails look AI generated.
- 
-PAIN POINT RULE
- 
-Pain points must logically relate to the company's business model.
- 
-Examples:
- 
-Recruitment companies → hiring pipeline pressure
- 
-Software development companies → engineering bandwidth
- 
-Consulting firms → project delivery capacity
- 
-AI companies → model deployment complexity
- 
-EMAIL STRUCTURE
- 
-1. 2–3 personalized opening lines about the company's work and challenges
-2. Bullet list describing practical operational issues
-3. Short explanation of the service (maximum 2 sentences)
-4. Simple conversational CTA
- 
-EMAIL LENGTH
- 
-150–190 words
- 
-FORMAT RULES
- 
-Clean HTML only.
- 
-One bullet list.
- 
-Maximum 3 bullets.
- 
-No emojis.
- 
-No marketing slogans.
- 
-No signatures.
- 
-The email must end directly after the CTA.
- 
-SUBJECT LINE RULES
- 
-Subject lines must sound like natural internal business emails.
- 
-Do NOT use sales language.
- 
-Avoid words like:
- 
-quick idea
-unlock
-enhance
-boost
-transform
-opportunity
- 
-Subject lines should reference business context.
- 
-Examples:
- 
-recruitment workload
-ERP implementation teams
-logistics automation projects
-backend developer hiring
- 
-FOLLOW-UP STRATEGY
- 
-Follow-ups must continue the same conversation.
- 
-Do NOT repeat the first email.
- 
-Do NOT write reminder emails.
- 
-Avoid phrases like:
- 
-just checking in
-following up
-circling back
-bumping this email
- 
-FOLLOW-UP STRUCTURE
- 
-Follow-up 1 → short practical example
- 
-Explain how a similar company solved the same challenge.
- 
-Follow-up 2 → industry observation
- 
-Mention a common operational pattern in that industry.
- 
-Follow-up 3 → explain how the service works in practice.
- 
-Follow-up 4 → polite closing message.
- 
-FOLLOW-UP LENGTH
- 
-90–140 words.
- 
-FORMAT
- 
-Clean HTML.
- 
-Short paragraphs.
- 
-No bullet lists unless necessary.
- 
-No signatures.
- 
-End with a simple question or closing thought.
- 
+Avoid buzzwords, fluff, and robotic phrasing.
 """
  
-
     user_prompt = f"""
-You are pitching from {user.company_url}
-to {target.company_url}.
-
-FRAMEWORK: {target.framework}
-FRAMEWORK STRUCTURE:
-{framework_instruction}
-
-TARGET INTEL:
-Growth: {scraped_data['growth_signals']}
-Pain: {scraped_data['pain_points']}
-Recent: {scraped_data['recent_activity']}
-
+ 
+ 
+Write a personalized cold email sequence.
+ 
+---
+ 
+SENDER:
+{user.company_name}
+ 
+SENDER NAME:
+{user.get_full_name()}
+ 
+---
+ 
+TARGET:
+ 
+Company Website:
+{target.company_url}
+ 
+Recipient:
+{target.receiver_first_name} {target.receiver_last_name}
+ 
+---
+ 
+SELECTED FRAMEWORK:
+{target.framework}
+ 
+---
+ 
+CAMPAIGN GOAL:
+{target.campaign_goal}
+ 
+---
+ 
+COMPANY SIGNALS:
+ 
+Primary:
+{scraped_data['primary_signal']}
+ 
+Supporting:
+{scraped_data['supporting_signal']}
+ 
+Additional:
+{scraped_data['growth_signals']}
+ 
+---
+ 
 SERVICE:
-Name: {selected_service.service_name}
-USP: {selected_service.product_usp}
-
-EMAIL RULES (STRICT):
-
-- Maximum 150–180 words total
-- Opening must mention growth or future direction
-- Use ONE <ul><li> block for key pain points only
-- 3 bullet points maximum
-- Each bullet must be short and high-impact
-- Service paragraph = max 2 sentences
-- CTA must be 1 short sentence
-FOLLOW-UP RULES:
-1. Short case study (max 150–180 words)
-2. Industry insight (max 150–180 words)
-3. Service benefit summary (max 150–180 words)
-4. Short FOMO close (max 150–180 words)
-OUTPUT JSON:
+ 
+Name:
+{selected_service.service_name}
+ 
+USP:
+{selected_service.product_usp}
+ 
+---
+ 
+STEP 0: DERIVE COMPANY NAME
+ 
+- Extract clean name from URL
+- If unclear → use "your team"
+- NEVER use raw domain
+ 
+---
+ 
+STEP 1: VALIDATE PERSONALIZATION (CRITICAL)
+ 
+Check if signals are REAL and SPECIFIC:
+ 
+VALID:
+- hiring activity
+- expansion
+- product launch
+- funding
+- partnerships
+ 
+INVALID:
+- generic website text
+- assumptions
+- vague descriptions
+ 
+---
+ 
+IF VALID SIGNAL EXISTS:
+- Use it naturally in opening
+ 
+IF NO VALID SIGNAL:
+- DO NOT fake personalization
+- DO NOT say:
+  "I noticed"
+  "It seems"
+  "You might be"
+ 
+- Instead:
+  Use role-relevant observation
+ 
+---
+ 
+STEP 2: INTERPRET SERVICE
+ 
+Convert USP into:
+- what problem it solves
+- what outcome it drives
+ 
+DO NOT repeat USP text
+DO NOT sound like a brochure
+ 
+---
+ 
+STEP 3: APPLY FRAMEWORK (INVISIBLE)
+ 
+Use selected framework to guide flow:
+ 
+AIDA → attention → interest → desire → action  
+PAS → problem → agitation → solution  
+BAB → before → after → bridge  
+STAR → situation → task → action → result  
+ACCA → awareness → comprehension → conviction → action  
+MAGIC → motivation → approach → gain → impact → close  
+ 
+IMPORTANT:
+- DO NOT mention framework
+- DO NOT label sections
+- DO NOT sound structured artificially
+ 
+---
+ 
+STEP 4: WRITE EMAIL (STRICT 3 PARAGRAPHS)
+ 
+RULES:
+ 
+- 90–140 words  
+- EXACTLY 3 paragraphs  
+- Each paragraph = 1–2 sentences  
+- Natural tone  
+- No buzzwords  
+- No fluff  
+- No generic phrases  
+ 
+---
+ 
+PARAGRAPH STRUCTURE (STRICT – MUST FOLLOW):
+ 
+PARAGRAPH 1 – TARGET COMPANY:
+- Talk ONLY about the target company
+- Use signal if strong (hiring, expansion, launch)
+- If no strong signal → use role-based observation
+- Show understanding of their business direction
+- Do NOT mention your service here
+ 
+PARAGRAPH 2 – YOUR SERVICE:
+- Clearly explain what your service does
+- Connect it directly to a problem the company likely faces
+- Show outcome or improvement (time, cost, efficiency, etc.)
+- Keep it simple and concrete
+- Do NOT sound like a sales pitch or brochure
+ 
+PARAGRAPH 3 – MEETING CTA:
+- Ask for a meeting or discussion
+- Keep it natural and human
+- Example styles:
+  - "Would you be open to a quick conversation?"
+  - "Worth connecting if this is relevant?"
+  - "Open to a short discussion this week?"
+ 
+STRICT RULES:
+- EXACTLY 3 paragraphs
+- Each paragraph = 1–2 sentences only
+- NO mixing (do not combine sections)
+ 
+---
+ 
+GENERIC FILTER:
+ 
+Avoid:
+- "Many companies"
+- "In today's fast-paced"
+- "We help businesses"
+- "End-to-end"
+- "Enhance / Optimize / Streamline"
+ 
+If reusable → REWRITE
+ 
+---
+ 
+CTA RULES:
+ 
+Use ONE style:
+ 
+- "Would this be relevant to you?"
+- "Worth a quick exchange if this is a priority?"
+- "Open to discussing this further?"
+ 
+NO:
+"schedule a call"
+"quick call"
+ 
+---
+ 
+TONE RULE:
+ 
+- Write like a human, not marketer
+- Slightly conversational is OK
+- Avoid perfection, aim for believability
+ 
+---
+ 
+STEP 5: SUBJECT LINES
+ 
+Generate 3
+ 
+RULES:
+- 3–6 words
+- Contextual
+- Natural
+ 
+---
+ 
+STEP 6: FOLLOW-UPS (4)
+ 
+RULES:
+ 
+- 50–90 words  
+- Each adds NEW angle  
+- No repetition  
+- No "just following up"  
+ 
+---
+ 
+FOLLOW-UP FLOW:
+ 
+F1 → expand personalization  
+F2 → share relevant observation  
+F3 → add small idea  
+F4 → close politely  
+ 
+---
+ 
+FAILSAFE:
+ 
+If unsure → simplify  
+If fake → remove  
+If generic → rewrite  
+ 
+---
+ 
+OUTPUT FORMAT:
+ 
 {{
     "main_email": {{
-        "title": "{target.framework}",
-        "subject": "Include {target.company_url}",
+        "subject_options": ["", "", ""],
         "body": "HTML string"
     }},
     "follow_ups": [
@@ -522,18 +628,38 @@ OUTPUT JSON:
         {{"body": "HTML string"}}
     ]
 }}
-
-Address recipient:
-{target.receiver_first_name} {target.receiver_last_name}
+ 
+---
+OUTPUT RULES:
+ 
+- Clean HTML only
+- No markdown
+- No signature
+- No placeholders
 """
-
+ 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         response_format={"type": "json_object"},
         temperature=0.5,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    system_prompt +
+                    "You are an email generator.\n"
+                    "Return ONLY valid JSON.\n"
+                    "Format:\n"
+                    "{\n"
+                    "  'main_email': { 'subject': '', 'body': '' },\n"
+                    "  'follow_ups': [ { 'body': '' } ]\n"
+                    "}"
+                )
+            },
+            {
+                "role": "user",
+                "content": user_prompt + "\n\nRespond in JSON only."
+            }
         ]
     )
  
@@ -544,6 +670,21 @@ Address recipient:
     except json.JSONDecodeError:
         content = content.split("```")[-1].strip()
         data = json.loads(content)
+ 
+    main_email = data.setdefault("main_email", {})
+ 
+    subjects = main_email.get("subject_options") or []
+    main_email["subject"] = subjects[0] if subjects else ""
+ 
+    framework_value = None
+ 
+    if isinstance(target, dict):
+        framework_value = target.get("framework")
+    else:
+        framework_value = getattr(target, "framework", None)
+ 
+    # Only set if it exists and is not empty
+    main_email["framework"] = (framework_value or "").strip()
  
     def clean_signature(text):
         if not text:
@@ -558,8 +699,9 @@ Address recipient:
         data["main_email"]["body"] = clean_signature(
             data["main_email"].get("body", "")
         )
-
+ 
     for f in data.get("follow_ups", []):
         f["body"] = clean_signature(f.get("body", ""))
-
+ 
     return json.dumps(data)
+ 
