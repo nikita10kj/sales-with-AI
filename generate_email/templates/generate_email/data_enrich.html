@@ -203,6 +203,60 @@
         margin-bottom: 20px;
     }
 
+    /* ── Toast Notifications ── */
+    #toast-container {
+        position: fixed;
+        top: 16px;
+        right: 18px;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
+    }
+    .toast-msg {
+        pointer-events: all;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        background: #eefbf1;
+        color: #18794e;
+        border: 1px solid #ccebd7;
+        border-radius: 10px;
+        padding: 11px 14px;
+        font-size: 13.5px;
+        font-weight: 500;
+        font-family: inherit;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+        min-width: 220px;
+        max-width: 380px;
+        animation: toastFadeIn 0.2s ease;
+    }
+    .toast-msg.error {
+        background: #fff0f0;
+        color: #c53d3d;
+        border-color: #f2c3c3;
+    }
+    .toast-close {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        color: inherit;
+        opacity: 0.55;
+        line-height: 1;
+        padding: 0;
+        flex-shrink: 0;
+    }
+    .toast-close:hover { opacity: 1; }
+    @keyframes toastFadeIn {
+        from { opacity: 0; transform: translateY(-8px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+
+
     .loader-overlay {
         display: none;
         position: fixed;
@@ -316,13 +370,7 @@
     <br>
 
     <div class="enrichment-container">
-        {% if error %}
-            <div class="error-box">{{ error }}</div>
-        {% endif %}
-
-        {% if success %}
-            <div class="success-box">{{ success }}</div>
-        {% endif %}
+        {# messages rendered as toasts via JS below #}
 
         <div class="upload-card">
             <h3>Enrich Saved List</h3>
@@ -403,36 +451,66 @@
     </div>
 </div>
 {% endblock content %}
-
 {% block js %}
 <script>
-    const GET_SAVED_LISTS_URL = "{% url 'get_saved_lists' %}";
-    const ENRICH_SAVED_LIST_URL = "{% url 'enrich_saved_list' %}";
+    const GET_SAVED_LISTS_URL           = "{% url 'get_saved_lists' %}";
+    const ENRICH_SAVED_LIST_URL         = "{% url 'enrich_saved_list' %}";
     const EXPORT_SAVED_LIST_CSV_BASE_URL = "{% url 'export_saved_list_csv' 0 %}";
+    const CHECK_BULK_ENRICHMENT_URL     = "{% url 'check_bulk_enrichment' %}";
+</script>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script>
+function showToast(message, type) {
+    type = type || "success";
+    var container = document.getElementById("toast-container");
+    var toast = document.createElement("div");
+    toast.className = "toast-msg" + (type === "error" ? " error" : "");
+    toast.innerHTML = "<span>" + message + "</span>"
+        + '<button class="toast-close" aria-label="Close">&times;</button>';
+    container.appendChild(toast);
+
+    toast.querySelector(".toast-close").addEventListener("click", function () {
+        removeToast(toast);
+    });
+
+    setTimeout(function () { removeToast(toast); }, 5000);
+}
+
+function removeToast(toast) {
+    toast.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(30px)";
+    setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 320);
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    {% if messages %}
+    {% for message in messages %}
+    showToast("{{ message|escapejs }}", "{% if 'error' in message.tags %}error{% else %}success{% endif %}");
+    {% endfor %}
+    {% endif %}
+});
 </script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    const form = document.getElementById("enrichmentForm");
-    const loader = document.getElementById("enrichLoader");
-    const fileInput = document.getElementById("csvFileInput");
-    const selectedFileName = document.getElementById("selectedFileName");
-    const dropzone = document.getElementById("dropzone");
-
-    const savedListSelect = document.getElementById("savedListSelect");
-    const enrichSavedListBtn = document.getElementById("enrichSavedListBtn");
-    const savedListEnrichStatus = document.getElementById("savedListEnrichStatus");
-    const downloadEnrichedCsvBtn = document.getElementById("downloadEnrichedCsvBtn");
-
-    const campaignListIdInput = document.getElementById("campaignListIdInput");
-    const useInCampaignBtn = document.getElementById("useInCampaignBtn");
+    var loader                  = document.getElementById("enrichLoader");
+    var savedListSelect         = document.getElementById("savedListSelect");
+    var enrichSavedListBtn      = document.getElementById("enrichSavedListBtn");
+    var savedListEnrichStatus   = document.getElementById("savedListEnrichStatus");
+    var downloadEnrichedCsvBtn  = document.getElementById("downloadEnrichedCsvBtn");
+    var campaignListIdInput     = document.getElementById("campaignListIdInput");
+    var useInCampaignBtn        = document.getElementById("useInCampaignBtn");
 
     function getCookie(name) {
-        let cookieValue = null;
+        var cookieValue = null;
         if (document.cookie && document.cookie !== "") {
-            const cookies = document.cookie.split(";");
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
+            var cookies = document.cookie.split(";");
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i].trim();
                 if (cookie.substring(0, name.length + 1) === (name + "=")) {
                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                     break;
@@ -442,34 +520,23 @@ document.addEventListener("DOMContentLoaded", function () {
         return cookieValue;
     }
 
-    function updateFileName(file) {
-        if (file) {
-            selectedFileName.textContent = "Selected file: " + file.name;
-        } else {
-            selectedFileName.textContent = "";
-        }
-    }
-
+    // ── Load saved lists into select ──
     async function loadSavedLists() {
         try {
-            const response = await fetch(GET_SAVED_LISTS_URL, {
+            var response = await fetch(GET_SAVED_LISTS_URL, {
                 method: "GET",
-                headers: {
-                    "X-Requested-With": "XMLHttpRequest"
-                }
+                headers: { "X-Requested-With": "XMLHttpRequest" }
             });
-
-            const data = await response.json();
+            var data = await response.json();
 
             if (!savedListSelect) return;
-
             savedListSelect.innerHTML = '<option value="">Select saved list</option>';
 
             if (data.success && Array.isArray(data.lists)) {
                 data.lists.forEach(function (item) {
-                    const option = document.createElement("option");
+                    var option = document.createElement("option");
                     option.value = item.id;
-                    option.textContent = `${item.name} (${item.count || 0})`;
+                    option.textContent = item.name + " (" + (item.count || 0) + ")";
                     savedListSelect.appendChild(option);
                 });
             }
@@ -479,84 +546,100 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (savedListSelect) {
-    savedListSelect.addEventListener("change", function () {
-        const listId = this.value || "";
-        campaignListIdInput.value = listId;
-
-        useInCampaignBtn.style.display = "none";
-        downloadEnrichedCsvBtn.style.display = "none";
-        savedListEnrichStatus.textContent = "";
-        savedListEnrichStatus.className = "status-box";
-    });
-}
-
-    if (fileInput) {
-        fileInput.addEventListener("change", function () {
-            updateFileName(this.files[0]);
-        });
-    }
-
-    if (dropzone) {
-        ["dragenter", "dragover"].forEach(function(eventName) {
-            dropzone.addEventListener(eventName, function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                dropzone.classList.add("dragover");
-            });
-        });
-
-        ["dragleave", "drop"].forEach(function(eventName) {
-            dropzone.addEventListener(eventName, function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                dropzone.classList.remove("dragover");
-            });
-        });
-
-        dropzone.addEventListener("drop", function(e) {
-            const files = e.dataTransfer.files;
-            if (files && files.length > 0) {
-                fileInput.files = files;
-                updateFileName(files[0]);
+        savedListSelect.addEventListener("change", function () {
+            var listId = this.value || "";
+            if (campaignListIdInput) campaignListIdInput.value = listId;
+            if (useInCampaignBtn) useInCampaignBtn.style.display = "none";
+            if (downloadEnrichedCsvBtn) downloadEnrichedCsvBtn.style.display = "none";
+            if (savedListEnrichStatus) {
+                savedListEnrichStatus.textContent = "";
+                savedListEnrichStatus.className = "status-box";
             }
         });
     }
 
-    if (form) {
-        form.addEventListener("submit", function () {
-            loader.style.display = "flex";
-        });
+    // ── Progress bar helpers ──
+    function createProgressBar() {
+        var bar = document.getElementById("enrichProgressBar");
+        if (!bar) {
+            bar = document.createElement("div");
+            bar.id = "enrichProgressBar";
+            bar.style.cssText = [
+                "position:fixed", "bottom:20px", "left:50%",
+                "transform:translateX(-50%)",
+                "background:#fff", "border-radius:14px",
+                "box-shadow:0 4px 24px rgba(0,0,0,.15)",
+                "padding:16px 24px", "z-index:99999",
+                "min-width:300px", "text-align:center",
+                "font-size:14px", "font-weight:600", "color:#2e374d"
+            ].join(";");
+            document.body.appendChild(bar);
+        }
+        return bar;
     }
 
+    function updateProgressBar(bar, done, total) {
+        var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+        bar.innerHTML =
+            '<i class="fas fa-spinner fa-spin me-2" style="color:#6276ea;"></i>'
+            + "Enriching contacts\u2026 " + done + "/" + total + " done"
+            + '<div style="margin-top:10px;height:6px;background:#eef0f4;border-radius:99px;overflow:hidden;">'
+            + '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,#6276ea,#7c4fc8);border-radius:99px;transition:width .4s;"></div>'
+            + '</div>';
+    }
+
+    // ── Poll CheckBulkEnrichmentView ──
+    async function pollBulkEnrichment(requestIds, onProgress) {
+        var total = requestIds.length;
+        for (var attempt = 0; attempt < 40; attempt++) {
+            await new Promise(function (res) { setTimeout(res, 3000); });
+            var checkData;
+            try {
+                var pollResp = await fetch(
+                    CHECK_BULK_ENRICHMENT_URL + "?request_ids=" + requestIds.join(","),
+                    { headers: { "X-Requested-With": "XMLHttpRequest" } }
+                );
+                checkData = await pollResp.json();
+            } catch (pollErr) {
+                console.warn("[Bulk enrich poll] fetch error:", pollErr);
+                continue;
+            }
+            if (onProgress) onProgress(checkData.done || 0, checkData.total || total);
+            if (checkData.all_done) return { allDone: true, items: checkData.items || [] };
+        }
+        return { allDone: false, items: [] };
+    }
+
+    // ── Main enrich button ──
     if (enrichSavedListBtn) {
         enrichSavedListBtn.addEventListener("click", async function () {
-            const listId = savedListSelect ? savedListSelect.value : "";
+            var listId = savedListSelect ? savedListSelect.value : "";
 
             if (!listId) {
-                alert("Please select a saved list.");
+                showToast("Please select a saved list.", "error");
                 return;
             }
 
             enrichSavedListBtn.disabled = true;
-            enrichSavedListBtn.textContent = "Enriching...";
+            enrichSavedListBtn.textContent = "Starting enrichment...";
             savedListEnrichStatus.className = "status-box info";
-            savedListEnrichStatus.textContent = "Fetching emails, please wait...";
-            downloadEnrichedCsvBtn.style.display = "none";
+            savedListEnrichStatus.textContent = "Sending enrichment requests...";
+            if (downloadEnrichedCsvBtn) downloadEnrichedCsvBtn.style.display = "none";
+            if (useInCampaignBtn) useInCampaignBtn.style.display = "none";
 
             try {
-                const response = await fetch(ENRICH_SAVED_LIST_URL, {
+                // ── Step 1: fire enrichment jobs ──
+                var response = await fetch(ENRICH_SAVED_LIST_URL, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                         "X-CSRFToken": getCookie("csrftoken"),
                         "X-Requested-With": "XMLHttpRequest"
                     },
-                    body: JSON.stringify({
-                        list_id: listId
-                    })
+                    body: JSON.stringify({ list_id: listId })
                 });
 
-                const data = await response.json();
+                var data = await response.json();
 
                 if (!data.success) {
                     savedListEnrichStatus.className = "status-box error";
@@ -564,14 +647,64 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
 
+                // ── All contacts already had emails ──
+                if (!data.pending || !data.request_ids || !data.request_ids.length) {
+                    savedListEnrichStatus.className = "status-box success";
+                    savedListEnrichStatus.textContent = data.message || "All contacts already have emails.";
+
+                    if (downloadEnrichedCsvBtn) {
+                        downloadEnrichedCsvBtn.href = EXPORT_SAVED_LIST_CSV_BASE_URL.replace("/0/export-csv/", "/" + data.list_id + "/export-csv/");
+                        downloadEnrichedCsvBtn.style.display = "inline-flex";
+                    }
+                    if (campaignListIdInput) campaignListIdInput.value = data.list_id;
+                    if (useInCampaignBtn) useInCampaignBtn.style.display = "inline-flex";
+                    return;
+                }
+
+                // ── Step 2: poll until webhook fills results ──
+                var requestIds = data.request_ids;
+                var total      = requestIds.length;
+
+                savedListEnrichStatus.className = "status-box info";
+                savedListEnrichStatus.textContent = "Waiting for enrichment results (" + total + " contacts)...";
+
+                var progressBar = createProgressBar();
+                updateProgressBar(progressBar, 0, total);
+
+                enrichSavedListBtn.textContent = "Enriching...";
+
+                var result = await pollBulkEnrichment(requestIds, function (done, tot) {
+                    updateProgressBar(progressBar, done, tot);
+                    savedListEnrichStatus.textContent =
+                        "Enriching... " + done + "/" + tot + " contacts done.";
+                });
+
+                if (progressBar) progressBar.remove();
+
+                // ── Step 3: show results ──
+                var enrichedCount = result.items
+                    ? result.items.filter(function (i) { return i.email; }).length
+                    : 0;
+
                 savedListEnrichStatus.className = "status-box success";
-                savedListEnrichStatus.textContent = data.message;
 
-                downloadEnrichedCsvBtn.href = EXPORT_SAVED_LIST_CSV_BASE_URL.replace("/0/export-csv/", `/${data.list_id}/export-csv/`);
-                downloadEnrichedCsvBtn.style.display = "inline-flex";
+                if (result.allDone) {
+                    savedListEnrichStatus.textContent =
+                        "Enrichment complete! " + enrichedCount + " of " + total + " contacts enriched.";
+                } else {
+                    savedListEnrichStatus.textContent =
+                        "Enrichment still running in background. "
+                        + enrichedCount + " contacts enriched so far. "
+                        + "Download CSV to see results.";
+                }
 
-                campaignListIdInput.value = data.list_id;
-                useInCampaignBtn.style.display = "inline-flex";
+                if (downloadEnrichedCsvBtn) {
+                    downloadEnrichedCsvBtn.href = EXPORT_SAVED_LIST_CSV_BASE_URL.replace("/0/export-csv/", "/" + data.list_id + "/export-csv/");
+                    downloadEnrichedCsvBtn.style.display = "inline-flex";
+                }
+                if (campaignListIdInput) campaignListIdInput.value = data.list_id;
+                if (useInCampaignBtn) useInCampaignBtn.style.display = "inline-flex";
+
             } catch (error) {
                 console.error(error);
                 savedListEnrichStatus.className = "status-box error";

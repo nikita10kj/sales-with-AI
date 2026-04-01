@@ -21,7 +21,7 @@ from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 from users.views import thirdparty_redirect,PrivacyPolicyView,TermsConditionsView
- 
+from generate_email.views import RedrobWebhookView
 
 urlpatterns = [
     # path('', RedirectView.as_view(url='/users/',permanent=False)),
@@ -31,6 +31,9 @@ urlpatterns = [
     path('users/', include('users.urls')),  # default landing page
     path('generator/', include('generate_email.urls')),
     path('', include('frontend.urls')), 
+        # path('webhook/redrob/', (),name="redrob-webhook"),
+    path("webhook/redrob/", RedrobWebhookView.as_view(), name="redrob_webhook"),
+    
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('privacypolicy/',PrivacyPolicyView.as_view()),
     path('termsconditions/',TermsConditionsView.as_view()),

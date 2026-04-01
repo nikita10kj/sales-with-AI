@@ -827,7 +827,7 @@ def sendCampaignEmail(request, user, target_audience, main_email, selected_accou
 
     provider = selected_account.provider
 
-    # 🔥 IMPORTANT: derive sender email from selected account
+    # derive sender email from selected account
     sender_email = (
         selected_account.extra_data.get("email")
         or selected_account.extra_data.get("userPrincipalName")
@@ -854,52 +854,76 @@ def sendCampaignEmail(request, user, target_audience, main_email, selected_accou
     # GOOGLE
     # =========================
     if provider == 'google':
+        try:
+            service = get_gmail_service_campaign(selected_account)
+            user_name = user.full_name
 
-        service = get_gmail_service_campaign(selected_account)
-        user_name = user.full_name
+            # ── DEBUG ──
+            print(f"[CAMPAIGN] sender_email={sender_email}")
+            print(f"[CAMPAIGN] account_uid={selected_account.uid}")
+            print(f"[CAMPAIGN] to={email}")
 
-        messages = create_message(
-            user_name,
-            sender_email,   # ✅ selected account email
-            email,
-            subject,
-            message,
-            attachment=attachment,
-            new_msg_id=message_id
-        )
+            msg_payload = create_message(
+                user_name,
+                sender_email,
+                email,
+                subject,
+                message,
+                attachment=attachment,
+                new_msg_id=message_id
+            )
 
-        service.users().messages().send(
-            userId='me',
-            body=messages
-        ).execute()
+            result = service.users().messages().send(
+                userId='me',
+                body=msg_payload
+            ).execute()
+
+            thread_id = result.get('threadId', '')
+            sent_email.threadId = thread_id
+            sent_email.save(update_fields=["threadId"])
+
+            print(f"[CAMPAIGN] Gmail API result={result}")
+            logger.info(
+                "Campaign email sent via Gmail to %s (thread=%s)",
+                email, thread_id
+            )
+
+        except Exception as e:
+            logger.error(
+                "Campaign Gmail send FAILED to %s from %s: %s",
+                email, sender_email, e
+            )
+            print(f"[CAMPAIGN ERROR] to={email} err={e}")
+            raise
 
     # =========================
     # MICROSOFT
     # =========================
-    # elif provider == 'microsoft':
-
-    #     send_microsoft_email(
-    #         to_email=email,
-    #         subject=subject,
-    #         html_body=message,
-    #         selected_account=selected_account,
-    #         sender_email=sender_email,  # ✅ pass correct sender
-    #         attachment=attachment
-    #     )
-
     elif provider == 'microsoft':
-        send_microsoft_email(
-            user=user,          # ✅ add user back — the function requires it
-            to_email=email,
-            subject=subject,
-            html_body=message,
-            selected_account=selected_account,
-            sender_email=sender_email,
-            attachment=attachment
-        )
+        try:
+            graph_id = send_microsoft_email(
+                user=user,
+                to_email=email,
+                subject=subject,
+                html_body=message,
+                selected_account=selected_account,
+                sender_email=sender_email,
+                attachment=attachment
+            )
+            sent_email.message_id = graph_id
+            sent_email.save(update_fields=["message_id"])
+
+            logger.info("Campaign email sent via Microsoft to %s", email)
+
+        except Exception as e:
+            logger.error(
+                "Campaign Microsoft send FAILED to %s from %s: %s",
+                email, sender_email, e
+            )
+            raise
 
     else:
-        raise Exception("Unsupported provider")
+        raise Exception(f"Unsupported provider: {provider}")
 
     return sent_email
 
@@ -934,7 +958,7 @@ def redrob_search_by_linkedin_url(filters: dict) -> dict:
     r.raise_for_status()
     return r.json()
 
-def redrob_start_bulk_enrichment(data: list, name: str = "People Enrichment") -> dict:
+def redrob_start_bulk_enrichment(data: list, name: str = "People Enrichment",webhookUrl=None) -> dict:
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {settings.REDROB_TOKEN}",
@@ -943,6 +967,9 @@ def redrob_start_bulk_enrichment(data: list, name: str = "People Enrichment") ->
         "name": name,
         "data": data,
     }
+
+    if webhookUrl:
+        payload["webhookUrl"] = webhookUrl
 
     r = requests.post(
         "https://developersapi.redrob.io/enrichment/api/start-bulk",
