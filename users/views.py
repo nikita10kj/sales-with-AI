@@ -785,7 +785,7 @@ class PrivacyPolicyView(View):
     def get(self, request):
         return render(request, self.template_name)
 
-class LearningHubView(BlockDirectAccessMixin,View):
+class LearningHubView(View):
     template_name='users/learninghub.html'
 
     def get(self, request):
@@ -795,7 +795,7 @@ class TermsConditionsView(View):
 
     def get(self, request):
         return render(request, self.template_name)
-class RefundPolicyView(BlockDirectAccessMixin,View):
+class RefundPolicyView(View):
     template_name='users/refundpolicy.html'
 
     def get(self, request):
