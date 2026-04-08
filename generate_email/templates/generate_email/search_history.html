@@ -633,6 +633,7 @@
 const GET_SAVED_LISTS_URL         = "{% url 'get_saved_lists' %}";
 const SAVE_COMPANIES_TO_LIST_URL  = "{% url 'save_companies_to_list' %}";
 const ENRICH_PERSON_URL           = "{% url 'enrich_person' %}";
+const CHECK_ENRICHMENT_URL        = "{% url 'check_enrichment' request_id='00000000-0000-0000-0000-000000000000' %}".replace("00000000-0000-0000-0000-000000000000", "PLACEHOLDER");
 const SAVE_ENRICH_CAMPAIGN_URL    = "{% url 'save_enrich_campaign' %}";
 const SELECT_PERSON_FOR_EMAIL_URL = "{% url 'select_person_for_email' %}";
 
@@ -654,55 +655,123 @@ function toggleResults(btn,panelId){
 
 function buildSendEmailForm(person,csrfToken){const form=document.createElement("form");form.method="POST";form.action=SELECT_PERSON_FOR_EMAIL_URL;form.className="d-inline";form.style.flex="1";const fields={csrfmiddlewaretoken:csrfToken,first:person.first||"",last:person.last||"",linkedin:person.linkedin||"",company:person.company||"",company_website:person.company_website||"",job_title:person.job_title||"",institution:person.institution||"",location:person.location||"",company_headquarter:person.company_headquarter||"",email:person.email||""};Object.keys(fields).forEach(k=>{const i=document.createElement("input");i.type="hidden";i.name=k;i.value=fields[k];form.appendChild(i);});const btn=document.createElement("button");btn.type="submit";btn.className="drawer-action-btn primary";btn.style.width="100%";btn.innerHTML='<i class="far fa-envelope"></i> Send Email';form.appendChild(btn);return form;}
 
-// ENRICH
-document.addEventListener("click",async function(e){
-    const btn=e.target.closest(".sh-enrich-btn,.sh-enrich-drawer-btn");if(!btn)return;
-    const hid=btn.getAttribute("data-hid"),rid=btn.getAttribute("data-rid"),enrichType=btn.getAttribute("data-type")||"email",linkedin=btn.getAttribute("data-linkedin")||"";
-    if(!linkedin){showMessage("No LinkedIn URL for this person.","error");return;}
-    const origHTML=btn.innerHTML;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';btn.disabled=true;
-    const loader=document.getElementById("enrichLoader");if(loader)loader.style.display="flex";
-    const fd=new FormData();
-    fd.append("csrfmiddlewaretoken",getCookie("csrftoken"));fd.append("linkedin_url",linkedin);
-    fd.append("first",btn.getAttribute("data-first")||"");fd.append("last",btn.getAttribute("data-last")||"");
-    fd.append("company",btn.getAttribute("data-company")||"");fd.append("company_website",btn.getAttribute("data-company_website")||"");
-    fd.append("job_title",btn.getAttribute("data-job_title")||"");fd.append("institution",btn.getAttribute("data-institution")||"");
-    fd.append("location",btn.getAttribute("data-location")||"");fd.append("company_headquarter",btn.getAttribute("data-company_headquarter")||"");
-    fd.append("card_id",rid);fd.append("enrich_type",enrichType);
-    try{
-        const resp=await fetch(ENRICH_PERSON_URL,{method:"POST",headers:{"X-CSRFToken":getCookie("csrftoken"),"X-Requested-With":"XMLHttpRequest"},body:fd});
-        const data=await resp.json();if(loader)loader.style.display="none";
+// ── Helper: apply resolved email/phone to DOM and update stored data ──
+function applyEnrichToHistoryRow(hid, rid, enrichType, firstEmail, firstPhone, personData) {
+    const allCbs = document.querySelectorAll(`.sh-row-checkbox[data-history="${hid}"]`);
+    const cb = allCbs[parseInt(rid) - 1];
+    if (cb) { if (firstEmail) cb.setAttribute("data-email", firstEmail); if (firstPhone) cb.setAttribute("data-phone", firstPhone); }
+    if (currentPDrawerPerson) { if (firstEmail) currentPDrawerPerson.email = firstEmail; if (firstPhone) currentPDrawerPerson.phone = firstPhone; }
+    if (firstEmail) { const ec = document.querySelector(`.sh-email-col-${hid}-${rid}`); if (ec) ec.innerHTML = `<span class="sh-email-pill"><i class="far fa-envelope me-1"></i>${escapeHtml(firstEmail)}</span>`; }
+    if (firstPhone) { const pc = document.querySelector(`.sh-phone-col-${hid}-${rid}`); if (pc) pc.innerHTML = `<span class="sh-phone-pill"><i class="fas fa-phone-alt me-1" style="font-size:10px;"></i>${escapeHtml(firstPhone)}</span>`; }
+    const tableRow = document.getElementById(`sh-card-${hid}-${rid}`);
+    if (tableRow) { const actionDiv = tableRow.querySelector(".action-icons"); if (actionDiv) { if (firstEmail && enrichType === "email") { const eb = actionDiv.querySelector('.sh-enrich-btn[data-type="email"]'); if (eb) { const nf = document.createElement("form"); nf.method = "POST"; nf.action = SELECT_PERSON_FOR_EMAIL_URL; nf.className = "d-inline"; nf.innerHTML = `<input type="hidden" name="csrfmiddlewaretoken" value="${escapeHtml(getCookie('csrftoken'))}"><input type="hidden" name="first" value="${escapeHtml(personData.first)}"><input type="hidden" name="last" value="${escapeHtml(personData.last)}"><input type="hidden" name="linkedin" value="${escapeHtml(personData.linkedin)}"><input type="hidden" name="company" value="${escapeHtml(personData.company)}"><input type="hidden" name="company_website" value="${escapeHtml(personData.company_website)}"><input type="hidden" name="job_title" value="${escapeHtml(personData.job_title)}"><input type="hidden" name="institution" value="${escapeHtml(personData.institution)}"><input type="hidden" name="location" value="${escapeHtml(personData.location)}"><input type="hidden" name="company_headquarter" value="${escapeHtml(personData.company_headquarter)}"><input type="hidden" name="email" value="${escapeHtml(firstEmail)}"><button type="submit" class="send-email-col-btn" title="Send Email"><i class="far fa-envelope me-1"></i>Send Email</button>`; eb.replaceWith(nf); } } if (firstPhone && enrichType === "phone") { const pb = actionDiv.querySelector('.sh-enrich-btn[data-type="phone"]'); if (pb) { const db = document.createElement("button"); db.type = "button"; db.title = "Phone fetched"; db.disabled = true; db.style.cursor = "default"; db.innerHTML = '<i class="fas fa-phone-alt"></i>'; pb.replaceWith(db); } } } }
+    const drawerContactRows = profileDrawerContent ? profileDrawerContent.querySelectorAll(".drawer-contact-row") : [];
+    drawerContactRows.forEach(row => { const eb = row.querySelector(".sh-enrich-drawer-btn"); if (!eb) return; const rt = eb.getAttribute("data-type"); if (rt === "email" && firstEmail) { const cl = row.querySelector(".drawer-contact-left"); if (cl) cl.innerHTML = `<i class="far fa-envelope"></i> <span class="contact-val">${escapeHtml(firstEmail)}</span>`; } if (rt === "phone" && firstPhone) { const cl = row.querySelector(".drawer-contact-left"); if (cl) cl.innerHTML = `<i class="fas fa-phone-alt" style="font-size:12px;margin-left:1px;"></i> <span class="contact-val">${escapeHtml(firstPhone)}</span>`; } });
+    if (firstEmail && enrichType === "email") { const ph = profileDrawerContent ? profileDrawerContent.querySelector(".sh-drawer-send-placeholder") : null; if (ph) { personData.email = firstEmail; const nf = buildSendEmailForm(personData, getCookie("csrftoken")); ph.replaceWith(nf); } }
+    const tpl = document.getElementById(`sh-profile-${hid}-${rid}`);
+    if (tpl) { if (firstEmail && enrichType === "email") { const bl = tpl.querySelector(".drawer-contact-row .drawer-contact-left .contact-blurred"); if (bl) { bl.className = "contact-val"; bl.textContent = firstEmail; } const et = tpl.querySelector('.sh-enrich-drawer-btn[data-type="email"]'); if (et) et.remove(); const ta = tpl.querySelector(".drawer-actions"); if (ta) { const ph = ta.querySelector(".sh-drawer-send-placeholder"); if (ph) { personData.email = firstEmail; const nf = buildSendEmailForm(personData, getCookie("csrftoken")); ph.replaceWith(nf); } } } if (firstPhone && enrichType === "phone") { tpl.querySelectorAll(".drawer-contact-row").forEach(row => { const eb = row.querySelector('.sh-enrich-drawer-btn[data-type="phone"]'); if (eb) { const cl = row.querySelector(".drawer-contact-left"); if (cl) cl.innerHTML = `<i class="fas fa-phone-alt" style="font-size:12px;margin-left:1px;"></i> <span class="contact-val">${escapeHtml(firstPhone)}</span>`; eb.remove(); } }); } }
+}
+
+// ENRICH (with webhook polling)
+document.addEventListener("click", async function(e) {
+    const btn = e.target.closest(".sh-enrich-btn,.sh-enrich-drawer-btn"); if (!btn) return;
+    const hid = btn.getAttribute("data-hid"), rid = btn.getAttribute("data-rid"),
+          enrichType = btn.getAttribute("data-type") || "email",
+          linkedin   = btn.getAttribute("data-linkedin") || "";
+    if (!linkedin) { showMessage("No LinkedIn URL for this person.", "error"); return; }
+    const origHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
+    const loader = document.getElementById("enrichLoader"); if (loader) loader.style.display = "flex";
+
+    const personData = {
+        first: btn.getAttribute("data-first") || "", last: btn.getAttribute("data-last") || "",
+        linkedin, company: btn.getAttribute("data-company") || "",
+        company_website: btn.getAttribute("data-company_website") || "",
+        job_title: btn.getAttribute("data-job_title") || "",
+        institution: btn.getAttribute("data-institution") || "",
+        location: btn.getAttribute("data-location") || "",
+        company_headquarter: btn.getAttribute("data-company_headquarter") || "",
+        email: "", phone: ""
+    };
+
+    const fd = new FormData();
+    fd.append("csrfmiddlewaretoken", getCookie("csrftoken")); fd.append("linkedin_url", linkedin);
+    fd.append("first", personData.first); fd.append("last", personData.last);
+    fd.append("company", personData.company); fd.append("company_website", personData.company_website);
+    fd.append("job_title", personData.job_title); fd.append("institution", personData.institution);
+    fd.append("location", personData.location); fd.append("company_headquarter", personData.company_headquarter);
+    fd.append("card_id", rid); fd.append("enrich_type", enrichType);
+
+    try {
+        const resp = await fetch(ENRICH_PERSON_URL, { method: "POST", headers: { "X-CSRFToken": getCookie("csrftoken"), "X-Requested-With": "XMLHttpRequest" }, body: fd });
+        const data = await resp.json();
+
         if (!data.success) {
-            if (data.limit_reached) {
-                slShowModal(data.credits || 0);
-            } else {
-                showMessage(data.error || "Could not fetch contact.", "error");
-            }
+            if (loader) loader.style.display = "none";
+            if (data.limit_reached) { if (typeof slShowModal === 'function') slShowModal(data.credits || 0); }
+            else { showMessage(data.error || "Could not fetch contact.", "error"); }
             btn.innerHTML = origHTML; btn.disabled = false; return;
         }
 
-        // Update credit count if returned
-        if (typeof data.credits === 'number') {
-            slUpdatePill(data.credits);
+        // ── Webhook / polling path ──
+        if (data.pending && data.request_id) {
+            const requestId = data.request_id;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            let resolved = false;
+
+            for (let attempt = 0; attempt < 40; attempt++) {
+                await new Promise(res => setTimeout(res, 3000));
+                let checkData;
+                try {
+                    const pollResp = await fetch(
+                        CHECK_ENRICHMENT_URL.replace("PLACEHOLDER", requestId),
+                        { headers: { "X-Requested-With": "XMLHttpRequest" } }
+                    );
+                    checkData = await pollResp.json();
+                } catch (pollErr) { console.warn("[SH enrich poll] error:", pollErr); continue; }
+
+                if (!checkData.pending) {
+                    const firstEmail = checkData.email || "";
+                    const firstPhone = checkData.phone || "";
+                    personData.email = firstEmail; personData.phone = firstPhone;
+
+                    if (typeof checkData.credits === "number" && typeof slUpdatePill === "function") {
+                        slUpdatePill(checkData.credits);
+                    }
+
+                    if (loader) loader.style.display = "none";
+                    applyEnrichToHistoryRow(hid, rid, enrichType, firstEmail, firstPhone, personData);
+
+                    if (!firstEmail && !firstPhone) { showMessage("No contact info found for this person.", "error"); }
+                    else { showMessage(enrichType === "email" ? "Email fetched successfully!" : "Phone fetched successfully!", "success"); }
+
+                    resolved = true; break;
+                }
+            }
+
+            if (loader) loader.style.display = "none";
+            if (!resolved) {
+                showMessage("Enrichment is taking longer than expected. Please try again later.", "error");
+                btn.innerHTML = origHTML; btn.disabled = false;
+            }
+            return;
         }
-        const person=data.person||{},emails=person.emails||[],phones=person.phones||[];
-        const firstEmail=typeof emails[0]==="string"?emails[0]:(emails[0]&&emails[0].email?emails[0].email:"");
-        const firstPhone=typeof phones[0]==="string"?phones[0]:(phones[0]&&phones[0].number?phones[0].number:"");
-        const personData={first:btn.getAttribute("data-first")||"",last:btn.getAttribute("data-last")||"",linkedin:linkedin,company:btn.getAttribute("data-company")||"",company_website:btn.getAttribute("data-company_website")||"",job_title:btn.getAttribute("data-job_title")||"",institution:btn.getAttribute("data-institution")||"",location:btn.getAttribute("data-location")||"",company_headquarter:btn.getAttribute("data-company_headquarter")||"",email:firstEmail,phone:firstPhone};
-        const allCbs=document.querySelectorAll(`.sh-row-checkbox[data-history="${hid}"]`);
-        const cb=allCbs[parseInt(rid)-1];
-        if(cb){if(firstEmail)cb.setAttribute("data-email",firstEmail);if(firstPhone)cb.setAttribute("data-phone",firstPhone);}
-        if(currentPDrawerPerson){if(firstEmail)currentPDrawerPerson.email=firstEmail;if(firstPhone)currentPDrawerPerson.phone=firstPhone;}
-        if(firstEmail){const ec=document.querySelector(`.sh-email-col-${hid}-${rid}`);if(ec)ec.innerHTML=`<span class="sh-email-pill"><i class="far fa-envelope me-1"></i>${escapeHtml(firstEmail)}</span>`;}
-        if(firstPhone){const pc=document.querySelector(`.sh-phone-col-${hid}-${rid}`);if(pc)pc.innerHTML=`<span class="sh-phone-pill"><i class="fas fa-phone-alt me-1" style="font-size:10px;"></i>${escapeHtml(firstPhone)}</span>`;}
-        const tableRow=document.getElementById(`sh-card-${hid}-${rid}`);
-        if(tableRow){const actionDiv=tableRow.querySelector(".action-icons");if(actionDiv){if(firstEmail&&enrichType==="email"){const eb=actionDiv.querySelector('.sh-enrich-btn[data-type="email"]');if(eb){const nf=document.createElement("form");nf.method="POST";nf.action=SELECT_PERSON_FOR_EMAIL_URL;nf.className="d-inline";nf.innerHTML=`<input type="hidden" name="csrfmiddlewaretoken" value="${escapeHtml(getCookie('csrftoken'))}"><input type="hidden" name="first" value="${escapeHtml(personData.first)}"><input type="hidden" name="last" value="${escapeHtml(personData.last)}"><input type="hidden" name="linkedin" value="${escapeHtml(personData.linkedin)}"><input type="hidden" name="company" value="${escapeHtml(personData.company)}"><input type="hidden" name="company_website" value="${escapeHtml(personData.company_website)}"><input type="hidden" name="job_title" value="${escapeHtml(personData.job_title)}"><input type="hidden" name="institution" value="${escapeHtml(personData.institution)}"><input type="hidden" name="location" value="${escapeHtml(personData.location)}"><input type="hidden" name="company_headquarter" value="${escapeHtml(personData.company_headquarter)}"><input type="hidden" name="email" value="${escapeHtml(firstEmail)}"><button type="submit" class="send-email-col-btn" title="Send Email"><i class="far fa-envelope me-1"></i>Send Email</button>`;eb.replaceWith(nf);}}if(firstPhone&&enrichType==="phone"){const pb=actionDiv.querySelector('.sh-enrich-btn[data-type="phone"]');if(pb){const db=document.createElement("button");db.type="button";db.title="Phone fetched";db.disabled=true;db.style.cursor="default";db.innerHTML='<i class="fas fa-phone-alt"></i>';pb.replaceWith(db);}}}}
-        const drawerContactRows=profileDrawerContent?profileDrawerContent.querySelectorAll(".drawer-contact-row"):[];
-        drawerContactRows.forEach(row=>{const eb=row.querySelector(".sh-enrich-drawer-btn");if(!eb)return;const rt=eb.getAttribute("data-type");if(rt==="email"&&firstEmail){const cl=row.querySelector(".drawer-contact-left");if(cl)cl.innerHTML=`<i class="far fa-envelope"></i> <span class="contact-val">${escapeHtml(firstEmail)}</span>`;}if(rt==="phone"&&firstPhone){const cl=row.querySelector(".drawer-contact-left");if(cl)cl.innerHTML=`<i class="fas fa-phone-alt" style="font-size:12px;margin-left:1px;"></i> <span class="contact-val">${escapeHtml(firstPhone)}</span>`;}});
-        if(firstEmail&&enrichType==="email"){const ph=profileDrawerContent?profileDrawerContent.querySelector(".sh-drawer-send-placeholder"):null;if(ph){personData.email=firstEmail;const nf=buildSendEmailForm(personData,getCookie("csrftoken"));ph.replaceWith(nf);}}
-        const tpl=document.getElementById(`sh-profile-${hid}-${rid}`);
-        if(tpl){if(firstEmail&&enrichType==="email"){const bl=tpl.querySelector(".drawer-contact-row .drawer-contact-left .contact-blurred");if(bl){bl.className="contact-val";bl.textContent=firstEmail;}const et=tpl.querySelector('.sh-enrich-drawer-btn[data-type="email"]');if(et)et.remove();const ta=tpl.querySelector(".drawer-actions");if(ta){const ph=ta.querySelector(".sh-drawer-send-placeholder");if(ph){personData.email=firstEmail;const nf=buildSendEmailForm(personData,getCookie("csrftoken"));ph.replaceWith(nf);}}}if(firstPhone&&enrichType==="phone"){tpl.querySelectorAll(".drawer-contact-row").forEach(row=>{const eb=row.querySelector('.sh-enrich-drawer-btn[data-type="phone"]');if(eb){const cl=row.querySelector(".drawer-contact-left");if(cl)cl.innerHTML=`<i class="fas fa-phone-alt" style="font-size:12px;margin-left:1px;"></i> <span class="contact-val">${escapeHtml(firstPhone)}</span>`;eb.remove();}});}}
-        showMessage(enrichType==="email"?"Email fetched successfully!":"Phone fetched successfully!","success");
-    }catch(err){if(loader)loader.style.display="none";btn.innerHTML=origHTML;btn.disabled=false;showMessage("Server error.","error");console.error(err);}
+
+        // ── Legacy direct response ──
+        if (loader) loader.style.display = "none";
+        const person = data.person || {}, emails = person.emails || [], phones = person.phones || [];
+        const firstEmail = typeof emails[0] === "string" ? emails[0] : (emails[0] && emails[0].email ? emails[0].email : "");
+        const firstPhone = typeof phones[0] === "string" ? phones[0] : (phones[0] && phones[0].number ? phones[0].number : "");
+        personData.email = firstEmail; personData.phone = firstPhone;
+        if (typeof data.credits === "number" && typeof slUpdatePill === "function") slUpdatePill(data.credits);
+        applyEnrichToHistoryRow(hid, rid, enrichType, firstEmail, firstPhone, personData);
+        showMessage(enrichType === "email" ? "Email fetched successfully!" : "Phone fetched successfully!", "success");
+
+    } catch (err) {
+        if (loader) loader.style.display = "none";
+        btn.innerHTML = origHTML; btn.disabled = false;
+        showMessage("Server error.", "error"); console.error(err);
+    }
 });
 
 // MODAL
@@ -815,6 +884,7 @@ if(confirmDeleteHistoryBtn){confirmDeleteHistoryBtn.addEventListener("click",asy
 
 // Credit system for history page
 let slCredits = {{ search_limit.credits|default:50 }};
+let slSearchCredits = {{ search_limit.search_credits|default:25 }};
 
 function slUpdatePill(newCredits) {
     slCredits = newCredits;

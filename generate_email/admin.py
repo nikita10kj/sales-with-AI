@@ -30,26 +30,45 @@ class GlobalSearchLogAdmin(admin.ModelAdmin):
 
 @admin.register(UserSearchLimit)
 class UserSearchLimitAdmin(admin.ModelAdmin):
-    list_display  = ['user', 'credits', 'credit_bar', 'updated_at', 'renew_50_btn', 'reset_btn']
+    list_display  = ['user', 'credits', 'search_credits', 'credit_bar', 'search_credit_bar', 'updated_at', 'renew_50_btn', 'reset_btn']
     search_fields = ['user__email', 'user__full_name']
-    list_editable = ['credits']
+    list_editable = ['credits', 'search_credits']
     ordering      = ['credits']
-    actions       = ['renew_50_credits', 'renew_100_credits', 'reset_to_50']
+    actions       = ['renew_50_credits', 'renew_100_credits', 'reset_to_50', 'renew_25_search', 'reset_search_25']
+
 
     def credit_bar(self, obj):
-        pct  = min(int((obj.credits / 50) * 100), 100)
-        # pct  = min(int((obj.credits / 4) * 100), 100)
-
+        pct   = min(int((obj.credits / 50) * 100), 100)
         color = '#22c55e' if pct > 40 else '#f59e0b' if pct > 15 else '#ef4444'
-        # color = '#22c55e' if pct > 2 else '#f59e0b' if pct > 1 else '#ef4444'
-
         return format_html(
             '<div style="width:100px;height:10px;background:#e5e7eb;border-radius:5px;">'
             '<div style="width:{}%;height:100%;background:{};border-radius:5px;"></div>'
-            '</div>',
-            pct, color
+            '</div>', pct, color
         )
-    credit_bar.short_description = 'Credits'
+    credit_bar.short_description = 'Enrich bar'
+
+    def search_credit_bar(self, obj):
+        pct   = min(int((obj.search_credits / 25) * 100), 100)
+        color = '#22c55e' if pct > 40 else '#f59e0b' if pct > 15 else '#ef4444'
+        return format_html(
+            '<div style="width:100px;height:10px;background:#e5e7eb;border-radius:5px;">'
+            '<div style="width:{}%;height:100%;background:{};border-radius:5px;"></div>'
+            '</div>', pct, color
+        )
+    search_credit_bar.short_description = 'Search bar'
+
+    def renew_25_search(self, request, queryset):
+        for obj in queryset:
+            obj.renew_search(25)
+        self.message_user(request, f"{queryset.count()} users got +25 search credits.")
+    renew_25_search.short_description = "Add 25 search credits to selected users"
+
+    def reset_search_25(self, request, queryset):
+        for obj in queryset:
+            obj.reset_search(25)
+        self.message_user(request, f"{queryset.count()} users reset to 25 search credits.")
+    reset_search_25.short_description = "Reset selected users to 25 search credits"
+
 
     def renew_50_btn(self, obj):
         return format_html(

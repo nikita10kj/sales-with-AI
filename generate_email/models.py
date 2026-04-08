@@ -209,47 +209,56 @@ class GlobalSearchLog(models.Model):
 
 
 class UserSearchLimit(models.Model):
-    user         = models.OneToOneField(CustomUser,on_delete=models.CASCADE,related_name='search_limit')
-    credits      = models.PositiveIntegerField(default=50)   # starts with 50
-    created_at   = models.DateTimeField(auto_now_add=True)
-    updated_at   = models.DateTimeField(auto_now=True)
+    user           = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='search_limit')
+    credits        = models.PositiveIntegerField(default=50)   # enrichment credits
+    search_credits = models.PositiveIntegerField(default=25)   # search credits
+    created_at     = models.DateTimeField(auto_now_add=True)
+    updated_at     = models.DateTimeField(auto_now=True)
 
     def has_credits(self):
         return self.credits > 0
 
+    def has_search_credits(self):
+        return self.search_credits > 0
+
     def deduct(self, amount=1):
-        """Deduct credits. Returns True if successful, False if not enough."""
         if self.credits >= amount:
             self.credits -= amount
             self.save(update_fields=['credits', 'updated_at'])
             return True
         return False
 
+    def deduct_search(self, amount=1):
+        if self.search_credits >= amount:
+            self.search_credits -= amount
+            self.save(update_fields=['search_credits', 'updated_at'])
+            return True
+        return False
+
     def renew(self, amount=50):
-        """Add credits (admin renewal)."""
         self.credits += amount
         self.save(update_fields=['credits', 'updated_at'])
 
+    def renew_search(self, amount=25):
+        self.search_credits += amount
+        self.save(update_fields=['search_credits', 'updated_at'])
+
     def reset(self, amount=50):
-        """Reset credits to a specific amount (admin reset)."""
         self.credits = amount
         self.save(update_fields=['credits', 'updated_at'])
 
+    def reset_search(self, amount=25):
+        self.search_credits = amount
+        self.save(update_fields=['search_credits', 'updated_at'])
+
     def __str__(self):
-        return f"{self.user} — {self.credits} credits"
-    
+        return f"{self.user} — {self.credits} enrich credits, {self.search_credits} search credits"
+
 
 @receiver(post_save, sender='users.CustomUser')
 def create_search_limit_for_new_user(sender, instance, created, **kwargs):
-    """
-    Only runs when a brand new user is created.
-    Existing users are NOT affected.
-    """
     if created:
         UserSearchLimit.objects.get_or_create(
             user=instance,
-            defaults={"credits": 50}
+            defaults={"credits": 50, "search_credits": 25}
         )
-
-
-

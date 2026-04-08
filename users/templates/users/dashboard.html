@@ -57,7 +57,7 @@
                     {% if email_limit %}
                     <div class="mt-2 fw-semibold"
                         style="font-size: 0.75rem;
-                                color: {% if remaining_emails <= 50 %}#dc3545{% else %}#00b894{% endif %};">
+                                color: {% if remaining_emails <= 10 %}#dc3545{% else %}#00b894{% endif %};">
                     {{ remaining_emails }} left out of {{ email_limit }}
                     </div>
                     {% endif %}

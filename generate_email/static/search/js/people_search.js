@@ -680,6 +680,11 @@ if (confirmSaveListBtn) {
                                 if (extraRow) extraRow.style.display = "none";
                                 if (loader) loader.style.display = "none";
 
+                                // ── Update credit pill live ──
+                                if (typeof checkData.credits === "number" && typeof slUpdatePill === "function") {
+                                    slUpdatePill(checkData.credits);
+                                }
+
                                 if (!fe && !fp) {
                                     showMessage("No contact info found for this person.", "error");
                                 } else {
@@ -973,6 +978,10 @@ if (confirmSaveListBtn) {
                         }
                         if (!checkData.pending) {
                             firstEmail = checkData.email || "";
+                            // ── Update credit pill live ──
+                            if (typeof checkData.credits === "number" && typeof slUpdatePill === "function") {
+                                slUpdatePill(checkData.credits);
+                            }
                             resolved = true;
                             break;
                         }

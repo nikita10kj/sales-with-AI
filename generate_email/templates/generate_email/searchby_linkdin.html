@@ -86,7 +86,12 @@
                     <span class="sl-credit-pill {% if search_limit.credits == 0 %}zero{% elif search_limit.credits <= 10 %}low{% endif %}"
                         id="slCreditPill">
                         <i class="fas fa-bolt"></i>
-                        <span id="slCreditCount">{{ search_limit.credits }}</span> credits
+                        <span title="Enrichment Credits">{{ search_limit.credits }}</span>
+                    </span>
+                    <span class="sl-credit-pill {% if search_limit.search_credits == 0 %}zero{% elif search_limit.search_credits <= 10 %}low{% endif %}"
+                        id="slSearchCreditPill">
+                        <i class="fas fa-search"></i>
+                        <span title="Search Credits">{{ search_limit.search_credits }}</span>
                     </span>
                     {% endif %}
                     <span class="contact-pill" id="contactPill">0/0</span>
@@ -761,6 +766,7 @@
 <script>
 // ── Credit system ──
 let slCredits = {{ search_limit.credits|default:50 }};
+let slSearchCredits = {{ search_limit.search_credits|default:25 }};
 
 function slUpdatePill(newCredits) {
     slCredits = newCredits;
@@ -771,6 +777,17 @@ function slUpdatePill(newCredits) {
         pill.classList.remove('low', 'zero');
         if (newCredits === 0)       pill.classList.add('zero');
         else if (newCredits <= 10)  pill.classList.add('low');
+    }
+}
+function slUpdateSearchPill(newCredits) {
+    slSearchCredits = newCredits;
+    const pill  = document.getElementById('slSearchCreditPill');
+    const count = document.getElementById('slSearchCreditCount');
+    if (count) count.textContent = newCredits;
+    if (pill) {
+        pill.classList.remove('low', 'zero');
+        if (newCredits === 0)      pill.classList.add('zero');
+        else if (newCredits <= 5)  pill.classList.add('low');
     }
 }
 
@@ -824,7 +841,7 @@ document.addEventListener('keydown', function(e) {
 })();
 
 // ── Show modal immediately if already at 0 on page load ──
-{% if search_limit and search_limit.credits == 0 %}
+{% if search_limit and search_limit.search_credits == 0 %}
 document.addEventListener('DOMContentLoaded', function() {
     // Only show on enrich attempts, not on page load
     // (User can still browse, just can't enrich)
