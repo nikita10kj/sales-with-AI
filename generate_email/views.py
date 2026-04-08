@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import FormView, View,TemplateView,ListView,DetailView
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from werkzeug.utils import redirect
 from .genai_email import get_response
 from .models import TargetAudience, SentEmail, ReminderEmail, EmailSubscription,SearchHistory,GlobalSearchLog,UserSearchLimit
 from users.models import ProductService, ActivityLog,Signature,UserWallet
@@ -149,6 +150,18 @@ class AiParseSearchView(View):
         if not query:
             return JsonResponse({"error": "Query is empty"}, status=400)
 
+        # Check if user has search credits before AI parsing
+        try:
+            limit = UserSearchLimit.objects.get(user=request.user)
+            if not limit.has_search_credits():
+                return JsonResponse({"error": "No search credits remaining. Please buy search credits."}, status=402)
+            # Deduct 1 search credit for AI parsing
+            limit.deduct_search(1)
+        except UserSearchLimit.DoesNotExist:
+            limit = UserSearchLimit.objects.create(user=request.user)
+            if limit.has_search_credits():
+                limit.deduct_search(1)
+
         api_key  = os.environ.get("OPENAI_API_KEY", "").strip().strip("'\"")
         endpoint = os.environ.get("ENDPOINT_URL", "").strip().strip("'\"")
 
@@ -219,7 +232,7 @@ def get_search_limit(user):
     """Get or create UserSearchLimit for user. Always returns the object."""
     limit, _ = UserSearchLimit.objects.get_or_create(
         user=user,
-        defaults={"credits": 50}
+        defaults={"credits": 25}
     )
     return limit
 
@@ -368,8 +381,18 @@ class SearchPeopleByLinkdinView(View):
         }
 
         try:
+
+            limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+            if not limit.has_search_credits():
+                request.session["error"] = "No search credits remaining. Please buy search credits."
+                request.session["form"] = form
+                return redirect("search_by_linkdin")
+            
             search_resp = redrob_search_by_linkedin_url(payload)
             raw_people = search_resp.get("data", [])
+
+            if raw_people:
+                limit.deduct_search(1)
 
             for p in raw_people:
                 company_obj = p.get("company") or {}
@@ -697,10 +720,20 @@ class SearchPeopleView(View):
         print(payload)
 
         try:
+            # Check if user has search credits
+            limit = UserSearchLimit.objects.get(user=request.user)
+            if not limit.has_search_credits():
+                error = "No search credits remaining. Please buy search credits."
+                request.session["error"] = error
+                return redirect("search_people")
+            
             search_resp = redrob_search_people(payload)
 
             data = search_resp.get("data", {})
             raw_people = search_resp.get("data", {}).get("people", [])
+            
+            # Deduct 1 search credit on successful search
+            limit.deduct_search(1)
             metadata = data.get("metadata", {})
 
             pagination = {
@@ -1232,16 +1265,64 @@ class CheckEnrichmentView(View):
         first_phone = phones[0].get("number", "") if phones and isinstance(phones[0], dict) else (phones[0] if phones else "")
 
         # Deduct credits only once
+        current_credits = None
         if not enrichment.credits_deducted and (first_email or first_phone):
             try:
                 limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+                # Email enrichment: 1 credit, Phone/Contact enrichment: 3 credits
+                credit_cost = 1 if enrichment.enrich_type == "email" else 3
                 if limit.has_credits():
-                    limit.deduct(1)
+                    limit.deduct(credit_cost)
                 EnrichmentRequest.objects.filter(
                     request_id=request_id
                 ).update(credits_deducted=True)
+                current_credits = limit.credits
             except Exception:
                 pass
+
+        # Fetch credits if not already set (e.g. already deducted previously)
+        if current_credits is None:
+            try:
+                limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+                current_credits = limit.credits
+            except Exception:
+                pass
+
+        # ── Update SearchHistory & GlobalSearchLog with the enriched email/phone ──
+        if first_email or first_phone:
+            try:
+                norm_url = enrichment.linkedin.strip().lower().rstrip("/")
+
+                def _patch_model(model_cls):
+                    """Patch all recent records (up to 20) that contain this person."""
+                    records = list(model_cls.objects.filter(
+                        user=request.user,
+                        search_type__in=["people", "linkedin"],
+                    ).order_by("-created_at")[:20])
+                    for record in records:
+                        if not record.results:
+                            continue
+                        changed = False
+                        for r in record.results:
+                            r_url = r.get("linkedin", "").strip().lower().rstrip("/")
+                            if r_url == norm_url:
+                                if first_email:
+                                    r["email"] = first_email
+                                if first_phone:
+                                    r["phone"] = first_phone
+                                changed = True
+                        if changed:
+                            model_cls.objects.filter(id=record.id).update(
+                                results=record.results
+                            )
+
+                _patch_model(SearchHistory)
+                _patch_model(GlobalSearchLog)
+
+            except Exception as _e:
+                import traceback
+                print("[CheckEnrichmentView] patch error:", _e)
+                traceback.print_exc()
 
         return JsonResponse({
             "success": True,
@@ -1252,6 +1333,7 @@ class CheckEnrichmentView(View):
             "emails":  emails,
             "phones":  phones,
             "enrich_type": enrichment.enrich_type,
+            "credits": current_credits,
         })
 
 class SearchCompanyView(View):
@@ -1419,9 +1501,19 @@ class SearchCompanyView(View):
         # print(payload["name"])
 
         try:
+
+            limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+            if not limit.has_search_credits():
+                request.session["error"] = "No search credits remaining. Please buy search credits."
+                request.session["form"] = form
+                return redirect("search_company")
+            
             search_resp = redrob_search_by_company(payload)
             # print(search_resp)
             raw_companies = search_resp.get("data", {}).get("companies", [])
+
+            if raw_companies:
+                limit.deduct_search(1)
             # print(raw_companies)
 
             # print(raw_companies)
@@ -2213,7 +2305,7 @@ class CheckBulkEnrichmentView(LoginRequiredMixin, View):
                 EnrichmentRequest.objects.filter(request_id=er.request_id).update(
                     credits_deducted=True
                 )
-
+                
             if is_done:
                 done_count += 1
 
@@ -2996,7 +3088,7 @@ class GenerateEmailView(BlockDirectAccessMixin,LoginRequiredMixin, View):
         if user_domain != ORG_DOMAIN:
             wallet, _ = UserWallet.objects.get_or_create(
                 user=request.user,
-                defaults={"credits": 500}
+                defaults={"credits": 50}
             )
             if wallet.credits <= 0:
                 return JsonResponse({

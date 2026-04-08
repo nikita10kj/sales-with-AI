@@ -101,7 +101,7 @@ class EmailAttachment(models.Model):
     
 class UserWallet(models.Model):
     user=models.OneToOneField(CustomUser,on_delete=models.CASCADE,related_name="wallet")
-    credits=models.IntegerField(default=500)
+    credits=models.IntegerField(default=50)
     updated_at=models.DateTimeField(auto_now=True)
     
 class RazorpayCreditOrder(models.Model):
@@ -123,9 +123,6 @@ class RazorpayCreditOrder(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="CREATED")
     created_at = models.DateTimeField(auto_now_add=True)
     paid_at = models.DateTimeField(null=True, blank=True)
-
-
-
 
 class ActivityLog(models.Model):
     ACTION_CHOICES = [

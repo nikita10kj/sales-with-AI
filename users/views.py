@@ -84,7 +84,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
         # Only apply the 500-email limit to external users
         if organization_domain not in user_email:
             total_sent_user = SentEmail.objects.filter(user=user).count()
-            email_limit = 500
+            email_limit = 50
             remaining_emails = max(email_limit - total_sent_user, 0)
         else:
             total_sent_user = SentEmail.objects.filter(user=user).count()
