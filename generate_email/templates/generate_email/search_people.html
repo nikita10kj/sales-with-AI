@@ -1254,8 +1254,21 @@ function changePage(page) {
                 const el = document.getElementById(FIELD_MAP[k]);
                 if (el) el.value = val;
             });
+             //const form = document.getElementById("peopleSearchForm");
+            //if (form) { form.submit(); }
             const form = document.getElementById("peopleSearchForm");
-            if (form) { form.submit(); }
+            if (form) {
+                let flag = document.getElementById("ai_search_flag");
+                if (!flag) {
+                    flag = document.createElement("input");
+                    flag.type = "hidden";
+                    flag.name = "ai_search";
+                    flag.id = "ai_search_flag";
+                    form.appendChild(flag);
+                }
+                flag.value = "1";
+                form.submit();
+            }
         })
         .catch(function(err) {
             aiSendBtn.disabled = false;

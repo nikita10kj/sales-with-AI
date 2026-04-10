@@ -602,7 +602,7 @@ FOLLOW-UP FLOW:
 F1 → expand personalization  
 F2 → share relevant observation  
 F3 → add small idea  
-F4 → close politely  
+F4 → close politely ,start with action-oriented sentence
  
 ---
  
