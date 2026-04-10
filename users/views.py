@@ -1135,3 +1135,149 @@ def delete_signature(request, pk):
         Signature.objects.filter(id=pk, user=request.user).delete()
         return JsonResponse({"success": True})
     return JsonResponse({"success": False})
+
+
+from django.http import HttpResponse
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from datetime import datetime, timedelta
+
+class AdminDashboardExportView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """Export admin dashboard data to Excel"""
+    
+    def test_func(self):
+        return self.request.user.is_superuser
+    
+    def get(self, request):
+        # Get all data same as AdminDashboardView
+        now = timezone.now()
+        today = now.date()
+        week_start = today - timedelta(days=7)
+        month_start = today.replace(day=1)
+        
+        users = CustomUser.objects.filter(
+            is_superuser=False
+        ).annotate(
+            email_count=Count("sent_email")
+        ).order_by("-last_login")
+        
+        superuser = CustomUser.objects.filter(is_superuser=True).first()
+        today_logins = CustomUser.objects.filter(last_login__date=today).count()
+        week_logins = CustomUser.objects.filter(last_login__date__gte=week_start).count()
+        month_logins = CustomUser.objects.filter(last_login__date__gte=month_start).count()
+        
+        # Create workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Dashboard"
+        
+        # Define styles
+        header_fill = PatternFill(start_color="6F6AE1", end_color="6F6AE1", fill_type="solid")
+        header_font = Font(bold=True, color="FFFFFF", size=12)
+        stat_fill = PatternFill(start_color="E8E8FF", end_color="E8E8FF", fill_type="solid")
+        stat_font = Font(bold=True, size=11)
+        label_font = Font(color="6B7280", size=10)
+        border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+        
+        # Title
+        ws['A1'] = "👑 ADMIN DASHBOARD REPORT"
+        ws['A1'].font = Font(bold=True, size=14)
+        ws.merge_cells('A1:D1')
+        ws['A1'].alignment = Alignment(horizontal='left', vertical='center')
+        
+        # Generate timestamp
+        ws['A2'] = f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        ws['A2'].font = Font(size=9, color="6B7280")
+        
+        # Superuser info
+        row = 4
+        ws[f'A{row}'] = "Super User"
+        ws[f'A{row}'].font = stat_font
+        ws[f'B{row}'] = superuser.email if superuser else "N/A"
+        
+        # Stats section
+        row = 6
+        ws[f'A{row}'] = "LOGIN STATISTICS"
+        ws[f'A{row}'].font = Font(bold=True, size=11)
+        ws.merge_cells(f'A{row}:B{row}')
+        
+        row = 7
+        stats_data = [
+            ("Today Logins", today_logins),
+            ("This Week Logins", week_logins),
+            ("This Month Logins", month_logins),
+        ]
+        
+        for label, value in stats_data:
+            ws[f'A{row}'] = label
+            ws[f'A{row}'].font = label_font
+            ws[f'B{row}'] = value
+            ws[f'B{row}'].font = stat_font
+            ws[f'B{row}'].fill = stat_fill
+            ws[f'B{row}'].alignment = Alignment(horizontal='center')
+            row += 1
+        
+        # Users table
+        row = 12
+        ws[f'A{row}'] = f"ALL USERS ({users.count()})"
+        ws[f'A{row}'].font = Font(bold=True, size=11)
+        ws.merge_cells(f'A{row}:D{row}')
+        
+        # Table headers
+        row = 13
+        headers = ["User", "Email", "Emails Sent", "Last Login"]
+        for col, header in enumerate(headers, start=1):
+            cell = ws.cell(row=row, column=col)
+            cell.value = header
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+            cell.border = border
+        
+        # Table data
+        row = 14
+        for user in users:
+            # User name
+            user_name = user.get_full_name() or user.email
+            ws[f'A{row}'] = user_name
+            ws[f'A{row}'].border = border
+            
+            # Email
+            ws[f'B{row}'] = user.email
+            ws[f'B{row}'].border = border
+            
+            # Emails sent
+            ws[f'C{row}'] = user.email_count
+            ws[f'C{row}'].border = border
+            ws[f'C{row}'].alignment = Alignment(horizontal='center')
+            
+            # Last login
+            if user.last_login:
+                last_login = user.last_login.strftime('%Y-%m-%d %H:%M')
+            else:
+                last_login = "Never"
+            ws[f'D{row}'] = last_login
+            ws[f'D{row}'].border = border
+            ws[f'D{row}'].alignment = Alignment(horizontal='center')
+            
+            row += 1
+        
+        # Column widths
+        ws.column_dimensions['A'].width = 25
+        ws.column_dimensions['B'].width = 30
+        ws.column_dimensions['C'].width = 18
+        ws.column_dimensions['D'].width = 20
+        
+        # Prepare response
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="admin_dashboard_{today.strftime("%Y%m%d")}.xlsx"'
+        
+        wb.save(response)
+        return response
