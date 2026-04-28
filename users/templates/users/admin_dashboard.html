@@ -21,10 +21,46 @@
   font-family: "Inter", system-ui, sans-serif;
 }
 
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
 .dashboard-title {
   font-size: 24px;
   font-weight: 700;
-  margin-bottom: 24px;
+  margin: 0;
+}
+
+/* Export Button */
+.export-btn {
+  background: linear-gradient(135deg, var(--purple), var(--blue));
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .3s;
+  box-shadow: 0 4px 15px rgba(79,156,255,.3);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(79,156,255,.4);
+}
+
+.export-btn:active {
+  transform: translateY(0);
 }
 
 /* Cards */
@@ -93,11 +129,37 @@
   font-weight: 700;
   margin-right: 10px;
 }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .export-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .dashboard-title {
+    font-size: 20px;
+  }
+  
+  .dashboard-wrapper {
+    padding: 20px;
+  }
+}
 </style>
 
 <div class="dashboard-wrapper">
 
-  <div class="dashboard-title">👑 Super User Dashboard</div>
+  <div class="dashboard-header">
+    <h1 class="dashboard-title">👑 Super User Dashboard</h1>
+    <a href="{% url 'admin_dashboard_export' %}" class="export-btn">
+      📊 Export to Excel
+    </a>
+  </div>
 
   {% if superuser %}
   <div class="section-card" style="margin-bottom:20px;">

@@ -408,6 +408,7 @@ def sendGeneratedEmail(request, user, target_audience, main_email,selected_accou
         opened_count=0,
         clicked_count=0,
         replied_count=0,
+        sending_account=selected_account,
         
     )
 

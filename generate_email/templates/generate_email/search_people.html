@@ -1261,6 +1261,8 @@ function changePage(page) {
                 const el = document.getElementById(FIELD_MAP[k]);
                 if (el) el.value = val;
             });
+             //const form = document.getElementById("peopleSearchForm");
+            //if (form) { form.submit(); }
             const form = document.getElementById("peopleSearchForm");
             if (form && typeof doAjaxSearch === "function") { doAjaxSearch(); }
         })
