@@ -30,9 +30,363 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // ── Show loader on form submit ──
     const searchForm = document.getElementById("linkedinSearchForm");
+
+    function showLoader() { if (loader) loader.style.display = "flex"; }
+    function hideLoader() { if (loader) loader.style.display = "none"; }
+
+    function buildResultsHTML(people) {
+        if (!people || !people.length) {
+            return '<div class="error-box"><i class="fas fa-info-circle"></i> No results found for this LinkedIn URL.</div>';
+        }
+
+        var html = '<div class="results-card">';
+
+        // meta bar
+        html += '<div class="results-meta"><div class="results-meta-left">'
+            + '<input type="checkbox" id="selectAllRows">'
+            + ' <i class="fas fa-chevron-down" style="font-size:11px;color:#aab0c4;cursor:pointer;"></i>'
+            + ' <span id="selectedCountText">0 selected of ' + people.length + ' results</span>'
+            + '</div><div class="results-meta-right">'
+            + '<button type="button" id="saveToListBtn" class="save-list-btn" style="display:none;"><i class="fas fa-plus"></i> Save to List</button>'
+            + '</div></div>';
+
+        // table
+        html += '<div class="table-wrap"><table class="results-table"><thead><tr>'
+            + '<th class="col-chk"></th><th>Profile</th><th>Job Title</th>'
+            + '<th>Contact Location</th><th>Company</th><th>HQ Location</th>'
+            + '<th>Institution</th><th>LinkedIn URL</th><th>Email</th><th>Contact</th><th>Actions</th>'
+            + '</tr></thead><tbody>';
+
+        people.forEach(function (p, i) {
+            var idx = i + 1;
+            var initials = ((p.first || "U").charAt(0) + (p.last || "").charAt(0));
+
+            html += '<tr id="person-card-' + idx + '">';
+
+            // checkbox
+            html += '<td class="col-chk"><input type="checkbox" class="row-checkbox"'
+                + ' data-first="' + escapeHtml(p.first) + '"'
+                + ' data-last="' + escapeHtml(p.last) + '"'
+                + ' data-linkedin="' + escapeHtml(p.linkedin) + '"'
+                + ' data-company="' + escapeHtml(p.company) + '"'
+                + ' data-company_website="' + escapeHtml(p.company_website || "") + '"'
+                + ' data-job_title="' + escapeHtml(p.job_title) + '"'
+                + ' data-institution="' + escapeHtml(p.institution) + '"'
+                + ' data-location="' + escapeHtml(p.location) + '"'
+                + ' data-company_headquarter="' + escapeHtml(p.company_headquarter) + '"'
+                + ' data-email="' + escapeHtml(p.emails && p.emails[0] ? (p.emails[0].email || "") : "") + '"'
+                + ' data-phone="' + escapeHtml(p.phones && p.phones[0] ? (p.phones[0].number || "") : "") + '"'
+                + '></td>';
+
+            // profile
+            var photoHtml = p.photo
+                ? '<img src="' + escapeHtml(p.photo) + '" alt="Profile Photo" onerror="this.style.display=\'none\';this.parentElement.classList.add(\'fallback-avatar\');">'
+                : '';
+            var avatarClass = p.photo ? 'avatar-circle' : 'avatar-circle fallback-avatar';
+            html += '<td><div class="profile-cell">';
+            if (p.linkedin) html += '<a href="' + escapeHtml(p.linkedin) + '" target="_blank" class="avatar-link">';
+            html += '<div class="' + avatarClass + '">' + photoHtml + '<span class="initials">' + escapeHtml(initials) + '</span></div>';
+            if (p.linkedin) html += '</a>';
+            html += '<div class="profile-info"><span class="profile-name drawer-trigger" data-tooltip="' + escapeHtml(p.first + ' ' + p.last) + '">' + escapeHtml(p.first + ' ' + p.last) + '</span>';
+            if (p.linkedin) html += ' <a href="' + escapeHtml(p.linkedin) + '" target="_blank" class="li-badge" title="LinkedIn">in</a>';
+            html += '</div></div></td>';
+
+            // job title, location, company, HQ, institution, LinkedIn URL
+            html += '<td class="cell-truncate drawer-trigger" data-tooltip="' + escapeHtml(p.job_title || '') + '">' + escapeHtml(p.job_title || "—") + '</td>';
+
+            html += '<td class="cell-truncate drawer-trigger"' + (p.location ? ' data-tooltip="' + escapeHtml(p.location) + '"' : '') + '>';
+            html += p.location ? '<span class="cell-icon"><i class="fas fa-map-marker-alt"></i></span>' + escapeHtml(p.location) : '—';
+            html += '</td>';
+
+            html += '<td class="cell-truncate"' + (p.company ? ' data-tooltip="' + escapeHtml(p.company) + '"' : '') + '>';
+            if (p.company) {
+                if (p.company_website) html += '<a href="' + escapeHtml(p.company_website) + '" target="_blank" class="company-link">';
+                html += '<span class="cell-icon"><i class="fas fa-building"></i></span>' + escapeHtml(p.company);
+                if (p.company_website) html += '</a>';
+            } else html += '—';
+            html += '</td>';
+
+            html += '<td class="cell-truncate drawer-trigger"' + (p.company_headquarter ? ' data-tooltip="' + escapeHtml(p.company_headquarter) + '"' : '') + '>';
+            html += p.company_headquarter ? '<span class="cell-icon"><i class="fas fa-map-marker-alt"></i></span>' + escapeHtml(p.company_headquarter) : '—';
+            html += '</td>';
+
+            html += '<td class="cell-truncate"' + (p.institution ? ' data-tooltip="' + escapeHtml(p.institution) + '"' : '') + '>';
+            html += p.institution ? '<span class="cell-icon"><i class="fas fa-graduation-cap"></i></span>' + escapeHtml(p.institution) : '—';
+            html += '</td>';
+
+            html += '<td class="cell-truncate"' + (p.linkedin ? ' data-tooltip="' + escapeHtml(p.linkedin) + '"' : '') + '>';
+            html += p.linkedin ? '<a href="' + escapeHtml(p.linkedin) + '" target="_blank" class="linkedin-url-link"><i class="fab fa-linkedin" style="color:#0a66c2;margin-right:5px;"></i>View Profile</a>' : '—';
+            html += '</td>';
+
+            // Email
+            var hasEmail = p.emails && p.emails[0] && p.emails[0].email;
+            html += '<td class="email-col-' + idx + '" style="min-width:180px;">';
+            if (hasEmail) html += '<span class="contact-col-pill contact-col-email"><i class="far fa-envelope me-1"></i>' + escapeHtml(p.emails[0].email) + '</span>';
+            else html += '<span class="contact-col-blurred">***@*****</span>';
+            html += '</td>';
+
+            // Phone
+            var hasPhone = p.phones && p.phones[0] && p.phones[0].number;
+            html += '<td class="phone-col-' + idx + '" style="min-width:130px;">';
+            if (hasPhone) html += '<span class="contact-col-pill contact-col-phone"><i class="fas fa-phone-alt me-1" style="font-size:10px;"></i>' + escapeHtml(p.phones[0].number) + '</span>';
+            else html += '<span class="contact-col-blurred">***-****</span>';
+            html += '</td>';
+
+            // Actions
+            html += '<td style="min-width:150px;"><div class="action-icons">';
+            if (hasEmail) {
+                html += '<form method="POST" action="' + SELECT_PERSON_FOR_EMAIL_URL + '" class="d-inline">'
+                    + '<input type="hidden" name="csrfmiddlewaretoken" value="' + CSRF_TOKEN + '">'
+                    + '<input type="hidden" name="first" value="' + escapeHtml(p.first) + '">'
+                    + '<input type="hidden" name="last" value="' + escapeHtml(p.last) + '">'
+                    + '<input type="hidden" name="linkedin" value="' + escapeHtml(p.linkedin) + '">'
+                    + '<input type="hidden" name="company" value="' + escapeHtml(p.company) + '">'
+                    + '<input type="hidden" name="company_website" value="' + escapeHtml(p.company_website || "") + '">'
+                    + '<input type="hidden" name="job_title" value="' + escapeHtml(p.job_title) + '">'
+                    + '<input type="hidden" name="institution" value="' + escapeHtml(p.institution) + '">'
+                    + '<input type="hidden" name="location" value="' + escapeHtml(p.location) + '">'
+                    + '<input type="hidden" name="company_headquarter" value="' + escapeHtml(p.company_headquarter) + '">'
+                    + '<input type="hidden" name="email" value="' + escapeHtml(p.emails[0].email) + '">'
+                    + '<button type="submit" class="send-email-col-btn" title="Send Email"><i class="far fa-envelope me-1"></i> Send Email</button></form>';
+            } else {
+                html += '<form method="POST" action="' + ENRICH_PERSON_URL + '" class="enrich-form d-inline">'
+                    + '<input type="hidden" name="csrfmiddlewaretoken" value="' + CSRF_TOKEN + '">'
+                    + '<input type="hidden" name="linkedin_url" value="' + escapeHtml(p.linkedin) + '">'
+                    + '<input type="hidden" name="first" value="' + escapeHtml(p.first) + '">'
+                    + '<input type="hidden" name="last" value="' + escapeHtml(p.last) + '">'
+                    + '<input type="hidden" name="company" value="' + escapeHtml(p.company) + '">'
+                    + '<input type="hidden" name="company_website" value="' + escapeHtml(p.company_website || "") + '">'
+                    + '<input type="hidden" name="job_title" value="' + escapeHtml(p.job_title) + '">'
+                    + '<input type="hidden" name="institution" value="' + escapeHtml(p.institution) + '">'
+                    + '<input type="hidden" name="location" value="' + escapeHtml(p.location) + '">'
+                    + '<input type="hidden" name="company_headquarter" value="' + escapeHtml(p.company_headquarter) + '">'
+                    + '<input type="hidden" name="card_id" value="' + idx + '">'
+                    + '<input type="hidden" name="enrich_type" value="email">'
+                    + '<button type="submit" title="Fetch Email"><i class="far fa-envelope"></i></button></form>';
+            }
+            html += '<form method="POST" action="' + ENRICH_PERSON_URL + '" class="enrich-form d-inline">'
+                + '<input type="hidden" name="csrfmiddlewaretoken" value="' + CSRF_TOKEN + '">'
+                + '<input type="hidden" name="linkedin_url" value="' + escapeHtml(p.linkedin) + '">'
+                + '<input type="hidden" name="first" value="' + escapeHtml(p.first) + '">'
+                + '<input type="hidden" name="last" value="' + escapeHtml(p.last) + '">'
+                + '<input type="hidden" name="company" value="' + escapeHtml(p.company) + '">'
+                + '<input type="hidden" name="company_website" value="' + escapeHtml(p.company_website || "") + '">'
+                + '<input type="hidden" name="job_title" value="' + escapeHtml(p.job_title) + '">'
+                + '<input type="hidden" name="institution" value="' + escapeHtml(p.institution) + '">'
+                + '<input type="hidden" name="location" value="' + escapeHtml(p.location) + '">'
+                + '<input type="hidden" name="company_headquarter" value="' + escapeHtml(p.company_headquarter) + '">'
+                + '<input type="hidden" name="card_id" value="' + idx + '">'
+                + '<input type="hidden" name="enrich_type" value="phone">'
+                + '<button type="submit" title="Fetch Phone"><i class="fas fa-phone-alt"></i></button></form>';
+
+            html += '<button type="button" title="Save to List" class="single-save-btn"><i class="far fa-bookmark"></i></button>';
+            html += '</div></td>';
+            html += '</tr>';
+            html += '<tr class="person-extra-row" id="person-extra-' + idx + '" style="display:none;"><td colspan="11" style="background:#fafbfe;padding:0;"><div class="person-extra-box" style="padding:16px 18px;"><div class="person-extra-content"></div></div></td></tr>';
+        });
+
+        html += '</tbody></table></div>';
+
+        // pagination footer (simplified for LinkedIn — single page)
+        html += '<div class="results-footer"><div class="results-footer-left">'
+            + '<span class="goto-label">Go to page</span>'
+            + '<span class="goto-page-wrap"><i class="fas fa-info-circle"></i> <span>1</span> <i class="fas fa-chevron-down"></i></span>'
+            + '</div><div class="pagination-wrap"><span class="results-count-text">Page 1</span></div></div>';
+
+        html += '</div>';
+        return html;
+    }
+
+    function buildProfileTemplatesHTML(people) {
+        var html = '';
+        people.forEach(function (p, i) {
+            var idx = i + 1;
+            var initials = ((p.first || "U").charAt(0) + (p.last || "").charAt(0));
+
+            html += '<div id="person-profile-' + idx + '" class="person-profile-tpl" style="display:none;" aria-hidden="true">';
+
+            // Hero
+            html += '<div class="drawer-hero"><div class="drawer-hero-top"><div class="drawer-avatar">';
+            if (p.photo) {
+                html += '<img src="' + escapeHtml(p.photo) + '" alt="' + escapeHtml(p.first + ' ' + p.last) + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';">';
+                html += '<span class="drawer-avatar-initials" style="display:none;">' + escapeHtml(initials) + '</span>';
+            } else {
+                html += '<span class="drawer-avatar-initials">' + escapeHtml(initials) + '</span>';
+            }
+            html += '</div><div class="drawer-name-block"><div class="drawer-name">';
+            if (p.linkedin) {
+                html += '<a href="' + escapeHtml(p.linkedin) + '" target="_blank" style="color:inherit;text-decoration:none;">' + escapeHtml(p.first + ' ' + p.last) + '</a>';
+                html += ' <a href="' + escapeHtml(p.linkedin) + '" target="_blank" class="li-badge" title="LinkedIn">in</a>';
+            } else html += escapeHtml(p.first + ' ' + p.last);
+            html += '</div>';
+            if (p.job_title) html += '<div class="drawer-job">' + escapeHtml(p.job_title) + '</div>';
+            html += '</div></div>';
+
+            // Meta + Tags
+            html += '<div class="drawer-meta-row">';
+            if (p.location) html += '<div class="drawer-meta-item"><i class="fas fa-map-marker-alt"></i><span>' + escapeHtml(p.location) + '</span></div>';
+            if (p.company_headquarter) html += '<div class="drawer-meta-item"><i class="fas fa-map-pin"></i><span>' + escapeHtml(p.company_headquarter) + '</span></div>';
+            html += '</div><div class="drawer-tag-row">';
+            if (p.company) html += '<span class="drawer-tag"><i class="fas fa-building"></i>' + escapeHtml(p.company) + '</span>';
+            if (p.institution) html += '<span class="drawer-tag"><i class="fas fa-graduation-cap"></i>' + escapeHtml(p.institution) + '</span>';
+            if (p.linkedin) html += '<a href="' + escapeHtml(p.linkedin) + '" target="_blank" class="drawer-tag li-tag" style="text-decoration:none;"><i class="fab fa-linkedin-in"></i>LinkedIn</a>';
+            html += '</div></div>';
+
+            // Contacts
+            var hasEmail = p.emails && p.emails[0] && p.emails[0].email;
+            var hasPhone = p.phones && p.phones[0] && p.phones[0].number;
+            html += '<div class="drawer-section"><div class="drawer-section-title">Contacts</div>';
+            html += '<div class="drawer-contact-row"><div class="drawer-contact-left"><i class="far fa-envelope"></i>';
+            if (hasEmail) html += '<span class="contact-val">' + escapeHtml(p.emails[0].email) + '</span>';
+            else html += '<span class="contact-blurred">***@***</span><button class="drawer-unlock-link" type="button">Enrich email</button>';
+            html += '</div></div>';
+            html += '<div class="drawer-contact-row"><div class="drawer-contact-left"><i class="fas fa-phone-alt" style="font-size:12px;margin-left:1px;"></i>';
+            if (hasPhone) html += '<span class="contact-val">' + escapeHtml(p.phones[0].number) + '</span>';
+            else html += '<span class="contact-blurred">**-***-***</span><button class="drawer-unlock-link" type="button">Enrich Contact</button>';
+            html += '</div></div></div>';
+
+            // Experience
+            html += '<div class="drawer-section"><div class="drawer-section-title">Work Experience</div>';
+            var exps = p.experience || [];
+            if (exps.length) {
+                exps.forEach(function(exp) {
+                    html += '<div class="drawer-exp-item"><div class="drawer-exp-icon"><i class="fas fa-building"></i></div><div class="drawer-exp-body">';
+                    html += '<div class="drawer-exp-title">' + escapeHtml(exp.title || "") + '</div>';
+                    html += '<div class="drawer-exp-company">' + escapeHtml(exp.company || "") + (exp.location ? ' | ' + escapeHtml(exp.location) : '') + '</div>';
+                    html += '</div></div>';
+                });
+            } else html += '<div class="drawer-no-data">No work experience available</div>';
+            html += '</div>';
+
+            // Skills
+            html += '<div class="drawer-section"><div class="drawer-section-title">Skills</div>';
+            var skills = p.skills_list || [];
+            if (skills.length) {
+                html += '<div class="drawer-skills-wrap">';
+                skills.forEach(function(s) { html += '<span class="drawer-skill-chip">' + escapeHtml(s) + '</span>'; });
+                html += '</div>';
+            } else html += '<div class="drawer-no-data">No skills available</div>';
+            html += '</div>';
+
+            // Actions
+            html += '<div class="drawer-actions">';
+            if (hasEmail) {
+                html += '<form method="POST" action="' + SELECT_PERSON_FOR_EMAIL_URL + '" class="d-inline" style="flex:1;">'
+                    + '<input type="hidden" name="csrfmiddlewaretoken" value="' + CSRF_TOKEN + '">'
+                    + '<input type="hidden" name="first" value="' + escapeHtml(p.first) + '">'
+                    + '<input type="hidden" name="last" value="' + escapeHtml(p.last) + '">'
+                    + '<input type="hidden" name="linkedin" value="' + escapeHtml(p.linkedin) + '">'
+                    + '<input type="hidden" name="company" value="' + escapeHtml(p.company) + '">'
+                    + '<input type="hidden" name="company_website" value="' + escapeHtml(p.company_website || "") + '">'
+                    + '<input type="hidden" name="job_title" value="' + escapeHtml(p.job_title) + '">'
+                    + '<input type="hidden" name="institution" value="' + escapeHtml(p.institution) + '">'
+                    + '<input type="hidden" name="location" value="' + escapeHtml(p.location) + '">'
+                    + '<input type="hidden" name="company_headquarter" value="' + escapeHtml(p.company_headquarter) + '">'
+                    + '<input type="hidden" name="email" value="' + escapeHtml(p.emails[0].email) + '">'
+                    + '<button type="submit" class="drawer-action-btn primary" style="width:100%;"><i class="far fa-envelope"></i> Send Email</button></form>';
+            } else {
+                html += '<button class="drawer-action-btn primary" type="button" disabled style="flex:1;opacity:.5;cursor:not-allowed;"><i class="far fa-envelope"></i> Send Email</button>';
+            }
+            if (p.linkedin) html += '<a href="' + escapeHtml(p.linkedin) + '" target="_blank" class="drawer-action-btn secondary" style="flex:1;"><i class="fab fa-linkedin-in"></i> LinkedIn</a>';
+            html += '</div></div>';
+        });
+        return html;
+    }
+
+    function renderAjaxResults(data) {
+        var resultsContent = document.querySelector(".results-content");
+        if (!resultsContent) return;
+
+        // Clear old results
+        resultsContent.innerHTML = "";
+        document.querySelectorAll(".person-profile-tpl").forEach(function(el) { el.remove(); });
+
+        if (data.error && (!data.people || !data.people.length)) {
+            resultsContent.innerHTML = '<div class="error-box"><i class="fas fa-exclamation-circle"></i> ' + escapeHtml(data.error) + '</div>';
+            return;
+        }
+
+        if (!data.people || !data.people.length) {
+            resultsContent.innerHTML = '<div class="empty-box"><i class="fas fa-search"></i><p>No results yet. Use the filters on the left and hit <strong>Search</strong>.</p></div>';
+            return;
+        }
+
+        resultsContent.innerHTML = buildResultsHTML(data.people);
+
+        // Insert profile templates
+        var resultsPanel = document.querySelector(".results-panel");
+        if (resultsPanel) resultsPanel.insertAdjacentHTML("afterend", buildProfileTemplatesHTML(data.people));
+
+        // Update credit pills
+        if (typeof slUpdateSearchPill === "function" && typeof data.search_credits === "number") slUpdateSearchPill(data.search_credits);
+        if (typeof slUpdatePill === "function" && typeof data.credits === "number") slUpdatePill(data.credits);
+
+        // Re-attach enrich events
+        attachEnrichEvents();
+
+        // Re-attach selection events
+        reattachSelectionEvents();
+    }
+
+    function reattachSelectionEvents() {
+        var cbs = document.querySelectorAll(".row-checkbox");
+        var sa = document.getElementById("selectAllRows");
+        var st = document.getElementById("selectedCountText");
+        var sb = document.getElementById("saveToListBtn");
+
+        function updateUI() {
+            if (!st || !sb) return;
+            var c = document.querySelectorAll(".row-checkbox:checked").length;
+            var t = document.querySelectorAll(".row-checkbox").length;
+            st.textContent = c + " selected of " + t + " results";
+            sb.style.display = c > 0 ? "inline-flex" : "none";
+            if (sa) sa.checked = t > 0 && c === t;
+        }
+
+        if (sa) sa.addEventListener("change", function () {
+            document.querySelectorAll(".row-checkbox").forEach(function (cb) { cb.checked = sa.checked; });
+            updateUI();
+        });
+        cbs.forEach(function (cb) { cb.addEventListener("change", updateUI); });
+        if (sb) sb.addEventListener("click", async function () {
+            await loadExistingLists();
+            setTab("new");
+            openModal();
+        });
+
+        var cp = document.getElementById("contactPill");
+        if (cp) cp.textContent = "0/" + cbs.length;
+    }
+
     if (searchForm) {
-        searchForm.addEventListener("submit", function () {
-            if (loader) loader.style.display = "flex";
+        searchForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            showLoader();
+
+            var formData = new FormData(searchForm);
+
+            fetch(SEARCH_BY_LINKDIN_URL, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": CSRF_TOKEN,
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: formData
+            })
+            .then(function (resp) { return resp.json(); })
+            .then(function (data) {
+                hideLoader();
+                if (data.limit_reached) {
+                    if (typeof slShowModal === "function") slShowModal(data.credits || 0);
+                    return;
+                }
+                renderAjaxResults(data);
+            })
+            .catch(function (err) {
+                hideLoader();
+                console.error("AJAX LinkedIn search error:", err);
+                showMessage("Search failed. Please try again.", "error");
+            });
         });
     }
 

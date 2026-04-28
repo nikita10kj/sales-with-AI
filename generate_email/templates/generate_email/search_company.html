@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'search/css/company_search.css' %}?v=9">
+<link rel="stylesheet" href="{% static 'search/css/company_search.css' %}?v=10">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 {% endblock extra_css %}
@@ -618,6 +618,15 @@
     </div>
 </div>
 
+<!-- Search loader overlay -->
+<div id="searchLoaderOverlay" class="loader-overlay" style="display:none;">
+    <div class="loader-box">
+        <div class="spinner-border text-primary" role="status"></div>
+        <div class="loader-text">Searching companies...</div>
+        <div class="loader-subtext">Please wait while results are fetched.</div>
+    </div>
+</div>
+
 <!-- Toast message -->
 <div id="customMessage" class="custom-message custom-message-success" style="display:none;">
     <span id="customMessageText">Saved successfully.</span>
@@ -753,6 +762,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
     const GET_SAVED_LISTS_URL = "{% url 'get_saved_lists' %}";
     const SAVE_COMPANIES_TO_LIST_URL = "{% url 'save_companies_to_list' %}";
+    const SEARCH_COMPANY_URL = "{% url 'search_company' %}";
+    const CSRF_TOKEN = "{{ csrf_token }}";
 </script>
-<script src="{% static 'search/js/company_search.js' %}?v=4"></script>
+<script src="{% static 'search/js/company_search.js' %}?v=5"></script>
 {% endblock js %}

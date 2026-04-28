@@ -368,7 +368,6 @@ class SearchPeopleByLinkdinView(View):
     def post(self, request, *args, **kwargs):
         people = []
         error = None
-
         linkedin_url = request.POST.get("linkedin_url", "").strip()
 
         form = {
@@ -380,10 +379,13 @@ class SearchPeopleByLinkdinView(View):
             "linkedinUrl": linkedin_url,
         }
 
-        try:
+        is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
+        try:
             limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
             if not limit.has_search_credits():
+                if is_ajax:
+                    return JsonResponse({"limit_reached": True, "error": "No search credits remaining.", "credits": limit.credits, "people": []})
                 request.session["error"] = "No search credits remaining. Please buy search credits."
                 request.session["form"] = form
                 return redirect("search_by_linkdin")
@@ -550,10 +552,7 @@ class SearchPeopleByLinkdinView(View):
         except Exception as e:
             error = f"Server error: {str(e)}"
 
-        request.session["people"] = people
-        request.session["error"] = error
-        request.session["form"] = form
-
+        # ── Save search history ──
         try:
             filters_snapshot = {"linkedin_url": linkedin_url} if linkedin_url else {}
 
@@ -598,6 +597,20 @@ class SearchPeopleByLinkdinView(View):
         except Exception:
             pass
 
+        # ── AJAX: return JSON instead of redirecting ──
+        is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        if is_ajax:
+            limit.refresh_from_db()
+            return JsonResponse({
+                "people": people,
+                "error": error or "",
+                "credits": limit.credits,
+                "search_credits": limit.search_credits,
+            })
+
+        request.session["people"] = people
+        request.session["error"] = error
+        request.session["form"] = form
         return redirect("search_by_linkdin")
 
 class SearchPeopleView(View):
@@ -717,17 +730,28 @@ class SearchPeopleView(View):
 
         payload = {k: v for k, v in payload.items() if v not in ([], "", None)}
 
-        print(payload)
+        print(f"🔍 Search payload: {payload}")
 
         try:
             # Check if user has search credits
             limit = UserSearchLimit.objects.get(user=request.user)
             if not limit.has_search_credits():
                 error = "No search credits remaining. Please buy search credits."
+                is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+                if is_ajax:
+                    return JsonResponse({
+                        "success": False,
+                        "error": error,
+                        "limit_reached": True,
+                        "search_credits": 0,
+                        "credits": limit.credits,
+                    })
                 request.session["error"] = error
                 return redirect("search_people")
             
             search_resp = redrob_search_people(payload)
+            print(f"🔍 API Response received: {type(search_resp)}")
+            print(f"Response keys: {search_resp.keys() if isinstance(search_resp, dict) else 'Not a dict'}")
 
             data = search_resp.get("data", {})
             raw_people = search_resp.get("data", {}).get("people", [])
@@ -894,16 +918,19 @@ class SearchPeopleView(View):
                 })
 
         except requests.HTTPError as e:
+            print(f"❌ API HTTPError {e.response.status_code}:")
+            print(f"Response: {e.response.text}")
             error = f"API error {e.response.status_code}: {e.response.text}"
+        except requests.RequestException as e:
+            print(f"❌ API RequestException: {str(e)}")
+            error = f"API request error: {str(e)}"
         except Exception as e:
+            print(f"❌ Unexpected error: {type(e).__name__}: {str(e)}")
+            import traceback
+            traceback.print_exc()
             error = f"Server error: {str(e)}"
 
-        request.session["people"] = people
-        request.session["error"] = error
-        request.session["form"] = form
-        request.session["pagination"] = pagination
-
-
+        # ── Save search history ──
         try:
             filters_snapshot = {k: v for k, v in {
                 "name": name, "company": company, "job_title": job_title,
@@ -954,7 +981,25 @@ class SearchPeopleView(View):
 
         except Exception:
             pass
-        
+
+        # ── AJAX request → return JSON (no page reload) ──
+        is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        if is_ajax:
+            limit_obj, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+            return JsonResponse({
+                "success":        error is None,
+                "error":          error,
+                "people":         people,
+                "pagination":     pagination,
+                "search_credits": limit_obj.search_credits,
+                "credits":        limit_obj.credits,
+            })
+
+        # ── Fallback: traditional POST-redirect-GET ──
+        request.session["people"] = people
+        request.session["error"] = error
+        request.session["form"] = form
+        request.session["pagination"] = pagination
         return redirect("search_people")
 
 # -----------working -----------------
@@ -1505,7 +1550,10 @@ class SearchCompanyView(View):
         try:
 
             limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+            is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
             if not limit.has_search_credits():
+                if is_ajax:
+                    return JsonResponse({"limit_reached": True, "error": "No search credits remaining.", "credits": limit.credits, "companies": []})
                 request.session["error"] = "No search credits remaining. Please buy search credits."
                 request.session["form"] = form
                 return redirect("search_company")
@@ -1578,10 +1626,7 @@ class SearchCompanyView(View):
         except Exception as e:
             error = f"Server error: {str(e)}"
 
-        request.session["companies"] = companies
-        request.session["error"] = error
-        request.session["form"] = form
-
+        # ── Save search history ──
         try:
             filters_snapshot = {k: v for k, v in {
                 "company": company, "industry": industry,
@@ -1631,6 +1676,20 @@ class SearchCompanyView(View):
 
         except Exception:
             pass
+
+        # ── AJAX: return JSON instead of redirecting ──
+        if is_ajax:
+            limit.refresh_from_db()
+            return JsonResponse({
+                "companies": companies,
+                "error": error or "",
+                "credits": limit.credits,
+                "search_credits": limit.search_credits,
+            })
+
+        request.session["companies"] = companies
+        request.session["error"] = error
+        request.session["form"] = form
         return redirect("search_company")
         
 # class GetSavedListsView(LoginRequiredMixin, View):
@@ -2975,6 +3034,7 @@ class SearchHistoryView(LoginRequiredMixin, View):
         
 # Create your views here.
 ORG_DOMAIN = "jmsadvisory.in"
+EMAIL_SEND_LIMIT = 50
 class GenerateEmailView(BlockDirectAccessMixin,LoginRequiredMixin, View):
     def normalize_url(self, url):
         """Ensure the URL starts with http:// or https://"""
@@ -3088,6 +3148,16 @@ class GenerateEmailView(BlockDirectAccessMixin,LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         user_domain = (request.user.email or "").split("@")[-1].lower()
         if user_domain != ORG_DOMAIN:
+            # ── Hard 50-email send limit ──
+            sent_count = SentEmail.objects.filter(user=request.user).count()
+            if sent_count >= EMAIL_SEND_LIMIT:
+                return JsonResponse({
+                    'success': False,
+                    'email_limit_reached': True,
+                    'redirect_url': reverse('pricing'),
+                    'errors': f"You have reached the limit of {EMAIL_SEND_LIMIT} emails. Please upgrade your plan."
+                }, status=403)
+
             wallet, _ = UserWallet.objects.get_or_create(
                 user=request.user,
                 defaults={"credits": 50}
@@ -3095,8 +3165,10 @@ class GenerateEmailView(BlockDirectAccessMixin,LoginRequiredMixin, View):
             if wallet.credits <= 0:
                 return JsonResponse({
                     'success': False,
+                    'email_limit_reached': True,
+                    'redirect_url': reverse('pricing'),
                     'errors': "Free limit finished. Please buy credits."
-                })
+                }, status=403)
         data = json.loads(request.body)
 
         from django.core.validators import validate_email
@@ -3368,6 +3440,16 @@ class SendEmailView(BlockDirectAccessMixin,LoginRequiredMixin, View):
         wallet = None
 
         if user_domain != ORG_DOMAIN:
+            # ── Hard 50-email send limit ──
+            sent_count = SentEmail.objects.filter(user=request.user).count()
+            if sent_count >= EMAIL_SEND_LIMIT:
+                return JsonResponse({
+                    "success": False,
+                    "email_limit_reached": True,
+                    "redirect_url": reverse('pricing'),
+                    "error": f"You have reached the limit of {EMAIL_SEND_LIMIT} emails. Please upgrade your plan."
+                }, status=403)
+
             wallet, _ = UserWallet.objects.get_or_create(
                 user=request.user,
                 defaults={"credits": 500}
@@ -3376,6 +3458,8 @@ class SendEmailView(BlockDirectAccessMixin,LoginRequiredMixin, View):
             if wallet.credits <= 0:
                 return JsonResponse({
                     "success": False,
+                    "email_limit_reached": True,
+                    "redirect_url": reverse('pricing'),
                     "error": "Free limit finished. Please buy credits to continue."
                 }, status=403)
         

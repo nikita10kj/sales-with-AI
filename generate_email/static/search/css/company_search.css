@@ -810,6 +810,27 @@
 .empty-box i { font-size: 36px; color: #c8cfe0; margin-bottom: 14px; display: block; }
 .empty-box p { font-size: 14px; margin: 0; }
 
+/* Loader */
+.loader-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,.78);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+.loader-box {
+    background: #fff;
+    padding: 26px 34px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.12);
+    text-align: center;
+    min-width: 260px;
+}
+.loader-text { margin-top: 10px; font-weight: 700; color: #2f2f44; font-size: 14px; }
+.loader-subtext { margin-top: 5px; font-size: 12.5px; color: #7a7f91; }
+
 /* Toast */
 .custom-message {
     position: fixed;

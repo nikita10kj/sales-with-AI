@@ -155,10 +155,317 @@ document.addEventListener("DOMContentLoaded", function () {
     setupTagInput({ inputId: "jobPostsInput",           addBtnId: "addJobPostsTag",            tagsContainerId: "jobPostsTags",            hiddenInputId: "jobPostsHidden" });
 
     const companySearchForm = document.getElementById("companySearchForm");
+    const searchLoader = document.getElementById("searchLoaderOverlay");
+
+    function showSearchLoader() { if (searchLoader) searchLoader.style.display = "flex"; }
+    function hideSearchLoader() { if (searchLoader) searchLoader.style.display = "none"; }
+
+    function buildCompanyResultsHTML(companies) {
+        if (!companies || !companies.length) {
+            return '<div class="empty-box"><i class="fas fa-building"></i><p>No results found. Try different filters.</p></div>';
+        }
+
+        var html = '<div class="results-card">';
+
+        // meta bar
+        html += '<div class="results-meta"><div class="results-meta-left">'
+            + '<input type="checkbox" id="selectAllRows">'
+            + ' <i class="fas fa-chevron-down" style="font-size:11px;color:#aab0c4;cursor:pointer;"></i>'
+            + ' <span id="selectedCountText">0 selected of ' + companies.length + ' results</span>'
+            + '</div><div class="results-meta-right">'
+            + '<button type="button" id="saveToListBtn" class="save-list-btn" style="display:none;"><i class="fas fa-plus"></i> Save to List</button>'
+            + '<button type="button" class="save-unlock-btn"><i class="fas fa-lock"></i> Save To Unlock</button>'
+            + '</div></div>';
+
+        // table
+        html += '<div class="table-wrap"><table class="results-table"><thead><tr>'
+            + '<th class="col-chk"></th><th>Company</th><th>Description</th>'
+            + '<th>HQ Location</th><th>Industry</th><th>Company Size</th><th>Actions</th>'
+            + '</tr></thead><tbody>';
+
+        companies.forEach(function (c, i) {
+            var idx = i + 1;
+            var initial = (c.name || "C").charAt(0);
+            var avatarClass = c.logo_url ? 'company-avatar' : 'company-avatar fallback-avatar';
+
+            html += '<tr id="company-card-' + idx + '">';
+
+            // checkbox
+            html += '<td class="col-chk"><input type="checkbox" class="row-checkbox"'
+                + ' data-name="' + escapeHtml(c.name) + '"'
+                + ' data-linkedin_url="' + escapeHtml(c.linkedin_url || "") + '"'
+                + ' data-website="' + escapeHtml(c.website || "") + '"'
+                + ' data-industry="' + escapeHtml(c.industry || "") + '"'
+                + ' data-description="' + escapeHtml(c.description || "") + '"'
+                + ' data-company_size="' + escapeHtml(c.company_size || "") + '"'
+                + ' data-headquarter="' + escapeHtml(c.headquarter || "") + '"'
+                + '></td>';
+
+            // Company: avatar + name
+            html += '<td class="drawer-trigger"><div class="profile-cell">';
+            if (c.linkedin_url) html += '<a href="' + escapeHtml(c.linkedin_url) + '" target="_blank" class="avatar-link" title="View on LinkedIn">';
+            html += '<div class="' + avatarClass + '">';
+            if (c.logo_url) html += '<img src="' + escapeHtml(c.logo_url) + '" alt="Company Logo" onerror="this.style.display=\'none\';this.parentElement.classList.add(\'fallback-avatar\');">';
+            html += '<div class="avatar-placeholder"><span class="shape shape1"></span><span class="shape shape2"></span></div>';
+            html += '</div>';
+            if (c.linkedin_url) html += '</a>';
+            html += '<div class="profile-info"><span class="profile-name drawer-trigger" data-tooltip="' + escapeHtml(c.name) + '">' + escapeHtml(c.name || "—") + '</span>';
+            if (c.linkedin_url) html += '<a href="' + escapeHtml(c.linkedin_url) + '" target="_blank" class="li-badge" title="LinkedIn">in</a>';
+            html += '</div></div></td>';
+
+            // Description
+            html += '<td class="cell-truncate cell-desc drawer-trigger">' + escapeHtml(c.description || "—") + '</td>';
+
+            // HQ Location
+            html += '<td class="cell-truncate drawer-trigger"' + (c.headquarter ? ' data-tooltip="' + escapeHtml(c.headquarter) + '"' : '') + '>';
+            html += c.headquarter ? '<span class="cell-icon"><i class="fas fa-map-marker-alt"></i></span>' + escapeHtml(c.headquarter) : '—';
+            html += '</td>';
+
+            // Industry
+            html += '<td class="cell-truncate drawer-trigger"' + (c.industry ? ' data-tooltip="' + escapeHtml(c.industry) + '"' : '') + '>';
+            html += c.industry ? '<span class="cell-icon"><i class="fas fa-industry"></i></span>' + escapeHtml(c.industry) : '—';
+            html += '</td>';
+
+            // Company Size
+            html += '<td class="cell-truncate"' + (c.company_size ? ' data-tooltip="' + escapeHtml(c.company_size) + ' employees"' : '') + '>';
+            html += c.company_size ? '<span class="cell-icon"><i class="fas fa-users"></i></span>' + escapeHtml(c.company_size) : '—';
+            html += '</td>';
+
+            // Actions
+            html += '<td><div class="action-icons">';
+            if (c.linkedin_url) html += '<a href="' + escapeHtml(c.linkedin_url) + '" target="_blank" title="View LinkedIn"><i class="fab fa-linkedin-in"></i></a>';
+            else html += '<button type="button" title="LinkedIn N/A" disabled><i class="fab fa-linkedin-in"></i></button>';
+            if (c.website) html += '<a href="' + escapeHtml(c.website) + '" target="_blank" title="Visit Website"><i class="fas fa-external-link-alt"></i></a>';
+            else html += '<button type="button" title="Website N/A" disabled><i class="fas fa-external-link-alt"></i></button>';
+            html += '<button type="button" title="Save to List" class="single-save-btn"><i class="far fa-bookmark"></i></button>';
+            html += '</div></td>';
+
+            html += '</tr>';
+        });
+
+        html += '</tbody></table></div>';
+
+        // pagination footer
+        html += '<div class="results-footer"><div class="results-footer-left">'
+            + '<span class="goto-label">Go to page</span>'
+            + '<span class="goto-page-wrap"><i class="fas fa-info-circle"></i> <span>1</span> <i class="fas fa-chevron-down"></i></span>'
+            + '</div><div class="pagination-wrap"><span class="results-count-text">1–' + companies.length + ' of ' + companies.length + '</span>'
+            + '<button class="page-btn" type="button" title="Previous"><i class="fas fa-chevron-left"></i></button>'
+            + '<button class="page-btn" type="button" title="Next"><i class="fas fa-chevron-right"></i></button>'
+            + '</div></div>';
+
+        html += '</div>';
+        return html;
+    }
+
+    function buildCompanyProfilesHTML(companies) {
+        var html = '';
+        companies.forEach(function (c, i) {
+            var idx = i + 1;
+            var initial = (c.name || "C").charAt(0);
+
+            html += '<div id="company-profile-' + idx + '" class="company-profile-tpl" style="display:none;" aria-hidden="true">';
+
+            // Hero Card
+            html += '<div style="background:#fff;margin:0 0 16px 0;border-bottom:1px solid #e8ebf2;">';
+            html += '<div class="drawer-hero" style="border-bottom:none;"><div class="drawer-hero-top">';
+            html += '<div class="drawer-avatar" style="border-radius:10px;border:1px solid #e0e4f0;background:#fff;padding:4px;">';
+            if (c.logo_url) {
+                html += '<img src="' + escapeHtml(c.logo_url) + '" alt="' + escapeHtml(c.name) + '" style="border-radius:6px;object-fit:contain;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';">';
+                html += '<span class="drawer-avatar-initials" style="display:none;color:#1a2038;">' + escapeHtml(initial) + '</span>';
+            } else {
+                html += '<span class="drawer-avatar-initials" style="color:#1a2038;">' + escapeHtml(initial) + '</span>';
+            }
+            html += '</div><div class="drawer-name-block"><div class="drawer-name">';
+            if (c.linkedin_url) {
+                html += '<a href="' + escapeHtml(c.linkedin_url) + '" target="_blank" style="color:inherit;text-decoration:none;">' + escapeHtml(c.name) + '</a>';
+                html += ' <a href="' + escapeHtml(c.linkedin_url) + '" target="_blank" class="li-badge" title="LinkedIn" style="text-decoration:none;">in</a>';
+            } else html += escapeHtml(c.name);
+            if (c.website) html += ' <a href="' + escapeHtml(c.website) + '" target="_blank" style="margin-left:6px;color:#6a7388;font-size:14px;"><i class="fas fa-link"></i></a>';
+            html += '</div></div></div>';
+
+            // Meta + Description
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
+            html += '<div class="drawer-meta-item"><i class="fas fa-map-marker-alt"></i><span>' + escapeHtml(c.location_country || c.headquarter || "—") + '</span></div>';
+            if (c.linkedin_url) html += '<a href="' + escapeHtml(c.linkedin_url) + '" target="_blank" style="color:#2f6df0;font-size:12.5px;font-weight:600;text-decoration:none;">View Company Profile</a>';
+            html += '</div>';
+
+            if (c.description) {
+                html += '<div style="background:#f4f5fb;border-radius:10px;border:1px solid #e8ebf2;padding:12px 14px;">';
+                html += '<div style="font-size:13px;color:#4c556f;line-height:1.6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;line-clamp:3;-webkit-box-orient:vertical;" class="drawer-desc-content">' + escapeHtml(c.description) + '</div>';
+                html += '<button type="button" class="drawer-desc-toggle" style="border:none;background:none;color:#6a7388;font-size:13px;font-weight:500;cursor:pointer;padding:0;margin-top:8px;display:inline-flex;align-items:center;gap:6px;font-family:\'Inter\',sans-serif;"><i class="fas fa-chevron-down" style="font-size:10px;transition:transform 0.2s;"></i> <span class="toggle-text">Read More</span></button>';
+                html += '</div>';
+            }
+            html += '</div></div>';
+
+            // Basic Details
+            html += '<div style="background:#fff;border-top:1px solid #e8ebf2;border-bottom:1px solid #e8ebf2;margin-bottom:16px;">';
+            html += '<div class="drawer-section" style="border-bottom:none;">';
+            html += '<div style="font-size:16px;font-weight:700;color:#1a2038;margin-bottom:16px;">Basic Details</div>';
+            html += '<div style="display:grid;grid-template-columns:140px 1fr;gap:12px;font-size:13px;color:#4c556f;">';
+
+            var details = [
+                {icon: "far fa-user", label: "Company Size", value: c.company_size || "—"},
+                {icon: "fas fa-map-marker-alt", label: "HQ Location", value: c.headquarter || "—"},
+                {icon: "far fa-building", label: "Industry", value: c.industry || "—"},
+            ];
+            details.forEach(function(d) {
+                html += '<div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="' + d.icon + '" style="width:14px;text-align:center;"></i> ' + d.label + '</div>';
+                html += '<div style="color:#1a2038;">' + escapeHtml(d.value) + '</div>';
+            });
+
+            // Website
+            html += '<div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="fas fa-link" style="width:14px;text-align:center;"></i> Website</div>';
+            if (c.website) html += '<div style="color:#1a2038;"><a href="' + escapeHtml(c.website) + '" target="_blank" style="color:#2f6df0;text-decoration:none;">' + escapeHtml(c.website) + '</a></div>';
+            else html += '<div style="color:#1a2038;">—</div>';
+
+            // Founded, Specialties, Tagline, Revenue, Followers
+            html += '<div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="fas fa-history" style="width:14px;text-align:center;"></i> Founded at</div>';
+            html += '<div style="color:#1a2038;">' + escapeHtml(c.found_at || "—") + '</div>';
+
+            html += '<div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="fas fa-hashtag" style="width:14px;text-align:center;"></i> Specialities</div>';
+            html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+            if (c.specialties && c.specialties.length) {
+                c.specialties.forEach(function(sp) { html += '<span style="background:#f0f3ff;color:#4c556f;padding:3px 8px;border-radius:6px;font-size:12px;">' + escapeHtml(sp) + '</span>'; });
+            } else html += '—';
+            html += '</div>';
+
+            html += '<div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="far fa-compass" style="width:14px;text-align:center;"></i> Tagline</div>';
+            html += '<div style="color:#1a2038;">' + escapeHtml(c.tagline || "—") + '</div>';
+
+            html += '<div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="fas fa-chart-line" style="width:14px;text-align:center;"></i> Revenue</div>';
+            html += '<div style="color:#1a2038;">' + escapeHtml(c.revenue || "—") + '</div>';
+
+            html += '<div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="fas fa-users" style="width:14px;text-align:center;"></i> LinkedIn Followers</div>';
+            html += '<div style="color:#1a2038;">' + escapeHtml(c.linkedin_followers || "—") + '</div>';
+
+            html += '</div></div></div>';
+
+            // Decision Makers
+            html += '<div style="background:#fff;border-top:1px solid #e8ebf2;border-bottom:1px solid #e8ebf2;margin-bottom:16px;">';
+            html += '<div class="drawer-section" style="border-bottom:none;">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">';
+            html += '<div style="font-size:16px;font-weight:700;color:#1a2038;">Potential Decision Makers</div>';
+            html += '<a href="#" class="drawer-view-employees-link" data-company="' + escapeHtml(c.name) + '" data-location="' + escapeHtml(c.location_country || c.headquarter || "") + '" style="color:#2f6df0;font-size:12.5px;font-weight:600;text-decoration:none;">View All Employees</a>';
+            html += '</div>';
+
+            if (c.decision_makers && c.decision_makers.length) {
+                html += '<div style="border:1px solid #e8ebf2;border-radius:10px;background:#fff;overflow:hidden;">';
+                c.decision_makers.forEach(function(dm) {
+                    var dmInitial = (dm.name || "U").charAt(0);
+                    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #e8ebf2;">';
+                    html += '<div style="display:flex;align-items:center;gap:12px;"><div class="avatar-circle" style="width:40px;height:40px;"><span class="initials">' + escapeHtml(dmInitial) + '</span></div>';
+                    html += '<div><div style="font-size:14px;font-weight:600;color:#1a2038;">' + escapeHtml(dm.name) + '</div>';
+                    html += '<div style="font-size:13px;color:#6a7388;margin-top:2px;">' + escapeHtml(dm.title || "") + '</div></div></div>';
+                    html += '<button class="single-save-btn" style="border:1px solid #dce0ea;background:#fff;border-radius:8px;width:34px;height:34px;color:#8a94b0;cursor:pointer;"><i class="far fa-bookmark"></i></button>';
+                    html += '</div>';
+                });
+                html += '</div>';
+            } else {
+                html += '<div class="drawer-no-data">No potential decision makers found</div>';
+            }
+            html += '</div></div>';
+            html += '</div>';
+        });
+        return html;
+    }
+
+    function renderCompanyAjaxResults(data) {
+        var resultsContent = document.querySelector(".results-content");
+        if (!resultsContent) return;
+
+        // Clear old results and profiles
+        resultsContent.innerHTML = "";
+        document.querySelectorAll(".company-profile-tpl").forEach(function(el) { el.remove(); });
+
+        if (data.error && (!data.companies || !data.companies.length)) {
+            resultsContent.innerHTML = '<div class="error-box"><i class="fas fa-exclamation-circle"></i> ' + escapeHtml(data.error) + '</div>';
+            return;
+        }
+
+        if (!data.companies || !data.companies.length) {
+            resultsContent.innerHTML = '<div class="empty-box"><i class="fas fa-building"></i><p>No results yet. Use the filters on the left and hit <strong>Search</strong>.</p></div>';
+            return;
+        }
+
+        resultsContent.innerHTML = buildCompanyResultsHTML(data.companies);
+
+        // Insert profile templates after results-panel
+        var resultsPanel = document.querySelector(".results-panel");
+        if (resultsPanel) resultsPanel.insertAdjacentHTML("afterend", buildCompanyProfilesHTML(data.companies));
+
+        // Update credit pills
+        if (typeof slUpdateSearchPill === "function" && typeof data.search_credits === "number") slUpdateSearchPill(data.search_credits);
+        if (typeof slUpdatePill === "function" && typeof data.credits === "number") slUpdatePill(data.credits);
+
+        // Re-attach selection events
+        reattachCompanySelectionEvents();
+    }
+
+    function reattachCompanySelectionEvents() {
+        var cbs = document.querySelectorAll(".row-checkbox");
+        var sa = document.getElementById("selectAllRows");
+        var st = document.getElementById("selectedCountText");
+        var sb = document.getElementById("saveToListBtn");
+
+        function updateUI() {
+            if (!st || !sb) return;
+            var c = document.querySelectorAll(".row-checkbox:checked").length;
+            var t = document.querySelectorAll(".row-checkbox").length;
+            st.textContent = c + " selected of " + t + " results";
+            sb.style.display = c > 0 ? "inline-flex" : "none";
+            if (sa) sa.checked = t > 0 && c === t;
+        }
+
+        if (sa) sa.addEventListener("change", function () {
+            document.querySelectorAll(".row-checkbox").forEach(function (cb) { cb.checked = sa.checked; });
+            updateUI();
+        });
+        cbs.forEach(function (cb) { cb.addEventListener("change", updateUI); });
+        if (sb) sb.addEventListener("click", async function () {
+            await loadExistingLists();
+            setTab("new");
+            openModal();
+        });
+
+        var cp = document.getElementById("contactPill");
+        if (cp) cp.textContent = "0/" + cbs.length;
+    }
+
     if (companySearchForm) {
-        companySearchForm.addEventListener("submit", function () {
+        companySearchForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            // Finalize pending tag inputs
             tagInputInstances.forEach(function (instance) {
                 instance.finalizePendingInput();
+            });
+
+            showSearchLoader();
+
+            var formData = new FormData(companySearchForm);
+
+            fetch(SEARCH_COMPANY_URL, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": CSRF_TOKEN,
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: formData
+            })
+            .then(function (resp) { return resp.json(); })
+            .then(function (data) {
+                hideSearchLoader();
+                if (data.limit_reached) {
+                    if (typeof slShowModal === "function") slShowModal(data.credits || 0);
+                    return;
+                }
+                renderCompanyAjaxResults(data);
+            })
+            .catch(function (err) {
+                hideSearchLoader();
+                console.error("AJAX company search error:", err);
+                showMessage("Search failed. Please try again.", "error");
             });
         });
     }
