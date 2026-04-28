@@ -147,6 +147,12 @@ class EmailMarketingApp {
       });
       const data = await response.json();
       if (!response.ok || data.success === false) {
+        // If email limit reached, redirect to pricing page
+        if (data.email_limit_reached && data.redirect_url) {
+          this.showAlert(data.errors || 'Email limit reached. Redirecting to pricing...', 'warning');
+          setTimeout(() => { window.location.href = data.redirect_url; }, 1500);
+          return;
+        }
         // If the server returned a specific error message, show it
         const errorMessage = data.errors || 'Error submitting details. Please try again.';
         this.showAlert(errorMessage, 'danger');
@@ -311,9 +317,10 @@ class EmailMarketingApp {
       }
     });
 
+    try {
         let response;
         // ✅ IF ATTACHMENT EXISTS → USE FormData
-       if (this.savedAttachmentId) {
+        if (this.savedAttachmentId) {
           const formData = new FormData();
           formData.append("emails", JSON.stringify(emails));
           formData.append("targetId", this.targetId);
@@ -327,7 +334,6 @@ class EmailMarketingApp {
               },
               body: formData,
           });
-        
 
         } else {
             // 🔁 EXISTING JSON FLOW (UNCHANGED)
@@ -346,7 +352,15 @@ class EmailMarketingApp {
         }
         // Parse JSON response from server
         const data = await response.json();
-        
+
+        if (data.email_limit_reached && data.redirect_url) {
+            // Email limit reached → redirect to pricing page
+            this.showLoading(false);
+            this.showAlert(data.error || 'Email limit reached. Redirecting to pricing...', 'warning');
+            setTimeout(() => { window.location.href = data.redirect_url; }, 1500);
+            return;
+        }
+
         if (data.success) {
             // On successful send:
             this.showLoading(false);     // Hide loading indicator
@@ -355,16 +369,16 @@ class EmailMarketingApp {
             this.showSuccessState(data.reminders, data.target_email);
         } else {
             // Show error if send failed
-            this.showAlert("Failed to send email.", "danger");
+            this.showLoading(false);
+            this.showAlert(data.error || "Failed to send email.", "danger");
         }
     } catch (error) {
         // Handle network errors
         console.error("Error:", error);
         this.showAlert("An error occurred while sending the email.", "danger");
-        // Always hide loading indicator when done
         this.showLoading(false);
-    // }
-}
+    }
+  }
   async checkEmailHistoryAndProceed() {
   const email = document.getElementById("targetEmail").value.trim();
   const service =document.getElementById("id_service").value;

@@ -858,8 +858,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const ENRICH_PERSON_URL = "{% url 'enrich_person' %}";
     const CHECK_ENRICHMENT_URL = "{% url 'check_enrichment' request_id='00000000-0000-0000-0000-000000000000' %}".replace("00000000-0000-0000-0000-000000000000", "PLACEHOLDER");
     const SELECT_PERSON_FOR_EMAIL_URL = "{% url 'select_person_for_email' %}";
+    const SEARCH_BY_LINKDIN_URL = "{% url 'search_by_linkdin' %}";
+    const CSRF_TOKEN = "{{ csrf_token }}";
 </script>
-<script src="{% static 'search/js/linkdin_search.js' %}?v=4"></script>
+<script src="{% static 'search/js/linkdin_search.js' %}?v=5"></script>
 
 
 

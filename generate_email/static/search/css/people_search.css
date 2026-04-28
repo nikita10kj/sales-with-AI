@@ -1977,5 +1977,105 @@
 .ai-back-btn:hover { background: #edf0f6; border-color: #6276ea; color: #6276ea; }
 
 
+/* ══════════════════════════════════════
+   SEARCH LOADER OVERLAY
+══════════════════════════════════════ */
+.search-loader-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    background: rgba(245, 246, 250, 0.88);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    border-radius: 12px;
+    animation: searchLoaderFadeIn .25s ease;
+}
+.search-loader-overlay.active {
+    display: flex;
+}
+@keyframes searchLoaderFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
 
+.search-loader-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding: 40px 50px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 12px 44px rgba(30, 40, 80, 0.10), 0 2px 12px rgba(98, 118, 234, 0.08);
+    animation: searchLoaderSlideUp .35s ease;
+}
+@keyframes searchLoaderSlideUp {
+    from { opacity: 0; transform: translateY(18px) scale(.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
 
+/* Pulsing gradient orb */
+.search-loader-orb {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, #6276ea, #7c4fc8, #a855f7, #6276ea);
+    animation: searchOrbSpin 1.2s linear infinite;
+    position: relative;
+}
+.search-loader-orb::after {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    border-radius: 50%;
+    background: #fff;
+}
+@keyframes searchOrbSpin {
+    to { transform: rotate(360deg); }
+}
+
+.search-loader-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #22283d;
+    letter-spacing: -.2px;
+}
+.search-loader-subtitle {
+    font-size: 13px;
+    color: #8a94b0;
+    text-align: center;
+    line-height: 1.5;
+    max-width: 260px;
+}
+
+/* Skeleton shimmer rows */
+.search-loader-skeletons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 240px;
+    margin-top: 4px;
+}
+.search-loader-skeleton {
+    height: 10px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #eef0f6 25%, #dde2f0 50%, #eef0f6 75%);
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.4s ease-in-out infinite;
+}
+.search-loader-skeleton:nth-child(1) { width: 100%; }
+.search-loader-skeleton:nth-child(2) { width: 75%; }
+.search-loader-skeleton:nth-child(3) { width: 60%; }
+@keyframes skeletonShimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Make results-content position relative for the overlay */
+.results-content {
+    position: relative;
+}

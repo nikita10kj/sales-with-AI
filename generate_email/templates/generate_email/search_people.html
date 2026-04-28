@@ -307,8 +307,22 @@
 
             <div class="results-content">
                 {% if error %}
-                    <div class="error-box"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+                    <div class="error-box" id="searchErrorBox"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
                 {% endif %}
+
+                <!-- ── Search Loader Overlay ── -->
+                <div id="searchLoaderOverlay" class="search-loader-overlay">
+                    <div class="search-loader-box">
+                        <div class="search-loader-orb"></div>
+                        <div class="search-loader-title">Searching people...</div>
+                        <div class="search-loader-subtitle">Please wait while we find the best matches for your filters.</div>
+                        <div class="search-loader-skeletons">
+                            <div class="search-loader-skeleton"></div>
+                            <div class="search-loader-skeleton"></div>
+                            <div class="search-loader-skeleton"></div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- ── AI Search Panel (always in DOM, shown/hidden by JS or when no results) ── -->
                 <div id="aiSearchPanel" class="ai-empty-state" {% if people %}style="display:none;"{% endif %}>
@@ -1095,25 +1109,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const SELECT_PERSON_FOR_EMAIL_URL = "{% url 'select_person_for_email' %}";
     const SAVE_ENRICH_CAMPAIGN_URL = "{% url 'save_enrich_campaign'%}"
     const CHECK_BULK_ENRICHMENT_URL = "{% url 'check_bulk_enrichment' %}";
+    const SEARCH_PEOPLE_URL = "{% url 'search_people' %}";
+    const CSRF_TOKEN = "{{ csrf_token }}";
 
 </script>
-<script src="{% static 'search/js/people_search.js' %}?v=14"></script>
+<script src="{% static 'search/js/people_search.js' %}?v=16"></script>
 <script>
 function changePage(page) {
     if (page < 1) return;
-
-    document.getElementById("pageInput").value = page;
-
-    const form = document.getElementById("peopleSearchForm");
-
-    // Inject page into main form
-    let input = document.createElement("input");
-    input.type = "hidden";
-    input.name = "page";
-    input.value = page;
-
-    form.appendChild(input);
-    form.submit();
+    // Use the AJAX search with a page override
+    if (typeof doAjaxSearch === "function") {
+        doAjaxSearch(page);
+    }
 }
 </script>
 
@@ -1255,7 +1262,7 @@ function changePage(page) {
                 if (el) el.value = val;
             });
             const form = document.getElementById("peopleSearchForm");
-            if (form) { form.submit(); }
+            if (form && typeof doAjaxSearch === "function") { doAjaxSearch(); }
         })
         .catch(function(err) {
             aiSendBtn.disabled = false;
