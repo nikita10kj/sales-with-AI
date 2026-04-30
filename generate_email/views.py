@@ -764,7 +764,9 @@ class SearchPeopleView(View):
 
             
             # Deduct 1 search credit on successful search
-            limit.deduct_search(1)
+            # limit.deduct_search(1)
+            if request.POST.get("ai_search") != "1":
+                limit.deduct_search(1)
             metadata = data.get("metadata", {})
 
             pagination = {
