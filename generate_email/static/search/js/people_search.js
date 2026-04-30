@@ -163,8 +163,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function buildResultsHTML(people, pagination, searchCredits, credits) {
         if (!people || !people.length) {
-            return '<div class="error-box"><i class="fas fa-info-circle"></i> No results found. Try adjusting your filters.</div>';
-        }
+    return '<div class="empty-state-box">'
+        + '<div class="empty-state-icon"><i class="fas fa-users-slash"></i></div>'
+        + '<div class="empty-state-title">No people found</div>'
+        + '<div class="empty-state-subtitle">We couldn\'t find anyone matching your current filters.</div>'
+        // + '<div class="empty-state-tips">'
+        // +   '<div class="empty-state-tips-title"><i class="fas fa-lightbulb"></i> Try these tips</div>'
+        // // +   '<ul>'
+        // // +     '<li>Use fewer or broader filters</li>'
+        // // +     '<li>Check for spelling mistakes</li>'
+        // // +     '<li>Try a different location or job title</li>'
+        // // +     '<li>Remove the seniority or industry filter</li>'
+        // // +   '</ul>'
+        // + '</div>'
+        + '</div>';
+}
 
         let html = '<div class="results-card" id="resultsCard">';
 
@@ -456,6 +469,11 @@ document.addEventListener("DOMContentLoaded", function () {
         var resultsContent = document.querySelector(".results-content");
         if (!resultsContent) return;
 
+        document.querySelectorAll(".error-box, .empty-state-box").forEach(function(el) { el.remove(); });
+        var oldCard = document.getElementById("resultsCard");
+        if (oldCard) oldCard.remove();
+        document.querySelectorAll(".person-profile-tpl").forEach(function(el) { el.remove(); });
+
         // Hide AI panel, show results
         var aiPanel = document.getElementById("aiSearchPanel");
         var errBox = document.getElementById("searchErrorBox");
@@ -463,15 +481,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (data.error && !data.people.length) {
             // Remove old results
-            var oldCard = document.getElementById("resultsCard");
-            if (oldCard) oldCard.remove();
-            // Remove old profile templates
-            document.querySelectorAll(".person-profile-tpl").forEach(function(el) { el.remove(); });
+            // var oldCard = document.getElementById("resultsCard");
+            // if (oldCard) oldCard.remove();
+            // // Remove old profile templates
+            // document.querySelectorAll(".person-profile-tpl").forEach(function(el) { el.remove(); });
 
             var errDiv = document.createElement("div");
-            errDiv.className = "error-box";
+            // errDiv.className = "error-box";
+
+            errDiv.className = "empty-state-box";
+            errDiv.innerHTML =
+                '<div class="empty-state-icon"><i class="fas fa-users-slash"></i></div>'
+                + '<div class="empty-state-title">No people found</div>'
+                + '<div class="empty-state-subtitle">We couldn\'t find anyone matching your current filters.</div>'
+                + '<div class="empty-state-tips">'
+                +   '<div class="empty-state-tips-title"><i class="fas fa-lightbulb"></i> Try these tips</div>'
+                +   '<ul>'
+                +     '<li>Use fewer or broader filters</li>'
+                +     '<li>Check for spelling mistakes</li>'
+                +     '<li>Try a different location or job title</li>'
+                +     '<li>Remove the seniority or industry filter</li>'
+                +   '</ul>'
+                + '</div>';
             errDiv.id = "searchErrorBox";
-            errDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + escapeHtml(data.error);
             resultsContent.insertBefore(errDiv, resultsContent.firstChild);
             if (aiPanel) aiPanel.style.display = "";
             return;

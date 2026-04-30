@@ -434,8 +434,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const dropdown = document.getElementById("attachmentDropdown");
     const hiddenUrl = document.getElementById("selectedAttachmentUrl");
 
+    if (!dropdown || !hiddenUrl) return;  // elements not on this page
+
     // Call users app to get attachments
-    fetch("/attachments/list/")
+    fetch("/users/attachments/list/")
         .then(res => res.json())
         .then(data => {
 
@@ -448,7 +450,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 opt.setAttribute("data-url", att.url);
                 dropdown.appendChild(opt);
             });
-        });
+        })
+        .catch(err => console.warn("Could not load attachments:", err));
 
     // When user selects attachment
     dropdown.addEventListener("change", function () {

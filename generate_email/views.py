@@ -721,14 +721,18 @@ class SearchPeopleView(View):
                 "location": to_list(location),
                 "industry": to_list(industry),
                 "specialties": to_list(specialites),
-                "is_decision_maker": int(is_decision_maker) if is_decision_maker else None,
+                # "is_decision_maker": int(is_decision_maker) if is_decision_maker else None,
+                "is_decision_maker": True if is_decision_maker else None,
                 "min_years_of_experience": int(min_experience) if min_experience.isdigit() else None,
                 "max_years_of_experience": int(max_experience) if max_experience.isdigit() else None,
                 "page": int(page),
             }
         
 
-        payload = {k: v for k, v in payload.items() if v not in ([], "", None)}
+        # payload = {k: v for k, v in payload.items() if v not in ([], "", None)}
+
+        payload = {k: v for k, v in payload.items() if v not in ([], "", None) or isinstance(v, bool)}
+
 
         print(f"🔍 Search payload: {payload}")
 
@@ -755,6 +759,9 @@ class SearchPeopleView(View):
 
             data = search_resp.get("data", {})
             raw_people = search_resp.get("data", {}).get("people", [])
+
+            print(f"🔍 People returned: {len(raw_people)}, Seniority sent: {payload.get('seniority')}")
+
             
             # Deduct 1 search credit on successful search
             # limit.deduct_search(1)

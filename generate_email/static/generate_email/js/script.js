@@ -635,14 +635,17 @@ const app = new EmailMarketingApp()
 // Additional utility functions
 document.addEventListener("DOMContentLoaded", () => {
   // File upload preview
-  document.getElementById("productFiles").addEventListener("change", (e) => {
-    const files = Array.from(e.target.files)
-    if (files.length > 0) {
-      const fileList = files.map((file) => file.name).join(", ")
-      app.showAlert(`Files selected: ${fileList}`, "info")
-    } 
-    app.attachmentFile = e.target.files[0] || null
-  })
+  const productFilesInput = document.getElementById("productFiles");
+  if (productFilesInput) {
+    productFilesInput.addEventListener("change", (e) => {
+      const files = Array.from(e.target.files)
+      if (files.length > 0) {
+        const fileList = files.map((file) => file.name).join(", ")
+        app.showAlert(`Files selected: ${fileList}`, "info")
+      } 
+      app.attachmentFile = e.target.files[0] || null
+    })
+  }
 
   // Form validation styling
   document.querySelectorAll("input, select, textarea").forEach((field) => {
