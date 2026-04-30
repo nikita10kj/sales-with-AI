@@ -164,13 +164,15 @@
                         <div class="filter-field">
                             <label for="experience_seniority">Seniority</label>
                             <select id="experience_seniority" name="seniority" class="filter-select">
-                                <option value="">e.g. C-suite, President</option>
-                                <option value="c_suite" {% if form.seniority == "c_suite" %}selected{% endif %}>C-suite</option>
-                                <option value="president" {% if form.seniority == "president" %}selected{% endif %}>President</option>
-                                <option value="vp" {% if form.seniority == "vp" %}selected{% endif %}>VP</option>
-                                <option value="director" {% if form.seniority == "director" %}selected{% endif %}>Director</option>
-                                <option value="manager" {% if form.seniority == "manager" %}selected{% endif %}>Manager</option>
-                                <option value="individual_contributor" {% if form.seniority == "individual_contributor" %}selected{% endif %}>Individual Contributor</option>
+                                <option value="">Any Seniority</option>
+                                <option value="C-Suite" {% if form.seniority == "C-Suite" %}selected{% endif %}>C-Suite</option>
+                                <option value="VP" {% if form.seniority == "VP" %}selected{% endif %}>VP</option>
+                                <option value="Director" {% if form.seniority == "Director" %}selected{% endif %}>Director</option>
+                                <option value="Manager" {% if form.seniority == "Manager" %}selected{% endif %}>Manager</option>
+                                <option value="Senior" {% if form.seniority == "Senior" %}selected{% endif %}>Senior</option>
+                                <option value="Junior" {% if form.seniority == "Junior" %}selected{% endif %}>Junior</option>
+                                <option value="Entry" {% if form.seniority == "Entry" %}selected{% endif %}>Entry Level</option>
+                                <option value="Intern" {% if form.seniority == "Intern" %}selected{% endif %}>Intern</option>
                             </select>
                         </div>
                         <div class="filter-field">
@@ -307,8 +309,21 @@
 
             <div class="results-content">
                 {% if error %}
-                    <div class="error-box" id="searchErrorBox"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
-                {% endif %}
+                    <div class="empty-state-box" id="searchErrorBox">
+                        <div class="empty-state-icon"><i class="fas fa-users-slash"></i></div>
+                        <div class="empty-state-title">No people found</div>
+                        <div class="empty-state-subtitle">We couldn't find anyone matching your current filters.</div>
+                        <div class="empty-state-tips">
+                            <div class="empty-state-tips-title"><i class="fas fa-lightbulb"></i> Try these tips</div>
+                            <ul>
+                                <li>Use fewer or broader filters</li>
+                                <li>Check for spelling mistakes</li>
+                                <li>Try a different location or job title</li>
+                                <li>Remove the seniority or industry filter</li>
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
 
                 <!-- ── Search Loader Overlay ── -->
                 <div id="searchLoaderOverlay" class="search-loader-overlay">

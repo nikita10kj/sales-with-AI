@@ -212,9 +212,11 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% comment %} {% if request.resolver_match.url_name == 'home' %} {% endcomment %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{% static 'users/js/analytics-script.js' %}"></script>
 <script src="{% static 'users/js/components/ui/chart.js' %}"></script>
+{% comment %} {% endif %} {% endcomment %}
 
 <script>
     function showAlert(message, type = "info") {
