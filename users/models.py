@@ -136,6 +136,8 @@ class ActivityLog(models.Model):
     action = models.CharField(max_length=50, choices=ACTION_CHOICES)
     description = models.TextField(null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+    sent_email = models.ForeignKey("generate_email.SentEmail",on_delete=models.CASCADE,null=True,blank=True,related_name="activities")
+
 
     def __str__(self):
         return f"{self.user} - {self.action} at {self.timestamp}"

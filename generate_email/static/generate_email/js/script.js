@@ -650,11 +650,20 @@ document.addEventListener("DOMContentLoaded", () => {
   // Form validation styling
   document.querySelectorAll("input, select, textarea").forEach((field) => {
     field.addEventListener("blur", function () {
-      if (this.hasAttribute("required") && !this.value.trim()) {
-        this.classList.add("is-invalid")
-      } else {
-        this.classList.remove("is-invalid")
-        this.classList.add("is-valid")
+      const value = this.value.trim();
+
+      if (value === "") {
+          // 👉 Empty field = NO validation color
+          this.classList.remove("is-valid");
+          this.classList.remove("is-invalid");
+      }
+      else if (this.hasAttribute("required") && !value) {
+          this.classList.add("is-invalid");
+          this.classList.remove("is-valid");
+      }
+      else {
+          this.classList.remove("is-invalid");
+          this.classList.add("is-valid");
       }
     })
   })

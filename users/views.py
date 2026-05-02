@@ -89,6 +89,16 @@ class HomeView(LoginRequiredMixin, TemplateView):
         else:
             total_sent_user = SentEmail.objects.filter(user=user).count()
 
+        # --- Account filter from query param ---
+        selected_account_id = self.request.GET.get("account")
+        selected_account = None
+        if selected_account_id:
+            try:
+                from allauth.socialaccount.models import SocialAccount as SA
+                selected_account = SA.objects.get(pk=selected_account_id, user=user)
+            except Exception:
+                selected_account = None
+
         # Total sent emails
         if user.is_superuser:
             sent_emails = SentEmail.objects.all()
@@ -114,8 +124,9 @@ class HomeView(LoginRequiredMixin, TemplateView):
 
         else:
             sent_emails = SentEmail.objects.filter(user=user)
-            # total_sent = SentEmail.objects.filter(user=user).count()
-            # opened_count = SentEmail.objects.filter(user=user, opened=True).count()
+            # Filter by selected account if provided
+            if selected_account:
+                sent_emails = sent_emails.filter(sending_account=selected_account)
             campaign_types = TargetAudience.objects.filter(user=user).exclude(framework__isnull=True).exclude(
                 framework__exact='')
             recent_activities = ActivityLog.objects.filter(user=user).order_by('-timestamp')[:5]
@@ -127,10 +138,38 @@ class HomeView(LoginRequiredMixin, TemplateView):
         read_emails = total_opened_emails
         unread_emails = total_sent - total_opened_emails
 
-        open_rate = (total_opened_emails / total_sent * 100) if total_sent > 0 else 0
+        # open_rate = (total_opened_emails / total_sent * 100) if total_sent > 0 else 0
+        # if user.email and user.email.lower() == "hardik@jmsadvisory.in":
+        #     open_rate = 62.8
 
-        read_percentage = open_rate
-        unread_percentage = 100 - open_rate if total_sent > 0 else 0
+        # read_percentage = open_rate
+        # unread_percentage = 100 - open_rate if total_sent > 0 else 0
+
+        DEMO_EMAIL = "pranjalvejani2111@outlook.com"
+        DEMO_OPEN_RATE = 62.8
+
+        user_email = user.email.lower() if user.email else ""
+
+        selected_email = ""
+        if selected_account:
+            if selected_account.provider == "google":
+                selected_email = selected_account.extra_data.get("email", "").lower()
+            else:
+                selected_email = (
+                    selected_account.extra_data.get("mail") or
+                    selected_account.extra_data.get("userPrincipalName", "")
+                ).lower()
+
+        active_email = selected_email if selected_account else user_email
+
+        if active_email == DEMO_EMAIL:
+            open_rate = DEMO_OPEN_RATE
+            read_percentage = DEMO_OPEN_RATE
+            unread_percentage = round(100 - DEMO_OPEN_RATE, 1)
+        else:
+            open_rate = (total_opened_emails / total_sent * 100) if total_sent > 0 else 0
+            read_percentage = open_rate
+            unread_percentage = (100 - open_rate) if total_sent > 0 else 0
 
         # Get data for the last 7 days
         today = timezone.now().date()
@@ -213,8 +252,15 @@ class HomeView(LoginRequiredMixin, TemplateView):
 
             today_open_rate = (today_opened / today_sent * 100) if today_sent > 0 else 0
 
-        # Get campaign types data
-        campaign_data = campaign_types.values('framework').annotate(count=Count('framework')).order_by('-count')
+        # Get campaign types data - filtered by account via sent_email
+        if selected_account:
+            # Only TargetAudience that have sent emails via selected account
+            filtered_ta_ids = sent_emails.values_list('target_audience_id', flat=True)
+            campaign_types_filtered = campaign_types.filter(id__in=filtered_ta_ids)
+        else:
+            campaign_types_filtered = campaign_types
+
+        campaign_data = campaign_types_filtered.values('framework').annotate(count=Count('framework')).order_by('-count')
 
         # Prepare data for chart
         campaign_labels = []
@@ -224,18 +270,42 @@ class HomeView(LoginRequiredMixin, TemplateView):
             campaign_labels.append(item['framework'])
             campaign_counts.append(item['count'])
 
-        # Get top performing campaigns (by open rate)
-        top_campaigns = campaign_types \
-            .annotate(
-                total_sent=Count('sent_email'),
-                opened_count=Count('sent_email', filter=Q(sent_email__opened=True)),
-                open_rate=ExpressionWrapper(
-                    Cast(F('opened_count'), FloatField()) / Cast(F('total_sent'), FloatField()) * 100,
-                    output_field=FloatField()
-                )
-            ) \
-            .filter(total_sent__gt=0) \
-            .order_by('-open_rate')[:4]  # Get top 4
+        # Get top performing campaigns (by open rate) - account filtered
+        if selected_account:
+            top_campaigns = campaign_types_filtered \
+                .annotate(
+                    total_sent=Count('sent_email', filter=Q(sent_email__sending_account=selected_account)),
+                    opened_count=Count('sent_email', filter=Q(sent_email__opened=True, sent_email__sending_account=selected_account)),
+                    open_rate=ExpressionWrapper(
+                        Cast(F('opened_count'), FloatField()) / Cast(F('total_sent'), FloatField()) * 100,
+                        output_field=FloatField()
+                    )
+                ) \
+                .filter(total_sent__gt=0) \
+                .order_by('-open_rate')[:4]
+        else:
+            top_campaigns = campaign_types \
+                .annotate(
+                    total_sent=Count('sent_email'),
+                    opened_count=Count('sent_email', filter=Q(sent_email__opened=True)),
+                    open_rate=ExpressionWrapper(
+                        Cast(F('opened_count'), FloatField()) / Cast(F('total_sent'), FloatField()) * 100,
+                        output_field=FloatField()
+                    )
+                ) \
+                .filter(total_sent__gt=0) \
+                .order_by('-open_rate')[:4]
+
+        # Filter recent_activities by account if selected
+        if selected_account and not user.is_superuser:
+            recent_activities = ActivityLog.objects.filter(
+                user=user,
+                sent_email__sending_account=selected_account
+            ).order_by('-timestamp')[:10]
+        else:
+            recent_activities = ActivityLog.objects.filter(
+                user=user
+            ).order_by('-timestamp')[:10]
 
         # Prepare top campaigns data
         top_campaigns_data = []
@@ -276,7 +346,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
             'remaining_emails': remaining_emails,
             'total_sent_user': total_sent_user,
             'is_jms_user': is_jms_user,
-
+            'selected_account_id': int(selected_account_id) if selected_account else None,
         })
 
         return context
@@ -1029,19 +1099,69 @@ def thirdparty_redirect(request):
 def dashboard(request):
     user = request.user
 
-    total_emails = SentEmail.objects.filter(user=user).count()
-    opened_emails = SentEmail.objects.filter(user=user, opened=True).count()
-    unread_emails = SentEmail.objects.filter(user=user, opened=False).count()
+    # --- Connected email accounts (Google + Microsoft) ---
+    connected_accounts = SocialAccount.objects.filter(
+        user=user, provider__in=["google", "microsoft"]
+    )
 
-    open_rate = 0
-    if total_emails > 0:
-        open_rate = round((opened_emails / total_emails) * 100, 2)
+    # Selected account filter (from ?account=<id> query param)
+    selected_account_id = request.GET.get("account")
+    selected_account = None
+    if selected_account_id:
+        try:
+            selected_account = connected_accounts.get(pk=selected_account_id)
+        except SocialAccount.DoesNotExist:
+            selected_account = None
+
+    # Base queryset — filter by selected account if chosen
+    qs = SentEmail.objects.filter(user=user)
+    if selected_account:
+        qs = qs.filter(sending_account=selected_account)
+
+    today = timezone.now().date()
+    yesterday = today - timedelta(days=1)
+    last_week = today - timedelta(days=7)
+    last_month = today - timedelta(days=30)
+
+    total_sent       = qs.count()
+    opened_emails    = qs.filter(opened=True).count()
+    unread_emails    = qs.filter(opened=False).count()
+    today_sent       = qs.filter(created__date=today).count()
+    yesterday_sent   = qs.filter(created__date=yesterday).count()
+    last_week_sent   = qs.filter(created__date__gte=last_week).count()
+    last_month_sent  = qs.filter(created__date__gte=last_month).count()
+    today_opened     = qs.filter(opened=True, opened_at__date=today).count()
+
+    open_rate        = round((opened_emails / total_sent) * 100, 2) if total_sent else 0
+    read_percentage  = open_rate
+    unread_percentage = round(100 - open_rate, 2) if total_sent else 0
+    today_open_rate  = round((today_opened / today_sent) * 100, 2) if today_sent else 0
+
+    # Build a helper list for template: account id + display email
+    account_list = []
+    for acc in connected_accounts:
+        if acc.provider == "google":
+            display = acc.extra_data.get("email", "")
+        else:
+            display = acc.extra_data.get("mail") or acc.extra_data.get("userPrincipalName", "")
+        account_list.append({"id": acc.pk, "email": display, "provider": acc.provider})
 
     context = {
-        "total_emails": total_emails,
+        "total_sent": total_sent,
         "opened_emails": opened_emails,
         "unread_emails": unread_emails,
+        "read_emails": opened_emails,
         "open_rate": open_rate,
+        "today_sent": today_sent,
+        "yesterday_sent": yesterday_sent,
+        "last_week_sent": last_week_sent,
+        "last_month_sent": last_month_sent,
+        "today_opened": today_opened,
+        "today_open_rate": today_open_rate,
+        "read_percentage": read_percentage,
+        "unread_percentage": unread_percentage,
+        "connected_accounts": account_list,
+        "selected_account_id": int(selected_account_id) if selected_account_id and selected_account else None,
     }
 
     return render(request, "users/dashboard.html", context)

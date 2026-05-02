@@ -47,15 +47,15 @@
         </a>
 
         {% if user.is_authenticated and request.resolver_match.url_name != 'user-details' %}
+        {% with acc_param=request.GET.account|default:'' %}
         <ul>
 
             <li>
-                <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active-link{% endif %}">
+                <a href="{% url 'home' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active-link{% endif %}">
                     <i class="fas fa-home me-2"></i><span>Dashboard</span>
                 </a>
             </li>
 
-            <li class="sidebar-dropdown">
                 <a class="nav-link d-flex justify-content-between align-items-center {% if request.resolver_match.url_name == 'search_people' or request.resolver_match.url_name == 'search_company' or request.resolver_match.url_name == 'search_by_linkdin' or request.resolver_match.url_name == 'data_enrich' %}active-link{% endif %}"
                    data-bs-toggle="collapse"
                    href="#prospectingMenu"
@@ -71,25 +71,25 @@
                 <div class="collapse {% if request.resolver_match.url_name == 'search_people' or request.resolver_match.url_name == 'search_company' or request.resolver_match.url_name == 'search_by_linkdin' or request.resolver_match.url_name == 'data_enrich' %}show{% endif %}" id="prospectingMenu">
                     <ul class="submenu list-unstyled ms-3 mt-2">
                         <li>
-                            <a href="{% url 'search_people' %}" class="nav-link submenu-link {% if request.resolver_match.url_name == 'search_people' %}active-link{% endif %}">
+                            <a href="{% url 'search_people' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link submenu-link {% if request.resolver_match.url_name == 'search_people' %}active-link{% endif %}">
                                 <i class="fas fa-user-friends me-2"></i><span>People</span>
                             </a>
                         </li>
 
                         <li>
-                            <a href="{% url 'search_company' %}" class="nav-link submenu-link {% if request.resolver_match.url_name == 'search_company' %}active-link{% endif %}">
+                            <a href="{% url 'search_company' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link submenu-link {% if request.resolver_match.url_name == 'search_company' %}active-link{% endif %}">
                                 <i class="fas fa-building me-2"></i><span>Company</span>
                             </a>
                         </li>
 
                         <li>
-                            <a href="{% url 'search_by_linkdin' %}" class="nav-link submenu-link {% if request.resolver_match.url_name == 'search_by_linkdin' %}active-link{% endif %}">
+                            <a href="{% url 'search_by_linkdin' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link submenu-link {% if request.resolver_match.url_name == 'search_by_linkdin' %}active-link{% endif %}">
                                 <i class="fab fa-linkedin me-2"></i><span>LinkedIn</span>
                             </a>
                         </li>
 
                         <li>
-                            <a href="{% url 'data_enrich' %}" class="nav-link submenu-link {% if request.resolver_match.url_name == 'data_enrich' %}active-link{% endif %}">
+                            <a href="{% url 'data_enrich' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link submenu-link {% if request.resolver_match.url_name == 'data_enrich' %}active-link{% endif %}">
                                 <i class="fas fa-database me-2"></i><span>Data Enrichment</span>
                             </a>
                         </li>
@@ -98,57 +98,57 @@
             </li>
 
             <li>
-                <a href="{% url 'generate_email' %}" class="nav-link {% if request.resolver_match.url_name == 'generate_email' %}active-link{% endif %}">
+                <a href="{% url 'generate_email' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'generate_email' %}active-link{% endif %}">
                     <i class="fas fa-envelope me-2"></i><span>Generator</span>
                 </a>
             </li>
 
             <li>
-                <a href="{% url 'campaign_view' %}" class="nav-link {% if request.resolver_match.url_name == 'campaign_view' %}active-link{% endif %}">
+                <a href="{% url 'campaign_view' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'campaign_view' %}active-link{% endif %}">
                     <i class="fas fa-mail-bulk me-2"></i><span>Campaign</span>
                 </a>
             </li>
 
             <li>
-                <a href="{% url 'list_view' %}" class="nav-link {% if request.resolver_match.url_name == 'list_view' %}active-link{% endif %}">
+                <a href="{% url 'list_view' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'list_view' %}active-link{% endif %}">
                     <i class="fas fa-list me-2"></i><span>Lists</span>
                 </a>
             </li>
 
             <li>
-                <a href="{% url 'view-leads' %}" class="nav-link {% if request.resolver_match.url_name == 'view-leads' %}active-link{% endif %}">
+                <a href="{% url 'view-leads' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'view-leads' %}active-link{% endif %}">
                     <i class="fas fa-users me-2"></i><span>Leads</span>
                 </a>
             </li>
 
             <li>
-                <a href="{% url 'view-emails' %}" class="nav-link {% if request.resolver_match.url_name == 'view-emails' %}active-link{% endif %}">
+                <a href="{% url 'view-emails' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'view-emails' %}active-link{% endif %}">
                     <i class="fas fa-envelope-open me-2"></i><span>Emails</span>
                 </a>
             </li>
 
             <li>
-                <a href="{% url 'search_history' %}" class="nav-link {% if request.resolver_match.url_name == 'search_history' %}active-link{% endif %}">
+                <a href="{% url 'search_history' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'search_history' %}active-link{% endif %}">
                     <i class="fas fa-history me-2"></i><span>Search History</span>
                 </a>
             </li>
 
             <li>
-                <a href="{% url 'pricing' %}" class="nav-link {% if request.resolver_match.url_name == 'pricing' %}active-link{% endif %}">
+                <a href="{% url 'pricing' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'pricing' %}active-link{% endif %}">
                     <i class="fas fa-tag me-2"></i><span>Pricing</span>
                 </a>
             </li>
 
 
             <li>
-                <a href="{% url 'Customized-Learning-Solutions' %}" class="nav-link {% if request.resolver_match.url_name == 'Customized-Learning-Solutions' %}active-link{% endif %}">
+                <a href="{% url 'Customized-Learning-Solutions' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'Customized-Learning-Solutions' %}active-link{% endif %}">
                     <i class="fas fa-graduation-cap me-2"></i><span>Academy</span>
                 </a>
             </li>
 
             {% if user.is_superuser %}
             <li>
-                <a href="{% url 'admin-dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'admin-dashboard' %}active-link{% endif %}">
+                <a href="{% url 'admin-dashboard' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'admin-dashboard' %}active-link{% endif %}">
                     <i class="fas fa-user-shield me-2"></i><span>Users</span>
                 </a>
             </li>
@@ -156,14 +156,142 @@
 
             <hr class="text-white">
 
+           
+
+            {% if user.is_authenticated %}
+            {% with user_accounts=request.user.socialaccount_set.all %}
+            {% if user_accounts %}
+            <li class="sidebar-dropdown">
+                <a class="nav-link d-flex justify-content-between align-items-center"
+                   data-bs-toggle="collapse"
+                   href="#accountSwitcherPanel"
+                   role="button"
+                   aria-expanded="{% if request.GET.account %}true{% else %}false{% endif %}"
+                   aria-controls="accountSwitcherPanel"
+                   id="accountSwitcherToggle">
+                    <span style="display:flex;align-items:center;gap:9px;min-width:0;">
+                        <span id="sidebarActiveAvatar" style="
+                            width:26px;height:26px;border-radius:50%;flex-shrink:0;
+                            {% if request.GET.account %}
+    {% for acc in user_accounts %}
+        {% if acc.id|stringformat:'s' == request.GET.account %}
+            {% if acc.provider == 'google' %}
+                background:linear-gradient(135deg,#4285F4,#34a853);
+            {% elif acc.provider == 'microsoft' %}
+                background:linear-gradient(135deg,#0078d4,#7b2ff7);
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+{% else %}
+    background:rgba(255,255,255,0.25);
+{% endif %}
+                            color:#fff;font-size:11px;font-weight:800;
+                            display:flex;align-items:center;justify-content:center;
+                            border:2px solid rgba(255,255,255,0.5);
+                            box-shadow:0 2px 6px rgba(0,0,0,0.2);
+                        ">
+                            {% if request.GET.account %}
+                                {% for acc in user_accounts %}{% if acc.id|stringformat:'s' == request.GET.account %}{% if acc.extra_data.email %}
+    {{ acc.extra_data.email|first|upper }}
+{% elif acc.extra_data.userPrincipalName %}
+    {{ acc.extra_data.userPrincipalName|first|upper }}
+{% elif acc.extra_data.mail %}
+    {{ acc.extra_data.mail|first|upper }}
+{% endif %}{% endif %}{% endfor %}
+                            {% else %}All{% endif %}
+                        </span>
+<span style="font-size:13px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                {% if request.GET.account %}{% for acc in user_accounts %}{% if acc.id|stringformat:'s' == request.GET.account %}
+                            {% if acc.extra_data.email %}
+    {{ acc.extra_data.email }}
+{% elif acc.extra_data.userPrincipalName %}
+    {{ acc.extra_data.userPrincipalName }}
+{% elif acc.extra_data.mail %}
+    {{ acc.extra_data.mail }}
+{% endif %}{% endif %}{% endfor %}{% else %}All Accounts{% endif %}
+                        </span>
+                    </span>
+                    <i class="fas fa-chevron-down small" style="transition:transform 0.25s;flex-shrink:0;" id="acChevron"></i>
+                </a>
+
+                <div class="collapse" id="accountSwitcherPanel">
+                    {% comment %} <div style="margin:4px 6px 12px 6px;border-radius:14px;overflow:hidden;background:rgba(0,0,0,0.18);border:1px solid rgba(255,255,255,0.12);"> {% endcomment %}
+                    <div style="margin:4px 6px 12px 6px;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#5a4fcf,#6b3fa0);border:1px solid rgba(255,255,255,0.2);box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+                        <!-- All Accounts row -->
+                        <a href="{% url 'home' %}" class="account-switch-link" style="display:flex;align-items:center;gap:10px;padding:9px 12px;text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.08);transition:background 0.15s;background:{% if not request.GET.account %}rgba(255,255,255,0.12){% else %}transparent{% endif %};"
+                           onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+                           onmouseout="this.style.background='{% if not request.GET.account %}rgba(255,255,255,0.12){% else %}transparent{% endif %}'">
+                            <span style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <span style="color:#fff;font-size:10px;font-weight:800;letter-spacing:-0.5px;">All</span>
+                            </span>
+                            <div style="flex:1;min-width:0;">
+                                <div style="color:#fff;font-size:12.5px;font-weight:600;">All Accounts</div>
+                                <div style="color:rgba(255,255,255,0.5);font-size:10.5px;">Combined view</div>
+                            </div>
+                            {% if not request.GET.account %}<i class="fas fa-check-circle" style="color:rgba(255,255,255,0.85);font-size:13px;flex-shrink:0;"></i>{% endif %}
+                        </a>
+
+                        <!-- Individual accounts -->
+                        {% for acc in user_accounts %}
+                        {% if acc.provider == "google" or acc.provider == "microsoft" %}
+                        <a href="?account={{ acc.id }}" class="account-switch-link" style="display:flex;align-items:center;gap:10px;padding:9px 12px;text-decoration:none;transition:background 0.15s;background:{% if request.GET.account == acc.id|stringformat:'s' %}rgba(255,255,255,0.12){% else %}transparent{% endif %};{% if not forloop.last %}border-bottom:1px solid rgba(255,255,255,0.06);{% endif %}"
+                           onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+                           onmouseout="this.style.background='{% if request.GET.account == acc.id|stringformat:'s' %}rgba(255,255,255,0.12){% else %}transparent{% endif %}'">
+                            <span style="width:34px;height:34px;border-radius:50%;{% if acc.provider == 'google' %}background:linear-gradient(135deg,#4285F4,#34a853);{% else %}background:linear-gradient(135deg,#0078d4,#7b2ff7);{% endif %}display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;font-weight:800;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.25);">
+                                {% if acc.extra_data.email %}
+    {{ acc.extra_data.email|first|upper }}
+{% elif acc.extra_data.userPrincipalName %}
+    {{ acc.extra_data.userPrincipalName|first|upper }}
+{% elif acc.extra_data.mail %}
+    {{ acc.extra_data.mail|first|upper }}
+{% endif %}
+                            </span>
+                            <div style="flex:1;min-width:0;overflow:hidden;">
+                                <div style="color:#fff;font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{% if acc.extra_data.email %}
+    {{ acc.extra_data.email }}
+{% elif acc.extra_data.userPrincipalName %}
+    {{ acc.extra_data.userPrincipalName }}
+{% elif acc.extra_data.mail %}
+    {{ acc.extra_data.mail }}
+{% endif %}</div>
+                                <div style="color:rgba(255,255,255,0.5);font-size:10px;margin-top:1px;">
+                                    {% if acc.provider == "google" %}<i class="fab fa-google" style="font-size:9px;margin-right:3px;"></i>Google Mail{% else %}<i class="fab fa-microsoft" style="font-size:9px;margin-right:3px;"></i>Microsoft{% endif %}
+                                </div>
+                            </div>
+                            {% if request.GET.account == acc.id|stringformat:'s' %}<i class="fas fa-check-circle" style="color:rgba(255,255,255,0.85);font-size:13px;flex-shrink:0;"></i>{% endif %}
+                        </a>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </li>
+            <script>
+            (function(){
+                var toggle = document.getElementById('accountSwitcherToggle');
+                var chevron = document.getElementById('acChevron');
+                if(toggle && chevron){
+                    toggle.addEventListener('click', function(){
+                        setTimeout(function(){
+                            var expanded = toggle.getAttribute('aria-expanded') === 'true';
+                            chevron.style.transform = expanded ? 'rotate(180deg)' : 'rotate(0deg)';
+                        }, 10);
+                    });
+                    // Set initial state
+                    if(toggle.getAttribute('aria-expanded') === 'true') chevron.style.transform = 'rotate(180deg)';
+                }
+            })();
+            </script>
+            {% endif %}
+            {% endwith %}
+            {% endif %}
             <li>
-                <a href="{% url 'profile' %}" class="nav-link {% if request.resolver_match.url_name == 'profile' %}active-link{% endif %}">
+                <a href="{% url 'profile' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'profile' %}active-link{% endif %}">
                     <i class="fas fa-user me-2"></i><span>Profile</span>
                 </a>
             </li>
 
             <li>
-                <a href="{% url 'support' %}" class="nav-link {% if request.resolver_match.url_name == 'support' %}active-link{% endif %}">
+                <a href="{% url 'support' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'support' %}active-link{% endif %}">
                     <i class="fas fa-headset me-2"></i><span>Support</span>
                 </a>
             </li>
@@ -176,7 +304,7 @@
                     </button>
                 </form>
             </li>
-
+        {% endwith %}
         </ul>
         {% endif %}
     </div>
@@ -428,6 +556,7 @@ document.addEventListener("DOMContentLoaded", function(){
     document.addEventListener("DOMContentLoaded", truncateSelectOptions);
 })();
 </script>
+
 {% block js %}
 
 {% endblock js %}

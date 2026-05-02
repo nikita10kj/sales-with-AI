@@ -3482,7 +3482,8 @@ class SendEmailView(BlockDirectAccessMixin,LoginRequiredMixin, View):
         ActivityLog.objects.get_or_create(
             user=request.user,
             action="EMAIL_SENT",
-            description=f"{target.framework} Email sent to {target.email}"
+            description=f"{target.framework} Email sent to {target.email}",
+            sent_email=sent_email   
         )
         message_id = make_msgid(domain='sellsharp.co')
         today = date.today()
@@ -3607,6 +3608,10 @@ class EmailListView(BlockDirectAccessMixin,LoginRequiredMixin, ListView):
         .annotate(next_reminder_date=Subquery(next_reminder))
         .order_by('-created')
         )
+        selected_account_id = self.request.GET.get("account")
+
+        if selected_account_id:
+            qs = qs.filter(sending_account_id=selected_account_id)
 
         full_dt=self.parse_full_datetime(search)
         if full_dt:
@@ -3764,7 +3769,13 @@ class LeadListView(BlockDirectAccessMixin,LoginRequiredMixin, ListView):
         last_days = self.request.GET.get('last_days', '').strip()
 
         qs = TargetAudience.objects.filter(user=self.request.user).order_by('-created')
+        #  (account-wise)
+        selected_account_id = self.request.GET.get("account")
 
+        if selected_account_id:
+            qs = qs.filter(
+                sent_email__sending_account_id=selected_account_id
+            ).distinct()
         if service:
             qs = qs.filter(selected_service=service)
         if framework:
@@ -5259,6 +5270,12 @@ def campaign_view(request):
                     user=request.user,
                     target_audience=audience
                 ).order_by("-created").first()
+                ActivityLog.objects.create(
+                        user=request.user,
+                        action="EMAIL_SENT",
+                        description=f"{framework} Campaign scheduled for {audience.email}",
+                        sent_email=sent_email_obj
+                    )
 
                 if sent_email_obj:
                     for i, follow in enumerate(follow_ups):
@@ -5328,6 +5345,12 @@ def campaign_view(request):
                         main_email=main_email,
                         selected_account=selected_account,
                         attachment=attachment_file
+                    )
+                    ActivityLog.objects.create(
+                        user=request.user,
+                        action="EMAIL_SENT",
+                        description=f"{framework} Campaign email sent to {audience.email}",
+                        sent_email=sent_email_obj
                     )
                 except Exception as e:
                     send_errors.append(f"{audience.email}: {e}")

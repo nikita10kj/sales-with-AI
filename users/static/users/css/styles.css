@@ -618,6 +618,7 @@ body {
 #sidebar.collapsed li {
     list-style: none;
     text-align: center;
+    margin: -4px;
 }
 
 /* ================= HOVER EXPAND (KEY FIX) ================= */
@@ -968,4 +969,229 @@ body {
 #sidebar li form button.nav-link:hover {
     background: rgba(255,255,255,0.15) !important;
     color: #fff !important;
+}
+/* ACCOUNT SWITCHER COLLAPSED FIX */
+#sidebar.collapsed #accountSwitcherToggle {
+    justify-content: center !important;
+    padding: 14px 0 !important;
+}
+
+/* Hide account text */
+#sidebar.collapsed #accountSwitcherToggle span:nth-child(2) {
+    display: none !important;
+}
+
+/* Center avatar perfectly */
+#sidebar.collapsed #sidebarActiveAvatar {
+    margin: 0 auto !important;
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 12px !important;
+}
+
+/* Hide dropdown arrow */
+#sidebar.collapsed #accountSwitcherToggle .fa-chevron-down {
+    display: none !important;
+}
+/* FIX: search/prospect icon center in collapsed */
+#sidebar.collapsed [data-bs-toggle="collapse"] {
+    justify-content: center !important;
+    padding: 14px 0 !important;
+}
+
+/* Only show icon */
+#sidebar.collapsed [data-bs-toggle="collapse"] span {
+    display: none !important;
+}
+
+/* Fix icon spacing */
+#sidebar.collapsed [data-bs-toggle="collapse"] i.fa-search {
+    margin: 0 !important;
+}
+
+/* Hide chevron */
+#sidebar.collapsed [data-bs-toggle="collapse"] .fa-chevron-down {
+    display: none !important;
+}
+
+/* ACCOUNT SWITCHER COLLAPSED - Avatar icon fix */
+#sidebar.collapsed #accountSwitcherToggle {
+    justify-content: center !important;
+    padding: 14px 0 !important;
+}
+
+/* Hide the outer flex wrapper's overflow issues */
+#sidebar.collapsed #accountSwitcherToggle > span:first-child {
+    min-width: unset !important;
+    overflow: visible !important;
+    gap: 0 !important;
+}
+
+/* Show ONLY the avatar circle */
+#sidebar.collapsed #sidebarActiveAvatar {
+    display: flex !important;
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 11px !important;
+    flex-shrink: 0 !important;
+    margin: 0 auto !important;
+}
+
+/* Hide account email text */
+#sidebar.collapsed #accountSwitcherToggle span:nth-child(2),
+#sidebar.collapsed #accountSwitcherToggle > span > span:last-child {
+    display: none !important;
+}
+
+/* Hide chevron */
+#sidebar.collapsed #accountSwitcherToggle #acChevron {
+    display: none !important;
+}
+
+/* Hover-expand: restore full display */
+#sidebar.collapsed.hover-expand:not(.no-hover):hover #accountSwitcherToggle {
+    justify-content: space-between !important;
+    padding: 10px 15px !important;
+}
+
+#sidebar.collapsed.hover-expand:not(.no-hover):hover #accountSwitcherToggle > span > span:last-child {
+    display: inline !important;
+}
+
+#sidebar.collapsed.hover-expand:not(.no-hover):hover #accountSwitcherToggle #acChevron {
+    display: inline !important;
+}
+
+/* ================= ACCOUNT SWITCHER COLLAPSED FIX ================= */
+
+#sidebar.collapsed #accountSwitcherToggle {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 14px 0 !important;
+    width: 100% !important;
+}
+
+/* Fix the outer span wrapper that causes overflow clipping */
+#sidebar.collapsed #accountSwitcherToggle > span:first-child {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-width: unset !important;
+    overflow: visible !important;
+    width: auto !important;
+    gap: 0 !important;
+}
+
+/* Show avatar circle */
+#sidebar.collapsed #sidebarActiveAvatar {
+    display: flex !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    font-size: 12px !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Hide email text label */
+#sidebar.collapsed #accountSwitcherToggle > span:first-child > span:last-child {
+    display: none !important;
+}
+
+/* Hide chevron arrow */
+#sidebar.collapsed #accountSwitcherToggle > i,
+#sidebar.collapsed #acChevron {
+    display: none !important;
+}
+
+/* ---- Hover expand: restore full layout ---- */
+#sidebar.collapsed.hover-expand:not(.no-hover):hover #accountSwitcherToggle {
+    justify-content: space-between !important;
+    padding: 10px 15px !important;
+}
+
+#sidebar.collapsed.hover-expand:not(.no-hover):hover #accountSwitcherToggle > span:first-child {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    gap: 9px !important;
+    flex: 1 !important;
+}
+
+#sidebar.collapsed.hover-expand:not(.no-hover):hover #accountSwitcherToggle > span:first-child > span:last-child {
+    display: inline !important;
+}
+
+#sidebar.collapsed.hover-expand:not(.no-hover):hover #acChevron {
+    display: inline-block !important;
+    flex-shrink: 0 !important;
+}
+
+/* ================= COLLAPSED: HIDE ACCOUNT SWITCHER PANEL COMPLETELY ================= */
+
+#sidebar.collapsed #accountSwitcherPanel {
+    display: none !important;
+}
+
+/* Also prevent it from opening when collapsed (no-hover state) */
+#sidebar.collapsed.no-hover #accountSwitcherPanel {
+    display: none !important;
+}
+
+/* Hover-expand: allow it to show on hover */
+#sidebar.collapsed.hover-expand:not(.no-hover):hover #accountSwitcherPanel.show {
+    display: block !important;
+}
+
+/* ================= FIX: overflow hidden on collapsed sidebar ================= */
+#sidebar.collapsed {
+    overflow: hidden !important;
+}
+
+/* But allow overflow when hover-expanding */
+#sidebar.collapsed.hover-expand:not(.no-hover):hover {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+/* Account switcher - opens UPWARD */
+.sidebar-dropdown {
+    position: relative !important;
+}
+
+#accountSwitcherPanel {
+    position: absolute !important;
+    bottom: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9999 !important;
+    margin-bottom: 6px !important;
+}
+
+/* Hover-expand: panel pops up correctly */
+#sidebar.collapsed.hover-expand:not(.no-hover):hover #accountSwitcherPanel.show {
+    display: block !important;
+    position: absolute !important;
+    bottom: 100% !important;
+}
+/* Allow account switcher panel to show on hover-expand pages */
+
+
+/* Keep inner scroll but allow panel popup */
+#sidebar.collapsed.hover-expand:not(.no-hover):hover #accountSwitcherPanel.show {
+    display: block !important;
+    position: absolute !important;
+    bottom: 100% !important;
+    left: 6px !important;
+    right: 6px !important;
+    z-index: 99999 !important;
+}
+.sidebar .nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* force left alignment */
+}
+.sidebar.collapsed .sidebar-dropdown .nav-link {
+    justify-content: flex-start !important;
 }

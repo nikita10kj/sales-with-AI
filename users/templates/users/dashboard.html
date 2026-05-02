@@ -8,10 +8,72 @@
       width: 100% !important;
       height: 300px !important;
     }
-  </style>
+    .account-filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 14px 20px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 16px;
+        box-shadow: 0 4px 18px rgba(99,102,241,0.10);
+        margin-bottom: 20px;
+    }
+    .account-filter-bar label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #374151;
+        white-space: nowrap;
+    }
+    .account-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 16px;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        border: 2px solid transparent;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s;
+        background: #f3f4f6;
+        color: #374151;
+    }
+    .account-pill:hover { background: #e0e7ff; color: #4f46e5; }
+    .account-pill.active { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+    .account-pill .dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: currentColor; opacity: 0.7;
+    }
+</style>
         
             <!-- Main Content -->
             <div class="main-content-analytics">
+
+                {% if selected_account_id %}
+                <!-- Active Account Filter Badge -->
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
+                    <span style="background:linear-gradient(135deg,#4f46e5,#7c3aed); color:#fff; border-radius:999px; padding:6px 18px; font-size:0.83rem; font-weight:700; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 14px rgba(99,102,241,0.3);">                    
+                        {% for acc in request.user.socialaccount_set.all %}
+                            {% if acc.id == selected_account_id %}
+                                {% if acc.id == selected_account_id %}
+    {% if acc.provider == "google" %}
+        <i class="fab fa-google"></i>
+        {{ acc.extra_data.email }}
+    {% elif acc.provider == "microsoft" %}
+        <i class="fab fa-microsoft"></i>
+        {{ acc.extra_data.mail|default:acc.extra_data.userPrincipalName }}
+    {% endif %}
+{% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </span>
+                    <a href="{% url 'home' %}" style="font-size:0.8rem; color:#6b7280; text-decoration:none;">
+                        <i class="fas fa-times-circle"></i> Clear filter
+                    </a>
+                </div>
+                {% endif %}
                 <!-- Overview Section -->
                 <div class="analytics-section active" id="overview">
 

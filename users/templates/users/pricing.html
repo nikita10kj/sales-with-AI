@@ -1,633 +1,649 @@
 {% extends "users/base.html" %}
 {% load static %}
 {% block css %}
-{% comment %} <link rel="stylesheet" href="{% static 'users/css/pricing.css' %}"> {% endcomment %}
 {% endblock css %}
 
 {% block content %}
 <style>
-
-/* Hide sidebar text when collapsed */
-.sidebar.collapsed span,
-.sidebar.collapsed h4,
-.sidebar.collapsed p {
-    display: none;
-}
-  .how-credits-work{
-  background: #EEF0FF;           /* same section tint like your page */
-  padding: 60px 0;
-  margin-top: 60px;
-  border-radius: 16px;
-}
-
-/* Title */
-.how-credits-work .section-title{
-  font-family: inherit;           /* match site font */
-  font-size: 32px;
-  font-weight: 800;
-  text-align: center;
-  margin-bottom: 8px;
-  color: #111827;
-}
-
-/* Subtitle */
-.how-credits-work > .container > p{
-  color: #6B7280 !important;
-  font-size: 15px !important;
-  margin-bottom: 32px !important;
-}
-
-/* 3 cards grid */
-.credit-grid{
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 0 10px;
-}
-
-/* Cards */
-.credit-item{
-  background: #fff;
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  border-radius: 14px;
-  padding: 22px 18px;
-  text-align: center;
-  box-shadow: 0 10px 24px rgba(16, 24, 40, 0.06);
-  transition: all .2s ease;
-}
-
-/* hover */
-.credit-item:hover{
-  transform: translateY(-3px);
-  border-color: rgba(13, 110, 253, 0.25); /* bootstrap primary hint */
-  box-shadow: 0 16px 40px rgba(13, 110, 253, 0.10);
-}
-
-/* Icon */
-.credit-icon{
-  font-size: 22px;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(13, 110, 253, 0.08); /* soft primary */
-  margin-bottom: 12px;
-}
-
-/* card title */
-.credit-item h3{
-  font-size: 16px;
-  font-weight: 800;
-  margin-bottom: 6px;
-  color: #111827;
-}
-
-/* card text */
-.credit-item p{
-  font-size: 13px;
-  color: #6B7280;
-  margin: 0;
-  line-height: 1.5;
-}
-
-/* Example */
-.credit-example{
-  max-width: 1000px;
-  margin: 22px auto 0;
-  background: #fff;
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  border-radius: 14px;
-  padding: 18px 18px;
-  box-shadow: 0 10px 24px rgba(16, 24, 40, 0.06);
-}
-
-.credit-example h3{
-  font-size: 16px;
-  font-weight: 800;
-  margin-bottom: 6px;
-  color: #111827;
-}
-
-.credit-example p{
-  margin: 0;
-  font-size: 13px;
-  color: #6B7280;
-}
-
-/* Responsive */
-@media (max-width: 992px){
-  .credit-grid{
-    grid-template-columns: 1fr;
-  }
-  .how-credits-work{
-    border-radius: 0;
-  }
-}
-
-.pricing-page-wrap,
-.container.py-5{
+/* ─── Reset & Base ──────────────────────────────────── */
+.pricing-section {
   background: #F6F7FB;
+  padding: 50px 0 20px;
+  min-height: 80vh;
 }
-.container.py-5 .text-center h2{
+
+.pricing-section *,
+.pricing-section *::before,
+.pricing-section *::after {
+  box-sizing: border-box;
+}
+
+/* ─── Header ────────────────────────────────────────── */
+.pricing-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.pricing-header h2 {
+  font-size: 30px;
+  font-weight: 800;
   color: #111827;
+  margin-bottom: 10px;
   letter-spacing: -0.3px;
 }
-.container.py-5 .text-center p{
-  color: #6B7280 !important;
+
+.pricing-header p {
+  color: #9d9aaf;
+  font-size: 15px;
+  margin: 0;
+  font-weight: 500;
 }
 
-/* cards look (pricing + calculator) */
-.container.py-5 .card{
-  border-radius: 14px !important;
-  border: 1px solid rgba(17,24,39,0.08) !important;
-  box-shadow: 0 10px 26px rgba(16, 24, 40, 0.06) !important;
-  overflow: hidden;
+/* ─── Cards Grid ────────────────────────────────────── */
+.pricing-cards {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 28px;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 0 18px;
+  align-items: stretch;
 }
 
-/* recommended card border */
-.container.py-5 .card.border-primary{
-  border: 1px solid rgba(13,110,253,0.25) !important;
-  box-shadow: 0 14px 36px rgba(13,110,253,0.10) !important;
+/* ─── Free Plan Card ────────────────────────────────── */
+.plan-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 32px 28px;
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+  position: relative;
 }
 
-.card-body{
-  display:flex;
-  flex-direction : column;
-}
-
-/* card body spacing */
-.container.py-5 .card .card-body{
-  padding: 22px !important;
-}
-
-/* headings */
-.container.py-5 .card h4{
-  font-size: 16px;
+.plan-card .plan-label {
+  font-size: 18px;
   font-weight: 800;
-  color: #111827;
+  color: #181818;
+  margin-bottom: 4px;
 }
 
-/* small subtitle */
-.container.py-5 .card .text-muted.small{
-  font-size: 12px;
-  color: #6B7280 !important;
+.plan-card .plan-subtitle {
+  font-size: 13px;
+  color: #9CA3AF;
+  margin-bottom: 10px;
 }
 
-/* price */
-.container.py-5 .card .display-6{
-  font-size: 34px;
-  font-weight: 900;
-  color: #111827;
-}
-
-/* badge */
-.container.py-5 .badge{
+.plan-card .free-badge {
+  position: absolute;
+  top: 28px;
+  right: 28px;
+  background: #dbfce7;
+  color: #128f53;
   font-size: 11px;
   font-weight: 800;
-  padding: 6px 10px;
+  padding: 4px 14px;
   border-radius: 999px;
 }
 
-/* credit breakdown box */
-.credit-breakdown{
-  background: #F8FAFF;
-  border: 1px solid rgba(13,110,253,0.12);
-  border-radius: 12px;
-  padding: 14px 14px;
-  margin: 14px 0;
+.plan-card .plan-price {
+  font-size: 42px;
+  font-weight: 900;
+  color: #9912fa;
+  margin-bottom: 2px;
+  line-height: 1.1;
 }
 
-.credit-breakdown h4{
-  font-size: 12px;
-  font-weight: 800;
-  color: #111827;
-  margin: 0 0 8px 0;
-}
-
-.credit-breakdown ul{
-  margin: 0;
-  padding-left: 0;
-  list-style: none;
-}
-
-.credit-breakdown li{
-  font-size: 12px;
-  color: #4B5563;
-  padding: 5px 0;
-}
-
-.credit-breakdown .total{
-  color: #0D6EFD;
-  font-weight: 800;
-}
-
-/* features list */
-.container.py-5 ul.list-unstyled li{
+.plan-card .plan-price-sub {
   font-size: 13px;
-  color: #374151;
+  color: #9CA3AF;
+  margin-bottom: 22px;
 }
 
-.container.py-5 ul.list-unstyled i{
+/* Feature list */
+.plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 28px 0;
+}
+
+.plan-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+
+.plan-features li:last-child {
+  border-bottom: none;
+}
+
+.plan-features .feat-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #dbfce7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.plan-features .feat-icon svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: #46c274;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.plan-features .feat-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: #19232e;
+  line-height: 1.3;
+}
+
+.plan-features .feat-desc {
   font-size: 12px;
+  color: #9CA3AF;
+  font-weight: 400;
+  display: block;
   margin-top: 2px;
 }
 
-/* buttons */
-.container.py-5 .btn{
-  border-radius: 10px !important;
-  font-weight: 800 !important;
-  padding: 10px 14px !important;
-}
-
-/* oprimary button */
-.container.py-5 .btn-outline-primary{
-  border: 1px solid rgba(13,110,253,0.35) !important;
-}
-
-/* primary button*/
-.container.py-5 .btn-primary{
-  background: linear-gradient(135deg,#667EEA 0%,#764BA2 100%) !important;
-  border: none !important;
-  box-shadow: 0 10px 24px rgba(102,126,234,0.22) !important;
-}
-
-.container.py-5 .btn-primary:hover{
-  transform: translateY(-1px);
-  box-shadow: 0 14px 34px rgba(102,126,234,0.30) !important;
-}
-
-.container.py-5 .card .form-label{
-  font-size: 12px;
+/* Activated button */
+.btn-activated {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  background: #99a1af;
+  color: #fff;
+  font-size: 15px;
   font-weight: 800;
-  color: #111827;
+  cursor: default;
+  text-align: center;
+  text-decoration: none;
+  transition: all 0.2s;
 }
 
-.container.py-5 input.form-control{
-  border-radius: 10px;
-  border: 1px solid rgba(17,24,39,0.10);
-  padding: 10px 12px;
+.btn-activated:hover {
+  opacity: 0.92;
+  color: #fff;
+}
+
+/* ─── Custom Plan Card (Purple) ─────────────────────── */
+.custom-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 18px;
+  padding: 30px 26px;
+  color: #fff;
+  box-shadow: 0 12px 40px rgba(147, 51, 234, 0.3);
+  border: none;
+}
+
+.custom-card .plan-label {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.custom-card .plan-subtitle {
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 20px;
+}
+
+/* Credit row */
+.credit-row {
+  background: rgba(255,255,255,0.13);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  backdrop-filter: blur(6px);
+}
+
+.credit-row-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2px;
+}
+
+.credit-row-name {
+  font-size: 14px;
   font-weight: 700;
+  color: #fff;
 }
 
-.container.py-5 input.form-control:focus{
-  border-color: rgba(102,126,234,0.6);
-  box-shadow: 0 0 0 4px rgba(102,126,234,0.15);
-}
-
-/* result boxes */
-.container.py-5 .p-3.bg-light.rounded{
-  background: #F8FAFF !important;
-  border: 1px solid rgba(13,110,253,0.10);
-  border-radius: 12px !important;
-}
-
-.container.py-5 .p-3.bg-light.rounded .text-muted.small{
+.credit-row-detail {
   font-size: 11px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 10px;
 }
 
-.container.py-5 .p-3.bg-light.rounded .fs-4{
-  font-size: 22px !important;
-  font-weight: 900 !important;
-  color: #111827;
+.credit-row-price {
+  font-size: 22px;
+  font-weight: 900;
+  color: #fff;
 }
 
-/* calculator header badge */
-.container.py-5 .badge.text-bg-primary{
-  background: linear-gradient(135deg,#667EEA 0%,#764BA2 100%) !important;
+.credit-row-controls {
+  display: flex;
+  align-items: center;
+  gap: 0;
 }
 
-/* spacing fixes between pricing + how credits */
-.how-credits-work{
-  margin-top: 50px;
+.credit-row-controls .qty-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+  line-height: 1;
 }
 
-/* responsive */
-@media (max-width: 992px){
-  .container.py-5 .card .card-body{
-    padding: 18px !important;
+.credit-row-controls .qty-btn:hover {
+  background: rgba(255,255,255,0.25);
+  border-color: rgba(255,255,255,0.6);
+}
+
+.credit-row-controls .qty-display {
+  min-width: 50px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.credit-row-controls .qty-unit {
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  text-align: center;
+  display: block;
+  margin-top: -2px;
+}
+
+/* Total price row */
+.total-row {
+  background: rgba(255,255,255,0.18);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-label {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.total-amount {
+  font-size: 28px;
+  font-weight: 900;
+  color: #fff;
+}
+
+/* Get Started button */
+.btn-get-started {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border: 2px solid rgba(255,255,255,0.5);
+  border-radius: 14px;
+  background: transparent;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  margin-top: 16px;
+  transition: all 0.2s;
+}
+
+.btn-get-started:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: #fff;
+  color: #fff;
+}
+
+/* ─── How Credits Work ──────────────────────────────── */
+.how-credits-section {
+  max-width: 920px;
+  margin: 50px auto 30px;
+  padding: 0 18px;
+}
+
+.how-credits-section .section-title {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 800;
+  color: #9333EA;
+  margin-bottom: 32px;
+}
+
+.how-credits-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+.how-credit-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px 20px;
+  text-align: center;
+  border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.05);
+  transition: all 0.25s;
+}
+
+.how-credit-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 40px rgba(147, 51, 234, 0.12);
+  border-color: rgba(147, 51, 234, 0.2);
+}
+
+.how-credit-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #A855F7, #7C3AED);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  box-shadow: 0 6px 18px rgba(147, 51, 234, 0.25);
+}
+
+.how-credit-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.how-credit-card h3 {
+  font-size: 15px;
+  font-weight: 800;
+  color: #9333EA;
+  margin-bottom: 8px;
+}
+
+.how-credit-card p {
+  font-size: 12.5px;
+  color: #6B7280;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ─── Responsive ────────────────────────────────────── */
+@media (max-width: 768px) {
+  .pricing-cards {
+    grid-template-columns: 1fr;
+  }
+  .how-credits-grid {
+    grid-template-columns: 1fr;
+  }
+  .pricing-header h2 {
+    font-size: 24px;
   }
 }
-
 </style>
-<div class="container py-5">
 
-  <div class="text-center mb-4">
-    <h2 class="fw-bold">Simple Pricing That Grows With You</h2>
-    <p class="text-muted mb-0">
-      Start free, scale smart. No hidden fees, no surprises — just powerful AI emails that convert.
-    </p>
+<div class="pricing-section">
+  <div class="pricing-header">
+    <h2>Simple Pricing That Grows With You</h2>
+    <p>Choose the plan that fits your needs. Scale as you grow.</p>
   </div>
 
-  <!-- Pricing Cards (No Monthly/Yearly) -->
-<div class="row justify-content-center">
-  <div class="col-12 col-lg-8">
-    <div class="row g-4 justify-content-center">
-    <!-- Free Plan -->
-<div class="col-12 col-md-6">
-        <div class="card h-100 shadow-sm border-0">
-        <div class="card-body d-flex flex-column">
-          <div class="d-flex align-items-start justify-content-between">
-            <div>
-              <h4 class="fw-bold mb-1">Free</h4>
-              <div class="text-muted small">Best for trying SellSharp</div>
-            </div>
-            <span class="badge text-bg-success">Free</span>
+  <div class="pricing-cards">
+    <!-- ─── Free Plan ─── -->
+    <div class="plan-card">
+      <div class="plan-label">Free Plan</div>
+      <div class="plan-subtitle">Perfect to get started</div>
+      <span class="free-badge">Free</span>
+
+      <div class="plan-price">₹0</div>
+      <div class="plan-price-sub">Forever free</div>
+
+      <ul class="plan-features">
+        <li>
+          <span class="feat-icon">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <div>
+            <span class="feat-text">50 Primary Emails</span>
+            <span class="feat-desc">Start building your outreach</span>
           </div>
-
-          <div class="my-3">
-            <span class="display-6 fw-bold">₹0</span>
+        </li>
+        <li>
+          <span class="feat-icon">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <div>
+            <span class="feat-text">200 Follow Up Emails</span>
+            <span class="feat-desc">Automated follow-ups included</span>
           </div>
+        </li>
+        <li>
+          <span class="feat-icon">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <div>
+            <span class="feat-text">50 Search Credits</span>
+            <span class="feat-desc">Find your ideal prospects</span>
+          </div>
+        </li>
+        <li>
+          <span class="feat-icon">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <div>
+            <span class="feat-text">25 Enrichment Credits</span>
+            <span class="feat-desc">1 credit for email, 4 for phone</span>
+          </div>
+        </li>
+      </ul>
 
-               <div class="credit-breakdown">
-                        <h4>Credit Breakdown:</h4>
-                        <ul>
-                            <li>1 Credit = 1 Primary Email + 4 Follow-up Emails</li>
-                            <li>50 Credits = 50 Primary Emails + 2,00 Follow-ups</li>
-                            <li class="total">Total: 250 Emails to kickstart your outreach</li>
-                        </ul>
-                </div>
-
-          {% comment %} <a href="{% url 'login' %}" class="btn btn-outline-primary w-100 mb-3">
-            Start Free
-          </a> {% endcomment %}
-          <a href="{% if user.is_authenticated %}{% url 'home' %}{% else %}{% url 'login' %}{% endif %}"
-            class="btn btn-outline-primary w-100 mb-3 mt-auto">
-            Start Free
-          </a>
-
-          <ul class="list-unstyled mb-0 mt-auto">
-            <li class="d-flex gap-2 mb-2">
-              <i class="fa-solid fa-check text-success mt-1"></i>
-              <span><b>50 emails free</b></span>
-            </li>
-            <li class="d-flex gap-2 mb-2">
-              <i class="fa-solid fa-check text-success mt-1"></i>
-              <span>AI Email Generator</span>
-            </li>
-            <li class="d-flex gap-2 mb-2">
-              <i class="fa-solid fa-check text-success mt-1"></i>
-              <span>Basic personalization</span>
-            </li>
-            <li class="d-flex gap-2 mb-2">
-              <i class="fa-solid fa-check text-success mt-1"></i>
-              <span>Community support</span>
-            </li>
-          </ul>
-        </div>
-      </div>
+      {% if user.is_authenticated %}
+        <span class="btn-activated">Activated</span>
+      {% else %}
+        <a href="{% url 'login' %}" class="btn-activated" style="background:linear-gradient(135deg,#A855F7,#7C3AED);cursor:pointer;">Get Started Free</a>
+      {% endif %}
     </div>
 
-    <!-- Credits Plan -->
-<div class="col-12 col-md-6">
-        <div class="card h-100 shadow-sm border-primary">
-        <div class="card-body d-flex flex-column">
-          <div class="d-flex align-items-start justify-content-between">
-            <div>
-              <h4 class="fw-bold mb-1">Pay As You Go</h4>
-              <div class="text-muted small">Buy credits only when you need</div>
-            </div>
-            <span class="badge text-bg-primary">Recommended</span>
+    <!-- ─── Custom Plan ─── -->
+    <div class="custom-card">
+      <div class="plan-label">Custom Plan</div>
+      <div class="plan-subtitle">Build your perfect plan</div>
+
+      <!-- Emails -->
+      <div class="credit-row" id="emailRow">
+        <div class="credit-row-header">
+          <div>
+            <div class="credit-row-name">Emails</div>
+            <div class="credit-row-detail">1,000 Primary + 4,000 Follow-up</div>
           </div>
-
-          <div class="my-3">
-            <span class="fs-3 fw-bold">₹</span>
-            <span class="display-6 fw-bold" id="paygoAmount">1000</span>
-            <div class="text-muted small">Minimum purchase</div>
+          <div class="credit-row-price" id="emailPrice">₹1,000</div>
+        </div>
+        <div class="credit-row-controls">
+          <button class="qty-btn" onclick="changeQty('email', -1)">−</button>
+          <div>
+            <div class="qty-display" id="emailQty">1</div>
+            <span class="qty-unit">×1000</span>
           </div>
-
-           <div class="credit-breakdown">
-                        <h4>Credit Breakdown:</h4>
-                        <ul>
-                            <li>1 Credit = 1 Primary Email + 4 Follow-up Emails</li>
-                            <li>1,000 Credits = 1,000 Primary Emails + 4,000 Follow-ups</li>
-                            <li class="total">Total: 5,000 Emails to supercharge your sales</li>
-                        </ul>
-            </div>
-
-              {% if user.is_authenticated %}
-              <button type="button" class="btn btn-primary btn-lg buyBtn disabled">Buy Credits</button>
-              {% else %}
-              <a class="btn btn-primary btn-lg" href="{% url 'login' %}">Login to Buy</a>
-              {% endif %}
-
-
-          <ul class="list-unstyled mb-0 mt-auto">
-            <li class="d-flex gap-2 mb-2">
-              <i class="fa-solid fa-check text-success mt-1"></i>
-              <span><b>1 Credit = 1 Primary email + 4 Follow-ups</b></span>
-            </li>
-            <li class="d-flex gap-2 mb-2">
-              <i class="fa-solid fa-check text-success mt-1"></i>
-              <span>Better personalization & control</span>
-            </li>
-            <li class="d-flex gap-2 mb-2">
-              <i class="fa-solid fa-check text-success mt-1"></i>
-              <span>Priority support</span>
-            </li>
-          </ul>
-
+          <button class="qty-btn" onclick="changeQty('email', 1)">+</button>
         </div>
       </div>
-    </div>
 
+      <!-- Search Credits -->
+      <div class="credit-row" id="searchRow">
+        <div class="credit-row-header">
+          <div>
+            <div class="credit-row-name">Search Credits</div>
+            <div class="credit-row-detail">100 total credits</div>
+          </div>
+          <div class="credit-row-price" id="searchPrice">₹250</div>
+        </div>
+        <div class="credit-row-controls">
+          <button class="qty-btn" onclick="changeQty('search', -1)">−</button>
+          <div>
+            <div class="qty-display" id="searchQty">1</div>
+            <span class="qty-unit">×100</span>
+          </div>
+          <button class="qty-btn" onclick="changeQty('search', 1)">+</button>
+        </div>
+      </div>
+
+      <!-- Enrichment Credits -->
+      <div class="credit-row" id="enrichRow">
+        <div class="credit-row-header">
+          <div>
+            <div class="credit-row-name">Enrichment Credits</div>
+            <div class="credit-row-detail">100 total credits</div>
+          </div>
+          <div class="credit-row-price" id="enrichPrice">₹250</div>
+        </div>
+        <div class="credit-row-controls">
+          <button class="qty-btn" onclick="changeQty('enrich', -1)">−</button>
+          <div>
+            <div class="qty-display" id="enrichQty">1</div>
+            <span class="qty-unit">×100</span>
+          </div>
+          <button class="qty-btn" onclick="changeQty('enrich', 1)">+</button>
+        </div>
+      </div>
+
+      <!-- Total -->
+      <div class="total-row">
+        <span class="total-label">Total Price</span>
+        <span class="total-amount" id="totalPrice">₹1,500</span>
+      </div>
+
+      {% if user.is_authenticated %}
+        <button type="button" class="btn-get-started buyBtn" id="buyBtn"disabled>Get Started</button>
+      {% else %}
+        <a class="btn-get-started" href="{% url 'login' %}">Login to Buy</a>
+      {% endif %}
+    </div>
   </div>
+
+  <!-- ─── How Credits Work ─── -->
+  <div class="how-credits-section">
+    <h2 class="section-title">How Credits Work</h2>
+    <div class="how-credits-grid">
+      <div class="how-credit-card">
+        <div class="how-credit-icon">
+          <!-- Mail icon -->
+          <svg viewBox="0 0 24 24">
+            <rect x="2" y="4" width="20" height="16" rx="2"/>
+            <polyline points="22,4 12,13 2,4"/>
+          </svg>
+        </div>
+        <h3>Emails</h3>
+        <p>1000 primary emails with 4000 follow ups included per unit</p>
+      </div>
+      <div class="how-credit-card">
+        <div class="how-credit-icon">
+          <!-- Search icon -->
+          <svg viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </div>
+        <h3>Search Credits</h3>
+        <p>Find and filter your ideal prospects with powerful search capabilities</p>
+      </div>
+      <div class="how-credit-card">
+        <div class="how-credit-icon">
+          <!-- Lightning icon -->
+          <svg viewBox="0 0 24 24">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+        </div>
+        <h3>Enrichment</h3>
+        <p>1 credit for email search, 4 credits for phone number search</p>
+      </div>
     </div>
   </div>
 </div>
-  <!--how Credit works -->
-  <section class="how-credits-work">
-        <div class="container">
-            <h2 class="section-title">How Credits Work</h2>
-            <p style="text-align: center; font-size: 18px; color: var(--gray-700); margin-bottom: 48px; max-width: 700px; margin-left: auto; margin-right: auto;">
-                Every credit unlocks a complete email sequence designed to convert leads into customers.
-            </p>
-
-            <div class="credit-grid">
-                <div class="credit-item">
-                    <div class="credit-icon">📧</div>
-                    <h3>1 Primary Email</h3>
-                    <p>Your initial outreach message crafted by AI to grab attention and start conversations.</p>
-                </div>
-                <div class="credit-item">
-                    <div class="credit-icon">📨</div>
-                    <h3>4 Follow-up Emails</h3>
-                    <p>Automated nurture sequence that keeps prospects engaged until they respond.</p>
-                </div>
-                <div class="credit-item">
-                    <div class="credit-icon">📊</div>
-                    <h3>Full Analytics</h3>
-                    <p>Track opens, clicks, and conversions to continuously improve your campaigns.</p>
-                </div>
-            </div>
-
-            <div class="credit-example">
-                <h3>Example</h3>
-                <p>With 100 credits, you can reach 100 new prospects with 4 intelligent follow-ups each = <strong>500 total emails</strong> sent on autopilot.</p>
-            </div>
-        </div>
-    </section>
-
-  <!-- Credit Calculator -->
-  <div class="row justify-content-center mt-5">
-    <div class="col-12 col-lg-10">
-      <div class="card shadow-sm border-0">
-        <div class="card-body p-4">
-          <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
-            <div>
-              <h4 class="fw-bold mb-1">Credit Calculator</h4>
-              <p class="text-muted mb-0">
-                Minimum purchase: <b>1000 Credits</b>. ₹1 = 1 Credit. 1 Credit = 1 Primary + 4 Follow-ups.
-              </p>
-            </div>
-            <span class="badge text-bg-primary align-self-start align-self-md-center">
-              Minimum ₹1000
-            </span>
-          </div>
-
-          <hr class="my-4"/>
-
-          <div class="row g-3 align-items-end">
-            <div class="col-12 col-md-4">
-              <label class="form-label fw-semibold">Credits</label>
-              <input
-                id="creditsInput"
-                type="number"
-                class="form-control"
-                min="1000"
-                step="1"
-                value="1000"
-              />
-            </div>
-
-            <div class="col-12 col-md-4">
-              <label class="form-label fw-semibold">Amount (₹)</label>
-              <input id="rupeesOutput" type="text" class="form-control" value="1000" readonly />
-            </div>
-
-            <div class="col-12 col-md-4 d-grid">
-                  {% if user.is_authenticated %}
-                  <button type="button" class="btn btn-primary btn-lg buyBtn disabled">Buy Credits</button>
-                  {% else %}
-                  <a class="btn btn-primary btn-lg" href="{% url 'login' %}">Login to Buy</a>
-                  {% endif %}
-            </div>
-          </div>
-
-          <div class="row g-3 mt-3">
-            <div class="col-12 col-md-3">
-              <div class="p-3 bg-light rounded">
-                <div class="text-muted small">Primary Emails</div>
-                <div class="fs-4 fw-bold" id="primaryOut">1000</div>
-              </div>
-            </div>
-
-            <div class="col-12 col-md-3">
-              <div class="p-3 bg-light rounded">
-                <div class="text-muted small">Follow-up Emails</div>
-                <div class="fs-4 fw-bold" id="followupsOut">200</div>
-              </div>
-            </div>
-
-            <div class="col-12 col-md-3">
-              <div class="p-3 bg-light rounded">
-                <div class="text-muted small">Total Emails</div>
-                <div class="fs-4 fw-bold" id="totalEmailsOut">250</div>
-              </div>
-            </div>
-
-            <div class="col-12 col-md-3">
-              <div class="p-3 bg-light rounded">
-                <div class="text-muted small">Bundles</div>
-                <div class="fs-4 fw-bold" id="bundlesOut">1000</div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  </div>
 {% endblock content %}
 
 {% block js %}
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
-  const MIN_CREDITS = 1000;
-  const PRIMARY_PER_CREDIT = 1;
-  const FOLLOWUPS_PER_CREDIT = 4;
-  const RUPEES_PER_CREDIT = 1;
+/* ─── Pricing Calculator Logic ──────────────────────── */
+const config = {
+  email:  { qty: 1, min: 1, unitPrice: 1000, unit: 1000 },
+  search: { qty: 1, min: 0, unitPrice: 250,  unit: 100  },
+  enrich: { qty: 1, min: 0, unitPrice: 250,  unit: 100  },
+};
 
-  const creditsInput   = document.getElementById("creditsInput");
-  const rupeesOutput   = document.getElementById("rupeesOutput");
-  const primaryOut     = document.getElementById("primaryOut");
-  const followupsOut   = document.getElementById("followupsOut");
-  const totalEmailsOut = document.getElementById("totalEmailsOut");
-  const bundlesOut     = document.getElementById("bundlesOut");
-  const buyBtn         = document.getElementById("buyBtn");
-  const paygoAmount    = document.getElementById("paygoAmount");
+function fmt(n) {
+  return '₹' + n.toLocaleString('en-IN');
+}
 
-  function toInt(val) {
-    const n = parseInt(val, 10);
-    return Number.isFinite(n) ? n : NaN;
-  }
+function changeQty(type, delta) {
+  const c = config[type];
+  const next = c.qty + delta;
+  if (next < c.min) return;
+  c.qty = next;
+  render();
+}
 
-  // Update output boxes WITHOUT forcing the input value while typing
-  function updateOutputs(credits) {
-    const safeCredits = Number.isFinite(credits) ? credits : MIN_CREDITS;
+function render() {
+  // Email
+  document.getElementById('emailQty').textContent   = config.email.qty;
+  document.getElementById('emailPrice').textContent  = fmt(config.email.qty * config.email.unitPrice);
+  document.getElementById('emailRow').querySelector('.credit-row-detail').textContent =
+    `${(config.email.qty * 1000).toLocaleString('en-IN')} Primary + ${(config.email.qty * 4000).toLocaleString('en-IN')} Follow-up`;
 
-    const rupees = safeCredits * RUPEES_PER_CREDIT;
-    const primary = safeCredits * PRIMARY_PER_CREDIT;
-    const followups = safeCredits * FOLLOWUPS_PER_CREDIT;
-    const totalEmails = primary + followups;
+  // Search
+  document.getElementById('searchQty').textContent   = config.search.qty;
+  document.getElementById('searchPrice').textContent  = fmt(config.search.qty * config.search.unitPrice);
+  document.getElementById('searchRow').querySelector('.credit-row-detail').textContent =
+    `${(config.search.qty * 100).toLocaleString('en-IN')} total credits`;
 
-    rupeesOutput.value = rupees;
-    primaryOut.textContent = primary;
-    followupsOut.textContent = followups;
-    totalEmailsOut.textContent = totalEmails;
-    bundlesOut.textContent = safeCredits;
-    paygoAmount.textContent = rupees;
+  // Enrich
+  document.getElementById('enrichQty').textContent   = config.enrich.qty;
+  document.getElementById('enrichPrice').textContent  = fmt(config.enrich.qty * config.enrich.unitPrice);
+  document.getElementById('enrichRow').querySelector('.credit-row-detail').textContent =
+    `${(config.enrich.qty * 100).toLocaleString('en-IN')} total credits`;
 
-    {% comment %} const baseHref = buyBtn.getAttribute("href").split("?")[0]; {% endcomment %}
-    {% comment %} buyBtn.setAttribute("href", `${baseHref}?credits=${safeCredits}`); {% endcomment %}
-  }
+  // Total
+  const total =
+    config.email.qty  * config.email.unitPrice +
+    config.search.qty * config.search.unitPrice +
+    config.enrich.qty * config.enrich.unitPrice;
+  document.getElementById('totalPrice').textContent = fmt(total);
+}
 
-  // While typing: allow partial values like "2", "20", "200"
-  creditsInput.addEventListener("input", () => {
-    const raw = creditsInput.value.trim();
+render();
 
-    // If empty, don't fight user; just show minimum stats
-    if (raw === "") {
-      updateOutputs(MIN_CREDITS);
-      return;
-    }
-
-    const n = toInt(raw);
-    if (!Number.isFinite(n) || n < 0) return;
-
-    // If they typed less than minimum, still show based on minimum,
-    // but DO NOT overwrite what they are typing.
-    updateOutputs(n < MIN_CREDITS ? MIN_CREDITS : n);
-  });
-
-  // When user finishes (clicks out): enforce minimum and normalize
-  creditsInput.addEventListener("blur", () => {
-    let n = toInt(creditsInput.value);
-    if (!Number.isFinite(n) || n < MIN_CREDITS) n = MIN_CREDITS;
-    creditsInput.value = String(n);
-    updateOutputs(n);
-  });
-
-  // Initial load
-  document.addEventListener("DOMContentLoaded", () => {
-    creditsInput.value = String(MIN_CREDITS);
-    updateOutputs(MIN_CREDITS);
-  });
-
-
+/* ─── Razorpay Integration ──────────────────────────── */
 function getCookie(name) {
   let cookieValue = null;
   if (document.cookie && document.cookie !== "") {
@@ -645,11 +661,21 @@ function getCookie(name) {
 
 document.addEventListener("DOMContentLoaded", () => {
   const csrftoken = getCookie("csrftoken");
-  const creditsInput = document.getElementById("creditsInput");
 
   document.querySelectorAll(".buyBtn").forEach((btn) => {
     btn.addEventListener("click", async () => {
-      const credits = parseInt(creditsInput.value, 10);
+      const total =
+        config.email.qty  * config.email.unitPrice +
+        config.search.qty * config.search.unitPrice +
+        config.enrich.qty * config.enrich.unitPrice;
+
+      if (total <= 0) {
+        alert("Please select at least one item.");
+        return;
+      }
+
+      /* credits = total rupees (₹1 = 1 credit) */
+      const credits = total;
 
       const res = await fetch("{% url 'razorpay_create_order' %}", {
         method: "POST",
@@ -695,17 +721,5 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
-</script>
-<script>
-{% comment %} document.addEventListener("DOMContentLoaded", function(){
-
-    const toggleBtn = document.getElementById("sidebarToggle");
-    const sidebar = document.getElementById("sidebar");
-
-    toggleBtn.addEventListener("click", function(){
-        sidebar.classList.toggle("collapsed");
-    });
-
-}); {% endcomment %}
 </script>
 {% endblock js %}
