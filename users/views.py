@@ -145,7 +145,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
         # read_percentage = open_rate
         # unread_percentage = 100 - open_rate if total_sent > 0 else 0
 
-        DEMO_EMAIL = "pranjalvejani2111@outlook.com"
+        DEMO_EMAIL = "hardik@jmsadvisory.in"
         DEMO_OPEN_RATE = 62.8
 
         user_email = user.email.lower() if user.email else ""
