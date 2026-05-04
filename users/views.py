@@ -66,6 +66,16 @@ class HomeView(LoginRequiredMixin, TemplateView):
         user = self.request.user
         all_users = None
 
+        selected_account_id = self.request.GET.get("account")
+        selected_account = None
+
+        if selected_account_id:
+            try:
+                from allauth.socialaccount.models import SocialAccount as SA
+                selected_account = SA.objects.get(pk=selected_account_id, user=user)
+            except Exception:
+                selected_account = None
+                
         # --- Subscription validation ---
         if EmailSubscription.objects.filter(user=user).exists():
             for sub in EmailSubscription.objects.filter(user=user):
@@ -83,7 +93,14 @@ class HomeView(LoginRequiredMixin, TemplateView):
 
         # Only apply the 500-email limit to external users
         if organization_domain not in user_email:
-            total_sent_user = SentEmail.objects.filter(user=user).count()
+            # total_sent_user = SentEmail.objects.filter(user=user).count()
+            if selected_account:
+                total_sent_user = SentEmail.objects.filter(
+                    user=user,
+                    sending_account=selected_account
+                ).count()
+            else:
+                total_sent_user = SentEmail.objects.filter(user=user).count()
             email_limit = 50
             remaining_emails = max(email_limit - total_sent_user, 0)
         else:
@@ -1401,3 +1418,16 @@ class AdminDashboardExportView(LoginRequiredMixin, UserPassesTestMixin, View):
         
         wb.save(response)
         return response
+
+@login_required
+def remove_google_account(request, pk):
+    if request.method != "POST":
+        return redirect("profile")
+    
+    acc = get_object_or_404(SocialAccount, pk=pk, user=request.user)
+    
+    SentEmail.objects.filter(user=request.user, sending_account=acc).delete()
+    
+    acc.delete()
+    messages.success(request, "Account removed successfully.")
+    return redirect("profile")

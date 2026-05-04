@@ -117,9 +117,9 @@
 
                 <!-- TAG -->
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Select Tag</label>
+                    <label class="form-label fw-semibold">Choose Target Group</label>
                     <select name="tag_id" class="form-select" id="tagSelect">
-                        <option value="">Select Tag</option>
+                        <option value="">Choose Target Group</option>
                         {% for tag in tags %}
                             <option value="{{ tag.id }}"
                                 {% if selected_tag_id == tag.id|stringformat:"s" %}selected{% endif %}>
