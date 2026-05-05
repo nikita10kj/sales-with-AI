@@ -1500,3 +1500,87 @@ html, body {
   }
 
 }
+/* ================================================================
+   ACCOUNT SWITCHER — FORCE TO LAST POSITION
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  /* Ensure the open nav ul is flex column */
+  #sidebar.mobile-open > ul {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Target the li containing the switcher — multiple selector attempts */
+  #sidebar li:has(#accountSwitcherToggle),
+  #sidebar ul > li:has(#accountSwitcherToggle) {
+    order: 9999 !important;
+    margin-top: 8px !important;
+    border-top: 1px solid rgba(255,255,255,0.12) !important;
+    padding-top: 6px !important;
+  }
+
+  /* All other li's stay in normal order */
+  #sidebar ul > li:not(:has(#accountSwitcherToggle)) {
+    order: 1 !important;
+  }
+
+  /* Panel flows inline, no overlap */
+  #accountSwitcherPanel {
+    position: static !important;
+    transform: none !important;
+  }
+}
+/* ================================================================
+   ACCOUNT SWITCHER — FIX POSITION (BOTTOM STICKY)
+   ================================================================ */
+
+@media (max-width: 767.98px) {
+
+  /* 1. Keep mt-auto ul hidden by default (like main ul) */
+  #sidebar > ul.mt-auto,
+  #sidebar.collapsed > ul.mt-auto {
+    max-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    z-index: 1058 !important;
+  }
+
+  /* 2. When nav opens — stick account switcher to BOTTOM of screen */
+  #sidebar.mobile-open > ul.mt-auto {
+    max-height: none !important;
+    overflow: visible !important;
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    padding: 0.5rem 0.75rem 0.85rem !important;
+    z-index: 1070 !important;
+    background: linear-gradient(160deg, #2a1f6b 0%, #4530a0 100%) !important;
+    border-top: 1px solid rgba(255,255,255,0.18) !important;
+    box-shadow: 0 -6px 24px rgba(20,10,70,0.45) !important;
+  }
+
+  /* 3. Main nav ul stays below account switcher z-index */
+  #sidebar.mobile-open > ul:not(.mt-auto) {
+    z-index: 1060 !important;
+    /* Add padding so last nav item isn't hidden behind the bottom bar */
+    padding-bottom: 90px !important;
+  }
+
+  /* 4. Account panel opens UPWARD (already configured, just reinforce) */
+  #sidebar.mobile-open > ul.mt-auto #accountSwitcherPanel {
+    position: fixed !important;
+    bottom: 70px !important;
+    top: auto !important;
+    left: 6px !important;
+    right: 6px !important;
+    z-index: 1075 !important;
+    background: linear-gradient(135deg, #3b2f8f 0%, #5b3fa6 100%) !important;
+    
+  }
+}

@@ -48,7 +48,8 @@
 
         {% if user.is_authenticated and request.resolver_match.url_name != 'user-details' %}
         {% with acc_param=request.GET.account|default:'' %}
-        <ul>
+           <ul class="flex-grow-1 overflow-y-auto" style="overflow-x:hidden; scrollbar-width:none;">
+
 
             <li>
                 <a href="{% url 'home' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active-link{% endif %}">
@@ -88,11 +89,11 @@
                             </a>
                         </li>
 
-                        <li>
+                        {% comment %} <li>
                             <a href="{% url 'data_enrich' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link submenu-link {% if request.resolver_match.url_name == 'data_enrich' %}active-link{% endif %}">
                                 <i class="fas fa-database me-2"></i><span>Data Enrichment</span>
                             </a>
-                        </li>
+                        </li> {% endcomment %}
                     </ul>
                 </div>
             </li>
@@ -104,14 +105,13 @@
             </li>
 
             <li>
-                <a href="{% url 'campaign_view' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'campaign_view' %}active-link{% endif %}">
-                    <i class="fas fa-mail-bulk me-2"></i><span>Campaign</span>
-                </a>
-            </li>
-
-            <li>
                 <a href="{% url 'list_view' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'list_view' %}active-link{% endif %}">
                     <i class="fas fa-list me-2"></i><span>Lists</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'campaign_view' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'campaign_view' %}active-link{% endif %}">
+                    <i class="fas fa-mail-bulk me-2"></i><span>Campaign</span>
                 </a>
             </li>
 
@@ -153,6 +153,29 @@
                 </a>
             </li>
             {% endif %}
+
+            <li>
+                <a href="{% url 'profile' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'profile' %}active-link{% endif %}">
+                    <i class="fas fa-user me-2"></i><span>Profile</span>
+                </a>
+            </li>
+
+            <li>
+                <a href="{% url 'support' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'support' %}active-link{% endif %}">
+                    <i class="fas fa-headset me-2"></i><span>Support</span>
+                </a>
+            </li>
+
+            <li>
+                <form action="{% url 'logout' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-link">
+                        <i class="fas fa-sign-out-alt me-2"></i><span>Logout</span>
+                    </button>
+                </form>
+            </li>
+        </ul>
+            <ul class="mt-auto" style="flex-shrink:0; padding:0; list-style:none;">
 
             <hr class="text-white">
 
@@ -284,26 +307,7 @@
             {% endif %}
             {% endwith %}
             {% endif %}
-            <li>
-                <a href="{% url 'profile' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'profile' %}active-link{% endif %}">
-                    <i class="fas fa-user me-2"></i><span>Profile</span>
-                </a>
-            </li>
-
-            <li>
-                <a href="{% url 'support' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'support' %}active-link{% endif %}">
-                    <i class="fas fa-headset me-2"></i><span>Support</span>
-                </a>
-            </li>
-
-            <li>
-                <form action="{% url 'logout' %}" method="post">
-                    {% csrf_token %}
-                    <button type="submit" class="nav-link">
-                        <i class="fas fa-sign-out-alt me-2"></i><span>Logout</span>
-                    </button>
-                </form>
-            </li>
+            
         {% endwith %}
         </ul>
         {% endif %}
@@ -501,7 +505,15 @@ document.addEventListener("DOMContentLoaded", function(){
             else { submenu.classList.remove("show"); }
         });
     }
- 
+    const acToggle = document.getElementById('accountSwitcherToggle');
+    if (acToggle) {
+        acToggle.addEventListener('click', function(e) {
+            if (!isMobile() && sidebar.classList.contains('collapsed')) {
+                sidebar.classList.remove('collapsed');
+                sidebar.classList.remove('no-hover');
+            }
+        });
+    }
     // Desktop: mouse leave
     sidebar.addEventListener("mouseleave", function() {
         if (!isMobile()) {
