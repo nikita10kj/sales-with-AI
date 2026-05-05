@@ -2,132 +2,191 @@
 {% load static %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'search/css/people_search.css' %}?v=8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-    .lists-page { padding: 0; }
-    .lists-shell { background: #f4f5f8; min-height: calc(100vh - 120px); border-radius: 0; overflow: hidden; }
-    .lists-header { background: linear-gradient(90deg, #6276ea, #7c4fc8); color: #fff; padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top-left-radius: 14px; border-top-right-radius: 14px; }
-    .lists-header-left { display: flex; align-items: center; gap: 12px; }
-    .lists-header-left i { font-size: 20px; }
-    .lists-header-title { font-size: 18px; font-weight: 700; margin: 0; }
-    .lists-count-pill { background: rgba(255,255,255,0.18); color: #fff; border-radius: 999px; padding: 6px 14px; font-size: 14px; font-weight: 600; white-space: nowrap; }
-    .lists-body { display: grid; grid-template-columns: 320px 1fr; min-height: calc(100vh - 190px); }
-    .lists-sidebar { background: #f7f7fa; border-right: 1px solid #dfe3eb; padding: 16px 0 0; }
-    .lists-sidebar-title { padding: 0 16px 14px; font-size: 15px; font-weight: 600; color: #56627a; }
-    .list-items-wrap { padding: 0 14px 14px; }
-    .list-card { background: #fff; border: 2px solid #e1e5ee; border-radius: 14px; padding: 14px 14px 12px; transition: 0.2s ease; margin-bottom: 12px; }
-    .list-card.active { border-color: #2f6df0; background: #f7fbff; }
-    .list-card:hover { border-color: #2f6df0; }
-    .list-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-    .list-card-link { text-decoration: none; display: block; color: inherit; flex: 1; }
-    .list-card-name { font-size: 16px; font-weight: 700; color: #162033; margin: 0 0 8px; word-break: break-word; }
-    .list-card-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13px; color: #7c879d; }
-    .list-card-meta span { display: inline-flex; align-items: center; gap: 5px; }
-    .list-card-delete { color: #ff4d4f; font-size: 16px; margin-top: 2px; border: none; background: none; cursor: pointer; padding: 4px 6px; border-radius: 8px; transition: background 0.15s; }
-    .list-card-delete:hover { background: #fff0f0; opacity: 1; }
-    .lists-sidebar-empty { height: calc(100% - 40px); display: flex; align-items: flex-start; justify-content: center; text-align: center; padding: 46px 24px 24px; }
-    .empty-state-box { max-width: 240px; }
-    .empty-state-icon { font-size: 52px; color: #c3c9d4; margin-bottom: 14px; line-height: 1; }
-    .empty-state-title { font-size: 16px; font-weight: 500; color: #5a6478; margin-bottom: 8px; }
-    .empty-state-text { font-size: 14px; color: #6d778c; line-height: 1.6; margin: 0; }
-    .lists-content { padding: 24px; background: #f4f5f8; }
-    .list-detail-card { background: #fff; border: 1px solid #e1e5ee; border-radius: 18px; overflow: hidden; box-shadow: 0 6px 18px rgba(34,40,70,0.06); }
-    .list-detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 26px; border-bottom: 1px solid #e6eaf1; flex-wrap: wrap; }
-    .list-detail-title { margin: 0 0 6px; font-size: 18px; font-weight: 700; color: #162033; }
-    .list-detail-subtitle { margin: 0; font-size: 14px; color: #6f7b92; }
-    .download-btn { background: #10a33c; color: #fff; border: none; border-radius: 12px; padding: 12px 18px; font-size: 15px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
-    .download-btn:hover { color: #fff; opacity: 0.95; }
-    .list-search-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .list-search-input { height: 42px; min-width: 240px; border: 1px solid #d5dbe7; border-radius: 12px; padding: 0 14px; outline: none; font-size: 14px; }
-    .list-search-btn { height: 42px; border: none; border-radius: 12px; padding: 0 16px; background: linear-gradient(90deg, #6276ea, #7c4fc8); color: #fff; font-weight: 700; cursor: pointer; }
-    .entry-section-title { padding: 20px 26px 10px; font-size: 16px; font-weight: 700; color: #162033; background: #fff; }
-    .entry-section-title.with-border { border-top: 1px solid #e9edf4; }
-    .entry-row { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(220px,1fr); gap: 20px; padding: 18px 26px; border-bottom: 1px solid #e9edf4; position: relative; }
-    .entry-row:last-child { border-bottom: none; }
-    .entry-left { display: flex; align-items: flex-start; gap: 16px; min-width: 0; }
-    .entry-avatar { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(90deg,#6276ea,#7c4fc8); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; flex-shrink: 0; text-transform: uppercase; }
-    .entry-info { min-width: 0; width: 100%; }
-    .entry-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
-    .entry-name { font-size: 17px; font-weight: 700; color: #162033; margin: 0 0 4px; }
-    .entry-role { font-size: 14px; color: #42506b; margin: 0 0 8px; word-break: break-word; }
-    .entry-meta { font-size: 14px; color: #7b879c; line-height: 1.7; }
-    .entry-meta a { color: #5f74e8; text-decoration: none; word-break: break-all; }
-    .entry-remove-btn { border: none; background: none; color: #ff4d4f; font-size: 16px; cursor: pointer; position: absolute; top: 18px; right: 26px; padding: 4px 6px; border-radius: 8px; transition: background 0.15s; }
-    .entry-remove-btn:hover { background: #fff0f0; }
-    .entry-right { display: flex; align-items: center; justify-content: flex-start; font-size: 15px; color: #7b879c; word-break: break-word; }
-    .entry-right strong { color: #7b879c; font-weight: 500; }
-    .lists-content-empty { display: flex; align-items: center; justify-content: center; min-height: 400px; text-align: center; }
-    .lists-content-empty-inner { max-width: 320px; }
-    .lists-content-empty .empty-state-icon { font-size: 64px; margin-bottom: 18px; }
-    .lists-content-empty .empty-state-title { font-size: 18px; font-weight: 500; color: #5e6880; margin-bottom: 0; }
-    .message-box { padding: 16px 24px 0; }
-    .message-item { background: #eefbf1; color: #18794e; border: 1px solid #ccebd7; padding: 12px 14px; border-radius: 12px; margin-bottom: 12px; }
-    .no-entry-box { padding: 22px; text-align: center; color: #7b879c; }
+/* ══ Page Shell ══ */
+.lists-page { padding: 0; font-family: 'Inter', sans-serif; }
+.lists-shell { background: #f4f5f8; min-height: calc(100vh - 120px); border-radius: 0; overflow: hidden; }
+.lists-header { background: linear-gradient(90deg, #6276ea, #7c4fc8); color: #fff; padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top-left-radius: 14px; border-top-right-radius: 14px; }
+.lists-header-left { display: flex; align-items: center; gap: 12px; }
+.lists-header-left i { font-size: 20px; }
+.lists-header-title { font-size: 18px; font-weight: 700; margin: 0; }
+.lists-count-pill { background: rgba(255,255,255,0.18); color: #fff; border-radius: 999px; padding: 6px 14px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.lists-body { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 190px); }
 
-    /* ── Confirm Modal ── */
-    .ll-modal-overlay {
-        position: fixed; inset: 0;
-        background: rgba(0,0,0,0.38);
-        z-index: 10000;
-        display: none;
-        align-items: center;
-        justify-content: center;
-    }
-    .ll-modal-overlay.active { display: flex; }
-    .ll-modal-box {
-        width: 100%; max-width: 400px;
-        background: #fff;
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-        margin: 16px;
-        animation: llModalIn 0.2s ease;
-    }
-    @keyframes llModalIn {
-        from { opacity:0; transform:scale(0.95) translateY(10px); }
-        to   { opacity:1; transform:scale(1) translateY(0); }
-    }
-    .ll-modal-body { padding: 28px 24px 20px; }
-    .ll-modal-icon {
-        width: 54px; height: 54px;
-        border-radius: 15px;
-        background: #ffebee;
-        display: flex; align-items: center; justify-content: center;
-        margin-bottom: 16px;
-    }
-    .ll-modal-title { font-size: 18px; font-weight: 700; color: #1a2038; margin: 0 0 8px; }
-    .ll-modal-text { font-size: 13px; color: #6c757d; margin: 0; line-height: 1.6; }
-    .ll-modal-footer {
-        display: flex; justify-content: flex-end; gap: 12px;
-        padding: 16px 24px;
-        border-top: 1px solid #e8ebf2;
-        background: #fafbfe;
-    }
-    .ll-btn-cancel {
-        padding: 10px 20px; border: 1px solid #ccd4e1;
-        border-radius: 12px; background: #fff;
-        font-weight: 700; font-size: 13px; cursor: pointer;
-        font-family: inherit;
-        transition: background 0.15s;
-    }
-    .ll-btn-cancel:hover { background: #f4f5fb; }
-    .ll-btn-danger {
-        padding: 10px 20px; border: none;
-        border-radius: 12px; background: #e53935;
-        color: #fff; font-weight: 700; font-size: 13px;
-        cursor: pointer; font-family: inherit;
-        display: inline-flex; align-items: center; gap: 6px;
-        transition: opacity 0.15s;
-    }
-    .ll-btn-danger:hover { opacity: 0.88; }
+/* ══ Sidebar ══ */
+.lists-sidebar { background: #f7f7fa; border-right: 1px solid #dfe3eb; padding: 16px 0 0; }
+.lists-sidebar-title { padding: 0 16px 14px; font-size: 15px; font-weight: 600; color: #56627a; }
+.list-items-wrap { padding: 0 14px 14px; }
+.list-card { background: #fff; border: 2px solid #e1e5ee; border-radius: 14px; padding: 14px 14px 12px; transition: 0.2s ease; margin-bottom: 12px; }
+.list-card.active { border-color: #6276ea; background: #f7fbff; }
+.list-card:hover { border-color: #6276ea; }
+.list-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.list-card-link { text-decoration: none; display: block; color: inherit; flex: 1; }
+.list-card-name { font-size: 15px; font-weight: 700; color: #162033; margin: 0 0 7px; word-break: break-word; }
+.list-card-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12px; color: #7c879d; }
+.list-card-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.list-card-delete { color: #ff4d4f; font-size: 15px; margin-top: 2px; border: none; background: none; cursor: pointer; padding: 4px 6px; border-radius: 8px; transition: background 0.15s; }
+.list-card-delete:hover { background: #fff0f0; }
+.lists-sidebar-empty { height: calc(100% - 40px); display: flex; align-items: flex-start; justify-content: center; text-align: center; padding: 46px 24px 24px; }
+.empty-state-box { max-width: 240px; }
+.empty-state-icon { font-size: 48px; color: #c3c9d4; margin-bottom: 14px; line-height: 1; }
+.empty-state-title { font-size: 15px; font-weight: 500; color: #5a6478; margin-bottom: 8px; }
+.empty-state-text { font-size: 13px; color: #6d778c; line-height: 1.6; margin: 0; }
 
-    @media (max-width: 992px) {
-        .lists-body { grid-template-columns: 1fr; }
-        .lists-sidebar { border-right: none; border-bottom: 1px solid #dfe3eb; }
-        .lists-content { padding: 18px; }
-        .list-detail-header { flex-direction: column; align-items: flex-start; }
-        .entry-row { grid-template-columns: 1fr; }
-        .list-search-input { min-width: 100%; }
-    }
+/* ══ Content ══ */
+.lists-content { padding: 20px; background: #f4f5f8; overflow: hidden; }
+.list-detail-card { background: #fff; border: 1px solid #e1e5ee; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(34,40,70,0.06); }
+
+/* ══ Detail header ══ */
+.list-detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 22px; border-bottom: 1px solid #e6eaf1; flex-wrap: wrap; }
+.list-detail-title { margin: 0 0 4px; font-size: 17px; font-weight: 700; color: #162033; }
+.list-detail-subtitle { margin: 0; font-size: 13px; color: #6f7b92; }
+
+/* ══ Header action buttons ══ */
+.download-btn { background: #10a33c; color: #fff; border: none; border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.download-btn:hover { color: #fff; opacity: 0.93; }
+.campaign-btn { background: linear-gradient(90deg, #6276ea, #7c4fc8); color: #fff; border: none; border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; cursor: pointer; }
+.campaign-btn:hover { color: #fff; opacity: 0.93; }
+.list-search-form { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.list-search-input { height: 40px; min-width: 220px; border: 1px solid #d5dbe7; border-radius: 10px; padding: 0 13px; outline: none; font-size: 13px; }
+.list-search-input:focus { border-color: #6276ea; box-shadow: 0 0 0 3px rgba(98,118,234,0.1); }
+.list-search-btn { height: 40px; border: none; border-radius: 10px; padding: 0 15px; background: linear-gradient(90deg, #6276ea, #7c4fc8); color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
+
+/* ══ Section titles ══ */
+.entry-section-title { padding: 14px 20px 10px; font-size: 13px; font-weight: 700; color: #56627a; background: #f8f9fc; border-bottom: 1px solid #e9edf4; text-transform: uppercase; letter-spacing: 0.5px; }
+.entry-section-title.with-border { border-top: 1px solid #e9edf4; }
+
+/* ══ TABLE — matches search history style ══ */
+.ll-table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: #dce2ee transparent; }
+.ll-table-wrap::-webkit-scrollbar { height: 4px; }
+.ll-table-wrap::-webkit-scrollbar-thumb { background: #dce2ee; border-radius: 999px; }
+
+.ll-table { width: max-content; min-width: 100%; border-collapse: collapse; table-layout: auto; }
+.ll-table thead tr { background: #f8f9fc; border-bottom: 2px solid #e8ebf2; }
+.ll-table thead th { padding: 10px 12px; font-size: 10.5px; font-weight: 700; color: #7b879c; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+.ll-table tbody tr { border-bottom: 1px solid #f0f2f8; transition: background 0.15s; }
+.ll-table tbody tr:last-child { border-bottom: none; }
+.ll-table tbody tr:hover { background: #f9faff; }
+.ll-table tbody td { padding: 10px 12px; font-size: 12.5px; color: #42506b; vertical-align: middle; white-space: nowrap; }
+
+/* Profile cell — matches people_search */
+.ll-profile-cell { display: flex; align-items: center; gap: 10px; min-width: 160px; }
+.avatar-circle { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #6276ea, #7c4fc8); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; overflow: hidden; position: relative; }
+.avatar-circle img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.avatar-circle .initials { font-size: 12px; font-weight: 700; text-transform: uppercase; }
+.ll-co-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #f57c00, #ff9800); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; text-transform: uppercase; }
+.profile-name { font-size: 13px; font-weight: 700; color: #162033; margin: 0 0 1px; white-space: nowrap; display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.profile-name:hover { color: #6276ea; }
+.li-badge { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; background: #0a66c2; color: #fff; border-radius: 3px; font-size: 9px; font-weight: 700; text-decoration: none; }
+.li-badge:hover { opacity: 0.85; }
+
+/* Cell truncation */
+.cell-truncate { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ll-location-cell { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; }
+.ll-location-cell i, .cell-icon { color: #9aa5be; font-size: 10px; margin-right: 3px; }
+
+/* Contact pills — matches history page */
+.sh-email-pill { display: inline-flex; align-items: center; padding: 3px 9px; background: #e8f5e9; color: #2e7d32; border-radius: 8px; font-size: 11px; font-weight: 600; white-space: nowrap; max-width: 190px; overflow: hidden; text-overflow: ellipsis; gap: 4px; }
+.sh-phone-pill { display: inline-flex; align-items: center; padding: 3px 9px; background: #e3f2fd; color: #0d47a1; border-radius: 8px; font-size: 11px; font-weight: 600; white-space: nowrap; gap: 4px; }
+.sh-blurred { font-size: 12px; color: #c8cfe0; letter-spacing: 1px; filter: blur(3.5px); user-select: none; display: inline-block; }
+.ll-url-link { display: inline-flex; align-items: center; gap: 4px; color: #0a66c2; font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.ll-url-link:hover { text-decoration: underline; }
+.ll-dash { color: #c8cfe0; }
+
+/* ══ Action icons — matches history page exactly ══ */
+.action-icons { display: flex; align-items: center; gap: 4px; flex-wrap: nowrap; }
+
+/* Send Email button */
+.send-email-col-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    height: 28px; padding: 0 8px;
+    background: linear-gradient(135deg, #6276ea, #7c4fc8);
+    color: #fff; border: none; border-radius: 7px;
+    font-size: 10.5px; font-weight: 700; cursor: pointer;
+    white-space: nowrap;
+}
+.send-email-col-btn:hover { opacity: 0.88; }
+
+/* Enrich buttons — same style as action icon buttons in history page */
+.ll-enrich-btn {
+    width: 28px; height: 28px;
+    border: 1px solid #e0e5f0; background: #f4f5fb;
+    color: #6276ea; border-radius: 7px; font-size: 11px;
+    cursor: pointer; display: inline-flex; align-items: center;
+    justify-content: center; transition: all 0.15s;
+}
+.ll-enrich-btn:hover { background: #eef1ff; border-color: #6276ea; }
+.ll-enrich-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Remove button */
+.ll-remove-btn { width: 28px; height: 28px; border: 1px solid #ffd0d0; background: #fff0f0; color: #e53935; border-radius: 7px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.ll-remove-btn:hover { background: #ffe4e4; border-color: #e53935; }
+
+/* ══ Empty states ══ */
+.lists-content-empty { display: flex; align-items: center; justify-content: center; min-height: 400px; text-align: center; }
+.lists-content-empty-inner { max-width: 300px; }
+.lists-content-empty .empty-state-icon { font-size: 56px; margin-bottom: 16px; }
+.lists-content-empty .empty-state-title { font-size: 16px; font-weight: 500; color: #5e6880; margin-bottom: 0; }
+.no-entry-box { padding: 30px; text-align: center; color: #9aa5be; font-size: 13px; }
+.message-box { padding: 14px 20px 0; }
+.message-item { background: #eefbf1; color: #18794e; border: 1px solid #ccebd7; padding: 11px 14px; border-radius: 10px; margin-bottom: 10px; font-size: 13px; }
+
+/* ══ Confirm / Delete Modal ══ */
+.ll-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.38); z-index: 10000; display: none; align-items: center; justify-content: center; }
+.ll-modal-overlay.active { display: flex; }
+.ll-modal-box { width: 100%; max-width: 400px; background: #fff; border-radius: 18px; overflow: hidden; box-shadow: 0 18px 50px rgba(0,0,0,0.18); margin: 16px; animation: llModalIn 0.2s ease; }
+@keyframes llModalIn { from { opacity:0; transform:scale(0.95) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
+.ll-modal-body { padding: 26px 22px 18px; }
+.ll-modal-icon { width: 52px; height: 52px; border-radius: 14px; background: #ffebee; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+.ll-modal-title { font-size: 17px; font-weight: 700; color: #1a2038; margin: 0 0 7px; }
+.ll-modal-text { font-size: 13px; color: #6c757d; margin: 0; line-height: 1.6; }
+.ll-modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 22px; border-top: 1px solid #e8ebf2; background: #fafbfe; }
+.ll-btn-cancel { padding: 9px 18px; border: 1px solid #ccd4e1; border-radius: 10px; background: #fff; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+.ll-btn-cancel:hover { background: #f4f5fb; }
+.ll-btn-danger { padding: 9px 18px; border: none; border-radius: 10px; background: #e53935; color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; transition: opacity 0.15s; }
+.ll-btn-danger:hover { opacity: 0.88; }
+
+/* ══ Enrich loader ══ */
+.loader-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 99999; display: none; align-items: center; justify-content: center; }
+.loader-box { background: #fff; border-radius: 18px; padding: 32px 36px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.loader-text { font-size: 15px; font-weight: 700; color: #162033; margin-top: 16px; }
+.loader-subtext { font-size: 13px; color: #8c93a3; margin-top: 6px; }
+
+/* ══ Toast ══ */
+#customMessage {
+    position: fixed !important;
+    bottom: 24px !important;
+    right: 24px !important;
+    top: auto !important;
+    left: auto !important;
+    inset: auto !important;          /* overrides any inset:0 inheritance */
+    width: auto !important;
+    max-width: 320px !important;
+    z-index: 99998;
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    background: #e8f5e9;   /* overridden by success/error class */
+}@keyframes toastIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.custom-message-success { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
+.custom-message-error { background: #ffebee; color: #b71c1c; border: 1px solid #ffcdd2; }
+.custom-message-close { background: none; border: none; font-size: 18px; cursor: pointer; color: inherit; line-height: 1; padding: 0; }
+
+@media (max-width: 992px) {
+    .lists-body { grid-template-columns: 1fr; }
+    .lists-sidebar { border-right: none; border-bottom: 1px solid #dfe3eb; }
+    .lists-content { padding: 14px; }
+    .list-detail-header { flex-direction: column; align-items: flex-start; }
+    .list-search-input { min-width: 160px; }
+}
 </style>
 {% endblock extra_css %}
 
@@ -155,10 +214,9 @@
 
         <div class="lists-body">
 
-            <!-- ── Sidebar ── -->
+            <!-- ══ Sidebar ══ -->
             <div class="lists-sidebar">
                 <div class="lists-sidebar-title">All Lists</div>
-
                 {% if lists %}
                 <div class="list-items-wrap">
                     {% for item in lists %}
@@ -167,11 +225,10 @@
                             <a href="{% url 'list_view' %}?list_id={{ item.id }}" class="list-card-link">
                                 <div class="list-card-name">{{ item.name }}</div>
                                 <div class="list-card-meta">
-                                    <span><i class="fas fa-link"></i>{{ item.entries.count|add:item.company_entries.count }} item{{ item.entries.count|add:item.company_entries.count|pluralize }}</span>
+                                    <span><i class="fas fa-link"></i> {{ item.entries.count|add:item.company_entries.count }} item{{ item.entries.count|add:item.company_entries.count|pluralize }}</span>
                                     <span><i class="far fa-calendar-alt"></i> {{ item.created_at|date:"n/j/Y" }}</span>
                                 </div>
                             </a>
-                            <!-- Delete list btn — triggers modal, no form submit -->
                             <button type="button" class="list-card-delete ll-delete-list-btn"
                                     data-action="{% url 'delete_saved_list' item.id %}"
                                     data-name="{{ item.name|escape }}"
@@ -193,24 +250,29 @@
                 {% endif %}
             </div>
 
-            <!-- ── Content ── -->
+            <!-- ══ Content ══ -->
             <div class="lists-content">
                 {% if selected_list %}
                 <div class="list-detail-card w-100">
+
+                    <!-- Header -->
                     <div class="list-detail-header">
                         <div>
                             <h3 class="list-detail-title">{{ selected_list.name }}</h3>
                             <p class="list-detail-subtitle">Created on {{ selected_list.created_at|date:"F j, Y" }}</p>
                         </div>
-                        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                             <form method="GET" action="{% url 'list_view' %}" class="list-search-form" onsubmit="return false;">
                                 <input type="hidden" name="list_id" value="{{ selected_list.id }}">
                                 <input type="text" id="liveSearchInput" name="q" value="{{ search_query }}"
-                                       placeholder="Search in this list" class="list-search-input" autocomplete="off">
-                                <button type="submit" class="list-search-btn">Search</button>
+                                       placeholder="Search in this list…" class="list-search-input" autocomplete="off">
+                                <button type="submit" class="list-search-btn"><i class="fas fa-search"></i></button>
                             </form>
+                            <a href="{% url 'campaign_view' %}?list_id={{ selected_list.id }}" class="campaign-btn">
+                                <i class="fas fa-paper-plane"></i> Start Campaign
+                            </a>
                             <a href="{% url 'download_list_csv' selected_list.id %}" class="download-btn">
-                                <i class="fas fa-download"></i> Download CSV
+                                <i class="fas fa-download"></i> CSV
                             </a>
                         </div>
                     </div>
@@ -218,105 +280,319 @@
                     {% if selected_entries or selected_company_entries %}
                     <div id="entriesContainer">
 
+                        <!-- ══ PEOPLE TABLE ══ -->
                         {% if selected_entries %}
-                        <div class="entry-section-title">People</div>
-                        {% for person in selected_entries %}
-                        <div class="entry-row" data-search="{{ person.first|default:''|lower }} {{ person.last|default:''|lower }} {{ person.job_title|default:''|lower }} {{ person.company|default:''|lower }} {{ person.email|default:''|lower }} {{ person.location|default:''|lower }} {{ person.phone|default:''|lower }} {{ person.linkedin|default:''|lower }}">
-                            <div class="entry-left">
-                                <div class="entry-avatar">{{ person.first|default:"U"|slice:":1" }}{{ person.last|default:""|slice:":1" }}</div>
-                                <div class="entry-info">
-                                    <div class="entry-top">
-                                        <div>
-                                            <h4 class="entry-name">{{ person.first }} {{ person.last }}</h4>
-                                            <p class="entry-role">{{ person.job_title|default:"No title" }}{% if person.company %} at {{ person.company }}{% endif %}</p>
-                                        </div>
-                                    </div>
-                                    <div class="entry-meta">
-                                        {% if person.email %}<div>Email: {{ person.email }}</div>{% endif %}
-                                        {% if person.phone %}<div><strong>Phone:</strong> {{ person.phone }}</div>{% endif %}
-                                        {% if person.location %}<div>Location: {{ person.location }}</div>{% endif %}
-                                        {% if person.linkedin %}<div>LinkedIn: <a href="{{ person.linkedin }}" target="_blank">{{ person.linkedin }}</a></div>{% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Remove person btn — modal trigger, no inline confirm -->
-                            <button type="button" class="entry-remove-btn ll-remove-person-btn"
-                                    data-action="{% url 'remove_person_from_list' selected_list.id person.id %}"
-                                    data-name="{{ person.first }} {{ person.last }}"
-                                    title="Remove from list">
-                                <i class="far fa-trash-alt"></i>
-                            </button>
+                        <div class="entry-section-title">
+                            <i class="fas fa-user-friends me-2" style="color:#6276ea;"></i>People
+                            <span style="font-size:11px;color:#9aa5be;font-weight:500;text-transform:none;letter-spacing:0;margin-left:4px;">({{ selected_entries|length }})</span>
                         </div>
-                        {% endfor %}
+                        <div class="ll-table-wrap">
+                            <table class="ll-table">
+                                <thead>
+                                    <tr>
+                                            <th>Profile</th>
+                                            <th>Job Title</th>
+                                            <th>Contact Location</th>
+                                            <th>Company</th>
+                                            <th>HQ Location</th>
+                                            <th>Institution</th>
+                                            <th>LinkedIn URL</th>
+                                            <th>Email</th>
+                                            <th>Phone</th>
+                                            <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for person in selected_entries %}
+                                    <tr data-search="{{ person.first|default:''|lower }} {{ person.last|default:''|lower }} {{ person.job_title|default:''|lower }} {{ person.company|default:''|lower }} {{ person.email|default:''|lower }} {{ person.location|default:''|lower }} {{ person.phone|default:''|lower }} {{ person.linkedin|default:''|lower }}{{ person.institution|default:''|lower }} {{ person.company_headquarter|default:''|lower }}">
+
+                                        <!-- Profile -->
+                                        <td>
+                                            <div class="ll-profile-cell">
+                                                <div class="avatar-circle">
+                                                    <span class="initials">{{ person.first|default:"U"|slice:":1" }}{{ person.last|default:""|slice:":1" }}</span>
+                                                </div>
+                                                <div>
+                                                    <div class="profile-name">
+                                                        {{ person.first }} {{ person.last }}
+                                                        {% if person.linkedin %}
+                                                        <a href="{{ person.linkedin }}" target="_blank" class="li-badge" title="LinkedIn">in</a>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <!-- Job Title -->
+                                        <td>
+                                            <div class="cell-truncate" title="{{ person.job_title|default:'' }}">
+                                                {{ person.job_title|default:"—" }}
+                                            </div>
+                                        </td>
+
+                                        <!-- Company -->
+                                        <td>
+                                            <div class="cell-truncate" title="{{ person.company|default:'' }}">
+                                                {% if person.company %}
+                                                {% if person.company_website %}
+                                                <a href="{{ person.company_website }}" target="_blank" class="company-link" style="color:inherit;text-decoration:none;">
+                                                    <span class="cell-icon"><i class="fas fa-building"></i></span>{{ person.company }}
+                                                </a>
+                                                {% else %}
+                                                <span class="cell-icon"><i class="fas fa-building"></i></span>{{ person.company }}
+                                                {% endif %}
+                                                {% else %}<span class="ll-dash">—</span>{% endif %}
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            {% if person.company_headquarter %}
+                                            <span class="ll-location-cell"><i class="fas fa-map-marker-alt"></i>{{ person.company_headquarter }}</span>
+                                            {% else %}<span class="ll-dash">—</span>{% endif %}
+                                        </td>
+
+                                        <!-- Institution -->
+                                        <td>
+                                            {% if person.institution %}
+                                            <span class="cell-icon"><i class="fas fa-graduation-cap"></i></span>{{ person.institution }}
+                                            {% else %}<span class="ll-dash">—</span>{% endif %}
+                                        </td>
+
+                                        <!-- Location -->
+                                        <td>
+                                            {% if person.location %}
+                                            <span class="ll-location-cell"><i class="fas fa-map-marker-alt"></i>{{ person.location }}</span>
+                                            {% else %}<span class="ll-dash">—</span>{% endif %}
+                                        </td>
+
+                                        <!-- Email -->
+                                        <td class="ll-email-col-person-{{ person.id }}">
+                                            {% if person.email %}
+                                            <span class="sh-email-pill"><i class="far fa-envelope" style="font-size:10px;"></i>{{ person.email }}</span>
+                                            {% else %}
+                                            <span class="sh-blurred">***@*****</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- Phone -->
+                                        <td class="ll-phone-col-person-{{ person.id }}">
+                                            {% if person.phone %}
+                                            <span class="sh-phone-pill"><i class="fas fa-phone-alt" style="font-size:9px;"></i>{{ person.phone }}</span>
+                                            {% else %}
+                                            <span class="sh-blurred">***-****</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- LinkedIn -->
+                                        <td>
+                                            {% if person.linkedin %}
+                                            <a href="{{ person.linkedin }}" target="_blank" class="ll-url-link">
+                                                <i class="fab fa-linkedin" style="color:#0a66c2;"></i> View
+                                            </a>
+                                            {% else %}<span class="ll-dash">—</span>{% endif %}
+                                        </td>
+
+                                        <!-- Actions -->
+                                        <td>
+                                            <div class="action-icons" id="ll-actions-person-{{ person.id }}">
+
+                                                <!-- Send Email or Enrich Email -->
+                                                {% if person.email %}
+                                                <form method="POST" action="{% url 'select_person_for_email' %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="first"               value="{{ person.first|default:'' }}">
+                                                    <input type="hidden" name="last"                value="{{ person.last|default:'' }}">
+                                                    <input type="hidden" name="linkedin"            value="{{ person.linkedin|default:'' }}">
+                                                    <input type="hidden" name="company"             value="{{ person.company|default:'' }}">
+                                                    <input type="hidden" name="company_website"     value="{{ person.company_website|default:'' }}">
+                                                    <input type="hidden" name="job_title"           value="{{ person.job_title|default:'' }}">
+                                                    <input type="hidden" name="institution"         value="{{ person.institution|default:'' }}">
+                                                    <input type="hidden" name="location"            value="{{ person.location|default:'' }}">
+                                                    <input type="hidden" name="company_headquarter" value="{{ person.company_headquarter|default:'' }}">
+                                                    <input type="hidden" name="email"               value="{{ person.email }}">
+                                                    <button type="submit" class="send-email-col-btn" title="Send Email">
+                                                        <i class="far fa-envelope me-1"></i> Send Email
+                                                    </button>
+                                                </form>
+                                                {% else %}
+                                                <!-- Enrich Email -->
+                                                <button type="button" class="ll-enrich-btn ll-list-enrich-btn" title="Fetch Email"
+                                                        data-person-id="{{ person.id }}"
+                                                        data-type="email"
+                                                        data-linkedin="{{ person.linkedin|default:'' }}"
+                                                        data-first="{{ person.first|default:'' }}"
+                                                        data-last="{{ person.last|default:'' }}"
+                                                        data-company="{{ person.company|default:'' }}"
+                                                        data-company_website="{{ person.company_website|default:'' }}"
+                                                        data-job_title="{{ person.job_title|default:'' }}"
+                                                        data-institution="{{ person.institution|default:'' }}"
+                                                        data-location="{{ person.location|default:'' }}"
+                                                        data-company_headquarter="{{ person.company_headquarter|default:'' }}">
+                                                    <i class="far fa-envelope"></i>
+                                                </button>
+                                                {% endif %}
+
+                                                <!-- Enrich Phone -->
+                                                {% if person.phone %}
+                                                <button type="button" class="ll-enrich-btn" title="Phone available" disabled>
+                                                    <i class="fas fa-phone-alt"></i>
+                                                </button>
+                                                {% else %}
+                                                <button type="button" class="ll-enrich-btn ll-list-enrich-btn" title="Fetch Phone"
+                                                        data-person-id="{{ person.id }}"
+                                                        data-type="phone"
+                                                        data-linkedin="{{ person.linkedin|default:'' }}"
+                                                        data-first="{{ person.first|default:'' }}"
+                                                        data-last="{{ person.last|default:'' }}"
+                                                        data-company="{{ person.company|default:'' }}"
+                                                        data-company_website="{{ person.company_website|default:'' }}"
+                                                        data-job_title="{{ person.job_title|default:'' }}"
+                                                        data-institution="{{ person.institution|default:'' }}"
+                                                        data-location="{{ person.location|default:'' }}"
+                                                        data-company_headquarter="{{ person.company_headquarter|default:'' }}">
+                                                    <i class="fas fa-phone-alt"></i>
+                                                </button>
+                                                {% endif %}
+
+                                                <!-- Remove from list -->
+                                                <button type="button" class="ll-remove-btn ll-remove-person-btn"
+                                                        data-action="{% url 'remove_person_from_list' selected_list.id person.id %}"
+                                                        data-name="{{ person.first }} {{ person.last }}"
+                                                        title="Remove from list">
+                                                    <i class="far fa-trash-alt"></i>
+                                                </button>
+
+                                            </div>
+                                        </td>
+
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                         {% endif %}
 
+                        <!-- ══ COMPANIES TABLE ══ -->
                         {% if selected_company_entries %}
-                        <div class="entry-section-title {% if selected_entries %}with-border{% endif %}">Companies</div>
-                        {% for company in selected_company_entries %}
-                        <div class="entry-row" data-search="{{ company.name|default:''|lower }} {{ company.linkedin_url|default:''|lower }} {{ company.website|default:''|lower }} {{ company.industry|default:''|lower }} {{ company.domain|default:''|lower }} {{ company.revenue|default:''|lower }} {{ company.specialties|default:''|lower }} {{ company.headquarter|default:''|lower }} {{ company.location|default:''|lower }} {{ company.company_market|default:''|lower }}">
-                            <div class="entry-left">
-                                <div class="entry-avatar">{{ company.name|default:"C"|slice:":1" }}</div>
-                                <div class="entry-info">
-                                    <div class="entry-top">
-                                        <div>
-                                            <h4 class="entry-name">{{ company.name|default:"Unnamed Company" }}</h4>
-                                            <p class="entry-role">{{ company.industry|default:"No industry" }}{% if company.company_market %} • {{ company.company_market }}{% endif %}</p>
-                                        </div>
-                                    </div>
-                                    <div class="entry-meta">
-                                        {% if company.website %}<div>Website: <a href="{{ company.website }}" target="_blank">{{ company.website }}</a></div>{% endif %}
-                                        {% if company.linkedin_url %}<div>LinkedIn: <a href="{{ company.linkedin_url }}" target="_blank">{{ company.linkedin_url }}</a></div>{% endif %}
-                                        {% if company.domain %}<div>Domain: {{ company.domain }}</div>{% endif %}
-                                        {% if company.revenue %}<div>Revenue: {{ company.revenue }}</div>{% endif %}
-                                        {% if company.specialties %}<div>Specialties: {{ company.specialties }}</div>{% endif %}
-                                        {% if company.headquarter %}<div>Headquarter: {{ company.headquarter }}</div>{% endif %}
-                                        {% if company.location %}<div>Location: {{ company.location }}</div>{% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Remove company btn — modal trigger -->
-                            <button type="button" class="entry-remove-btn ll-remove-company-btn"
-                                    data-action="{% url 'remove_company_from_list' selected_list.id company.id %}"
-                                    data-name="{{ company.name|default:'this company' }}"
-                                    title="Remove from list">
-                                <i class="far fa-trash-alt"></i>
-                            </button>
+                        <div class="entry-section-title {% if selected_entries %}with-border{% endif %}">
+                            <i class="fas fa-building me-2" style="color:#f57c00;"></i>Companies
+                            <span style="font-size:11px;color:#9aa5be;font-weight:500;text-transform:none;letter-spacing:0;margin-left:4px;">({{ selected_company_entries|length }})</span>
                         </div>
-                        {% endfor %}
+                        <div class="ll-table-wrap">
+                            <table class="ll-table">
+                                <thead>
+                                    <tr>
+                                        <th>Company</th>
+                                        <th>Industry</th>
+                                        <th>HQ Location</th>
+                                        <th>Website</th>
+                                        <th>Revenue</th>
+                                        <th>LinkedIn</th>
+                                        <th style="text-align:center;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for company in selected_company_entries %}
+                                    <tr data-search="{{ company.name|default:''|lower }} {{ company.linkedin_url|default:''|lower }} {{ company.website|default:''|lower }} {{ company.industry|default:''|lower }} {{ company.domain|default:''|lower }} {{ company.revenue|default:''|lower }} {{ company.specialties|default:''|lower }} {{ company.headquarter|default:''|lower }} {{ company.location|default:''|lower }} {{ company.company_market|default:''|lower }}">
+
+                                        <td>
+                                            <div class="ll-profile-cell">
+                                                <div class="ll-co-avatar">{{ company.name|default:"C"|slice:":1" }}</div>
+                                                <div>
+                                                    <div class="profile-name">
+                                                        {{ company.name|default:"Unnamed Company" }}
+                                                        {% if company.linkedin_url %}
+                                                        <a href="{{ company.linkedin_url }}" target="_blank" class="li-badge" title="LinkedIn">in</a>
+                                                        {% endif %}
+                                                    </div>
+                                                    {% if company.company_market %}<div style="font-size:11px;color:#9aa5be;">{{ company.company_market }}</div>{% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><div class="cell-truncate" title="{{ company.industry|default:'' }}">{{ company.industry|default:"—" }}</div></td>
+                                        <td>
+                                            {% if company.headquarter %}
+                                            <span class="ll-location-cell"><i class="fas fa-map-marker-alt"></i>{{ company.headquarter }}</span>
+                                            {% elif company.location %}
+                                            <span class="ll-location-cell"><i class="fas fa-map-marker-alt"></i>{{ company.location }}</span>
+                                            {% else %}<span class="ll-dash">—</span>{% endif %}
+                                        </td>
+                                        <td>
+                                            {% if company.website %}
+                                            <a href="{{ company.website }}" target="_blank" class="ll-url-link"><i class="fas fa-external-link-alt"></i> Visit</a>
+                                            {% else %}<span class="ll-dash">—</span>{% endif %}
+                                        </td>
+                                        <td>{{ company.revenue|default:"—" }}</td>
+                                        <td>
+                                            {% if company.linkedin_url %}
+                                            <a href="{{ company.linkedin_url }}" target="_blank" class="ll-url-link">
+                                                <i class="fab fa-linkedin" style="color:#0a66c2;"></i> View
+                                            </a>
+                                            {% else %}<span class="ll-dash">—</span>{% endif %}
+                                        </td>
+                                        <td style="text-align:center;">
+                                            <div class="action-icons" style="justify-content:center;">
+                                                {% if company.linkedin_url %}
+                                                <a href="{{ company.linkedin_url }}" target="_blank" class="ll-enrich-btn" title="LinkedIn" style="text-decoration:none;color:#0a66c2;">
+                                                    <i class="fab fa-linkedin-in"></i>
+                                                </a>
+                                                {% endif %}
+                                                {% if company.website %}
+                                                <a href="{{ company.website }}" target="_blank" class="ll-enrich-btn" title="Website" style="text-decoration:none;color:#6276ea;">
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                </a>
+                                                {% endif %}
+                                                <button type="button" class="ll-remove-btn ll-remove-company-btn"
+                                                        data-action="{% url 'remove_company_from_list' selected_list.id company.id %}"
+                                                        data-name="{{ company.name|default:'this company' }}"
+                                                        title="Remove from list">
+                                                    <i class="far fa-trash-alt"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                         {% endif %}
 
+                    </div><!-- /entriesContainer -->
+
+                    <div id="liveSearchEmpty" class="no-entry-box" style="display:none;">
+                        <i class="fas fa-search me-2" style="color:#c8cfe0;"></i>No matching items found in this list.
                     </div>
-                    <div id="liveSearchEmpty" class="no-entry-box" style="display:none;">No matching items found in this list.</div>
+
                     {% else %}
-                    <div class="no-entry-box">No items found in this list.</div>
+                    <div class="no-entry-box"><i class="fas fa-inbox me-2" style="color:#c8cfe0;"></i>No items found in this list.</div>
                     {% endif %}
-                </div>
+
+                </div><!-- /list-detail-card -->
 
                 {% else %}
                 <div class="lists-content-empty">
                     <div class="lists-content-empty-inner">
-                        <div class="empty-state-icon"><i class="fas fa-user-friends"></i></div>
-                        <div class="empty-state-title">Select a list to view details</div>
+                        <div class="empty-state-icon"><i class="fas fa-mouse-pointer" style="color:#c3c9d4;"></i></div>
+                        <div class="empty-state-title">Select a list to view its contents</div>
                     </div>
                 </div>
                 {% endif %}
-            </div>
+            </div><!-- /lists-content -->
 
-        </div>
-    </div>
+        </div><!-- /lists-body -->
+    </div><!-- /lists-shell -->
 </div>
 
-<!-- ══ HIDDEN CSRF FORM (used by modal to POST) ══ -->
-<form id="llConfirmForm" method="POST" style="display:none;">
-    {% csrf_token %}
-</form>
+<!-- ══ HIDDEN CSRF FORM ══ -->
+<form id="llConfirmForm" method="POST" style="display:none;">{% csrf_token %}</form>
 
 <!-- ══ CONFIRM MODAL ══ -->
 <div id="llModal" class="ll-modal-overlay">
     <div class="ll-modal-box">
         <div class="ll-modal-body">
             <div class="ll-modal-icon">
-                <i class="fas fa-trash-alt" style="font-size:22px; color:#e53935;"></i>
+                <i class="fas fa-trash-alt" style="font-size:21px; color:#e53935;"></i>
             </div>
             <h5 class="ll-modal-title" id="llModalTitle">Delete this list?</h5>
             <p class="ll-modal-text" id="llModalText">This action cannot be undone.</p>
@@ -330,21 +606,70 @@
     </div>
 </div>
 
+<!-- ══ ENRICH LOADER ══ -->
+<div id="enrichLoader" class="loader-overlay">
+    <div class="loader-box">
+        <div class="spinner-border text-primary" role="status"></div>
+        <div class="loader-text">Fetching contact data...</div>
+        <div class="loader-subtext">Please wait while details are retrieved.</div>
+    </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div id="customMessage" class="custom-message custom-message-success" style="display:none;">
+    <span id="customMessageText">Saved successfully.</span>
+    <button type="button" id="closeCustomMessage" class="custom-message-close">&times;</button>
+</div>
+
 <script>
+// ── URL constants (same pattern as history page) ──
+const ENRICH_PERSON_URL           = "{% url 'enrich_person' %}";
+const CHECK_ENRICHMENT_URL        = "{% url 'check_enrichment' request_id='00000000-0000-0000-0000-000000000000' %}".replace("00000000-0000-0000-0000-000000000000", "PLACEHOLDER");
+const SELECT_PERSON_FOR_EMAIL_URL = "{% url 'select_person_for_email' %}";
+
+// ── Utilities ──
+function getCookie(n) {
+    let v = null;
+    if (document.cookie) {
+        document.cookie.split(";").forEach(c => {
+            c = c.trim();
+            if (c.startsWith(n + "=")) v = decodeURIComponent(c.substring(n.length + 1));
+        });
+    }
+    return v;
+}
+function escapeHtml(v) {
+    return String(v || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
+
+// ── Toast ──
+const customMessage = document.getElementById("customMessage"),
+      customMessageText = document.getElementById("customMessageText"),
+      closeCustomMessage = document.getElementById("closeCustomMessage");
+let cmt;
+function showMessage(msg, type = "success") {
+    if (!customMessage || !customMessageText) return;
+    customMessageText.textContent = msg;
+    customMessage.classList.remove("custom-message-success", "custom-message-error");
+    customMessage.classList.add(type === "error" ? "custom-message-error" : "custom-message-success");
+    customMessage.style.display = "flex";
+    clearTimeout(cmt);
+    cmt = setTimeout(() => customMessage.style.display = "none", 4000);
+}
+if (closeCustomMessage) closeCustomMessage.addEventListener("click", () => { customMessage.style.display = "none"; clearTimeout(cmt); });
+
+// ── Live search ──
 document.addEventListener("DOMContentLoaded", function () {
-
-    // ── Live search ──
     const input    = document.getElementById("liveSearchInput");
-    const rows     = document.querySelectorAll(".entry-row[data-search]");
+    const rows     = document.querySelectorAll("tr[data-search]");
     const emptyBox = document.getElementById("liveSearchEmpty");
-
     if (input && rows.length) {
         function filterEntries() {
             const query = input.value.trim().toLowerCase();
             let visible = 0;
             rows.forEach(function(row) {
-                const match = query === "" || (row.getAttribute("data-search")||"").toLowerCase().includes(query);
-                row.style.display = match ? "grid" : "none";
+                const match = query === "" || (row.getAttribute("data-search") || "").toLowerCase().includes(query);
+                row.style.display = match ? "" : "none";
                 if (match) visible++;
             });
             if (emptyBox) emptyBox.style.display = visible === 0 ? "block" : "none";
@@ -352,84 +677,243 @@ document.addEventListener("DOMContentLoaded", function () {
         input.addEventListener("input", filterEntries);
         filterEntries();
     }
+});
 
-    // ── Modal logic ──
-    const modal          = document.getElementById("llModal");
-    const cancelBtn      = document.getElementById("llCancelBtn");
-    const confirmBtn     = document.getElementById("llConfirmBtn");
-    const confirmBtnText = document.getElementById("llConfirmBtnText");
-    const modalTitle     = document.getElementById("llModalTitle");
-    const modalText      = document.getElementById("llModalText");
-    const confirmForm    = document.getElementById("llConfirmForm");
+// ── Enrich contact (email or phone) — mirrors history page polling logic ──
+document.addEventListener("click", async function(e) {
+    const btn = e.target.closest(".ll-list-enrich-btn");
+    if (!btn) return;
 
-    let pendingAction = null;
+    const personId   = btn.getAttribute("data-person-id");
+    const enrichType = btn.getAttribute("data-type") || "email";
+    const linkedin   = btn.getAttribute("data-linkedin") || "";
 
-    function openModal(title, text, action) {
-        modalTitle.textContent    = title;
-        modalText.textContent     = text;
-        pendingAction             = action;
-        confirmBtnText.textContent = "Yes, Delete";
-        confirmBtn.disabled       = false;
-        modal.classList.add("active");
+    if (!linkedin) { showMessage("No LinkedIn URL available for this person.", "error"); return; }
+
+    const origHTML = btn.innerHTML;
+    btn.innerHTML  = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled   = true;
+
+    const loader = document.getElementById("enrichLoader");
+    if (loader) loader.style.display = "flex";
+
+    const personData = {
+        first:               btn.getAttribute("data-first") || "",
+        last:                btn.getAttribute("data-last") || "",
+        linkedin,
+        company:             btn.getAttribute("data-company") || "",
+        company_website:     btn.getAttribute("data-company_website") || "",
+        job_title:           btn.getAttribute("data-job_title") || "",
+        institution:         btn.getAttribute("data-institution") || "",
+        location:            btn.getAttribute("data-location") || "",
+        company_headquarter: btn.getAttribute("data-company_headquarter") || "",
+        email: "", phone: ""
+    };
+
+    const fd = new FormData();
+    fd.append("csrfmiddlewaretoken", getCookie("csrftoken"));
+    fd.append("linkedin_url", linkedin);
+    fd.append("first",               personData.first);
+    fd.append("last",                personData.last);
+    fd.append("company",             personData.company);
+    fd.append("company_website",     personData.company_website);
+    fd.append("job_title",           personData.job_title);
+    fd.append("institution",         personData.institution);
+    fd.append("location",            personData.location);
+    fd.append("company_headquarter", personData.company_headquarter);
+    fd.append("card_id",             personId);
+    fd.append("enrich_type",         enrichType);
+
+    try {
+        const resp = await fetch(ENRICH_PERSON_URL, {
+            method: "POST",
+            headers: { "X-CSRFToken": getCookie("csrftoken"), "X-Requested-With": "XMLHttpRequest" },
+            body: fd
+        });
+        const data = await resp.json();
+
+        if (!data.success) {
+            if (loader) loader.style.display = "none";
+            if (data.limit_reached && typeof slShowModal === 'function') slShowModal(data.credits || 0);
+            else showMessage(data.error || "Could not fetch contact.", "error");
+            btn.innerHTML = origHTML; btn.disabled = false;
+            return;
+        }
+
+        // ── Webhook / polling path ──
+        if (data.pending && data.request_id) {
+            const requestId = data.request_id;
+            let resolved = false;
+
+            for (let attempt = 0; attempt < 40; attempt++) {
+                await new Promise(res => setTimeout(res, 3000));
+                let checkData;
+                try {
+                    const pollResp = await fetch(
+                        CHECK_ENRICHMENT_URL.replace("PLACEHOLDER", requestId),
+                        { headers: { "X-Requested-With": "XMLHttpRequest" } }
+                    );
+                    checkData = await pollResp.json();
+                } catch (pollErr) { console.warn("[List enrich poll] error:", pollErr); continue; }
+
+                if (!checkData.pending) {
+                    const firstEmail = checkData.email || "";
+                    const firstPhone = checkData.phone || "";
+                    if (loader) loader.style.display = "none";
+                    applyEnrichToListRow(personId, enrichType, firstEmail, firstPhone, personData, btn, origHTML);
+                    if (!firstEmail && !firstPhone) showMessage("No contact info found.", "error");
+                    else showMessage(enrichType === "email" ? "Email fetched!" : "Phone fetched!", "success");
+                    resolved = true; break;
+                }
+            }
+            if (loader) loader.style.display = "none";
+            if (!resolved) {
+                showMessage("Enrichment taking longer than expected. Try again.", "error");
+                btn.innerHTML = origHTML; btn.disabled = false;
+            }
+            return;
+        }
+
+        // ── Legacy direct response ──
+        if (loader) loader.style.display = "none";
+        const person   = data.person || {};
+        const emails   = person.emails || [];
+        const phones   = person.phones || [];
+        const firstEmail = typeof emails[0] === "string" ? emails[0] : (emails[0] && emails[0].email ? emails[0].email : "");
+        const firstPhone = typeof phones[0] === "string" ? phones[0] : (phones[0] && phones[0].number ? phones[0].number : "");
+        applyEnrichToListRow(personId, enrichType, firstEmail, firstPhone, personData, btn, origHTML);
+        if (!firstEmail && !firstPhone) showMessage("No contact info found.", "error");
+        else showMessage(enrichType === "email" ? "Email fetched!" : "Phone fetched!", "success");
+
+    } catch (err) {
+        if (loader) loader.style.display = "none";
+        btn.innerHTML = origHTML; btn.disabled = false;
+        showMessage("Server error.", "error"); console.error(err);
+    }
+});
+
+// ── Apply enriched data to the list row ──
+function applyEnrichToListRow(personId, enrichType, firstEmail, firstPhone, personData, btn, origHTML) {
+    // Update email cell
+    if (firstEmail && enrichType === "email") {
+        const emailCell = document.querySelector(`.ll-email-col-person-${personId}`);
+        if (emailCell) {
+            emailCell.innerHTML = `<span class="sh-email-pill"><i class="far fa-envelope" style="font-size:10px;"></i>${escapeHtml(firstEmail)}</span>`;
+        }
+        // Replace enrich email btn with Send Email form
+        const actionsDiv = document.getElementById(`ll-actions-person-${personId}`);
+        if (actionsDiv) {
+            const enrichEmailBtn = actionsDiv.querySelector('.ll-list-enrich-btn[data-type="email"]');
+            if (enrichEmailBtn) {
+                personData.email = firstEmail;
+                const nf = document.createElement("form");
+                nf.method  = "POST";
+                nf.action  = SELECT_PERSON_FOR_EMAIL_URL;
+                nf.className = "d-inline";
+                const fields = {
+                    csrfmiddlewaretoken: getCookie("csrftoken"),
+                    first: personData.first, last: personData.last,
+                    linkedin: personData.linkedin, company: personData.company,
+                    company_website: personData.company_website, job_title: personData.job_title,
+                    institution: personData.institution, location: personData.location,
+                    company_headquarter: personData.company_headquarter, email: firstEmail
+                };
+                Object.entries(fields).forEach(([k, v]) => {
+                    const i = document.createElement("input"); i.type = "hidden"; i.name = k; i.value = v;
+                    nf.appendChild(i);
+                });
+                const sb = document.createElement("button");
+                sb.type = "submit"; sb.className = "send-email-col-btn"; sb.title = "Send Email";
+                sb.innerHTML = '<i class="far fa-envelope me-1"></i> Send Email';
+                nf.appendChild(sb);
+                enrichEmailBtn.replaceWith(nf);
+            }
+        }
     }
 
-    function closeModal() {
-        modal.classList.remove("active");
-        pendingAction = null;
+    // Update phone cell
+    if (firstPhone && enrichType === "phone") {
+        const phoneCell = document.querySelector(`.ll-phone-col-person-${personId}`);
+        if (phoneCell) {
+            phoneCell.innerHTML = `<span class="sh-phone-pill"><i class="fas fa-phone-alt" style="font-size:9px;"></i>${escapeHtml(firstPhone)}</span>`;
+        }
+        // Replace enrich phone btn with disabled fetched btn
+        const actionsDiv = document.getElementById(`ll-actions-person-${personId}`);
+        if (actionsDiv) {
+            const enrichPhoneBtn = actionsDiv.querySelector('.ll-list-enrich-btn[data-type="phone"]');
+            if (enrichPhoneBtn) {
+                const db = document.createElement("button");
+                db.type = "button"; db.className = "ll-enrich-btn"; db.title = "Phone fetched";
+                db.disabled = true; db.style.cursor = "default";
+                db.innerHTML = '<i class="fas fa-phone-alt"></i>';
+                enrichPhoneBtn.replaceWith(db);
+            }
+        }
     }
 
-    cancelBtn.addEventListener("click", closeModal);
-    modal.addEventListener("click", function(e) {
-        if (e.target === modal) closeModal();
-    });
-    document.addEventListener("keydown", function(e) {
-        if (e.key === "Escape") closeModal();
-    });
+    // If no data, restore original btn
+    if (!firstEmail && !firstPhone) {
+        btn.innerHTML = origHTML; btn.disabled = false;
+    }
+}
 
-    confirmBtn.addEventListener("click", function() {
-        if (!pendingAction) return;
-        confirmBtnText.textContent = "Deleting...";
-        confirmBtn.disabled = true;
-        confirmForm.action = pendingAction;
-        confirmForm.submit();
-    });
+// ══ CONFIRM MODAL (delete list / remove person / remove company) ══
+const modal          = document.getElementById("llModal");
+const cancelBtn      = document.getElementById("llCancelBtn");
+const confirmBtn     = document.getElementById("llConfirmBtn");
+const confirmBtnText = document.getElementById("llConfirmBtnText");
+const modalTitle     = document.getElementById("llModalTitle");
+const modalText      = document.getElementById("llModalText");
+const confirmForm    = document.getElementById("llConfirmForm");
+let pendingAction    = null;
 
-    // ── Delete LIST ──
-    document.querySelectorAll(".ll-delete-list-btn").forEach(function(btn) {
-        btn.addEventListener("click", function() {
-            const name = btn.getAttribute("data-name") || "this list";
-            openModal(
-                "Delete \"" + name + "\"?",
-                "All people and companies in this list will be permanently removed. This cannot be undone.",
-                btn.getAttribute("data-action")
-            );
-        });
-    });
+function openModal(title, text, action) {
+    modalTitle.textContent     = title;
+    modalText.textContent      = text;
+    pendingAction              = action;
+    confirmBtnText.textContent = "Yes, Delete";
+    confirmBtn.disabled        = false;
+    modal.classList.add("active");
+}
+function closeModal() { modal.classList.remove("active"); pendingAction = null; }
 
-    // ── Remove PERSON from list ──
-    document.querySelectorAll(".ll-remove-person-btn").forEach(function(btn) {
-        btn.addEventListener("click", function() {
-            const name = btn.getAttribute("data-name") || "this person";
-            openModal(
-                "Remove " + name + "?",
-                "This person will be removed from the list.",
-                btn.getAttribute("data-action")
-            );
-        });
-    });
+cancelBtn.addEventListener("click", closeModal);
+modal.addEventListener("click", function(e) { if (e.target === modal) closeModal(); });
+document.addEventListener("keydown", function(e) { if (e.key === "Escape") closeModal(); });
+confirmBtn.addEventListener("click", function() {
+    if (!pendingAction) return;
+    confirmBtnText.textContent = "Deleting…";
+    confirmBtn.disabled = true;
+    confirmForm.action = pendingAction;
+    confirmForm.submit();
+});
 
-    // ── Remove COMPANY from list ──
-    document.querySelectorAll(".ll-remove-company-btn").forEach(function(btn) {
-        btn.addEventListener("click", function() {
-            const name = btn.getAttribute("data-name") || "this company";
-            openModal(
-                "Remove " + name + "?",
-                "This company will be removed from the list.",
-                btn.getAttribute("data-action")
-            );
-        });
+// Delete LIST
+document.querySelectorAll(".ll-delete-list-btn").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+        const name = btn.getAttribute("data-name") || "this list";
+        openModal(
+            "Delete \"" + name + "\"?",
+            "All people and companies in this list will be permanently removed. This cannot be undone.",
+            btn.getAttribute("data-action")
+        );
     });
+});
 
+// Remove PERSON
+document.querySelectorAll(".ll-remove-person-btn").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+        const name = btn.getAttribute("data-name") || "this person";
+        openModal("Remove " + name + "?", "This person will be removed from the list.", btn.getAttribute("data-action"));
+    });
+});
+
+// Remove COMPANY
+document.querySelectorAll(".ll-remove-company-btn").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+        const name = btn.getAttribute("data-name") || "this company";
+        openModal("Remove " + name + "?", "This company will be removed from the list.", btn.getAttribute("data-action"));
+    });
 });
 </script>
 {% endblock content %}

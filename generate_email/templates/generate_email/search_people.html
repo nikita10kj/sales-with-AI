@@ -25,10 +25,10 @@
                 {% csrf_token %}
 
                 <!-- keyword search at top -->
-                <div class="sidebar-search-box">
+                {% comment %} <div class="sidebar-search-box">
                     <input type="text" name="keyword" placeholder="e.g. Sales Manager in New York" value="{{ form.keyword|default:'' }}">
                     <span class="sidebar-search-icon"><i class="fas fa-search"></i></span>
-                </div>
+                </div> {% endcomment %}
 
                 <!-- ── Location ── -->
                 <div class="filter-item">
@@ -302,7 +302,7 @@
                         <span title="Search Credits">{{ search_limit.search_credits }}</span>
                     </span>
                     {% endif %}
-                    <span class="contact-pill" id="contactPill">0/0</span>
+                    {% comment %} <span class="contact-pill" id="contactPill">0/0</span> {% endcomment %}
                     {% comment %} <button class="contact-btn" type="button">Contact Now</button> {% endcomment %}
                 </div>
             </div>
@@ -343,7 +343,7 @@
                 <div id="aiSearchPanel" class="ai-empty-state" {% if people %}style="display:none;"{% endif %}>
                     <div class="ai-mode-title">
                         <span>The <span class="ai-gradient">AI</span> for Smarter Prospecting</span>
-                        <p>Describe who you're looking for in plain English and let AI do the rest.</p>
+                        <p>Describe who you're looking for and let AI do the rest.</p>
                     </div>
                     <div class="ai-search-box" id="aiSearchBox">
                         <textarea id="aiQueryInput" placeholder='Try "CEO in Dubai" or "VP of Sales at SaaS companies in London"' rows="3"></textarea>
@@ -609,39 +609,58 @@
                             </table>
                         </div>
 
+                        
                         <!-- pagination footer -->
                         <div class="results-footer">
-                            <div class="results-footer-left">
-                                <span class="goto-label">Go to page</span>
-                                <span class="goto-page-wrap">
-                                    <i class="fas fa-info-circle"></i>
-                                    <span>1</span>
-                                    <i class="fas fa-chevron-down"></i>
-                                </span>
-                            </div>
-                            <form method="POST" id="paginationForm">
-                                {% csrf_token %}
-                                <input type="hidden" name="page" id="pageInput" value="{{ pagination.current|default:1 }}">
-                            </form>
-
                             <div class="pagination-wrap">
-                                <span class="results-count-text">
-                                    Page {{ pagination.current|default:1 }}
-                                </span>
 
-                                <!-- Previous -->
-                                <button class="page-btn" type="button"
-                                        onclick="changePage({{ pagination.current|default:1 }} - 1)">
-                                    <i class="fas fa-chevron-left"></i>
+                                <!-- First -->
+                                <button class="page-btn page-btn-text" type="button"
+                                        onclick="changePage(1)"
+                                        {% if pagination.current <= 1 %}disabled{% endif %}>
+                                    &lt;&lt; First
                                 </button>
+
+                                <!-- Prev -->
+                                <button class="page-btn page-btn-text" type="button"
+                                        {% if pagination.current > 1 %}
+                                        onclick="changePage({{ pagination.current|add:'-1' }})"
+                                        {% endif %}
+                                        {% if pagination.current <= 1 %}disabled{% endif %}>
+                                    &lt; Prev
+                                </button>
+
+                                <!-- Page number buttons -->
+                                {% for p in pagination.page_range %}
+                                    {% if p == -1 %}
+                                        <span class="page-ellipsis">…</span>
+                                    {% elif p == pagination.current %}
+                                        <button class="page-btn page-num active" type="button">{{ p }}</button>
+                                    {% else %}
+                                        <button class="page-btn page-num" type="button"
+                                                onclick="changePage({{ p }})">{{ p }}</button>
+                                    {% endif %}
+                                {% endfor %}
 
                                 <!-- Next -->
                                 {% if pagination.has_next %}
-                                <button class="page-btn" type="button"
+                                <button class="page-btn page-btn-text" type="button"
                                         onclick="changePage({{ pagination.next }})">
-                                    <i class="fas fa-chevron-right"></i>
+                                    Next &gt;
+                                </button>
+                                {% else %}
+                                <button class="page-btn page-btn-text" type="button" disabled>
+                                    Next &gt;
                                 </button>
                                 {% endif %}
+
+                                <!-- Last -->
+                                <button class="page-btn page-btn-text" type="button"
+                                        onclick="changePage({{ pagination.total_pages }})"
+                                        {% if pagination.current >= pagination.total_pages %}disabled{% endif %}>
+                                    Last &gt;&gt;
+                                </button>
+
                             </div>
                         </div>
                     </div>
@@ -1168,6 +1187,47 @@ function changePage(page) {
         institution: "institutionHidden",
     };
 
+    // ── Check for URL query parameters and auto-populate on page load ──
+    function loadFiltersFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        let hasParams = false;
+        
+        console.log("🔍 loadFiltersFromUrl: URL params detected:", Object.fromEntries(params));
+        
+        Object.keys(FIELD_MAP).forEach(function(key) {
+            const value = params.get(key);
+            if (value) {
+                const fieldId = FIELD_MAP[key];
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    console.log("✓ Setting", fieldId, "=", value);
+                    field.value = value;
+                    hasParams = true;
+                } else {
+                    console.warn("⚠ Field not found:", fieldId);
+                }
+            }
+        });
+        
+        // If URL had parameters, auto-trigger search
+        if (hasParams) {
+            console.log("🚀 Auto-triggering search after URL params...");
+            // Give people_search.js time to initialize doAjaxSearch
+            setTimeout(function() {
+                if (typeof doAjaxSearch === "function") {
+                    console.log("✓ Calling doAjaxSearch()");
+                    doAjaxSearch();
+                } else {
+                    console.warn("⚠ doAjaxSearch not available, trying form.submit()");
+                    const form = document.getElementById("peopleSearchForm");
+                    if (form) form.submit();
+                }
+            }, 300);
+        } else {
+            console.log("ℹ No URL query parameters found");
+        }
+    }
+
     // ── Show / Hide AI panel ──
     function showAiPanel() {
         if (aiSearchPanel) aiSearchPanel.style.display = "";
@@ -1269,15 +1329,40 @@ function changePage(page) {
                 return;
             }
             const filters = data.filters;
+            const searchType = filters.search_type || "people";
             saveRecent(query);
-            // Populate hidden form fields then submit
+            
+            console.log("🤖 AI Response:", {searchType, filters});
+            
+            // If company search, redirect to company search page with filters
+            if (searchType === "company") {
+                // Build query params for company search
+                const params = new URLSearchParams();
+                if (filters.company) params.append("company", filters.company);
+                if (filters.company_location) params.append("company_location", filters.company_location);
+                if (filters.industry) params.append("industry", filters.industry);
+                if (filters.company_specialites) params.append("company_specialites", filters.company_specialites);
+                if (filters.employee_count) params.append("employee_count", filters.employee_count);
+                if (filters.company_technologies) params.append("company_technologies", filters.company_technologies);
+                if (filters.min_revenue) params.append("min_revenue", filters.min_revenue);
+                if (filters.max_revenue) params.append("max_revenue", filters.max_revenue);
+                
+                const redirectUrl = "{% url 'search_company' %}" + (params.toString() ? "?" + params.toString() : "");
+                console.log("🔀 Redirecting to company search:", redirectUrl);
+                // Show loader if available before navigating
+                if (typeof showSearchLoader === 'function') { try { showSearchLoader(); } catch(e){} }
+                const overlay = document.getElementById('searchLoaderOverlay');
+                if (overlay) overlay.style.display = 'flex';
+                window.location.href = redirectUrl;
+                return;
+            }
+            
+            // Otherwise, populate people search form and submit
             Object.keys(FIELD_MAP).forEach(function(k) {
                 const val = filters[k] || "";
                 const el = document.getElementById(FIELD_MAP[k]);
                 if (el) el.value = val;
             });
-             //const form = document.getElementById("peopleSearchForm");
-            //if (form) { form.submit(); }
             const form = document.getElementById("peopleSearchForm");
             if (form && typeof doAjaxSearch === "function") { doAjaxSearch(); }
         })
@@ -1287,6 +1372,9 @@ function changePage(page) {
             alert("Network error: " + err.message);
         });
     }
+
+    // ── Load filters from URL query parameters on page load ──
+    loadFiltersFromUrl();
 })();
 </script>
 {% endblock js %}

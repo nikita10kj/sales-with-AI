@@ -121,6 +121,39 @@ class RedrobWebhookView(View):
                 enrichment.phones = phones
                 enrichment.save()
 
+                # ── Update SearchHistory & GlobalSearchLog with enriched email/phone ──
+                if first_email or first_phone:
+                    try:
+                        norm_url = enrichment.linkedin.strip().lower().rstrip("/")
+                        user = enrichment.user
+
+                        def _patch_model(model_cls):
+                            records = list(model_cls.objects.filter(
+                                user=user,
+                                search_type__in=["people", "linkedin"],
+                            ).order_by("-created_at")[:20])
+                            for record in records:
+                                if not record.results:
+                                    continue
+                                changed = False
+                                for r in record.results:
+                                    r_url = r.get("linkedin", "").strip().lower().rstrip("/")
+                                    if r_url == norm_url:
+                                        if first_email:
+                                            r["email"] = first_email
+                                        if first_phone:
+                                            r["phone"] = first_phone
+                                        changed = True
+                                if changed:
+                                    model_cls.objects.filter(id=record.id).update(
+                                        results=record.results
+                                    )
+
+                        _patch_model(SearchHistory)
+                        _patch_model(GlobalSearchLog)
+                    except Exception as patch_err:
+                        print(f"⚠️ SearchHistory patch error: {patch_err}")
+
                 print(f"✅ Updated: {request_id} | Email: {first_email}")
 
                 updated_count += 1
@@ -137,7 +170,10 @@ class RedrobWebhookView(View):
 class AiParseSearchView(View):
     """
     POST { "query": "dubai ceo fintech" }
-    Returns JSON { "location": "Dubai", "job_title": "CEO", "industry": "Fintech", ... }
+    Returns JSON with search_type and appropriate filters for people or company search.
+    Examples:
+    - People search: {"search_type": "people", "location": "Dubai", "job_title": "CEO", ...}
+    - Company search: {"search_type": "company", "company_location": "Silicon Valley", "industry": "AI", ...}
     """
 
     def post(self, request, *args, **kwargs):
@@ -169,20 +205,34 @@ class AiParseSearchView(View):
             return JsonResponse({"error": "Azure OpenAI not configured"}, status=500)
 
         # Build the Azure OpenAI Chat Completions URL
-        # Uses model: gpt-35-turbo (deployment name may differ)
         deployment  = "gpt-4o-mini"
         api_version = "2024-02-01"
         url = f"{endpoint.rstrip('/')}/openai/deployments/{deployment}/chat/completions?api-version={api_version}"
 
         system_prompt = (
-            "You are a search filter extractor for a B2B people search tool. "
-            "Given a free-text query from the user, extract structured search filters. "
-            "Return ONLY a valid JSON object with these keys (all optional, omit if not mentioned): "
-            "location, job_title, company, industry, skills, name, seniority, degree, institution. "
-            "Values should be plain strings. If multiple values exist for a field, join with comma. "
-            "Examples: "
-            "Query: 'dubai ceo' → {\"location\": \"Dubai\", \"job_title\": \"CEO\"} "
-            "Query: 'software engineer london fintech 5 years' → {\"location\": \"London\", \"job_title\": \"Software Engineer\", \"industry\": \"Fintech\"} "
+            "You are a smart search filter extractor for a B2B search tool. "
+            "Given a free-text query, determine if it's about PEOPLE search or COMPANY search, then extract appropriate filters.\n"
+            "\n"
+            "PEOPLE search indicators: job titles (CEO, VP, Engineer, Manager), skills, seniority, decision makers, professionals\n"
+            "COMPANY search indicators: companies, startups, founded, funding, revenue, employees, tech stack, industry (when referring to companies)\n"
+            "\n"
+            "Return ONLY a valid JSON object. Always include 'search_type' field ('people' or 'company').\n"
+            "\n"
+            "For PEOPLE search, use keys (all optional, omit if not mentioned):\n"
+            "search_type, location, job_title, company, industry, skills, name, seniority, degree, institution\n"
+            "\n"
+            "For COMPANY search, use keys (all optional, omit if not mentioned):\n"
+            "search_type, company, company_location, industry, company_specialites, employee_count, company_technologies, min_revenue, max_revenue\n"
+            "\n"
+            "Values should be plain strings. If multiple values exist for a field, join with comma.\n"
+            "\n"
+            "Examples:\n"
+            "Query: 'dubai ceo' → {\"search_type\": \"people\", \"location\": \"Dubai\", \"job_title\": \"CEO\"}\n"
+            "Query: 'software engineer london fintech' → {\"search_type\": \"people\", \"location\": \"London\", \"job_title\": \"Software Engineer\", \"industry\": \"Fintech\"}\n"
+            "Query: 'ai companies in silicon valley' → {\"search_type\": \"company\", \"company_location\": \"Silicon Valley\", \"company_specialites\": \"AI\"}\n"
+            "Query: 'saas startups in london' → {\"search_type\": \"company\", \"company_location\": \"London\", \"company_specialites\": \"SaaS\"}\n"
+            "Query: 'fintech companies with funding' → {\"search_type\": \"company\", \"industry\": \"Fintech\"}\n"
+            "\n"
             "Return ONLY the JSON, no explanation."
         )
 
@@ -196,7 +246,7 @@ class AiParseSearchView(View):
                 {"role": "user",   "content": query},
             ],
             "temperature": 0,
-            "max_tokens": 200,
+            "max_tokens": 300,
         }
 
         try:
@@ -209,6 +259,11 @@ class AiParseSearchView(View):
                 if content.startswith("json"):
                     content = content[4:]
             filters = json.loads(content)
+            
+            # Ensure search_type is present, default to "people" if not
+            if "search_type" not in filters:
+                filters["search_type"] = "people"
+            
             return JsonResponse({"success": True, "filters": filters})
         except requests.HTTPError as e:
             return JsonResponse({"error": f"Azure API error {e.response.status_code}: {e.response.text}"}, status=500)
@@ -759,6 +814,8 @@ class SearchPeopleView(View):
 
             data = search_resp.get("data", {})
             raw_people = search_resp.get("data", {}).get("people", [])
+            # raw_people = search_resp.get("people", [])
+            metadata = search_resp.get("metadata", {})
 
             print(f"🔍 People returned: {len(raw_people)}, Seniority sent: {payload.get('seniority')}")
 
@@ -769,11 +826,34 @@ class SearchPeopleView(View):
                 limit.deduct_search(1)
             metadata = data.get("metadata", {})
 
+            def _get_page_range(current, total_pages, window=2):
+                pages = []
+                left  = max(1, current - window)
+                right = min(total_pages, current + window)
+                if left > 1:
+                    pages.append(1)
+                    if left > 2:
+                        pages.append(-1)
+                for p in range(left, right + 1):
+                    pages.append(p)
+                if right < total_pages:
+                    if right < total_pages - 1:
+                        pages.append(-1)
+                    pages.append(total_pages)
+                return pages
+
+            current_page_num = metadata.get("currentPage", 1)
+            last_page        = metadata.get("lastPage", 1)
+
             pagination = {
-                "current": metadata.get("currentPage", 1),
-                "next": metadata.get("nextPage"),
-                "has_next": metadata.get("hasNext", False),
-                "prev": metadata.get("prevPage"),
+                "current":     current_page_num,
+                "next":        metadata.get("nextPage"),
+                "has_next":    metadata.get("hasNext", False),
+                "prev":        metadata.get("prevPage"),
+                "total":       metadata.get("total", 0),
+                "last_page":   last_page,
+                "total_pages": last_page,
+                "page_range":  _get_page_range(current_page_num, last_page),
             }
 
             for p in raw_people:
@@ -1689,6 +1769,14 @@ class SearchCompanyView(View):
             limit.refresh_from_db()
             return JsonResponse({
                 "companies": companies,
+                "pagination": {
+                    "total": len(companies),
+                    "current": 1,
+                    "next": None,
+                    "has_next": False,
+                    "prev": None,
+                    "last_page": 1
+                },
                 "error": error or "",
                 "credits": limit.credits,
                 "search_credits": limit.search_credits,
@@ -2373,7 +2461,39 @@ class CheckBulkEnrichmentView(LoginRequiredMixin, View):
                 EnrichmentRequest.objects.filter(request_id=er.request_id).update(
                     credits_deducted=True
                 )
-                
+
+            # ── Update SearchHistory & GlobalSearchLog with enriched email/phone ──
+            if is_done and (first_email or first_phone):
+                try:
+                    norm_url = er.linkedin.strip().lower().rstrip("/")
+
+                    def _patch_history(model_cls):
+                        records = list(model_cls.objects.filter(
+                            user=request.user,
+                            search_type__in=["people", "linkedin"],
+                        ).order_by("-created_at")[:20])
+                        for record in records:
+                            if not record.results:
+                                continue
+                            changed = False
+                            for r in record.results:
+                                r_url = r.get("linkedin", "").strip().lower().rstrip("/")
+                                if r_url == norm_url:
+                                    if first_email:
+                                        r["email"] = first_email
+                                    if first_phone:
+                                        r["phone"] = first_phone
+                                    changed = True
+                            if changed:
+                                model_cls.objects.filter(id=record.id).update(
+                                    results=record.results
+                                )
+
+                    _patch_history(SearchHistory)
+                    _patch_history(GlobalSearchLog)
+                except Exception:
+                    pass
+
             if is_done:
                 done_count += 1
 

@@ -31,7 +31,7 @@
 
 <div class="d-flex">
 
-    <div id="sidebar" class="sidebar d-flex flex-column p-3 {% if request.resolver_match.url_name == 'search_people' or request.resolver_match.url_name == 'search_company' or request.resolver_match.url_name == 'search_by_linkdin' or request.resolver_match.url_name == 'data_enrich' %}collapsed hover-expand{% endif %}">
+    <div id="sidebar" class="sidebar d-flex flex-column p-3 {% if request.resolver_match.url_name == 'search_people' or request.resolver_match.url_name == 'search_company' or request.resolver_match.url_name == 'search_by_linkdin' or request.resolver_match.url_name == 'data_enrich' or request.resolver_match.url_name == 'list_view' %}collapsed hover-expand{% endif %}">
         {% comment %} <button id="sidebarToggle" class="btn border-0 bg-transparent shadow-none">
             <i class="fas fa-angle-right text-white"></i>
         </button> {% endcomment %}

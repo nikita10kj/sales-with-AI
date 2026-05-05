@@ -13,14 +13,22 @@
 
         <!-- ═══════════════════════════════ LEFT SIDEBAR ═══════════════════════════════ -->
         <div class="filters-panel">
+
+            <!-- ── AI Search permanent sidebar button ── -->
+            <button type="button" id="sidebarAiSearchBtn" class="sidebar-ai-btn">
+                <span class="sidebar-ai-icon"><i class="fas fa-magic"></i></span>
+                <span class="sidebar-ai-label">AI Search</span>
+                {% comment %} <span class="sidebar-ai-badge">New</span> {% endcomment %}
+            </button>
+
             <form method="POST" action="{% url 'search_company' %}" id="companySearchForm" class="filter-form">
                 {% csrf_token %}
 
                 <!-- keyword search at top -->
-                <div class="sidebar-search-box">
+                {% comment %} <div class="sidebar-search-box">
                     <input type="text" name="name" placeholder="e.g. Google, Microsoft" value="{{ form.name|default:'' }}">
                     <span class="sidebar-search-icon"><i class="fas fa-search"></i></span>
-                </div>
+                </div> {% endcomment %}
 
                 <!-- ── Company ── -->
                 <div class="filter-item">
@@ -231,7 +239,7 @@
                         <span title="Search Credits">{{ search_limit.search_credits }}</span>
                     </span>
                     {% endif %}
-                    <span class="contact-pill" id="contactPill">0/0</span>
+                    {% comment %} <span class="contact-pill" id="contactPill">0/0</span> {% endcomment %}
                     {% comment %} <button class="contact-btn" type="button">Export Now</button> {% endcomment %}
                 </div>
             </div>
@@ -240,6 +248,52 @@
                 {% if error %}
                     <div class="error-box"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
                 {% endif %}
+
+                <!-- ── Search Loader Overlay ── -->
+                <div id="searchLoaderOverlay" class="search-loader-overlay" style="display:none;">
+                    <div class="search-loader-box">
+                        <div class="search-loader-orb"></div>
+                        <div class="search-loader-title">Searching companies...</div>
+                        <div class="search-loader-subtitle">Please wait while we find the best matches for your filters.</div>
+                        <div class="search-loader-skeletons">
+                            <div class="search-loader-skeleton"></div>
+                            <div class="search-loader-skeleton"></div>
+                            <div class="search-loader-skeleton"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── AI Search Panel (always in DOM, shown/hidden by JS or when no results) ── -->
+                <div id="aiSearchPanel" class="ai-empty-state" {% if companies %}style="display:none;"{% endif %}>
+                    <div class="ai-mode-title">
+                        <span>The <span class="ai-gradient">AI</span> for Smarter Prospecting</span>
+                        <p>Describe who you're looking for and let AI do the rest.</p>
+                    </div>
+                    <div class="ai-search-box" id="aiSearchBox">
+                        <textarea id="aiQueryInput" placeholder='Try "AI companies in Silicon Valley" or "SaaS startups in London"' rows="3"></textarea>
+                        <div class="ai-search-footer">
+                            <button type="button" class="ai-recent-btn" id="aiRecentBtn">
+                                <i class="far fa-clock"></i> Recent Searches <i class="fas fa-chevron-down" style="font-size:10px;"></i>
+                            </button>
+                            <div id="aiRecentDropdown" class="ai-recent-dropdown" style="display:none;"></div>
+                            <button type="button" class="ai-send-btn" id="aiSendBtn" title="Search with AI">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="ai-example-queries">
+                        <span class="ai-example-label">Try:</span>
+                        <button type="button" class="ai-example-chip" onclick="document.getElementById('aiQueryInput').value=this.textContent.trim()">AI companies in Silicon Valley</button>
+                        <button type="button" class="ai-example-chip" onclick="document.getElementById('aiQueryInput').value=this.textContent.trim()">SaaS startups in London</button>
+                        <button type="button" class="ai-example-chip" onclick="document.getElementById('aiQueryInput').value=this.textContent.trim()">Fintech companies in New York</button>
+                        <button type="button" class="ai-example-chip" onclick="document.getElementById('aiQueryInput').value=this.textContent.trim()">Healthcare tech with funding</button>
+                    </div>
+                    {% if companies %}
+                    <button type="button" id="backToResultsBtn" class="ai-back-btn">
+                        <i class="fas fa-arrow-left"></i> Back to Results
+                    </button>
+                    {% endif %}
+                </div>
 
                 {% if companies %}
                     <div class="results-card">
@@ -391,11 +445,6 @@
                                 <button class="page-btn" type="button" title="Next"><i class="fas fa-chevron-right"></i></button>
                             </div>
                         </div>
-                    </div>
-                {% else %}
-                    <div class="empty-box">
-                        <i class="fas fa-building"></i>
-                        <p>No results yet. Use the filters on the left and hit <strong>Search</strong>.</p>
                     </div>
                 {% endif %}
             </div>
@@ -766,4 +815,220 @@ document.addEventListener('DOMContentLoaded', function() {
     const CSRF_TOKEN = "{{ csrf_token }}";
 </script>
 <script src="{% static 'search/js/company_search.js' %}?v=5"></script>
+
+<!-- ── AI Mode JavaScript ── -->
+<script>
+(function () {
+    const AI_PARSE_URL = "{% url 'ai_parse_search' %}";
+    const CSRF_TOKEN   = "{{ csrf_token }}";
+    const STORAGE_KEY  = "sc_ai_recent";
+
+    const aiSearchPanel     = document.getElementById("aiSearchPanel");
+    const resultsCard       = document.getElementById("resultsCard");
+    const sidebarAiBtn      = document.getElementById("sidebarAiSearchBtn");
+    const backToResultsBtn  = document.getElementById("backToResultsBtn");
+    const aiQueryInput      = document.getElementById("aiQueryInput");
+    const aiSendBtn         = document.getElementById("aiSendBtn");
+    const aiRecentBtn       = document.getElementById("aiRecentBtn");
+    const aiRecentDD        = document.getElementById("aiRecentDropdown");
+
+    // map AI filter key → form field id
+    const FIELD_MAP = {
+        company:              "companyHidden",
+        company_location:     "companyLocationHidden",
+        industry:             "industryHidden",
+        company_specialites:  "companySpecialitesHidden",
+        employee_count:       "employeeCountHidden",
+        company_technologies: "companyTechnologiesHidden",
+        min_revenue:          "minRevenue",
+        max_revenue:          "maxRevenue",
+    };
+
+    // ── Check for URL query parameters and auto-populate on page load ──
+    function loadFiltersFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        let hasParams = false;
+        
+        Object.keys(FIELD_MAP).forEach(function(key) {
+            const value = params.get(key);
+            if (value) {
+                const fieldId = FIELD_MAP[key];
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.value = value;
+                    hasParams = true;
+                }
+            }
+        });
+        
+        // If URL had parameters, auto-trigger search
+        if (hasParams) {
+            const form = document.getElementById("companySearchForm");
+            if (form) {
+                setTimeout(function() {
+                    if (typeof showSearchLoader === 'function') { try { showSearchLoader(); } catch(e){} }
+                    const overlay = document.getElementById('searchLoaderOverlay');
+                    if (overlay) overlay.style.display = 'flex';
+                    form.submit();
+                }, 100);
+            }
+        }
+    }
+
+    // ── Show / Hide AI panel ──
+    function showAiPanel() {
+        if (aiSearchPanel) aiSearchPanel.style.display = "";
+        if (resultsCard)   resultsCard.style.display   = "none";
+        if (sidebarAiBtn)  sidebarAiBtn.classList.add("active");
+        if (aiQueryInput)  aiQueryInput.focus();
+    }
+    function showResults() {
+        if (aiSearchPanel) aiSearchPanel.style.display = "none";
+        if (resultsCard)   resultsCard.style.display   = "";
+        if (sidebarAiBtn)  sidebarAiBtn.classList.remove("active");
+    }
+
+    // Sidebar AI Search button
+    if (sidebarAiBtn) {
+        sidebarAiBtn.addEventListener("click", showAiPanel);
+    }
+
+    // Back to Results button (only rendered when companies exist)
+    if (backToResultsBtn) {
+        backToResultsBtn.addEventListener("click", showResults);
+    }
+
+    // ── Recent searches ──
+    function getRecent() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+        catch(e) { return []; }
+    }
+    function saveRecent(q) {
+        let items = getRecent().filter(function(x){ return x !== q; });
+        items.unshift(q);
+        items = items.slice(0, 8);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    }
+    function renderRecentDropdown() {
+        const items = getRecent();
+        if (!items.length) {
+            aiRecentDD.innerHTML = '<div class="ai-recent-empty">No recent searches</div>';
+            return;
+        }
+        aiRecentDD.innerHTML = items.map(function(q) {
+            return '<div class="ai-recent-item">' + q + '</div>';
+        }).join("");
+        aiRecentDD.querySelectorAll(".ai-recent-item").forEach(function(el) {
+            el.addEventListener("click", function() {
+                aiQueryInput.value = el.textContent;
+                aiRecentDD.style.display = "none";
+                runAiSearch(el.textContent);
+            });
+        });
+    }
+    if (aiRecentBtn) {
+        aiRecentBtn.addEventListener("click", function(e) {
+            e.stopPropagation();
+            const isOpen = aiRecentDD.style.display !== "none";
+            if (isOpen) { aiRecentDD.style.display = "none"; return; }
+            renderRecentDropdown();
+            aiRecentDD.style.display = "block";
+        });
+    }
+    document.addEventListener("click", function() {
+        if (aiRecentDD) aiRecentDD.style.display = "none";
+    });
+
+    // ── Send ──
+    if (aiSendBtn) {
+        aiSendBtn.addEventListener("click", function() {
+            runAiSearch(aiQueryInput.value.trim());
+        });
+    }
+    if (aiQueryInput) {
+        aiQueryInput.addEventListener("keydown", function(e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                runAiSearch(aiQueryInput.value.trim());
+            }
+        });
+    }
+
+    function runAiSearch(query) {
+        if (!query) return;
+        aiSendBtn.disabled = true;
+        aiSendBtn.innerHTML = '<span class="ai-spinner" style="border-top-color:#fff;"></span>';
+
+        fetch(AI_PARSE_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": CSRF_TOKEN,
+            },
+            body: JSON.stringify({ query: query }),
+        })
+        .then(function(r){ return r.json(); })
+        .then(function(data) {
+            aiSendBtn.disabled = false;
+            aiSendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+            if (!data.success) {
+                alert("AI error: " + (data.error || "Unknown error"));
+                return;
+            }
+            const filters = data.filters;
+            const searchType = filters.search_type || "company";
+            saveRecent(query);
+            
+            console.log("🤖 AI Response:", {searchType, filters});
+            
+            // If people search, redirect to people search page with filters
+            if (searchType === "people") {
+                // Build query params for people search
+                const params = new URLSearchParams();
+                if (filters.location) params.append("location", filters.location);
+                if (filters.job_title) params.append("job_title", filters.job_title);
+                if (filters.company) params.append("company", filters.company);
+                if (filters.industry) params.append("industry", filters.industry);
+                if (filters.skills) params.append("skills", filters.skills);
+                if (filters.name) params.append("name", filters.name);
+                if (filters.seniority) params.append("seniority", filters.seniority);
+                if (filters.degree) params.append("degree", filters.degree);
+                if (filters.institution) params.append("institution", filters.institution);
+                
+                const redirectUrl = "{% url 'search_people' %}" + (params.toString() ? "?" + params.toString() : "");
+                console.log("🔀 Redirecting to people search:", redirectUrl);
+                // Show loader if available before navigating
+                if (typeof showSearchLoader === 'function') { try { showSearchLoader(); } catch(e){} }
+                const overlay = document.getElementById('searchLoaderOverlay');
+                if (overlay) overlay.style.display = 'flex';
+                window.location.href = redirectUrl;
+                return;
+            }
+            
+            // Otherwise, populate company search form and submit
+            Object.keys(FIELD_MAP).forEach(function(k) {
+                const val = filters[k] || "";
+                const el = document.getElementById(FIELD_MAP[k]);
+                if (el) el.value = val;
+            });
+            const form = document.getElementById("companySearchForm");
+            if (form) {
+                // Show loader before submitting
+                if (typeof showSearchLoader === 'function') { try { showSearchLoader(); } catch(e){} }
+                const overlay = document.getElementById('searchLoaderOverlay');
+                if (overlay) overlay.style.display = 'flex';
+                form.submit();
+            }
+        })
+        .catch(function(err) {
+            aiSendBtn.disabled = false;
+            aiSendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+            alert("Network error: " + err.message);
+        });
+    }
+
+    // ── Load filters from URL query parameters on page load ──
+    loadFiltersFromUrl();
+})();
+</script>
 {% endblock js %}

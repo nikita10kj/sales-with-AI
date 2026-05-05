@@ -134,6 +134,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 e.preventDefault();
                 addTag();
             }
+            if (e.key === ",") {
+                e.preventDefault();
+                const inputValue = input.value.trim();
+                if (inputValue) {
+                    // Split by comma and add each non-empty part as a tag
+                    const values = inputValue.split(",").map(v => v.trim()).filter(v => v !== "");
+                    values.forEach(function(v) { addTag(v); });
+                }
+                input.focus();
+            }
             if (e.key === "Backspace" && !input.value.trim() && tags.length) {
                 tags.pop();
                 updateHiddenInput();
@@ -160,12 +170,19 @@ document.addEventListener("DOMContentLoaded", function () {
     function showSearchLoader() { if (searchLoader) searchLoader.style.display = "flex"; }
     function hideSearchLoader() { if (searchLoader) searchLoader.style.display = "none"; }
 
-    function buildCompanyResultsHTML(companies) {
+    function buildCompanyResultsHTML(companies, pagination) {
         if (!companies || !companies.length) {
             return '<div class="empty-box"><i class="fas fa-building"></i><p>No results found. Try different filters.</p></div>';
         }
 
         var html = '<div class="results-card">';
+
+        // Calculate pagination info
+        var totalResult = (pagination && pagination.total) ? pagination.total : companies.length;
+        var currentPage = (pagination && pagination.current) ? pagination.current : 1;
+        var pageSize = 20; // Default page size
+        var itemsOnThisPage = companies.length; // Count of actual results on this page
+        var paginationText = itemsOnThisPage + ' out of ' + totalResult;
 
         // meta bar
         html += '<div class="results-meta"><div class="results-meta-left">'
@@ -173,6 +190,10 @@ document.addEventListener("DOMContentLoaded", function () {
             + ' <i class="fas fa-chevron-down" style="font-size:11px;color:#aab0c4;cursor:pointer;"></i>'
             + ' <span id="selectedCountText">0 selected of ' + companies.length + ' results</span>'
             + '</div><div class="results-meta-right">'
+            + '<span class="results-pagination-text" style="font-size:13px;color:#666;margin-right:16px;">' + paginationText + '</span>'
+            + '<input type="hidden" name="total_result" value="' + totalResult + '">'
+            + '<input type="hidden" name="current_page" value="' + currentPage + '">'
+            + '<input type="hidden" name="page_size" value="' + pageSize + '">'
             + '<button type="button" id="saveToListBtn" class="save-list-btn" style="display:none;"><i class="fas fa-plus"></i> Save to List</button>'
             + '<button type="button" class="save-unlock-btn"><i class="fas fa-lock"></i> Save To Unlock</button>'
             + '</div></div>';
@@ -246,10 +267,16 @@ document.addEventListener("DOMContentLoaded", function () {
         html += '</tbody></table></div>';
 
         // pagination footer
+        var cur = (pagination && pagination.current) || 1;
+        var total = (pagination && pagination.total) || companies.length;
+        var pageSize = companies.length;
+        var startIdx = (cur - 1) * pageSize + 1;
+        var endIdx = startIdx + pageSize - 1;
+        
         html += '<div class="results-footer"><div class="results-footer-left">'
             + '<span class="goto-label">Go to page</span>'
-            + '<span class="goto-page-wrap"><i class="fas fa-info-circle"></i> <span>1</span> <i class="fas fa-chevron-down"></i></span>'
-            + '</div><div class="pagination-wrap"><span class="results-count-text">1–' + companies.length + ' of ' + companies.length + '</span>'
+            + '<span class="goto-page-wrap"><i class="fas fa-info-circle"></i> <span>' + cur + '</span> <i class="fas fa-chevron-down"></i></span>'
+            + '</div><div class="pagination-wrap"><span class="results-count-text">' + startIdx + '–' + endIdx + ' of ' + total + '</span>'
             + '<button class="page-btn" type="button" title="Previous"><i class="fas fa-chevron-left"></i></button>'
             + '<button class="page-btn" type="button" title="Next"><i class="fas fa-chevron-right"></i></button>'
             + '</div></div>';
@@ -388,7 +415,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        resultsContent.innerHTML = buildCompanyResultsHTML(data.companies);
+        resultsContent.innerHTML = buildCompanyResultsHTML(data.companies, data.pagination);
 
         // Insert profile templates after results-panel
         var resultsPanel = document.querySelector(".results-panel");
