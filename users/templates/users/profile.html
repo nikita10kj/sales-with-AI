@@ -612,7 +612,19 @@ attachments-list {
             border-radius:20px;
             padding:22px;
             box-shadow:0 18px 40px rgba(124,58,237,0.18);
+            position:relative;
+
         ">
+            <form method="post"
+                  action="{% url 'remove_microsoft_account' acc.id %}"
+                  style="position:absolute;top:14px;right:16px;">
+                {% csrf_token %}
+                <button type="submit" title="Remove account" style="
+                    background:#fff;border:none;width:28px;height:28px;
+                    border-radius:50%;font-size:16px;color:#ef4444;
+                    cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.15);
+                ">×</button>
+            </form>
 
             <div style="display:flex;align-items:center;gap:16px;">
 
@@ -655,7 +667,7 @@ attachments-list {
         </div>
         {% endfor %}
 
-        <!-- ================= ADD ANOTHER ACCOUNT ================= -->
+        {% comment %} <!-- ================= ADD ANOTHER ACCOUNT ================= -->
         <a href="/accounts/google/login/?process=connect"
            style="
                 width:360px;
@@ -691,6 +703,82 @@ attachments-list {
     </div>
 </div>
     </div>
+</div> {% endcomment %}
+<!-- ================= ADD ANOTHER ACCOUNT ================= -->
+<div style="width:360px; align-self:flex-start; position:relative;">
+<div style="
+    width:360px;
+    border-radius:20px;
+    padding:22px;
+    background:linear-gradient(135deg,#eef2ff,#f5f3ff);
+    border:2px dashed #6366f1;
+    cursor:pointer;
+    transition:all .2s ease;
+    box-sizing:border-box;
+" id="addAccountCard" onclick="toggleAccountPopup(event)">
+    <div style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;">
+        <div style="font-size:32px;font-weight:700;color:#4f46e5;line-height:1;">+</div>
+        <div style="font-size:15px;font-weight:700;color:#4f46e5;">Add Account</div>
+        <div style="font-size:12px;color:#6366f1;opacity:0.7;">Google or Microsoft</div>
+    </div>
+
+  <div id="accountProviderPopup" style="
+        display:none;
+        position:absolute;
+        top:calc(100% + 8px);
+        left:0;
+        width:360px;
+        background:white;
+        border-radius:16px;
+        border:1px solid #e0e0ff;
+        box-shadow:0 8px 28px rgba(99,102,241,0.18);
+        padding:14px;
+        flex-direction:column;
+        gap:10px;
+        z-index:999;
+    ">
+        <!-- Google -->
+        <a href="/accounts/google/login/?process=connect" style="
+            display:flex;align-items:center;gap:12px;
+            padding:12px 16px;border-radius:12px;
+            background:white;border:1px solid #e0e0ff;
+            text-decoration:none;font-weight:600;font-size:14px;
+            transition:all .2s ease;
+        " onmouseover="this.style.background='#f5f3ff'" onmouseout="this.style.background='white'">
+            <div style="
+                width:36px;height:36px;border-radius:50%;
+                background:linear-gradient(135deg,#4285F4,#7b61ff);
+                color:white;display:flex;align-items:center;
+                justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;
+            ">G</div>
+            <div>
+                <div style="color:#1f2937;">Connect Google</div>
+                <div style="font-size:12px;color:#6b7280;font-weight:400;">Gmail account</div>
+            </div>
+        </a>
+
+        <!-- Microsoft -->
+        <a href="/accounts/microsoft/login/?process=connect" style="
+            display:flex;align-items:center;gap:12px;
+            padding:12px 16px;border-radius:12px;
+            background:white;border:1px solid #e0e0ff;
+            text-decoration:none;font-weight:600;font-size:14px;
+            transition:all .2s ease;
+        " onmouseover="this.style.background='#f5f3ff'" onmouseout="this.style.background='white'">
+            <div style="
+                width:36px;height:36px;border-radius:50%;
+                background:linear-gradient(135deg,#6366f1,#9333ea);
+                color:white;display:flex;align-items:center;
+                justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;
+            ">M</div>
+            <div>
+                <div style="color:#1f2937;">Connect Microsoft</div>
+                <div style="font-size:12px;color:#6b7280;font-weight:400;">Outlook / Office 365</div>
+            </div>
+        </a>
+    </div>
+   </div>
+</div>
 </div>
 
     </div>
@@ -896,6 +984,20 @@ document.querySelector('button[name="signature_submit"]').addEventListener('clic
         alert("Please add signature before submitting.");
     }
 
+});
+</script>
+<script>
+function toggleAccountPopup(e) {
+    e.stopPropagation();
+    const popup = document.getElementById('accountProviderPopup');
+    popup.style.display = popup.style.display === 'flex' ? 'none' : 'flex';
+}
+document.addEventListener('click', function(e) {
+    const card = document.getElementById('addAccountCard');
+    const popup = document.getElementById('accountProviderPopup');
+    if (popup && card && !card.contains(e.target) && !popup.contains(e.target)) {
+        popup.style.display = 'none';
+    }
 });
 </script>
 {% endblock %}

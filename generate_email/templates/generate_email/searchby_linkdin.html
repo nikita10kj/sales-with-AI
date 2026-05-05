@@ -100,6 +100,20 @@
             </div>
 
             <div class="results-content">
+                <!-- ── Low Credits Warning Card ── -->
+                <div id="lowCreditsWarning" class="low-credits-warning" style="display:none;">
+                    <div class="low-credits-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="low-credits-content">
+                        <div class="low-credits-title">Low Credits</div>
+                        <div class="low-credits-message">You’re running low on credits. Upgrade your plan to continue using search and enrichment features.</div>
+                    </div>
+                    <button type="button" class="low-credits-close" onclick="document.getElementById('lowCreditsWarning').style.display='none';">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
                 {% if error %}
                     <div class="error-box"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
                 {% endif %}
@@ -118,9 +132,6 @@
                                 <button type="button" id="saveToListBtn" class="save-list-btn" style="display:none;">
                                     <i class="fas fa-plus"></i> Save to List
                                 </button>
-                                {% comment %} <button type="button" class="save-unlock-btn">
-                                    <i class="fas fa-lock"></i> Save To Unlock Contacts
-                                </button> {% endcomment %}
                             </div>
                         </div>
 
@@ -778,6 +789,7 @@ function slUpdatePill(newCredits) {
         if (newCredits === 0)       pill.classList.add('zero');
         else if (newCredits <= 10)  pill.classList.add('low');
     }
+    showLowCreditsWarning();
 }
 function slUpdateSearchPill(newCredits) {
     slSearchCredits = newCredits;
@@ -789,6 +801,7 @@ function slUpdateSearchPill(newCredits) {
         if (newCredits === 0)      pill.classList.add('zero');
         else if (newCredits <= 5)  pill.classList.add('low');
     }
+    showLowCreditsWarning();
 }
 
 function slShowModal(credits) {
@@ -796,6 +809,19 @@ function slShowModal(credits) {
     const mc    = document.getElementById('slModalCredits');
     if (mc)    mc.textContent = credits;
     if (modal) modal.classList.add('active');
+}
+
+// Show low credits warning
+function showLowCreditsWarning() {
+    const warningCard = document.getElementById('lowCreditsWarning');
+    if (warningCard) {
+        const hasLowEnrichmentCredits = slCredits < 10;
+        const hasLowSearchCredits = slSearchCredits < 10;
+        
+        if (hasLowEnrichmentCredits || hasLowSearchCredits) {
+            warningCard.style.display = 'flex';
+        }
+    }
 }
 
 // Close modal on overlay click
@@ -845,8 +871,14 @@ document.addEventListener('keydown', function(e) {
 document.addEventListener('DOMContentLoaded', function() {
     // Only show on enrich attempts, not on page load
     // (User can still browse, just can't enrich)
+    showLowCreditsWarning();
 });
 {% endif %}
+
+// ── Show low credits warning if credits are below 10 ──
+document.addEventListener('DOMContentLoaded', function() {
+    showLowCreditsWarning();
+});
 </script>
 {% endblock content %}
 

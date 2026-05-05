@@ -27,7 +27,7 @@ urlpatterns = [
     path("pricing/", PricingView.as_view(), name="pricing"),
     path("razorpay/create-order/", razorpay_create_order, name="razorpay_create_order"),
     path("razorpay/verify/", razorpay_verify_payment, name="razorpay_verify_payment"),
-
+    path('remove-microsoft-account/<int:pk>/', views.remove_microsoft_account, name='remove_microsoft_account'),
     path('admin-dashboard/export/', views.AdminDashboardExportView.as_view(), name='admin_dashboard_export'),
 
 ]

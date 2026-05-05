@@ -850,15 +850,17 @@
 }
 
 /* Pagination footer */
+/* ── Pagination Footer ── */
 .results-footer {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    gap: 10px;
-    padding: 10px 16px;
-    border-top: 1px solid #edf0f6;
-    background: #fafbfe;
-    flex-wrap: wrap;
+    padding: 14px 20px;
+    border-top: 1px solid #e8ebf2;
+    background: #fff;
+    border-radius: 0 0 14px 14px;
+    position: relative;
+    z-index: 10;
 }
 .results-footer-left { display: flex; align-items: center; gap: 7px; font-size: 13px; color: #6a7388; }
 .goto-label { font-size: 13px; color: #6a7388; }
@@ -892,6 +894,120 @@
 }
 .page-btn:hover { background: #f0f2fd; border-color: #b4bedd; }
 .page-btn.active { background: linear-gradient(90deg,#6276ea,#7c4fc8); color:#fff; border-color:transparent; }
+.page-btn.page-btn-text {
+    width: auto;
+    padding: 0 10px;
+    white-space: nowrap;
+    font-size: 12px;
+    gap: 2px;
+}
+.page-btn.page-btn-text:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+.page-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+    color: #9099b0;
+    user-select: none;
+}
+.pagination-wrap {
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* Enhanced Pagination Styles (matching people_search) */
+/* ── Pagination Footer ── */
+.results-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 14px 20px;
+    border-top: 1px solid #e8ebf2;
+    background: #fff;
+    border-radius: 0 0 14px 14px;
+}
+
+.pagination-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* First / Prev / Next / Last text buttons */
+.page-btn.page-btn-text {
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid #dde2ee;
+    border-radius: 8px;
+    background: #fff;
+    color: #4a5568;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+.page-btn.page-btn-text:hover:not(:disabled) {
+    background: #f0f4ff;
+    border-color: #6276ea;
+    color: #6276ea;
+}
+
+.page-btn.page-btn-text:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Numbered page buttons */
+.page-btn.page-num {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid #dde2ee;
+    border-radius: 8px;
+    background: #fff;
+    color: #4a5568;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.page-btn.page-num:hover:not(.active) {
+    background: #f0f4ff;
+    border-color: #6276ea;
+    color: #6276ea;
+}
+
+/* Active / current page */
+.page-btn.page-num.active {
+    background: linear-gradient(90deg,#6276ea,#7c4fc8);
+    color: #fff;
+    border-color: transparent;
+    font-weight: 700;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* Ellipsis */
+.page-ellipsis {
+    width: 32px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #9099b0;
+    user-select: none;
+}
 
 /* Empty state */
 .empty-box {
@@ -1511,6 +1627,80 @@
     transition: background .15s;
 }
 .sl-btn-secondary:hover { background: #f4f5fb; color: #44506a; }
+
+/* ── Low Credits Warning Card ── */
+.low-credits-warning {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 12px rgba(239,68,68,.2);
+    animation: slideDown .25s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.low-credits-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    background: rgba(255,255,255,.25);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #fff;
+}
+
+.low-credits-content {
+    flex: 1;
+}
+
+.low-credits-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 2px;
+}
+
+.low-credits-message {
+    font-size: 12px;
+    color: rgba(255,255,255,.9);
+    line-height: 1.4;
+}
+
+.low-credits-close {
+    flex-shrink: 0;
+    background: rgba(255,255,255,.25);
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #fff;
+    font-size: 14px;
+    transition: background .15s;
+}
+
+.low-credits-close:hover {
+    background: rgba(255,255,255,.4);
+}
 
 /* ══════════════════════════════════════
    AI SEARCH PANEL — CSS

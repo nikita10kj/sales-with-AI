@@ -89,9 +89,9 @@
       Clear
     </button>
   </div>
-   <a href="{% url 'import_leads' %}" class="btn btn-primary btn-sm">
+   {% comment %} <a href="{% url 'import_leads' %}" class="btn btn-primary btn-sm">
     <i class="fas fa-file-import me-1"></i> Import to CSV
-  </a> 
+  </a>  {% endcomment %}
   <!-- RIGHT: Export -->
   <a href="{% url 'export-leads' %}" class="btn btn-primary btn-sm">
     <i class="fas fa-file-export me-1"></i> Export to CSV

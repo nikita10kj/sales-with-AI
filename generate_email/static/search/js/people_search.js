@@ -235,6 +235,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 + ' data-company_headquarter="' + escapeHtml(p.company_headquarter) + '"'
                 + ' data-email="' + escapeHtml(p.emails && p.emails[0] ? (p.emails[0].email || "") : "") + '"'
                 + ' data-phone="' + escapeHtml(p.phones && p.phones[0] ? (p.phones[0].number || "") : "") + '"'
+                + ' data-photo="' + escapeHtml(p.photo || "") + '"'
                 + '></td>';
 
             // profile
@@ -728,7 +729,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 location:            cb.getAttribute("data-location") || "",
                 company_headquarter: cb.getAttribute("data-company_headquarter") || "",
                 email:               cb.getAttribute("data-email") || "",
-                phone:               cb.getAttribute("data-phone") || ""
+                phone:               cb.getAttribute("data-phone") || "",
+                photo:               cb.getAttribute("data-photo") || ""
             });
         });
         return selected;
@@ -854,8 +856,12 @@ if (confirmSaveListBtn) {
  
             const data = await response.json();
  
-            if (!data.success) {
-                showMessage(data.error || "Could not save list.", "error");
+           if (!data.success) {
+                if (data.limit_reached && typeof slShowModal === "function") {
+                    slShowModal(data.credits || 0);
+                } else {
+                    showMessage(data.error || "Could not save list.", "error");
+                }
                 confirmSaveListBtn.disabled = false;
                 confirmSaveListBtn.innerHTML = "Save to List";
                 return;
@@ -923,12 +929,19 @@ if (confirmSaveListBtn) {
                     console.warn("[Bulk enrich poll] fetch error:", pollErr);
                     continue;
                 }
- 
+
+                if (checkData.limit_reached) {
+                    if (progressBar) progressBar.remove();
+                    if (typeof slShowModal === "function") slShowModal(checkData.credits || 0);
+                    confirmSaveListBtn.disabled = false;
+                    confirmSaveListBtn.innerHTML = "Save to List";
+                    return;
+                }
+
                 updateProgress(checkData.done || 0, checkData.total || total);
- 
+
                 // Update credit pill if server returned updated count
-                if (typeof checkData.credits === "number") {
-                    if (typeof slUpdatePill === "function") slUpdatePill(checkData.credits);
+                if (typeof checkData.credits === "number") {                    if (typeof slUpdatePill === "function") slUpdatePill(checkData.credits);
                 }
  
                 if (checkData.all_done) {
@@ -1160,12 +1173,21 @@ if (confirmSaveListBtn) {
 
                     const data = await response.json();
 
+                    // if (!data.success) {
+                    //     if (loader) loader.style.display = "none";
+                    //     showMessage(data.error || "Something went wrong.", "error");
+                    //     return;
+                    // }
+
                     if (!data.success) {
                         if (loader) loader.style.display = "none";
-                        showMessage(data.error || "Something went wrong.", "error");
+                        if (data.limit_reached && typeof slShowModal === "function") {
+                            slShowModal(data.credits || 0);
+                        } else {
+                            showMessage(data.error || "Something went wrong.", "error");
+                        }
                         return;
                     }
-
                     // ── Webhook/polling flow ──
                     if (data.pending && data.request_id) {
                         const requestId = data.request_id;
@@ -1182,9 +1204,21 @@ if (confirmSaveListBtn) {
                                     headers: { "X-Requested-With": "XMLHttpRequest" }
                                 });
                                 checkData = await checkResp.json();
+
+                                if (checkData.limit_reached) {
+                                    if (loader) loader.style.display = "none";
+                                    if (typeof slShowModal === "function") slShowModal(checkData.credits || 0);
+                                    return;
+                                }
                             } catch (pollErr) {
                                 console.warn("[Enrich poll] fetch error:", pollErr);
                                 continue;
+                            }
+
+                            if (checkData.limit_reached) {
+                                if (loader) loader.style.display = "none";
+                                if (typeof slShowModal === "function") slShowModal(checkData.credits || 0);
+                                return;
                             }
 
                             if (!checkData.pending) {
@@ -1473,12 +1507,15 @@ if (confirmSaveListBtn) {
                 const data = await response.json();
 
                 if (!data.success) {
-                    showMessage(data.error || "Could not fetch email.", "error");
+                    if (data.limit_reached && typeof slShowModal === "function") {
+                        slShowModal(data.credits || 0);
+                    } else {
+                        showMessage(data.error || "Could not fetch email.", "error");
+                    }
                     unlockBtn.textContent = origText;
                     unlockBtn.disabled = false;
                     return;
                 }
-
                 let firstEmail = "";
 
                 // ── Webhook polling ──
@@ -1501,6 +1538,13 @@ if (confirmSaveListBtn) {
                             console.warn("[Drawer poll] fetch error:", pollErr);
                             continue;
                         }
+                        if (checkData.limit_reached) {
+                            if (typeof slShowModal === "function") slShowModal(checkData.credits || 0);
+                            unlockBtn.textContent = origText;
+                            unlockBtn.disabled = false;
+                            return;
+                        }
+
                         if (!checkData.pending) {
                             firstEmail = checkData.email || "";
                             // ── Update credit pill live ──

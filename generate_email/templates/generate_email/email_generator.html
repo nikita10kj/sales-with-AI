@@ -142,50 +142,14 @@
 
                     <div class="mb-3">
                         <label class="form-label">Email Framework *</label>
-                        <div class="framework-options">
-                            <div class="form-check framework-card">
-                                <input class="form-check-input" type="radio" name="framework" id="aida" value="AIDA" checked>
-                                <label class="form-check-label" for="aida">
-                                    <strong>AIDA Framework</strong>
-                                    <small class="d-block text-muted">Attention → Interest → Desire → Action</small>
-                                </label>
-                            </div>
-                            <div class="form-check framework-card">
-                                <input class="form-check-input" type="radio" name="framework" id="pas" value="PAS">
-                                <label class="form-check-label" for="pas">
-                                    <strong>PAS Framework</strong>
-                                    <small class="d-block text-muted">Problem → Agitate → Solution</small>
-                                </label>
-                            </div>
-                            <div class="form-check framework-card">
-                                <input class="form-check-input" type="radio" name="framework" id="before-after" value="Before-After-Bridge">
-                                <label class="form-check-label" for="before-after">
-                                    <strong>Before-After-Bridge</strong>
-                                    <small class="d-block text-muted">Current State → Desired State → Solution</small>
-                                </label>
-                            </div>
-                            <div class="form-check framework-card">
-                                <input class="form-check-input" type="radio" name="framework" id="star" value="STAR">
-                                <label class="form-check-label" for="star">
-                                    <strong>STAR Framework</strong>
-                                    <small class="d-block text-muted">Situation → Task → Action → Result</small>
-                                </label>
-                            </div>
-                            <div class="form-check framework-card">
-                                <input class="form-check-input" type="radio" name="framework" id="magic" value="Magic">
-                                <label class="form-check-label" for="magic">
-                                    <strong>Magic Framework</strong>
-                                    <small class="d-block text-muted">Let us define framework</small>
-                                </label>
-                            </div>
-                            <div class="form-check framework-card">
-                                <input class="form-check-input" type="radio" name="framework" id="acca" value="ACCA">
-                                <label class="form-check-label" for="acca">
-                                    <strong>ACCA Framework</strong>
-                                    <small class="d-block text-muted">Awareness → Comprehension → Conviction → Action</small>
-                                </label>
-                            </div>
-                        </div>
+                        <select class="form-select" name="framework" required>
+                            <option value="AIDA" selected>AIDA — Attention → Interest → Desire → Action</option>
+                            <option value="PAS">PAS — Problem → Agitate → Solution</option>
+                            <option value="Before-After-Bridge">Before-After-Bridge — Current State → Desired State → Solution</option>
+                            <option value="STAR">STAR — Situation → Task → Action → Result</option>
+                            <option value="Magic">Magic — Hook → Story → Offer → Close</option>
+                            <option value="ACCA">ACCA — Awareness → Comprehension → Conviction → Action</option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="campaignGoal" class="form-label">Campaign Goal *</label>

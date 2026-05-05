@@ -165,10 +165,15 @@ document.addEventListener("DOMContentLoaded", function () {
     setupTagInput({ inputId: "jobPostsInput",           addBtnId: "addJobPostsTag",            tagsContainerId: "jobPostsTags",            hiddenInputId: "jobPostsHidden" });
 
     const companySearchForm = document.getElementById("companySearchForm");
-    const searchLoader = document.getElementById("searchLoaderOverlay");
 
-    function showSearchLoader() { if (searchLoader) searchLoader.style.display = "flex"; }
-    function hideSearchLoader() { if (searchLoader) searchLoader.style.display = "none"; }
+    function showSearchLoader() {
+        var el = document.getElementById("searchLoaderOverlay");
+        if (el) el.style.display = "flex";
+    }
+    function hideSearchLoader() {
+        var el = document.getElementById("searchLoaderOverlay");
+        if (el) el.style.display = "none";
+    }
 
     function buildCompanyResultsHTML(companies, pagination) {
         if (!companies || !companies.length) {
@@ -178,11 +183,11 @@ document.addEventListener("DOMContentLoaded", function () {
         var html = '<div class="results-card">';
 
         // Calculate pagination info
-        var totalResult = (pagination && pagination.total) ? pagination.total : companies.length;
-        var currentPage = (pagination && pagination.current) ? pagination.current : 1;
-        var pageSize = 20; // Default page size
-        var itemsOnThisPage = companies.length; // Count of actual results on this page
-        var paginationText = itemsOnThisPage + ' out of ' + totalResult;
+        var cur      = (pagination && pagination.current) || 1;
+        var total    = (pagination && pagination.total)   || 0;
+        var pageSize = companies.length;
+        var startIdx = (cur - 1) * pageSize + 1;
+        var endIdx   = Math.min(startIdx + pageSize - 1, total);
 
         // meta bar
         html += '<div class="results-meta"><div class="results-meta-left">'
@@ -190,12 +195,8 @@ document.addEventListener("DOMContentLoaded", function () {
             + ' <i class="fas fa-chevron-down" style="font-size:11px;color:#aab0c4;cursor:pointer;"></i>'
             + ' <span id="selectedCountText">0 selected of ' + companies.length + ' results</span>'
             + '</div><div class="results-meta-right">'
-            + '<span class="results-pagination-text" style="font-size:13px;color:#666;margin-right:16px;">' + paginationText + '</span>'
-            + '<input type="hidden" name="total_result" value="' + totalResult + '">'
-            + '<input type="hidden" name="current_page" value="' + currentPage + '">'
-            + '<input type="hidden" name="page_size" value="' + pageSize + '">'
+            + '<span style="font-size:13px;color:#6a7388;margin-right:12px;">' + startIdx + '–' + endIdx + ' of ' + total + '</span>'
             + '<button type="button" id="saveToListBtn" class="save-list-btn" style="display:none;"><i class="fas fa-plus"></i> Save to List</button>'
-            + '<button type="button" class="save-unlock-btn"><i class="fas fa-lock"></i> Save To Unlock</button>'
             + '</div></div>';
 
         // table
@@ -266,21 +267,56 @@ document.addEventListener("DOMContentLoaded", function () {
 
         html += '</tbody></table></div>';
 
-        // pagination footer
-        var cur = (pagination && pagination.current) || 1;
-        var total = (pagination && pagination.total) || companies.length;
-        var pageSize = companies.length;
-        var startIdx = (cur - 1) * pageSize + 1;
-        var endIdx = startIdx + pageSize - 1;
-        
-        html += '<div class="results-footer"><div class="results-footer-left">'
-            + '<span class="goto-label">Go to page</span>'
-            + '<span class="goto-page-wrap"><i class="fas fa-info-circle"></i> <span>' + cur + '</span> <i class="fas fa-chevron-down"></i></span>'
-            + '</div><div class="pagination-wrap"><span class="results-count-text">' + startIdx + '–' + endIdx + ' of ' + total + '</span>'
-            + '<button class="page-btn" type="button" title="Previous"><i class="fas fa-chevron-left"></i></button>'
-            + '<button class="page-btn" type="button" title="Next"><i class="fas fa-chevron-right"></i></button>'
-            + '</div></div>';
+        // ── Pagination ──
+        var totalPages = (pagination && pagination.total_pages) || (pagination && pagination.last_page) || 1;
+        var hasNext   = pagination && pagination.has_next;
 
+        function buildPageRange(cur, total, window) {
+            var pages = [];
+            var left  = Math.max(1, cur - window);
+            var right = Math.min(total, cur + window);
+            if (left > 1)  { pages.push(1); if (left > 2)  pages.push(-1); }
+            for (var p = left; p <= right; p++) pages.push(p);
+            if (right < total) { if (right < total - 1) pages.push(-1); pages.push(total); }
+            return pages;
+        }
+
+        var pageRange = (pagination && pagination.page_range) || buildPageRange(cur, totalPages, 2);
+
+        html += '<div class="results-footer"><div class="pagination-wrap">';
+
+        // First
+        html += '<button class="page-btn page-btn-text" type="button"'
+            + (cur <= 1 ? ' disabled' : ' onclick="changeCompanyPage(1)"')
+            + '>&lt;&lt; First</button>';
+
+        // Prev
+        html += '<button class="page-btn page-btn-text" type="button"'
+            + (cur <= 1 ? ' disabled' : ' onclick="changeCompanyPage(' + (cur - 1) + ')"')
+            + '>&lt; Prev</button>';
+
+        // Page numbers
+        pageRange.forEach(function(p) {
+            if (p === -1) {
+                html += '<span class="page-ellipsis">…</span>';
+            } else if (p === cur) {
+                html += '<button class="page-btn page-num active" type="button">' + p + '</button>';
+            } else {
+                html += '<button class="page-btn page-num" type="button" onclick="changeCompanyPage(' + p + ')">' + p + '</button>';
+            }
+        });
+
+        // Next
+        html += '<button class="page-btn page-btn-text" type="button"'
+            + (hasNext ? ' onclick="changeCompanyPage(' + (cur + 1) + ')"' : ' disabled')
+            + '>Next &gt;</button>';
+
+        // Last
+        html += '<button class="page-btn page-btn-text" type="button"'
+            + (cur >= totalPages ? ' disabled' : ' onclick="changeCompanyPage(' + totalPages + ')"')
+            + '>Last &gt;&gt;</button>';
+
+        html += '</div></div>';
         html += '</div>';
         return html;
     }
@@ -401,21 +437,42 @@ document.addEventListener("DOMContentLoaded", function () {
         var resultsContent = document.querySelector(".results-content");
         if (!resultsContent) return;
 
-        // Clear old results and profiles
-        resultsContent.innerHTML = "";
-        document.querySelectorAll(".company-profile-tpl").forEach(function(el) { el.remove(); });
+        // ── Helper: clear results-content while preserving persistent elements ──
+        function clearResultsContent() {
+            var loaderEl = document.getElementById("searchLoaderOverlay");
+            var aiPanel  = document.getElementById("aiSearchPanel");
+            // Detach persistent elements so innerHTML doesn't destroy them
+            if (loaderEl && loaderEl.parentNode) loaderEl.parentNode.removeChild(loaderEl);
+            if (aiPanel  && aiPanel.parentNode)  aiPanel.parentNode.removeChild(aiPanel);
+            // Clear everything else
+            resultsContent.innerHTML = "";
+            document.querySelectorAll(".company-profile-tpl").forEach(function(el) { el.remove(); });
+            // Re-insert persistent elements
+            if (loaderEl) { loaderEl.style.display = "none"; resultsContent.appendChild(loaderEl); }
+            if (aiPanel)  resultsContent.appendChild(aiPanel);
+        }
+
+        clearResultsContent();
+
+        // Manage AI panel visibility
+        var aiPanel = document.getElementById("aiSearchPanel");
 
         if (data.error && (!data.companies || !data.companies.length)) {
-            resultsContent.innerHTML = '<div class="error-box"><i class="fas fa-exclamation-circle"></i> ' + escapeHtml(data.error) + '</div>';
+            resultsContent.insertAdjacentHTML("afterbegin", '<div class="error-box"><i class="fas fa-exclamation-circle"></i> ' + escapeHtml(data.error) + '</div>');
+            if (aiPanel) aiPanel.style.display = "";
             return;
         }
 
         if (!data.companies || !data.companies.length) {
-            resultsContent.innerHTML = '<div class="empty-box"><i class="fas fa-building"></i><p>No results yet. Use the filters on the left and hit <strong>Search</strong>.</p></div>';
+            resultsContent.insertAdjacentHTML("afterbegin", '<div class="empty-box"><i class="fas fa-building"></i><p>No results yet. Use the filters on the left and hit <strong>Search</strong>.</p></div>');
+            if (aiPanel) aiPanel.style.display = "";
             return;
         }
 
-        resultsContent.innerHTML = buildCompanyResultsHTML(data.companies, data.pagination);
+        // Hide AI panel when showing results
+        if (aiPanel) aiPanel.style.display = "none";
+
+        resultsContent.insertAdjacentHTML("afterbegin", buildCompanyResultsHTML(data.companies, data.pagination));
 
         // Insert profile templates after results-panel
         var resultsPanel = document.querySelector(".results-panel");
@@ -496,6 +553,44 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     }
+
+    // ── Pagination function for company search ──
+    window.changeCompanyPage = function (pageNumber) {
+        if (!companySearchForm) return;
+        
+        // Finalize pending tag inputs
+        tagInputInstances.forEach(function (instance) {
+            instance.finalizePendingInput();
+        });
+
+        showSearchLoader();
+
+        var formData = new FormData(companySearchForm);
+        formData.set("page", pageNumber);
+
+        fetch(SEARCH_COMPANY_URL, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": CSRF_TOKEN,
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            body: formData
+        })
+        .then(function (resp) { return resp.json(); })
+        .then(function (data) {
+            hideSearchLoader();
+            if (data.limit_reached) {
+                if (typeof slShowModal === "function") slShowModal(data.credits || 0);
+                return;
+            }
+            renderCompanyAjaxResults(data);
+        })
+        .catch(function (err) {
+            hideSearchLoader();
+            console.error("AJAX company search error:", err);
+            showMessage("Search failed. Please try again.", "error");
+        });
+    };
 
     // ── Selection & Save to List ──
     const rowCheckboxes = document.querySelectorAll(".row-checkbox");

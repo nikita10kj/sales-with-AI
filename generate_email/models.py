@@ -114,6 +114,7 @@ class SavedPeopleEntry(models.Model):
     company_headquarter = models.CharField(max_length=255, blank=True)
     email = models.CharField(max_length=255, blank=True)
     phone = models.CharField(max_length=14,blank=True)
+    photo = models.URLField(max_length=500, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

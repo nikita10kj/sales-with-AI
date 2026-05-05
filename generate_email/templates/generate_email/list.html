@@ -13,7 +13,33 @@
 .lists-header-left { display: flex; align-items: center; gap: 12px; }
 .lists-header-left i { font-size: 20px; }
 .lists-header-title { font-size: 18px; font-weight: 700; margin: 0; }
+.lists-header-right { display: flex; align-items: center; gap: 12px; }
 .lists-count-pill { background: rgba(255,255,255,0.18); color: #fff; border-radius: 999px; padding: 6px 14px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+
+/* Import button styling */
+.list-import-btn { 
+    background: #fff; 
+    color: #6276ea; 
+    border: none; 
+    border-radius: 10px; 
+    padding: 10px 16px; 
+    font-size: 13px; 
+    font-weight: 700; 
+    text-decoration: none; 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 7px; 
+    white-space: nowrap; 
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: all 0.15s ease;
+}
+.list-import-btn:hover { 
+    background: #f0f2ff;
+    color: #6276ea;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+    transform: translateY(-1px);
+}
 .lists-body { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 190px); }
 
 /* ══ Sidebar ══ */
@@ -199,8 +225,13 @@
                 <i class="fas fa-users"></i>
                 <h2 class="lists-header-title">My Lists</h2>
             </div>
-            <div class="lists-count-pill">
-                {{ lists|length|default:"0" }} List{{ lists|length|pluralize }}
+            <div class="lists-header-right">
+                <a href="{% url 'import_leads' %}" class="list-import-btn">
+                    <i class="fas fa-file-import"></i> Import to CSV
+                </a>
+                <div class="lists-count-pill">
+                    {{ lists|length|default:"0" }} List{{ lists|pluralize }}
+                </div>
             </div>
         </div>
 
@@ -268,9 +299,12 @@
                                        placeholder="Search in this list…" class="list-search-input" autocomplete="off">
                                 <button type="submit" class="list-search-btn"><i class="fas fa-search"></i></button>
                             </form>
-                            <a href="{% url 'campaign_view' %}?list_id={{ selected_list.id }}" class="campaign-btn">
-                                <i class="fas fa-paper-plane"></i> Start Campaign
-                            </a>
+                            <span id="selectedCountBadge" style="display:none; font-size:13px; color:#6276ea; font-weight:700;">
+                                    <span id="selectedCount">0</span> selected
+                                </span>
+                                <button type="button" id="campaignBtn" class="campaign-btn">
+                                    <i class="fas fa-paper-plane"></i> <span id="campaignBtnLabel">Campaign</span>
+                                </button>
                             <a href="{% url 'download_list_csv' selected_list.id %}" class="download-btn">
                                 <i class="fas fa-download"></i> CSV
                             </a>
@@ -290,13 +324,14 @@
                             <table class="ll-table">
                                 <thead>
                                     <tr>
+                                            <th><input type="checkbox" id="selectAllPeople" style="width:15px;height:15px;accent-color:#6276ea;cursor:pointer;"></th>
                                             <th>Profile</th>
                                             <th>Job Title</th>
                                             <th>Contact Location</th>
                                             <th>Company</th>
                                             <th>HQ Location</th>
                                             <th>Institution</th>
-                                            <th>LinkedIn URL</th>
+                                            {% comment %} <th>LinkedIn URL</th> {% endcomment %}
                                             <th>Email</th>
                                             <th>Phone</th>
                                             <th>Actions</th>
@@ -305,12 +340,27 @@
                                 <tbody>
                                     {% for person in selected_entries %}
                                     <tr data-search="{{ person.first|default:''|lower }} {{ person.last|default:''|lower }} {{ person.job_title|default:''|lower }} {{ person.company|default:''|lower }} {{ person.email|default:''|lower }} {{ person.location|default:''|lower }} {{ person.phone|default:''|lower }} {{ person.linkedin|default:''|lower }}{{ person.institution|default:''|lower }} {{ person.company_headquarter|default:''|lower }}">
-
+                                        <td style="width:36px;">
+                                            <input type="checkbox" class="person-select-chk" 
+                                                value="{{ person.id }}"
+                                                style="width:15px;height:15px;accent-color:#6276ea;cursor:pointer;">
+                                        </td>
                                         <!-- Profile -->
                                         <td>
                                             <div class="ll-profile-cell">
                                                 <div class="avatar-circle">
-                                                    <span class="initials">{{ person.first|default:"U"|slice:":1" }}{{ person.last|default:""|slice:":1" }}</span>
+                                                    {% if person.photo %}
+                                                        <img src="{{ person.photo }}" 
+                                                            alt="{{ person.first }}" class="avatar-img"
+                                                            onerror="this.style.display='none'; this.parentElement.classList.add('fallback-avatar');">
+                                                    {% elif person.pictureUrl or person.profilePic %}
+                                                        <img src="{{ person.pictureUrl|default:person.profilePic }}" 
+                                                            alt="{{ person.first }}" class="avatar-img">
+                                                    {% else %}
+                                                        <span class="initials">
+                                                            {{ person.first|default:"U"|slice:":1" }}{{ person.last|default:""|slice:":1" }}
+                                                        </span>
+                                                    {% endif %}
                                                 </div>
                                                 <div>
                                                     <div class="profile-name">
@@ -915,5 +965,39 @@ document.querySelectorAll(".ll-remove-company-btn").forEach(function(btn) {
         openModal("Remove " + name + "?", "This company will be removed from the list.", btn.getAttribute("data-action"));
     });
 });
+
+// ── Select people for campaign ──
+const campaignBtn        = document.getElementById('campaignBtn');
+const campaignBtnLabel   = document.getElementById('campaignBtnLabel');
+const selectedCountEl    = document.getElementById('selectedCount');
+const selectedCountBadge = document.getElementById('selectedCountBadge');
+const baseListUrl        = "{% url 'campaign_view' %}?list_id={{ selected_list.id }}";
+
+function updateCampaignBtn() {
+    const checked = [...document.querySelectorAll('.person-select-chk:checked')];
+    const count   = checked.length;
+
+    selectedCountEl.textContent = count;
+    selectedCountBadge.style.display = count > 0 ? 'inline' : 'none';
+    campaignBtnLabel.textContent     = count > 0 ? 'Campaign' : 'Campaign';
+}
+
+document.addEventListener('change', function(e) {
+    if (!e.target.classList.contains('person-select-chk') && e.target.id !== 'selectAllPeople') return;
+
+    if (e.target.id === 'selectAllPeople') {
+        document.querySelectorAll('.person-select-chk').forEach(c => c.checked = e.target.checked);
+    }
+    updateCampaignBtn();
+});
+
+campaignBtn?.addEventListener('click', function() {
+    const ids = [...document.querySelectorAll('.person-select-chk:checked')].map(c => c.value);
+    const url  = ids.length
+        ? baseListUrl + '&person_ids=' + ids.join(',')
+        : baseListUrl;
+    window.location.href = url;
+});
+
 </script>
 {% endblock content %}

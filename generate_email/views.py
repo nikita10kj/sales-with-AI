@@ -65,6 +65,109 @@ def _deduct_credits(user, count):
     return sl
 
 
+# @method_decorator(csrf_exempt, name='dispatch')
+# class RedrobWebhookView(View):
+#     def post(self, request):
+#         try:
+#             data = json.loads(request.body)
+#             print("🔥 WEBHOOK HIT:", data)
+
+#         except Exception as e:
+#             print("❌ Invalid JSON:", e)
+#             return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+#         datas = data.get("datas") or data.get("data", {}).get("datas", [])
+
+#         if not datas:
+#             print("⚠️ No datas found")
+#             return JsonResponse({"error": "No data"}, status=400)
+
+#         updated_count = 0
+
+#         for item in datas:
+#             try:
+#                 # 🔑 Get request_id from customFields
+#                 request_id = item.get("customFields", {}).get("request_id")
+
+#                 if not request_id:
+#                     print("⚠️ Missing request_id, skipping...")
+#                     continue
+
+#                 enrichment = EnrichmentRequest.objects.filter(
+#                     request_id=request_id
+#                 ).first()
+
+#                 if not enrichment:
+#                     print(f"⚠️ No DB record for request_id: {request_id}")
+#                     continue
+
+#                 # ✅ Extract emails
+#                 emails = item.get("emails", [])
+#                 phones = item.get("phones", [])
+
+#                 first_email = ""
+#                 if emails:
+#                     first_email = emails[0].get("email", "")
+
+#                 first_phone = ""
+#                 if phones:
+#                     first_phone = phones[0].get("number", "")
+
+                
+
+#                 # ✅ Update DB
+#                 enrichment.status = data.get("status", "")
+#                 enrichment.emails = emails
+#                 enrichment.phones = phones
+#                 enrichment.save()
+
+#                 # ── Update SearchHistory & GlobalSearchLog with enriched email/phone ──
+#                 if first_email or first_phone:
+#                     try:
+#                         norm_url = enrichment.linkedin.strip().lower().rstrip("/")
+#                         user = enrichment.user
+
+#                         def _patch_model(model_cls):
+#                             records = list(model_cls.objects.filter(
+#                                 user=user,
+#                                 search_type__in=["people", "linkedin"],
+#                             ).order_by("-created_at")[:20])
+#                             for record in records:
+#                                 if not record.results:
+#                                     continue
+#                                 changed = False
+#                                 for r in record.results:
+#                                     r_url = r.get("linkedin", "").strip().lower().rstrip("/")
+#                                     if r_url == norm_url:
+#                                         if first_email:
+#                                             r["email"] = first_email
+#                                         if first_phone:
+#                                             r["phone"] = first_phone
+#                                         changed = True
+#                                 if changed:
+#                                     model_cls.objects.filter(id=record.id).update(
+#                                         results=record.results
+#                                     )
+
+#                         _patch_model(SearchHistory)
+#                         _patch_model(GlobalSearchLog)
+#                     except Exception as patch_err:
+#                         print(f"⚠️ SearchHistory patch error: {patch_err}")
+
+#                 print(f"✅ Updated: {request_id} | Email: {first_email} |Phone: {first_phone}")
+
+#                 updated_count += 1
+
+#             except Exception as e:
+#                 print("❌ Error processing item:", e)
+#                 continue
+
+#         return JsonResponse({
+#             "success": True,
+#             "updated": updated_count
+#         })
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 class RedrobWebhookView(View):
     def post(self, request):
@@ -86,8 +189,10 @@ class RedrobWebhookView(View):
 
         for item in datas:
             try:
-                # 🔑 Get request_id from customFields
-                request_id = item.get("customFields", {}).get("request_id")
+                # 🔑 Get request_id and entry_id from customFields
+                custom_fields = item.get("customFields", {})
+                request_id = custom_fields.get("request_id")
+                entry_id = custom_fields.get("entry_id")
 
                 if not request_id:
                     print("⚠️ Missing request_id, skipping...")
@@ -101,27 +206,36 @@ class RedrobWebhookView(View):
                     print(f"⚠️ No DB record for request_id: {request_id}")
                     continue
 
-                # ✅ Extract emails
+                # ✅ Extract emails and phones
                 emails = item.get("emails", [])
                 phones = item.get("phones", [])
 
-                first_email = ""
-                if emails:
-                    first_email = emails[0].get("email", "")
+                first_email = emails[0].get("email", "") if emails else ""
+                first_phone = phones[0].get("number", "") if phones else ""
 
-                first_phone = ""
-                if phones:
-                    first_phone = phones[0].get("number", "")
-
-                
-
-                # ✅ Update DB
+                # ✅ Update EnrichmentRequest
                 enrichment.status = data.get("status", "")
                 enrichment.emails = emails
                 enrichment.phones = phones
                 enrichment.save()
 
-                # ── Update SearchHistory & GlobalSearchLog with enriched email/phone ──
+                # ✅ Update SavedPeopleEntry directly using entry_id
+                if entry_id:
+                    try:
+                        update_fields = {}
+                        if first_email:
+                            update_fields["email"] = first_email
+                        if first_phone:
+                            update_fields["phone"] = first_phone
+                        if update_fields:
+                            SavedPeopleEntry.objects.filter(pk=entry_id).update(**update_fields)
+                            print(f"📋 SavedPeopleEntry {entry_id} updated: email={first_email} phone={first_phone}")
+                        else:
+                            print(f"⚠️ No email or phone found for entry_id: {entry_id}")
+                    except Exception as entry_err:
+                        print(f"⚠️ SavedPeopleEntry update error: {entry_err}")
+
+                # ✅ Update SearchHistory & GlobalSearchLog
                 if first_email or first_phone:
                     try:
                         norm_url = enrichment.linkedin.strip().lower().rstrip("/")
@@ -154,8 +268,7 @@ class RedrobWebhookView(View):
                     except Exception as patch_err:
                         print(f"⚠️ SearchHistory patch error: {patch_err}")
 
-                print(f"✅ Updated: {request_id} | Email: {first_email}")
-
+                print(f"✅ Updated: {request_id} | Email: {first_email} | Phone: {first_phone}")
                 updated_count += 1
 
             except Exception as e:
@@ -1324,6 +1437,24 @@ class EnrichPersonView(View):
         print("[EnrichPersonView] Webhook URL:", webhook_url)
 
         enrich_type = request.POST.get("enrich_type", "email").strip()
+    
+
+        try:
+            limit = UserSearchLimit.objects.get(user=request.user)
+            credit_cost = 1 if enrich_type == "email" else 3
+            if not limit.has_credits() or limit.credits < credit_cost:
+                return JsonResponse({
+                    "success": False,
+                    "limit_reached": True,
+                    "credits": limit.credits,
+                    "error": f"Insufficient enrichment credits. Need {credit_cost}, have {limit.credits}.",
+                }, status=403)
+        except UserSearchLimit.DoesNotExist:
+            return JsonResponse({
+                "success": False,
+                "error": "Could not verify credits.",
+            }, status=500)
+        
         enrich_email = enrich_type == "email"
         enrich_phone = enrich_type == "phone"
 
@@ -1403,13 +1534,18 @@ class CheckEnrichmentView(View):
         if not enrichment.credits_deducted and (first_email or first_phone):
             try:
                 limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
-                # Email enrichment: 1 credit, Phone/Contact enrichment: 3 credits
                 credit_cost = 1 if enrichment.enrich_type == "email" else 3
-                if limit.has_credits():
-                    limit.deduct(credit_cost)
-                EnrichmentRequest.objects.filter(
-                    request_id=request_id
-                ).update(credits_deducted=True)
+                if not limit.has_credits() or limit.credits < credit_cost:
+                    # Not enough credits — don't reveal the data
+                    return JsonResponse({
+                        "success": False,
+                        "pending": False,
+                        "limit_reached": True,
+                        "credits": limit.credits,
+                        "error": f"Insufficient enrichment credits. Need {credit_cost}, have {limit.credits}.",
+                    })
+                limit.deduct(credit_cost)
+                EnrichmentRequest.objects.filter(request_id=request_id).update(credits_deducted=True)
                 current_credits = limit.credits
             except Exception:
                 pass
@@ -1476,6 +1612,7 @@ class SearchCompanyView(View):
     def get(self, request, *args, **kwargs):
         companies = request.session.pop("companies", [])
         error = request.session.pop("error", None)
+        pagination = request.session.pop("pagination", {})  # ✅ ADD THIS
         limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
 
         form = request.session.pop("form", {
@@ -1502,16 +1639,19 @@ class SearchCompanyView(View):
             "companies": companies,
             "error": error,
             "form": form,
+            "pagination": pagination,  # ✅ ADD THIS
             "search_limit": limit,
         })
 
     def post(self, request, *args, **kwargs):
         companies = []
         error = None
+        pagination = {}  # ✅ ADD THIS
+        is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"  # ✅ MOVE TO TOP
 
         def to_list(value):
             return [v.strip() for v in value.split(",") if v.strip()]
-    
+
         # Basic fields
         name = request.POST.get("name", "").strip()
         company = request.POST.get("company", "").strip()
@@ -1520,22 +1660,17 @@ class SearchCompanyView(View):
         company_location = request.POST.get("company_location", "").strip()
         year_founded_min = request.POST.get("year_founded_min", "").strip()
         year_founded_max = request.POST.get("year_founded_max", "").strip()
-
-        # Company lookalike section
         company_specialites = request.POST.get("company_specialites", "").strip()
         employee_count = request.POST.get("employee_count", "").strip()
-
-        # Revenue
         min_revenue = request.POST.get("min_revenue", "").strip()
         max_revenue = request.POST.get("max_revenue", "").strip()
-
-        # Hiring & tech signals
         company_technologies = request.POST.get("company_technologies", "").strip()
         min_technology_count = request.POST.get("min_technology_count", "").strip()
         max_technology_count = request.POST.get("max_technology_count", "").strip()
         job_posts = request.POST.get("job_posts", "").strip()
         min_jobpost = request.POST.get("min_jobpost", "").strip()
         max_jobpost = request.POST.get("max_jobpost", "").strip()
+        page = request.POST.get("page", "1")  # ✅ ADD THIS
 
         form = {
             "name": name,
@@ -1559,106 +1694,104 @@ class SearchCompanyView(View):
 
         payload = {
             "title": "Search for companies by filters",
-            "page": 1,
+            "page": int(page),  # ✅ USE DYNAMIC PAGE
         }
 
-        # keyword search
-        # if name:
-        #     payload["name"] = [name]
-
-        # company name filter
         if company:
             payload["name"] = to_list(company)
-
-        # industry
         if industry:
             payload["industries"] = to_list(industry)
-
-        # market
         if company_market:
             payload["companyMarket"] = company_market
-
-        # location
         if company_location:
             payload["location"] = to_list(company_location)
-
-        # year founded
         if year_founded_min.isdigit():
             payload["yearFoundedMin"] = int(year_founded_min)
-
         if year_founded_max.isdigit():
             payload["yearFoundedMax"] = int(year_founded_max)
-
-        # specialties
         if company_specialites:
             payload["specialties"] = to_list(company_specialites)
-
-
-        # employee count
         if employee_count:
             payload["employeeCount"] = to_list(employee_count)
-
-        # revenue
         if min_revenue.isdigit():
             payload["min_revenue"] = int(min_revenue)
-
         if max_revenue.isdigit():
             payload["max_revenue"] = int(max_revenue)
 
-        # Hiring & Tech Signals
         hiring_and_tech_signals = {}
-
         if company_technologies:
             hiring_and_tech_signals["technologiesUsed"] = to_list(company_technologies)
-
         if min_technology_count.isdigit():
             hiring_and_tech_signals["technologyTotalCountMin"] = int(min_technology_count)
-
         if max_technology_count.isdigit():
             hiring_and_tech_signals["technologyTotalCountMax"] = int(max_technology_count)
-
         if job_posts:
             hiring_and_tech_signals["jobPosts"] = to_list(job_posts)
-
         if min_jobpost.isdigit():
             hiring_and_tech_signals["jobPostingCountMin"] = int(min_jobpost)
-
         if max_jobpost.isdigit():
             hiring_and_tech_signals["jobPostingCountMax"] = int(max_jobpost)
-
         if hiring_and_tech_signals:
             payload["hiringAndTechSignals"] = hiring_and_tech_signals
 
         payload = {k: v for k, v in payload.items() if v not in ([], "", None)}
-
         print(payload)
-        # print(payload["name"])
 
         try:
-
             limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
-            is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
             if not limit.has_search_credits():
                 if is_ajax:
                     return JsonResponse({"limit_reached": True, "error": "No search credits remaining.", "credits": limit.credits, "companies": []})
                 request.session["error"] = "No search credits remaining. Please buy search credits."
                 request.session["form"] = form
                 return redirect("search_company")
-            
+
             search_resp = redrob_search_by_company(payload)
-            # print(search_resp)
-            raw_companies = search_resp.get("data", {}).get("companies", [])
+
+            # ✅ EXTRACT DATA + METADATA LIKE SearchPeopleView
+            data = search_resp.get("data", {})
+            raw_companies = data.get("companies", [])
+            metadata = data.get("metadata", {})
 
             if raw_companies:
                 limit.deduct_search(1)
-            # print(raw_companies)
 
-            # print(raw_companies)
+            # ✅ BUILD PAGINATION EXACTLY LIKE SearchPeopleView
+            def _get_page_range(current, total_pages, window=2):
+                pages = []
+                left = max(1, current - window)
+                right = min(total_pages, current + window)
+                if left > 1:
+                    pages.append(1)
+                    if left > 2:
+                        pages.append(-1)
+                for p in range(left, right + 1):
+                    pages.append(p)
+                if right < total_pages:
+                    if right < total_pages - 1:
+                        pages.append(-1)
+                    pages.append(total_pages)
+                return pages
+
+            current_page_num = metadata.get("currentPage", 1)
+            last_page = metadata.get("lastPage", 1)
+
+            pagination = {
+                "current":     current_page_num,
+                "next":        metadata.get("nextPage"),
+                "has_next":    metadata.get("hasNext", False),
+                "prev":        metadata.get("prevPage"),
+                "total":       metadata.get("total", 0),
+                "last_page":   last_page,
+                "total_pages": last_page,
+                "per_page":    metadata.get("perPage", 25),  # ✅ EXTRA: companies per page
+                "page_range":  _get_page_range(current_page_num, last_page),
+            }
 
             for c in raw_companies:
                 headquarter = c.get("headquarter") or {}
                 headquarter_address = headquarter.get("address") or {}
-
                 company_headquarter = ", ".join(
                     filter(None, [
                         headquarter_address.get("city", ""),
@@ -1666,20 +1799,12 @@ class SearchCompanyView(View):
                         headquarter_address.get("country", ""),
                     ])
                 )
-
                 funding = c.get("funding") or {}
-                
-
                 executives = c.get("keyExecutiveArrivals", [])
                 decision_makers = [
-                    {
-                        "name": e.get("member_full_name"),
-                        "title": e.get("member_position_title"),
-                    }
-                    for e in executives[:5]   # limit to 5
+                    {"name": e.get("member_full_name"), "title": e.get("member_position_title")}
+                    for e in executives[:5]
                 ]
-
-                # 🔥 NEW: Employee seniority breakdown
                 seniority_data = c.get("employeesBySeniority", [])
 
                 companies.append({
@@ -1694,13 +1819,7 @@ class SearchCompanyView(View):
                     "headquarter": company_headquarter,
                     "location_country": c.get("locationCountry", ""),
                     "company_market": "B2B" if c.get("isB2b") else "B2C" if c.get("isB2c") else "",
-                    "found_at":c.get("foundedAt",""),
-                    # "active_job_postings_count": c.get("activeJobPostingsCount", ""),
-                    # "num_technologies_used": c.get("numTechnologiesUsed", ""),
-                    # "funding_rounds": funding.get("roundsCount", ""),
-                    # "last_funding_amount": funding.get("lastRoundMoneyRaisedAmount", ""),
-                    # "last_funding_date": funding.get("lastRoundAnnouncedOnDate", ""),
-                    # "phone": ", ".join(c.get("phone", [])) if c.get("phone") else "",
+                    "found_at": c.get("foundedAt", ""),
                     "logo_url": c.get("logoUrl", ""),
                     "tagline": c.get("tagline", ""),
                     "linkedin_followers": c.get("followers", ""),
@@ -1752,7 +1871,6 @@ class SearchCompanyView(View):
                 results=company_snapshot,
                 result_count=len(companies),
             )
-
             GlobalSearchLog.objects.create(
                 user=request.user,
                 search_type="company",
@@ -1760,31 +1878,25 @@ class SearchCompanyView(View):
                 results=company_snapshot,
                 result_count=len(companies),
             )
-
         except Exception:
             pass
 
-        # ── AJAX: return JSON instead of redirecting ──
+        # ── AJAX ──
         if is_ajax:
             limit.refresh_from_db()
             return JsonResponse({
-                "companies": companies,
-                "pagination": {
-                    "total": len(companies),
-                    "current": 1,
-                    "next": None,
-                    "has_next": False,
-                    "prev": None,
-                    "last_page": 1
-                },
-                "error": error or "",
-                "credits": limit.credits,
+                "companies":  companies,
+                "pagination": pagination,  # ✅ NOW INCLUDES ALL METADATA
+                "error":      error or "",
+                "credits":    limit.credits,
                 "search_credits": limit.search_credits,
             })
 
+        # ── Traditional POST-redirect-GET ──
         request.session["companies"] = companies
         request.session["error"] = error
         request.session["form"] = form
+        request.session["pagination"] = pagination  # ✅ ADD THIS
         return redirect("search_company")
         
 # class GetSavedListsView(LoginRequiredMixin, View):
@@ -1875,6 +1987,7 @@ class SavePeopleToListView(LoginRequiredMixin, View):
                         "company_headquarter": person.get("company_headquarter", ""),
                         "email": person.get("email", ""),
                         "phone":person.get("phone",""),
+                        "photo": person.get("photo", "") or person.get("pictureUrl", "") or person.get("profilePic", ""),
                     }
                 )
                 if created:
@@ -2439,6 +2552,28 @@ class CheckBulkEnrichmentView(LoginRequiredMixin, View):
             # (webhook logic)
             if is_done and not er.credits_deducted:
                 if first_email or first_phone:
+                    try:
+                        sl, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+                        if not sl.has_credits() or sl.credits < 1:
+                            # Not enough credits — mark as deducted to stop
+                            # retrying, but do NOT write email/phone back
+                            EnrichmentRequest.objects.filter(
+                                request_id=er.request_id
+                            ).update(credits_deducted=True)
+                            return JsonResponse({
+                                "success":       False,
+                                "limit_reached": True,
+                                "credits":       sl.credits,
+                                "error":         "Insufficient enrichment credits.",
+                                "total":         total,
+                                "done":          done_count,
+                                "all_done":      False,
+                                "items":         items,
+                            })
+                        sl.deduct(1)
+                    except Exception:
+                        pass
+
                     (SavedPeopleEntry.objects
                      .filter(
                          saved_list__user=request.user,
@@ -2450,13 +2585,6 @@ class CheckBulkEnrichmentView(LoginRequiredMixin, View):
                              "phone": first_phone or None,
                          }.items() if v}
                      ))
-
-                    # Deduct 1 credit per successfully enriched person
-                    try:
-                        sl, _ = UserSearchLimit.objects.get_or_create(user=request.user)
-                        sl.deduct(1)
-                    except Exception:
-                        pass
 
                 EnrichmentRequest.objects.filter(request_id=er.request_id).update(
                     credits_deducted=True
@@ -2506,14 +2634,20 @@ class CheckBulkEnrichmentView(LoginRequiredMixin, View):
                 "done":       is_done,
             })
 
+        try:
+            sl, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+            current_credits = sl.credits
+        except Exception:
+            current_credits = None
+
         return JsonResponse({
             "success":  True,
             "total":    total,
             "done":     done_count,
             "all_done": done_count >= total,
             "items":    items,
+            "credits":  current_credits,
         })
- 
  
 # ─────────────────────────────────────────────────────────────────────────────
 # SaveEnrichAndGoToCampaignView  — webhook-based
@@ -2567,6 +2701,7 @@ class SaveEnrichAndGoToCampaignView(LoginRequiredMixin, View):
                     "company_headquarter": person.get("company_headquarter", ""),
                     "email":               person.get("email", ""),
                     "phone":               person.get("phone", ""),
+                    "photo":               person.get("photo", "") or person.get("pictureUrl", "") or person.get("profilePic", ""),
                 },
             )
  
@@ -2591,7 +2726,7 @@ class SaveEnrichAndGoToCampaignView(LoginRequiredMixin, View):
         sl, _ = UserSearchLimit.objects.get_or_create(user=request.user)
         credit_cost = len(to_enrich)
  
-        if sl.credits < credit_cost:
+        if not sl.has_credits() or sl.credits < credit_cost:
             return JsonResponse({
                 "success":       False,
                 "limit_reached": True,
@@ -2623,7 +2758,7 @@ class SaveEnrichAndGoToCampaignView(LoginRequiredMixin, View):
             bulk_data.append({
                 "linkedinUrl": entry.linkedin.strip(),
                 "enrichEmail": True,
-                "enrichPhone": False,
+                "enrichPhone": True,
                 "customFields": {
                     "request_id": str(req_id),
                     "entry_id": entry.pk,
@@ -3136,7 +3271,7 @@ class SearchHistoryView(LoginRequiredMixin, View):
 
         limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
         return render(request, self.template_name, {
-            "histories":   histories[:100],
+            "histories":   histories[:10],
             "search_type": search_type,
             "search_limit": limit,
         })
@@ -5147,6 +5282,9 @@ def campaign_view(request):
     )
     user_attachments = EmailAttachment.objects.filter(user=request.user)
 
+
+    selected_person_ids = request.GET.get("person_ids", "")
+
     # Only saved lists that have at least 1 enriched email
     saved_lists = SavedPeopleList.objects.filter(
         user=request.user
@@ -5161,6 +5299,8 @@ def campaign_view(request):
         # =========================
         tag_id              = request.POST.get("tag_id", "").strip()
         selected_list_id    = request.POST.get("selected_list_id", "").strip()
+        person_ids_raw      = request.POST.get("person_ids", "").strip()  # ← add this
+
         service_name        = request.POST.get("selected_service")
         framework           = request.POST.get("framework")
         campaign_goal       = request.POST.get("campaign_goal")
@@ -5188,6 +5328,11 @@ def campaign_view(request):
                 return redirect("campaign_view")
 
             entries_with_email = saved_list.entries.exclude(email="")
+
+            if person_ids_raw:
+                pid_list = [int(x) for x in person_ids_raw.split(",") if x.strip().isdigit()]
+                if pid_list:
+                    entries_with_email = entries_with_email.filter(id__in=pid_list)
 
             if not entries_with_email.exists():
                 messages.error(
@@ -5538,4 +5683,5 @@ def campaign_view(request):
         "selected_tag_id": str(selected_tag_id) if selected_tag_id else "",
         "scheduled_emails":scheduled_emails,
         "selected_list_id": selected_list_id,
+        "selected_person_ids": selected_person_ids,
     })
