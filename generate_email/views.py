@@ -168,13 +168,125 @@ def _deduct_credits(user, count):
 #         })
 
 
+# @method_decorator(csrf_exempt, name='dispatch')
+# class RedrobWebhookView(View):
+#     def post(self, request):
+#         try:
+#             data = json.loads(request.body)
+#             print("🔥 WEBHOOK HIT:", data)
+
+#         except Exception as e:
+#             print("❌ Invalid JSON:", e)
+#             return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+#         datas = data.get("datas") or data.get("data", {}).get("datas", [])
+
+#         if not datas:
+#             print("⚠️ No datas found")
+#             return JsonResponse({"error": "No data"}, status=400)
+
+#         updated_count = 0
+
+#         for item in datas:
+#             try:
+#                 # 🔑 Get request_id and entry_id from customFields
+#                 custom_fields = item.get("customFields", {})
+#                 request_id = custom_fields.get("request_id")
+#                 entry_id = custom_fields.get("entry_id")
+
+#                 if not request_id:
+#                     print("⚠️ Missing request_id, skipping...")
+#                     continue
+
+#                 enrichment = EnrichmentRequest.objects.filter(
+#                     request_id=request_id
+#                 ).first()
+
+#                 if not enrichment:
+#                     print(f"⚠️ No DB record for request_id: {request_id}")
+#                     continue
+
+#                 # ✅ Extract emails and phones
+#                 emails = item.get("emails", [])
+#                 phones = item.get("phones", [])
+
+#                 first_email = emails[0].get("email", "") if emails else ""
+#                 first_phone = phones[0].get("number", "") if phones else ""
+
+#                 # ✅ Update EnrichmentRequest
+#                 enrichment.status = data.get("status", "")
+#                 enrichment.emails = emails
+#                 enrichment.phones = phones
+#                 enrichment.save()
+
+#                 # ✅ Update SavedPeopleEntry directly using entry_id
+#                 if entry_id:
+#                     try:
+#                         update_fields = {}
+#                         if first_email:
+#                             update_fields["email"] = first_email
+#                         if first_phone:
+#                             update_fields["phone"] = first_phone
+#                         if update_fields:
+#                             SavedPeopleEntry.objects.filter(pk=entry_id).update(**update_fields)
+#                             print(f"📋 SavedPeopleEntry {entry_id} updated: email={first_email} phone={first_phone}")
+#                         else:
+#                             print(f"⚠️ No email or phone found for entry_id: {entry_id}")
+#                     except Exception as entry_err:
+#                         print(f"⚠️ SavedPeopleEntry update error: {entry_err}")
+
+#                 # ✅ Update SearchHistory & GlobalSearchLog
+#                 if first_email or first_phone:
+#                     try:
+#                         norm_url = enrichment.linkedin.strip().lower().rstrip("/")
+#                         user = enrichment.user
+
+#                         def _patch_model(model_cls):
+#                             records = list(model_cls.objects.filter(
+#                                 user=user,
+#                                 search_type__in=["people", "linkedin"],
+#                             ).order_by("-created_at")[:20])
+#                             for record in records:
+#                                 if not record.results:
+#                                     continue
+#                                 changed = False
+#                                 for r in record.results:
+#                                     r_url = r.get("linkedin", "").strip().lower().rstrip("/")
+#                                     if r_url == norm_url:
+#                                         if first_email:
+#                                             r["email"] = first_email
+#                                         if first_phone:
+#                                             r["phone"] = first_phone
+#                                         changed = True
+#                                 if changed:
+#                                     model_cls.objects.filter(id=record.id).update(
+#                                         results=record.results
+#                                     )
+
+#                         _patch_model(SearchHistory)
+#                         _patch_model(GlobalSearchLog)
+#                     except Exception as patch_err:
+#                         print(f"⚠️ SearchHistory patch error: {patch_err}")
+
+#                 print(f"✅ Updated: {request_id} | Email: {first_email} | Phone: {first_phone}")
+#                 updated_count += 1
+
+#             except Exception as e:
+#                 print("❌ Error processing item:", e)
+#                 continue
+
+#         return JsonResponse({
+#             "success": True,
+#             "updated": updated_count
+#         })
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 class RedrobWebhookView(View):
     def post(self, request):
         try:
             data = json.loads(request.body)
             print("🔥 WEBHOOK HIT:", data)
-
         except Exception as e:
             print("❌ Invalid JSON:", e)
             return JsonResponse({"error": "Invalid JSON"}, status=400)
@@ -182,20 +294,18 @@ class RedrobWebhookView(View):
         datas = data.get("datas") or data.get("data", {}).get("datas", [])
 
         if not datas:
-            print("⚠️ No datas found")
             return JsonResponse({"error": "No data"}, status=400)
 
         updated_count = 0
+        ENRICH_CREDITS_PER_PERSON = 4  # 1 email + 3 phone
 
         for item in datas:
             try:
-                # 🔑 Get request_id and entry_id from customFields
                 custom_fields = item.get("customFields", {})
                 request_id = custom_fields.get("request_id")
                 entry_id = custom_fields.get("entry_id")
 
                 if not request_id:
-                    print("⚠️ Missing request_id, skipping...")
                     continue
 
                 enrichment = EnrichmentRequest.objects.filter(
@@ -203,23 +313,50 @@ class RedrobWebhookView(View):
                 ).first()
 
                 if not enrichment:
-                    print(f"⚠️ No DB record for request_id: {request_id}")
                     continue
 
-                # ✅ Extract emails and phones
                 emails = item.get("emails", [])
                 phones = item.get("phones", [])
 
                 first_email = emails[0].get("email", "") if emails else ""
                 first_phone = phones[0].get("number", "") if phones else ""
 
-                # ✅ Update EnrichmentRequest
-                enrichment.status = data.get("status", "")
+                # ✅ Update EnrichmentRequest status
+                enrichment.status = data.get("status", "FINISHED")
                 enrichment.emails = emails
                 enrichment.phones = phones
                 enrichment.save()
 
-                # ✅ Update SavedPeopleEntry directly using entry_id
+                # ✅ Deduct credits HERE in webhook (only once)
+                # ✅ Deduct credits based on what was actually found
+                if not enrichment.credits_deducted:
+                    credits_to_deduct = 0
+                    
+                    if first_email:
+                        credits_to_deduct += 1  # 1 credit for email
+                    if first_phone:
+                        credits_to_deduct += 3  # 3 credits for phone
+
+                    if credits_to_deduct > 0:
+                        try:
+                            sl, _ = UserSearchLimit.objects.get_or_create(user=enrichment.user)
+                            
+                            if sl.has_credits() and sl.credits >= credits_to_deduct:
+                                sl.deduct(credits_to_deduct)
+                                print(f"💳 Deducted {credits_to_deduct} credits for {request_id} | email={bool(first_email)} phone={bool(first_phone)}")
+                            else:
+                                print(f"⚠️ Not enough credits for {request_id}")
+                        except Exception as credit_err:
+                            print(f"⚠️ Credit deduction error: {credit_err}")
+                    else:
+                        print(f"⚠️ No email or phone found for {request_id} — 0 credits deducted")
+
+                    # Always mark as deducted so it never runs again
+                    EnrichmentRequest.objects.filter(
+                        request_id=request_id
+                    ).update(credits_deducted=True)
+
+                # ✅ Update SavedPeopleEntry
                 if entry_id:
                     try:
                         update_fields = {}
@@ -229,13 +366,10 @@ class RedrobWebhookView(View):
                             update_fields["phone"] = first_phone
                         if update_fields:
                             SavedPeopleEntry.objects.filter(pk=entry_id).update(**update_fields)
-                            print(f"📋 SavedPeopleEntry {entry_id} updated: email={first_email} phone={first_phone}")
-                        else:
-                            print(f"⚠️ No email or phone found for entry_id: {entry_id}")
                     except Exception as entry_err:
                         print(f"⚠️ SavedPeopleEntry update error: {entry_err}")
 
-                # ✅ Update SearchHistory & GlobalSearchLog
+                # ✅ Patch SearchHistory & GlobalSearchLog
                 if first_email or first_phone:
                     try:
                         norm_url = enrichment.linkedin.strip().lower().rstrip("/")
@@ -268,17 +402,13 @@ class RedrobWebhookView(View):
                     except Exception as patch_err:
                         print(f"⚠️ SearchHistory patch error: {patch_err}")
 
-                print(f"✅ Updated: {request_id} | Email: {first_email} | Phone: {first_phone}")
                 updated_count += 1
 
             except Exception as e:
                 print("❌ Error processing item:", e)
                 continue
 
-        return JsonResponse({
-            "success": True,
-            "updated": updated_count
-        })
+        return JsonResponse({"success": True, "updated": updated_count})
 # ─── Azure OpenAI: parse natural language query → search filters ───────────────
 class AiParseSearchView(View):
     """
@@ -2554,7 +2684,8 @@ class CheckBulkEnrichmentView(LoginRequiredMixin, View):
                 if first_email or first_phone:
                     try:
                         sl, _ = UserSearchLimit.objects.get_or_create(user=request.user)
-                        if not sl.has_credits() or sl.credits < 1:
+                        CREDITS_PER_PERSON = 4
+                        if not sl.has_credits() or sl.credits < CREDITS_PER_PERSON:
                             # Not enough credits — mark as deducted to stop
                             # retrying, but do NOT write email/phone back
                             EnrichmentRequest.objects.filter(
@@ -2570,7 +2701,7 @@ class CheckBulkEnrichmentView(LoginRequiredMixin, View):
                                 "all_done":      False,
                                 "items":         items,
                             })
-                        sl.deduct(1)
+                        sl.deduct(CREDITS_PER_PERSON)
                     except Exception:
                         pass
 
@@ -2724,17 +2855,21 @@ class SaveEnrichAndGoToCampaignView(LoginRequiredMixin, View):
  
         # ── 4. Credit check ─────────────────────────────────────────────────
         sl, _ = UserSearchLimit.objects.get_or_create(user=request.user)
-        credit_cost = len(to_enrich)
- 
+
+        # credit_cost = len(to_enrich)
+
+        MAX_CREDITS_PER_PERSON = 4  # 1 email + 3 phone
+        credit_cost = len(to_enrich) * MAX_CREDITS_PER_PERSON
+
         if not sl.has_credits() or sl.credits < credit_cost:
             return JsonResponse({
-                "success":       False,
+                "success": False,
                 "limit_reached": True,
-                "credits":       sl.credits,
-                "needed":        credit_cost,
-                "error":         (
-                    f"Need {credit_cost} credits to enrich {len(to_enrich)} people "
-                    f"but you only have {sl.credits}. Contact admin to renew."
+                "credits": sl.credits,
+                "needed": credit_cost,
+                "error": (
+                    f"Need up to {credit_cost} credits ({len(to_enrich)} people × max 4) "
+                    f"but you only have {sl.credits}. Actual cost depends on what is found."
                 ),
             }, status=403)
  
@@ -3271,7 +3406,7 @@ class SearchHistoryView(LoginRequiredMixin, View):
 
         limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
         return render(request, self.template_name, {
-            "histories":   histories[:10],
+            "histories":   histories[:50],
             "search_type": search_type,
             "search_limit": limit,
         })
