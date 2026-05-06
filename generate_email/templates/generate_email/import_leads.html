@@ -17,12 +17,11 @@
             <i class="fas fa-file-upload me-2" style="font-size:35px;"></i>
 
             <div>
-                <h5 class="mb-1 fw-semibold">Import Leads</h5>
+                <h5 class="mb-1 fw-semibold">Import Lists</h5>
                 <small style="font-size:13px; opacity:0.85;">
                     Upload CSV file and organize leads with a tag
                 </small>
             </div>
-
         </div>
 
         <div class="card-body p-4">
@@ -50,12 +49,14 @@
 
                 <!-- CSV Upload -->
                 <div class="mb-4">
-                    <label class="form-label fw-semibold">Upload CSV File *</label>
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <label class="form-label fw-semibold mb-0">Upload CSV File *</label>
+                    </div>
                     <input type="file"
-                           name="csv_file"
-                           class="form-control"
-                           accept=".csv"
-                           required>
+                        name="csv_file"
+                        class="form-control"
+                        accept=".csv"
+                        required>
                     <small class="text-muted" style="font-size:12px;">
                         Only .csv files supported
                     </small>
@@ -73,10 +74,19 @@
 
             </form>
             <!-- CSV Format Guide -->
-              <div class="mt-4"> 
-                <h6 class="fw-semibold mb-2">CSV File Format</h6> 
-                <small class="text-muted"> Your CSV must contain the following columns. Fields marked with * are required. 
-
+<div class="mt-4">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+        <div>
+            <h6 class="fw-semibold mb-1">CSV File Format</h6>
+            <small class="text-muted">Your CSV must contain the following columns. Fields marked with * are required.</small>
+        </div>
+        <button type="button"
+                onclick="downloadSampleCSV()"
+                class="btn btn-sm fw-semibold"
+                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:#fff; font-size:12px; padding:7px 14px; border:none; border-radius:8px; white-space:nowrap; box-shadow: 0 3px 10px rgba(102,126,234,0.35);">
+            <i class="fas fa-download me-1"></i> Download Sample CSV
+        </button>
+    </div>
                 </small> <div class="table-responsive mt-2"> 
                     <table class="table table-bordered table-sm text-center align-middle">
                          <thead style="background:#f5f6fa;"> 
@@ -120,5 +130,24 @@
     padding: 8px 12px;
 }
 </style>
+
+<script>
+function downloadSampleCSV() {
+    const csvContent = [
+        "Target Person Email,Target Person LinkedIn,Target Company Website,Target Person First Name,Target Person Last Name",
+        "john@gmail.com,https://linkedin.com/in/john,https://company.com,John,Doe"
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "sample_leads.csv";
+    a.click();
+
+    URL.revokeObjectURL(url);
+}
+</script>
 
 {% endblock %}

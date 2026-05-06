@@ -365,6 +365,14 @@ class HomeView(LoginRequiredMixin, TemplateView):
             'is_jms_user': is_jms_user,
             'selected_account_id': int(selected_account_id) if selected_account else None,
         })
+        
+        # Add search credits limit
+        try:
+            from generate_email.models import UserSearchLimit
+            search_limit = UserSearchLimit.objects.get(user=user)
+            context['search_limit'] = search_limit
+        except:
+            context['search_limit'] = None
 
         return context
 
@@ -1430,4 +1438,14 @@ def remove_google_account(request, pk):
     
     acc.delete()
     messages.success(request, "Account removed successfully.")
+    return redirect("profile")
+
+@login_required
+def remove_microsoft_account(request, pk):
+    if request.method != "POST":
+        return redirect("profile")
+    acc = get_object_or_404(SocialAccount, pk=pk, user=request.user, provider="microsoft")
+    SentEmail.objects.filter(user=request.user, sending_account=acc).delete()
+    acc.delete()
+    messages.success(request, "Microsoft account removed successfully.")
     return redirect("profile")

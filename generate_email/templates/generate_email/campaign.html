@@ -114,12 +114,15 @@
 
             <form method="POST" id="campaignForm" enctype="multipart/form-data">
                 {% csrf_token %}
+                {% if selected_person_ids %}
+                    <input type="hidden" name="person_ids" value="{{ selected_person_ids }}">
+                {% endif %}
 
                 <!-- TAG -->
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Choose Target Group</label>
+                    <label class="form-label fw-semibold">Choose Target Group (optional)</label>
                     <select name="tag_id" class="form-select" id="tagSelect">
-                        <option value="">Choose Target Group</option>
+                        <option value="">Choose Target Group </option>
                         {% for tag in tags %}
                             <option value="{{ tag.id }}"
                                 {% if selected_tag_id == tag.id|stringformat:"s" %}selected{% endif %}>
@@ -130,10 +133,10 @@
                 </div>
 
                 <!-- SAVED PEOPLE LIST -->
-                {% if saved_lists %}
+                {% if saved_lists %} 
                 <div class="mb-3">
                     <label class="form-label fw-semibold">
-                        Send to Saved List
+                        Send to Saved List (optional)
                         {% comment %} <span style="font-size:11px;color:#6c757d;font-weight:400;">
                             — overrides Tag above if selected
                         </span> {% endcomment %}
@@ -163,71 +166,16 @@
                 </div>
 
                 <!-- FRAMEWORK -->
-                <div class="mb-4">
-                    <label class="form-label fw-semibold mb-2">Framework *</label>
-                    <div class="row g-3">
-
-                        <div class="col-md-6 col-lg-4">
-                            <label class="framework-option w-100">
-                                <input type="radio" name="framework" value="AIDA" checked hidden>
-                                <div class="framework-card text-center rounded-3">
-                                    <div class="fw-semibold" style="font-size:14px;">AIDA</div>
-                                    <small>Attention → Interest → Desire → Action</small>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="col-md-6 col-lg-4">
-                            <label class="framework-option w-100">
-                                <input type="radio" name="framework" value="PAS" hidden>
-                                <div class="framework-card text-center rounded-3">
-                                    <div class="fw-semibold" style="font-size:14px;">PAS</div>
-                                    <small>Problem → Agitate → Solution</small>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="col-md-6 col-lg-4">
-                            <label class="framework-option w-100">
-                                <input type="radio" name="framework" value="Before-After-Bridge" hidden>
-                                <div class="framework-card text-center rounded-3">
-                                    <div class="fw-semibold" style="font-size:14px;">Before-After-Bridge</div>
-                                    <small>Current → Desired → Solution</small>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="col-md-6 col-lg-4">
-                            <label class="framework-option w-100">
-                                <input type="radio" name="framework" value="STAR" hidden>
-                                <div class="framework-card text-center rounded-3">
-                                    <div class="fw-semibold" style="font-size:14px;">STAR</div>
-                                    <small>Situation → Task → Action → Result</small>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="col-md-6 col-lg-4">
-                            <label class="framework-option w-100">
-                                <input type="radio" name="framework" value="Magic" hidden>
-                                <div class="framework-card text-center rounded-3">
-                                    <div class="fw-semibold" style="font-size:14px;">Magic</div>
-                                    <small>Hook → Story → Offer → Close</small>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="col-md-6 col-lg-4">
-                            <label class="framework-option w-100">
-                                <input type="radio" name="framework" value="ACCA" hidden>
-                                <div class="framework-card text-center rounded-3">
-                                    <div class="fw-semibold" style="font-size:14px;">ACCA</div>
-                                    <small>Awareness → Comprehension → Conviction → Action</small>
-                                </div>
-                            </label>
-                        </div>
-
-                    </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Framework *</label>
+                    <select class="form-select" name="framework" required>
+                        <option value="AIDA" selected>AIDA — Attention → Interest → Desire → Action</option>
+                        <option value="PAS">PAS — Problem → Agitate → Solution</option>
+                        <option value="Before-After-Bridge">Before-After-Bridge — Current → Desired → Solution</option>
+                        <option value="STAR">STAR — Situation → Task → Action → Result</option>
+                        <option value="Magic">Magic — Hook → Story → Offer → Close</option>
+                        <option value="ACCA">ACCA — Awareness → Comprehension → Conviction → Action</option>
+                    </select>
                 </div>
 
                 <!-- GOAL -->

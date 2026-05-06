@@ -129,6 +129,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
         input.addEventListener("keydown", function (e) {
             if (e.key === "Enter") { e.preventDefault(); addTag(); }
+            if (e.key === ",") {
+                e.preventDefault();
+                const inputValue = input.value.trim();
+                if (inputValue) {
+                    // Split by comma and add each non-empty part as a tag
+                    const values = inputValue.split(",").map(v => v.trim()).filter(v => v !== "");
+                    values.forEach(function(v) { addTag(v); });
+                }
+                input.focus();
+            }
             if (e.key === "Backspace" && !input.value.trim() && tags.length) {
                 tags.pop();
                 updateHiddenInput();
@@ -181,12 +191,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
         let html = '<div class="results-card" id="resultsCard">';
 
+        // ── Compute pagination values FIRST so meta bar can use them ──
+        var cur      = (pagination && pagination.current) || 1;
+        var total    = (pagination && pagination.total)   || 0;
+        var pageSize = people.length;
+        var startIdx = (cur - 1) * pageSize + 1;
+        var endIdx   = Math.min(startIdx + pageSize - 1, total);
+
         // meta bar
         html += '<div class="results-meta"><div class="results-meta-left">'
             + '<input type="checkbox" id="selectAllRows">'
             + ' <i class="fas fa-chevron-down" style="font-size:11px;color:#aab0c4;cursor:pointer;"></i>'
             + ' <span id="selectedCountText">0 selected of ' + people.length + ' results</span>'
             + '</div><div class="results-meta-right">'
+            + '<span style="font-size:13px;color:#6a7388;margin-right:12px;">' + startIdx + '–' + endIdx + ' of ' + total + '</span>'
             + '<button type="button" id="saveToListBtn" class="save-list-btn" style="display:none;"><i class="fas fa-plus"></i> Save to List</button>'
             + '</div></div>';
 
@@ -217,6 +235,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 + ' data-company_headquarter="' + escapeHtml(p.company_headquarter) + '"'
                 + ' data-email="' + escapeHtml(p.emails && p.emails[0] ? (p.emails[0].email || "") : "") + '"'
                 + ' data-phone="' + escapeHtml(p.phones && p.phones[0] ? (p.phones[0].number || "") : "") + '"'
+                + ' data-photo="' + escapeHtml(p.photo || "") + '"'
                 + '></td>';
 
             // profile
@@ -342,22 +361,67 @@ document.addEventListener("DOMContentLoaded", function () {
 
         html += '</tbody></table></div>';
 
-        // pagination
-        var cur = (pagination && pagination.current) || 1;
-        html += '<div class="results-footer"><div class="results-footer-left">'
-            + '<span class="goto-label">Go to page</span>'
-            + '<span class="goto-page-wrap"><i class="fas fa-info-circle"></i> <span>' + cur + '</span> <i class="fas fa-chevron-down"></i></span>'
-            + '</div><div class="pagination-wrap">'
-            + '<span class="results-count-text">Page ' + cur + '</span>'
-            + '<button class="page-btn" type="button" onclick="changePage(' + (cur - 1) + ')"><i class="fas fa-chevron-left"></i></button>';
-        if (pagination && pagination.has_next) {
-            html += '<button class="page-btn" type="button" onclick="changePage(' + pagination.next + ')"><i class="fas fa-chevron-right"></i></button>';
-        }
-        html += '</div></div>';
-        html += '</div>';
+        
+       // ── Pagination ──
+        var cur        = (pagination && pagination.current)     || 1;
+        var total      = (pagination && pagination.total)       || 0;
+        var totalPages = (pagination && pagination.total_pages) || (pagination && pagination.last_page) || 1;
+        var pageSize   = people.length;
+        var startIdx   = (cur - 1) * pageSize + 1;
+        var endIdx     = startIdx + pageSize - 1;
 
-        return html;
-    }
+        function buildPageRange(cur, total, window) {
+            var pages = [];
+            var left  = Math.max(1, cur - window);
+            var right = Math.min(total, cur + window);
+            if (left > 1)  { pages.push(1); if (left > 2)  pages.push(-1); }
+            for (var p = left; p <= right; p++) pages.push(p);
+            if (right < total) { if (right < total - 1) pages.push(-1); pages.push(total); }
+            return pages;
+        }
+
+        var pageRange = (pagination && pagination.page_range) || buildPageRange(cur, totalPages, 2);
+        var hasNext   = pagination && pagination.has_next;
+
+        html += '<div class="results-footer"><div class="pagination-wrap">';
+
+        // First
+        html += '<button class="page-btn page-btn-text" type="button"'
+            + (cur <= 1 ? ' disabled' : ' onclick="changePage(1)"')
+            + '>&lt;&lt; First</button>';
+
+        // Prev
+        html += '<button class="page-btn page-btn-text" type="button"'
+            + (cur <= 1 ? ' disabled' : ' onclick="changePage(' + (cur - 1) + ')"')
+            + '>&lt; Prev</button>';
+
+        // Page numbers
+        pageRange.forEach(function(p) {
+            if (p === -1) {
+                html += '<span class="page-ellipsis">…</span>';
+            } else if (p === cur) {
+                html += '<button class="page-btn page-num active" type="button">' + p + '</button>';
+            } else {
+                html += '<button class="page-btn page-num" type="button" onclick="changePage(' + p + ')">' + p + '</button>';
+            }
+        });
+
+        // Next
+        html += '<button class="page-btn page-btn-text" type="button"'
+            + (hasNext ? ' onclick="changePage(' + (cur + 1) + ')"' : ' disabled')
+            + '>Next &gt;</button>';
+
+        // Last
+        html += '<button class="page-btn page-btn-text" type="button"'
+            + (cur >= totalPages ? ' disabled' : ' onclick="changePage(' + totalPages + ')"')
+            + '>Last &gt;&gt;</button>';
+
+        html += '</div></div>';
+        html += '</div>'; // close results-card
+
+        return html
+
+        }
 
     function buildProfileTemplatesHTML(people) {
         var html = '';
@@ -665,7 +729,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 location:            cb.getAttribute("data-location") || "",
                 company_headquarter: cb.getAttribute("data-company_headquarter") || "",
                 email:               cb.getAttribute("data-email") || "",
-                phone:               cb.getAttribute("data-phone") || ""
+                phone:               cb.getAttribute("data-phone") || "",
+                photo:               cb.getAttribute("data-photo") || ""
             });
         });
         return selected;
@@ -791,8 +856,12 @@ if (confirmSaveListBtn) {
  
             const data = await response.json();
  
-            if (!data.success) {
-                showMessage(data.error || "Could not save list.", "error");
+           if (!data.success) {
+                if (data.limit_reached && typeof slShowModal === "function") {
+                    slShowModal(data.credits || 0);
+                } else {
+                    showMessage(data.error || "Could not save list.", "error");
+                }
                 confirmSaveListBtn.disabled = false;
                 confirmSaveListBtn.innerHTML = "Save to List";
                 return;
@@ -860,12 +929,19 @@ if (confirmSaveListBtn) {
                     console.warn("[Bulk enrich poll] fetch error:", pollErr);
                     continue;
                 }
- 
+
+                if (checkData.limit_reached) {
+                    if (progressBar) progressBar.remove();
+                    if (typeof slShowModal === "function") slShowModal(checkData.credits || 0);
+                    confirmSaveListBtn.disabled = false;
+                    confirmSaveListBtn.innerHTML = "Save to List";
+                    return;
+                }
+
                 updateProgress(checkData.done || 0, checkData.total || total);
- 
+
                 // Update credit pill if server returned updated count
-                if (typeof checkData.credits === "number") {
-                    if (typeof slUpdatePill === "function") slUpdatePill(checkData.credits);
+                if (typeof checkData.credits === "number") {                    if (typeof slUpdatePill === "function") slUpdatePill(checkData.credits);
                 }
  
                 if (checkData.all_done) {
@@ -1097,12 +1173,21 @@ if (confirmSaveListBtn) {
 
                     const data = await response.json();
 
+                    // if (!data.success) {
+                    //     if (loader) loader.style.display = "none";
+                    //     showMessage(data.error || "Something went wrong.", "error");
+                    //     return;
+                    // }
+
                     if (!data.success) {
                         if (loader) loader.style.display = "none";
-                        showMessage(data.error || "Something went wrong.", "error");
+                        if (data.limit_reached && typeof slShowModal === "function") {
+                            slShowModal(data.credits || 0);
+                        } else {
+                            showMessage(data.error || "Something went wrong.", "error");
+                        }
                         return;
                     }
-
                     // ── Webhook/polling flow ──
                     if (data.pending && data.request_id) {
                         const requestId = data.request_id;
@@ -1119,9 +1204,21 @@ if (confirmSaveListBtn) {
                                     headers: { "X-Requested-With": "XMLHttpRequest" }
                                 });
                                 checkData = await checkResp.json();
+
+                                if (checkData.limit_reached) {
+                                    if (loader) loader.style.display = "none";
+                                    if (typeof slShowModal === "function") slShowModal(checkData.credits || 0);
+                                    return;
+                                }
                             } catch (pollErr) {
                                 console.warn("[Enrich poll] fetch error:", pollErr);
                                 continue;
+                            }
+
+                            if (checkData.limit_reached) {
+                                if (loader) loader.style.display = "none";
+                                if (typeof slShowModal === "function") slShowModal(checkData.credits || 0);
+                                return;
                             }
 
                             if (!checkData.pending) {
@@ -1410,12 +1507,15 @@ if (confirmSaveListBtn) {
                 const data = await response.json();
 
                 if (!data.success) {
-                    showMessage(data.error || "Could not fetch email.", "error");
+                    if (data.limit_reached && typeof slShowModal === "function") {
+                        slShowModal(data.credits || 0);
+                    } else {
+                        showMessage(data.error || "Could not fetch email.", "error");
+                    }
                     unlockBtn.textContent = origText;
                     unlockBtn.disabled = false;
                     return;
                 }
-
                 let firstEmail = "";
 
                 // ── Webhook polling ──
@@ -1438,6 +1538,13 @@ if (confirmSaveListBtn) {
                             console.warn("[Drawer poll] fetch error:", pollErr);
                             continue;
                         }
+                        if (checkData.limit_reached) {
+                            if (typeof slShowModal === "function") slShowModal(checkData.credits || 0);
+                            unlockBtn.textContent = origText;
+                            unlockBtn.disabled = false;
+                            return;
+                        }
+
                         if (!checkData.pending) {
                             firstEmail = checkData.email || "";
                             // ── Update credit pill live ──
