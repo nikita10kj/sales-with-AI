@@ -54,20 +54,38 @@
                         </div>
 
                         <div class="filter-field">
-                            <label for="industryInput">Company Industry</label>
-                            <div class="tag-input-row">
-                                <div id="industryTags" class="tags-container"></div>
-                                <div class="tag-input-wrap">
-                                    <input type="text" id="industryInput" placeholder="e.g. Technology">
-                                    <button type="button" class="add-tag-btn" id="addIndustryTag"><i class="fas fa-plus"></i></button>
-                                </div>
+                            <label>Company Industry</label>
+                            <div id="industryTagsSelected" class="tags-container" style="margin-bottom:6px;"></div>
+                            <div style="position:relative;">
+                                <input type="text" id="industryInput" placeholder="e.g. Technology" autocomplete="off"
+                                    style="width:100%;padding:8px 12px;border:1px solid #dce0ea;border-radius:8px;font-size:13px;box-sizing:border-box;">
+                                <ul id="industrySuggestions" style="
+                                    display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;
+                                    background:#fff;border:1px solid #dce0ea;border-radius:8px;
+                                    box-shadow:0 4px 16px rgba(0,0,0,0.08);z-index:300;
+                                    max-height:220px;overflow-y:auto;margin:0;padding:6px 0;list-style:none;">
+                                </ul>
                             </div>
                             <input type="hidden" name="industry" id="industryHidden" value="{{ form.industry }}">
                         </div>
 
                         <div class="filter-field">
-                            <label for="company_market">Company Market</label>
-                            <input type="text" id="company_market" name="company_market" placeholder="e.g. B2B" value="{{ form.company_market }}" class="filter-text-input">
+                            <label>Company Market</label>
+                            <div class="custom-multiselect" id="companyMarketDropdown">
+                                <div class="multiselect-trigger" id="companyMarketTrigger">
+                                    <span class="multiselect-placeholder" id="companyMarketPlaceholder">Select market type</span>
+                                    <i class="fas fa-chevron-down multiselect-arrow"></i>
+                                </div>
+                                <div class="multiselect-options" id="companyMarketOptions" style="display:none;">
+                                    <label class="multiselect-option">
+                                        <input type="checkbox" class="company-market-cb" value="B2B"> B2B
+                                    </label>
+                                    <label class="multiselect-option">
+                                        <input type="checkbox" class="company-market-cb" value="B2C"> B2C
+                                    </label>
+                                </div>
+                            </div>
+                            <input type="hidden" name="company_market" id="companyMarketHidden" value="{{ form.company_market }}">
                         </div>
 
                         <div class="filter-field">
@@ -116,12 +134,18 @@
                         </div>
 
                         <div class="filter-field">
-                            <label for="employeeCountInput">Employee Count</label>
-                            <div class="tag-input-row">
-                                <div id="employeeCountTags" class="tags-container"></div>
-                                <div class="tag-input-wrap">
-                                    <input type="text" id="employeeCountInput" placeholder="e.g. 100-500">
-                                    <button type="button" class="add-tag-btn" id="addEmployeeCountTag"><i class="fas fa-plus"></i></button>
+                            <label>Employee Count</label>
+                            <div class="custom-multiselect" id="employeeCountDropdown">
+                                <div class="multiselect-trigger" id="employeeCountTrigger">
+                                    <span class="multiselect-placeholder" id="employeeCountPlaceholder">Select employee count</span>
+                                    <i class="fas fa-chevron-up multiselect-arrow"></i>
+                                </div>
+                                <div class="multiselect-options" id="employeeCountOptions">
+                                    {% for value, label in employee_count_choices %}
+                                    <label class="multiselect-option">
+                                        <input type="checkbox" class="employee-count-cb" value="{{ value }}"> {{ label }}
+                                    </label>
+                                    {% endfor %}
                                 </div>
                             </div>
                             <input type="hidden" name="employee_count" id="employeeCountHidden" value="{{ form.employee_count }}">
@@ -894,6 +918,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const SEARCH_COMPANY_URL = "{% url 'search_company' %}";
     const CSRF_TOKEN = "{{ csrf_token }}";
 </script>
+
+{{ industry_choices|json_script:"industryChoicesData" }}
+
+
 <script src="{% static 'search/js/company_search.js' %}?v=6"></script>
 
 <!-- ── AI Mode JavaScript ── -->

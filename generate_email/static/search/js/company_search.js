@@ -1,12 +1,13 @@
 document.addEventListener("DOMContentLoaded", function () {
 
     // ── Toast ──
-    const customMessage = document.getElementById("customMessage");
-    const customMessageText = document.getElementById("customMessageText");
-    const closeCustomMessage = document.getElementById("closeCustomMessage");
-    let customMessageTimeout;
+    var customMessage = document.getElementById("customMessage");
+    var customMessageText = document.getElementById("customMessageText");
+    var closeCustomMessage = document.getElementById("closeCustomMessage");
+    var customMessageTimeout;
 
-    function showMessage(message, type = "success") {
+    function showMessage(message, type) {
+        type = type || "success";
         if (!customMessage || !customMessageText) return;
         customMessageText.textContent = message;
         customMessage.classList.remove("custom-message-success", "custom-message-error");
@@ -28,7 +29,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // ── Filter accordion ──
     document.querySelectorAll(".filter-toggle").forEach(function (button) {
         button.addEventListener("click", function () {
-            const parent = button.closest(".filter-item");
+            var parent = button.closest(".filter-item");
             if (parent) parent.classList.toggle("active");
         });
     });
@@ -45,11 +46,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function getCookie(name) {
-        let cookieValue = null;
+        var cookieValue = null;
         if (document.cookie && document.cookie !== "") {
-            const cookies = document.cookie.split(";");
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
+            var cookies = document.cookie.split(";");
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i].trim();
                 if (cookie.substring(0, name.length + 1) === (name + "=")) {
                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                     break;
@@ -60,17 +61,17 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // ── Tag input system ──
-    const tagInputInstances = [];
+    var tagInputInstances = [];
 
     function setupTagInput(config) {
-        const input = document.getElementById(config.inputId);
-        const addBtn = document.getElementById(config.addBtnId);
-        const tagsContainer = document.getElementById(config.tagsContainerId);
-        const hiddenInput = document.getElementById(config.hiddenInputId);
+        var input = document.getElementById(config.inputId);
+        var addBtn = document.getElementById(config.addBtnId);
+        var tagsContainer = document.getElementById(config.tagsContainerId);
+        var hiddenInput = document.getElementById(config.hiddenInputId);
 
         if (!input || !addBtn || !tagsContainer || !hiddenInput) return;
 
-        let tags = [];
+        var tags = [];
 
         if (hiddenInput.value.trim()) {
             tags = hiddenInput.value
@@ -86,17 +87,15 @@ document.addEventListener("DOMContentLoaded", function () {
         function renderTags() {
             tagsContainer.innerHTML = "";
             tags.forEach(function (tagValue, index) {
-                const tag = document.createElement("div");
+                var tag = document.createElement("div");
                 tag.className = "tag";
-                tag.innerHTML = `
-                    <span class="tag-text">${escapeHtml(tagValue)}</span>
-                    <span class="tag-remove" data-index="${index}">&times;</span>
-                `;
+                tag.innerHTML = '<span class="tag-text">' + escapeHtml(tagValue) + '</span>'
+                    + '<span class="tag-remove" data-index="' + index + '">&times;</span>';
                 tagsContainer.appendChild(tag);
             });
             tagsContainer.querySelectorAll(".tag-remove").forEach(function (removeBtn) {
                 removeBtn.addEventListener("click", function () {
-                    const index = parseInt(removeBtn.getAttribute("data-index"), 10);
+                    var index = parseInt(removeBtn.getAttribute("data-index"), 10);
                     tags.splice(index, 1);
                     updateHiddenInput();
                     renderTags();
@@ -104,10 +103,10 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
 
-        function addTag(value = null) {
-            const finalValue = (value !== null ? value : input.value).trim();
+        function addTag(value) {
+            var finalValue = (value !== null && value !== undefined ? value : input.value).trim();
             if (!finalValue) return;
-            const alreadyExists = tags.some(function (tag) {
+            var alreadyExists = tags.some(function (tag) {
                 return tag.toLowerCase() === finalValue.toLowerCase();
             });
             if (alreadyExists) {
@@ -123,7 +122,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         function finalizePendingInput() {
-            const pendingValue = input.value.trim();
+            var pendingValue = input.value.trim();
             if (pendingValue) addTag(pendingValue);
         }
 
@@ -136,11 +135,12 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             if (e.key === ",") {
                 e.preventDefault();
-                const inputValue = input.value.trim();
+                var inputValue = input.value.trim();
                 if (inputValue) {
-                    // Split by comma and add each non-empty part as a tag
-                    const values = inputValue.split(",").map(v => v.trim()).filter(v => v !== "");
-                    values.forEach(function(v) { addTag(v); });
+                    var values = inputValue.split(",")
+                        .map(function (v) { return v.trim(); })
+                        .filter(function (v) { return v !== ""; });
+                    values.forEach(function (v) { addTag(v); });
                 }
                 input.focus();
             }
@@ -156,15 +156,232 @@ document.addEventListener("DOMContentLoaded", function () {
         tagInputInstances.push({ finalizePendingInput: finalizePendingInput });
     }
 
-    setupTagInput({ inputId: "companyInput",            addBtnId: "addCompanyTag",             tagsContainerId: "companyTags",             hiddenInputId: "companyHidden" });
-    setupTagInput({ inputId: "industryInput",           addBtnId: "addIndustryTag",            tagsContainerId: "industryTags",            hiddenInputId: "industryHidden" });
-    setupTagInput({ inputId: "companyLocationInput",    addBtnId: "addCompanyLocationTag",     tagsContainerId: "companyLocationTags",     hiddenInputId: "companyLocationHidden" });
-    setupTagInput({ inputId: "companySpecialitesInput", addBtnId: "addCompanySpecialitesTag",  tagsContainerId: "companySpecialitesTags",  hiddenInputId: "companySpecialitesHidden" });
-    setupTagInput({ inputId: "employeeCountInput",      addBtnId: "addEmployeeCountTag",       tagsContainerId: "employeeCountTags",       hiddenInputId: "employeeCountHidden" });
-    setupTagInput({ inputId: "companyTechnologiesInput",addBtnId: "addCompanyTechnologiesTag", tagsContainerId: "companyTechnologiesTags", hiddenInputId: "companyTechnologiesHidden" });
-    setupTagInput({ inputId: "jobPostsInput",           addBtnId: "addJobPostsTag",            tagsContainerId: "jobPostsTags",            hiddenInputId: "jobPostsHidden" });
+    setupTagInput({ inputId: "companyInput",             addBtnId: "addCompanyTag",             tagsContainerId: "companyTags",             hiddenInputId: "companyHidden" });
+    setupTagInput({ inputId: "companyLocationInput",     addBtnId: "addCompanyLocationTag",     tagsContainerId: "companyLocationTags",     hiddenInputId: "companyLocationHidden" });
+    setupTagInput({ inputId: "companySpecialitesInput",  addBtnId: "addCompanySpecialitesTag",  tagsContainerId: "companySpecialitesTags",  hiddenInputId: "companySpecialitesHidden" });
+    setupTagInput({ inputId: "employeeCountInput",       addBtnId: "addEmployeeCountTag",       tagsContainerId: "employeeCountTags",       hiddenInputId: "employeeCountHidden" });
+    setupTagInput({ inputId: "companyTechnologiesInput", addBtnId: "addCompanyTechnologiesTag", tagsContainerId: "companyTechnologiesTags", hiddenInputId: "companyTechnologiesHidden" });
+    setupTagInput({ inputId: "jobPostsInput",            addBtnId: "addJobPostsTag",            tagsContainerId: "jobPostsTags",            hiddenInputId: "jobPostsHidden" });
 
-    const companySearchForm = document.getElementById("companySearchForm");
+    // ── Employee Count Multi-select Dropdown ──
+    (function () {
+        var dropdown = document.getElementById("employeeCountDropdown");
+        var trigger  = document.getElementById("employeeCountTrigger");
+        var hidden   = document.getElementById("employeeCountHidden");
+        var placeholder = document.getElementById("employeeCountPlaceholder");
+        if (!dropdown || !trigger || !hidden) return;
+
+        if (hidden.value) {
+            var saved = hidden.value.split(",").map(function (v) { return v.trim(); }).filter(Boolean);
+            dropdown.querySelectorAll(".employee-count-cb").forEach(function (cb) {
+                if (saved.indexOf(cb.value) !== -1) cb.checked = true;
+            });
+            updateEmployeeHidden();
+        }
+
+        trigger.addEventListener("click", function (e) {
+            e.stopPropagation();
+            dropdown.classList.toggle("open");
+        });
+
+        document.addEventListener("click", function (e) {
+            if (!dropdown.contains(e.target)) dropdown.classList.remove("open");
+        });
+
+        dropdown.querySelectorAll(".employee-count-cb").forEach(function (cb) {
+            cb.addEventListener("change", updateEmployeeHidden);
+        });
+
+        function updateEmployeeHidden() {
+            var checked = [];
+            dropdown.querySelectorAll(".employee-count-cb:checked").forEach(function (cb) {
+                checked.push(cb.value);
+            });
+            hidden.value = checked.join(",");
+            placeholder.textContent = checked.length ? checked.join(", ") : "Select employee count";
+            placeholder.style.color = checked.length ? "#1a2038" : "#aab0c4";
+        }
+    })();
+
+    // ── Industry Autocomplete ──
+    (function () {
+        var dataEl = document.getElementById("industryChoicesData");
+        if (!dataEl) return;
+        var INDUSTRIES = JSON.parse(dataEl.textContent);
+
+        var input         = document.getElementById("industryInput");
+        var suggestions   = document.getElementById("industrySuggestions");
+        var tagsContainer = document.getElementById("industryTagsSelected");
+        var hidden        = document.getElementById("industryHidden");
+
+        if (!input || !suggestions || !tagsContainer || !hidden) return;
+
+        var searchBtn = document.querySelector('#companySearchForm button[type="submit"]');
+
+        var selected = hidden.value
+            ? hidden.value.split(",").map(function (v) { return v.trim(); }).filter(Boolean)
+            : [];
+
+        function validateIndustryInput() {
+            var typedValue = input.value.trim();
+            if (typedValue) {
+                if (searchBtn) {
+                    searchBtn.disabled = true;
+                    searchBtn.title = "Please select an industry from the suggestions list";
+                    searchBtn.style.opacity = "0.5";
+                    searchBtn.style.cursor = "not-allowed";
+                }
+            } else {
+                enableSearchBtn();
+            }
+        }
+
+        function enableSearchBtn() {
+            if (searchBtn) {
+                searchBtn.disabled = false;
+                searchBtn.title = "";
+                searchBtn.style.opacity = "";
+                searchBtn.style.cursor = "";
+            }
+        }
+
+        function renderTags() {
+            tagsContainer.innerHTML = "";
+            selected.forEach(function (val, i) {
+                var tag = document.createElement("div");
+                tag.className = "tag";
+                tag.innerHTML = '<span class="tag-text">' + escapeHtml(val) + '</span>'
+                    + '<span class="tag-remove" data-index="' + i + '">&times;</span>';
+                tagsContainer.appendChild(tag);
+            });
+            tagsContainer.querySelectorAll(".tag-remove").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    selected.splice(parseInt(btn.dataset.index), 1);
+                    updateHidden();
+                    renderTags();
+                });
+            });
+        }
+
+        function updateHidden() {
+            hidden.value = selected.join(",");
+        }
+
+        function showSuggestions(query) {
+            var q = query.toLowerCase().trim();
+            if (!q) { suggestions.style.display = "none"; return; }
+
+            var matches = INDUSTRIES.filter(function (ind) {
+                return ind.toLowerCase().indexOf(q) !== -1 && selected.indexOf(ind) === -1;
+            }).slice(0, 10);
+
+            if (!matches.length) { suggestions.style.display = "none"; return; }
+
+            suggestions.innerHTML = matches.map(function (ind) {
+                var highlighted = ind.replace(
+                    new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi"),
+                    "<strong>$1</strong>"
+                );
+                return '<li data-value="' + escapeHtml(ind) + '" style="'
+                    + 'padding:8px 14px;font-size:13px;color:#1a2038;cursor:pointer;'
+                    + 'transition:background 0.15s;"'
+                    + ' onmouseover="this.style.background=\'#f4f5fb\'"'
+                    + ' onmouseout="this.style.background=\'\'">' + highlighted + '</li>';
+            }).join("");
+
+            suggestions.querySelectorAll("li").forEach(function (li) {
+                li.addEventListener("click", function () {
+                    var val = li.dataset.value;
+                    if (val && selected.indexOf(val) === -1) {
+                        selected.push(val);
+                        updateHidden();
+                        renderTags();
+                    }
+                    input.value = "";
+                    suggestions.style.display = "none";
+                    input.focus();
+                    enableSearchBtn();
+                });
+            });
+
+            suggestions.style.display = "block";
+        }
+
+        input.addEventListener("input", function () {
+            showSuggestions(input.value);
+            validateIndustryInput();
+        });
+
+        input.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") {
+                suggestions.style.display = "none";
+                input.value = "";
+                validateIndustryInput();
+            }
+        });
+
+        document.addEventListener("click", function (e) {
+            if (!input.contains(e.target) && !suggestions.contains(e.target)) {
+                suggestions.style.display = "none";
+                if (input.value.trim()) {
+                    input.value = "";
+                    enableSearchBtn();
+                }
+            }
+        });
+
+        renderTags();
+        updateHidden();
+    })();
+
+    // ── Company Market Dropdown ──
+    (function () {
+        var dropdown    = document.getElementById("companyMarketDropdown");
+        var trigger     = document.getElementById("companyMarketTrigger");
+        var hidden      = document.getElementById("companyMarketHidden");
+        var placeholder = document.getElementById("companyMarketPlaceholder");
+        var options     = document.getElementById("companyMarketOptions");
+
+        if (!dropdown || !trigger || !hidden) return;
+
+        if (hidden.value) {
+            var saved = hidden.value.split(",").map(function (v) { return v.trim(); }).filter(Boolean);
+            dropdown.querySelectorAll(".company-market-cb").forEach(function (cb) {
+                if (saved.indexOf(cb.value) !== -1) cb.checked = true;
+            });
+            updateMarketHidden();
+        }
+
+        trigger.addEventListener("click", function (e) {
+            e.stopPropagation();
+            var isOpen = options.style.display !== "none";
+            options.style.display = isOpen ? "none" : "block";
+            dropdown.classList.toggle("open", !isOpen);
+        });
+
+        document.addEventListener("click", function (e) {
+            if (!dropdown.contains(e.target)) {
+                options.style.display = "none";
+                dropdown.classList.remove("open");
+            }
+        });
+
+        dropdown.querySelectorAll(".company-market-cb").forEach(function (cb) {
+            cb.addEventListener("change", updateMarketHidden);
+        });
+
+        function updateMarketHidden() {
+            var checked = [];
+            dropdown.querySelectorAll(".company-market-cb:checked").forEach(function (cb) {
+                checked.push(cb.value);
+            });
+            hidden.value = checked.join(",");
+            placeholder.textContent = checked.length ? checked.join(", ") : "Select market type";
+            placeholder.style.color = checked.length ? "#1a2038" : "#aab0c4";
+        }
+    })();
+
+    var companySearchForm = document.getElementById("companySearchForm");
 
     function showSearchLoader() {
         var el = document.getElementById("searchLoaderOverlay");
@@ -182,24 +399,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
         var html = '<div class="results-card">';
 
-        // Calculate pagination info
         var cur      = (pagination && pagination.current) || 1;
         var total    = (pagination && pagination.total)   || 0;
         var pageSize = companies.length;
         var startIdx = (cur - 1) * pageSize + 1;
         var endIdx   = Math.min(startIdx + pageSize - 1, total);
 
-        // meta bar
         html += '<div class="results-meta"><div class="results-meta-left">'
             + '<input type="checkbox" id="selectAllRows">'
             + ' <i class="fas fa-chevron-down" style="font-size:11px;color:#aab0c4;cursor:pointer;"></i>'
             + ' <span id="selectedCountText">0 selected of ' + companies.length + ' results</span>'
             + '</div><div class="results-meta-right">'
-            + '<span style="font-size:13px;color:#6a7388;margin-right:12px;">' + startIdx + '–' + endIdx + ' of ' + total + '</span>'
+            + '<span style="font-size:13px;color:#6a7388;margin-right:12px;">' + startIdx + '\u2013' + endIdx + ' of ' + total + '</span>'
             + '<button type="button" id="saveToListBtn" class="save-list-btn" style="display:none;"><i class="fas fa-plus"></i> Save to List</button>'
             + '</div></div>';
 
-        // table
         html += '<div class="table-wrap"><table class="results-table"><thead><tr>'
             + '<th class="col-chk"></th><th>Company</th><th>Description</th>'
             + '<th>HQ Location</th><th>Industry</th><th>Company Size</th><th>Actions</th>'
@@ -207,12 +421,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         companies.forEach(function (c, i) {
             var idx = i + 1;
-            var initial = (c.name || "C").charAt(0);
             var avatarClass = c.logo_url ? 'company-avatar' : 'company-avatar fallback-avatar';
 
             html += '<tr id="company-card-' + idx + '">';
 
-            // checkbox
             html += '<td class="col-chk"><input type="checkbox" class="row-checkbox"'
                 + ' data-name="' + escapeHtml(c.name) + '"'
                 + ' data-linkedin_url="' + escapeHtml(c.linkedin_url || "") + '"'
@@ -223,7 +435,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 + ' data-headquarter="' + escapeHtml(c.headquarter || "") + '"'
                 + '></td>';
 
-            // Company: avatar + name
             html += '<td class="drawer-trigger"><div class="profile-cell">';
             if (c.linkedin_url) html += '<a href="' + escapeHtml(c.linkedin_url) + '" target="_blank" class="avatar-link" title="View on LinkedIn">';
             html += '<div class="' + avatarClass + '">';
@@ -231,29 +442,24 @@ document.addEventListener("DOMContentLoaded", function () {
             html += '<div class="avatar-placeholder"><span class="shape shape1"></span><span class="shape shape2"></span></div>';
             html += '</div>';
             if (c.linkedin_url) html += '</a>';
-            html += '<div class="profile-info"><span class="profile-name drawer-trigger" data-tooltip="' + escapeHtml(c.name) + '">' + escapeHtml(c.name || "—") + '</span>';
+            html += '<div class="profile-info"><span class="profile-name drawer-trigger" data-tooltip="' + escapeHtml(c.name) + '">' + escapeHtml(c.name || "\u2014") + '</span>';
             if (c.linkedin_url) html += '<a href="' + escapeHtml(c.linkedin_url) + '" target="_blank" class="li-badge" title="LinkedIn">in</a>';
             html += '</div></div></td>';
 
-            // Description
-            html += '<td class="cell-truncate cell-desc drawer-trigger">' + escapeHtml(c.description || "—") + '</td>';
+            html += '<td class="cell-truncate cell-desc drawer-trigger">' + escapeHtml(c.description || "\u2014") + '</td>';
 
-            // HQ Location
             html += '<td class="cell-truncate drawer-trigger"' + (c.headquarter ? ' data-tooltip="' + escapeHtml(c.headquarter) + '"' : '') + '>';
-            html += c.headquarter ? '<span class="cell-icon"><i class="fas fa-map-marker-alt"></i></span>' + escapeHtml(c.headquarter) : '—';
+            html += c.headquarter ? '<span class="cell-icon"><i class="fas fa-map-marker-alt"></i></span>' + escapeHtml(c.headquarter) : '\u2014';
             html += '</td>';
 
-            // Industry
             html += '<td class="cell-truncate drawer-trigger"' + (c.industry ? ' data-tooltip="' + escapeHtml(c.industry) + '"' : '') + '>';
-            html += c.industry ? '<span class="cell-icon"><i class="fas fa-industry"></i></span>' + escapeHtml(c.industry) : '—';
+            html += c.industry ? '<span class="cell-icon"><i class="fas fa-industry"></i></span>' + escapeHtml(c.industry) : '\u2014';
             html += '</td>';
 
-            // Company Size
             html += '<td class="cell-truncate"' + (c.company_size ? ' data-tooltip="' + escapeHtml(c.company_size) + ' employees"' : '') + '>';
-            html += c.company_size ? '<span class="cell-icon"><i class="fas fa-users"></i></span>' + escapeHtml(c.company_size) : '—';
+            html += c.company_size ? '<span class="cell-icon"><i class="fas fa-users"></i></span>' + escapeHtml(c.company_size) : '\u2014';
             html += '</td>';
 
-            // Actions
             html += '<td><div class="action-icons">';
             if (c.linkedin_url) html += '<a href="' + escapeHtml(c.linkedin_url) + '" target="_blank" title="View LinkedIn"><i class="fab fa-linkedin-in"></i></a>';
             else html += '<button type="button" title="LinkedIn N/A" disabled><i class="fab fa-linkedin-in"></i></button>';
@@ -267,17 +473,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
         html += '</tbody></table></div>';
 
-        // ── Pagination ──
         var totalPages = (pagination && pagination.total_pages) || (pagination && pagination.last_page) || 1;
-        var hasNext   = pagination && pagination.has_next;
+        var hasNext    = pagination && pagination.has_next;
 
-        function buildPageRange(cur, total, window) {
+        function buildPageRange(cur, totalPgs, win) {
             var pages = [];
-            var left  = Math.max(1, cur - window);
-            var right = Math.min(total, cur + window);
-            if (left > 1)  { pages.push(1); if (left > 2)  pages.push(-1); }
+            var left  = Math.max(1, cur - win);
+            var right = Math.min(totalPgs, cur + win);
+            if (left > 1)  { pages.push(1); if (left > 2) pages.push(-1); }
             for (var p = left; p <= right; p++) pages.push(p);
-            if (right < total) { if (right < total - 1) pages.push(-1); pages.push(total); }
+            if (right < totalPgs) { if (right < totalPgs - 1) pages.push(-1); pages.push(totalPgs); }
             return pages;
         }
 
@@ -285,20 +490,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
         html += '<div class="results-footer"><div class="pagination-wrap">';
 
-        // First
         html += '<button class="page-btn page-btn-text" type="button"'
             + (cur <= 1 ? ' disabled' : ' onclick="changeCompanyPage(1)"')
             + '>&lt;&lt; First</button>';
 
-        // Prev
         html += '<button class="page-btn page-btn-text" type="button"'
             + (cur <= 1 ? ' disabled' : ' onclick="changeCompanyPage(' + (cur - 1) + ')"')
             + '>&lt; Prev</button>';
 
-        // Page numbers
-        pageRange.forEach(function(p) {
+        pageRange.forEach(function (p) {
             if (p === -1) {
-                html += '<span class="page-ellipsis">…</span>';
+                html += '<span class="page-ellipsis">\u2026</span>';
             } else if (p === cur) {
                 html += '<button class="page-btn page-num active" type="button">' + p + '</button>';
             } else {
@@ -306,12 +508,10 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 
-        // Next
         html += '<button class="page-btn page-btn-text" type="button"'
             + (hasNext ? ' onclick="changeCompanyPage(' + (cur + 1) + ')"' : ' disabled')
             + '>Next &gt;</button>';
 
-        // Last
         html += '<button class="page-btn page-btn-text" type="button"'
             + (cur >= totalPages ? ' disabled' : ' onclick="changeCompanyPage(' + totalPages + ')"')
             + '>Last &gt;&gt;</button>';
@@ -329,7 +529,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             html += '<div id="company-profile-' + idx + '" class="company-profile-tpl" style="display:none;" aria-hidden="true">';
 
-            // Hero Card
             html += '<div style="background:#fff;margin:0 0 16px 0;border-bottom:1px solid #e8ebf2;">';
             html += '<div class="drawer-hero" style="border-bottom:none;"><div class="drawer-hero-top">';
             html += '<div class="drawer-avatar" style="border-radius:10px;border:1px solid #e0e4f0;background:#fff;padding:4px;">';
@@ -347,9 +546,8 @@ document.addEventListener("DOMContentLoaded", function () {
             if (c.website) html += ' <a href="' + escapeHtml(c.website) + '" target="_blank" style="margin-left:6px;color:#6a7388;font-size:14px;"><i class="fas fa-link"></i></a>';
             html += '</div></div></div>';
 
-            // Meta + Description
             html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
-            html += '<div class="drawer-meta-item"><i class="fas fa-map-marker-alt"></i><span>' + escapeHtml(c.location_country || c.headquarter || "—") + '</span></div>';
+            html += '<div class="drawer-meta-item"><i class="fas fa-map-marker-alt"></i><span>' + escapeHtml(c.location_country || c.headquarter || "\u2014") + '</span></div>';
             if (c.linkedin_url) html += '<a href="' + escapeHtml(c.linkedin_url) + '" target="_blank" style="color:#2f6df0;font-size:12.5px;font-weight:600;text-decoration:none;">View Company Profile</a>';
             html += '</div>';
 
@@ -361,50 +559,48 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             html += '</div></div>';
 
-            // Basic Details
             html += '<div style="background:#fff;border-top:1px solid #e8ebf2;border-bottom:1px solid #e8ebf2;margin-bottom:16px;">';
             html += '<div class="drawer-section" style="border-bottom:none;">';
             html += '<div style="font-size:16px;font-weight:700;color:#1a2038;margin-bottom:16px;">Basic Details</div>';
             html += '<div style="display:grid;grid-template-columns:140px 1fr;gap:12px;font-size:13px;color:#4c556f;">';
 
             var details = [
-                {icon: "far fa-user", label: "Company Size", value: c.company_size || "—"},
-                {icon: "fas fa-map-marker-alt", label: "HQ Location", value: c.headquarter || "—"},
-                {icon: "far fa-building", label: "Industry", value: c.industry || "—"},
+                {icon: "far fa-user",        label: "Company Size", value: c.company_size || "\u2014"},
+                {icon: "fas fa-map-marker-alt", label: "HQ Location", value: c.headquarter || "\u2014"},
+                {icon: "far fa-building",    label: "Industry",     value: c.industry || "\u2014"}
             ];
-            details.forEach(function(d) {
+            details.forEach(function (d) {
                 html += '<div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="' + d.icon + '" style="width:14px;text-align:center;"></i> ' + d.label + '</div>';
                 html += '<div style="color:#1a2038;">' + escapeHtml(d.value) + '</div>';
             });
 
-            // Website
             html += '<div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="fas fa-link" style="width:14px;text-align:center;"></i> Website</div>';
             if (c.website) html += '<div style="color:#1a2038;"><a href="' + escapeHtml(c.website) + '" target="_blank" style="color:#2f6df0;text-decoration:none;">' + escapeHtml(c.website) + '</a></div>';
-            else html += '<div style="color:#1a2038;">—</div>';
+            else html += '<div style="color:#1a2038;">\u2014</div>';
 
-            // Founded, Specialties, Tagline, Revenue, Followers
             html += '<div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="fas fa-history" style="width:14px;text-align:center;"></i> Founded at</div>';
-            html += '<div style="color:#1a2038;">' + escapeHtml(c.found_at || "—") + '</div>';
+            html += '<div style="color:#1a2038;">' + escapeHtml(c.found_at || "\u2014") + '</div>';
 
             html += '<div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="fas fa-hashtag" style="width:14px;text-align:center;"></i> Specialities</div>';
             html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
             if (c.specialties && c.specialties.length) {
-                c.specialties.forEach(function(sp) { html += '<span style="background:#f0f3ff;color:#4c556f;padding:3px 8px;border-radius:6px;font-size:12px;">' + escapeHtml(sp) + '</span>'; });
-            } else html += '—';
+                c.specialties.forEach(function (sp) {
+                    html += '<span style="background:#f0f3ff;color:#4c556f;padding:3px 8px;border-radius:6px;font-size:12px;">' + escapeHtml(sp) + '</span>';
+                });
+            } else html += '\u2014';
             html += '</div>';
 
             html += '<div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="far fa-compass" style="width:14px;text-align:center;"></i> Tagline</div>';
-            html += '<div style="color:#1a2038;">' + escapeHtml(c.tagline || "—") + '</div>';
+            html += '<div style="color:#1a2038;">' + escapeHtml(c.tagline || "\u2014") + '</div>';
 
             html += '<div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="fas fa-chart-line" style="width:14px;text-align:center;"></i> Revenue</div>';
-            html += '<div style="color:#1a2038;">' + escapeHtml(c.revenue || "—") + '</div>';
+            html += '<div style="color:#1a2038;">' + escapeHtml(c.revenue || "\u2014") + '</div>';
 
             html += '<div style="display:flex;align-items:center;gap:8px;color:#6a7388;"><i class="fas fa-users" style="width:14px;text-align:center;"></i> LinkedIn Followers</div>';
-            html += '<div style="color:#1a2038;">' + escapeHtml(c.linkedin_followers || "—") + '</div>';
+            html += '<div style="color:#1a2038;">' + escapeHtml(c.linkedin_followers || "\u2014") + '</div>';
 
             html += '</div></div></div>';
 
-            // Decision Makers
             html += '<div style="background:#fff;border-top:1px solid #e8ebf2;border-bottom:1px solid #e8ebf2;margin-bottom:16px;">';
             html += '<div class="drawer-section" style="border-bottom:none;">';
             html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">';
@@ -414,7 +610,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (c.decision_makers && c.decision_makers.length) {
                 html += '<div style="border:1px solid #e8ebf2;border-radius:10px;background:#fff;overflow:hidden;">';
-                c.decision_makers.forEach(function(dm) {
+                c.decision_makers.forEach(function (dm) {
                     var dmInitial = (dm.name || "U").charAt(0);
                     html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #e8ebf2;">';
                     html += '<div style="display:flex;align-items:center;gap:12px;"><div class="avatar-circle" style="width:40px;height:40px;"><span class="initials">' + escapeHtml(dmInitial) + '</span></div>';
@@ -437,24 +633,19 @@ document.addEventListener("DOMContentLoaded", function () {
         var resultsContent = document.querySelector(".results-content");
         if (!resultsContent) return;
 
-        // ── Helper: clear results-content while preserving persistent elements ──
         function clearResultsContent() {
             var loaderEl = document.getElementById("searchLoaderOverlay");
             var aiPanel  = document.getElementById("aiSearchPanel");
-            // Detach persistent elements so innerHTML doesn't destroy them
             if (loaderEl && loaderEl.parentNode) loaderEl.parentNode.removeChild(loaderEl);
             if (aiPanel  && aiPanel.parentNode)  aiPanel.parentNode.removeChild(aiPanel);
-            // Clear everything else
             resultsContent.innerHTML = "";
-            document.querySelectorAll(".company-profile-tpl").forEach(function(el) { el.remove(); });
-            // Re-insert persistent elements
+            document.querySelectorAll(".company-profile-tpl").forEach(function (el) { el.remove(); });
             if (loaderEl) { loaderEl.style.display = "none"; resultsContent.appendChild(loaderEl); }
             if (aiPanel)  resultsContent.appendChild(aiPanel);
         }
 
         clearResultsContent();
 
-        // Manage AI panel visibility
         var aiPanel = document.getElementById("aiSearchPanel");
 
         if (data.error && (!data.companies || !data.companies.length)) {
@@ -469,28 +660,24 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        // Hide AI panel when showing results
         if (aiPanel) aiPanel.style.display = "none";
 
         resultsContent.insertAdjacentHTML("afterbegin", buildCompanyResultsHTML(data.companies, data.pagination));
 
-        // Insert profile templates after results-panel
         var resultsPanel = document.querySelector(".results-panel");
         if (resultsPanel) resultsPanel.insertAdjacentHTML("afterend", buildCompanyProfilesHTML(data.companies));
 
-        // Update credit pills
         if (typeof slUpdateSearchPill === "function" && typeof data.search_credits === "number") slUpdateSearchPill(data.search_credits);
         if (typeof slUpdatePill === "function" && typeof data.credits === "number") slUpdatePill(data.credits);
 
-        // Re-attach selection events
         reattachCompanySelectionEvents();
     }
 
     function reattachCompanySelectionEvents() {
         var cbs = document.querySelectorAll(".row-checkbox");
-        var sa = document.getElementById("selectAllRows");
-        var st = document.getElementById("selectedCountText");
-        var sb = document.getElementById("saveToListBtn");
+        var sa  = document.getElementById("selectAllRows");
+        var st  = document.getElementById("selectedCountText");
+        var sb  = document.getElementById("saveToListBtn");
 
         function updateUI() {
             if (!st || !sb) return;
@@ -506,10 +693,11 @@ document.addEventListener("DOMContentLoaded", function () {
             updateUI();
         });
         cbs.forEach(function (cb) { cb.addEventListener("change", updateUI); });
-        if (sb) sb.addEventListener("click", async function () {
-            await loadExistingLists();
-            setTab("new");
-            openModal();
+        if (sb) sb.addEventListener("click", function () {
+            loadExistingLists().then(function () {
+                setTab("new");
+                openModal();
+            });
         });
 
         var cp = document.getElementById("contactPill");
@@ -520,7 +708,6 @@ document.addEventListener("DOMContentLoaded", function () {
         companySearchForm.addEventListener("submit", function (e) {
             e.preventDefault();
 
-            // Finalize pending tag inputs
             tagInputInstances.forEach(function (instance) {
                 instance.finalizePendingInput();
             });
@@ -554,11 +741,9 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // ── Pagination function for company search ──
     window.changeCompanyPage = function (pageNumber) {
         if (!companySearchForm) return;
-        
-        // Finalize pending tag inputs
+
         tagInputInstances.forEach(function (instance) {
             instance.finalizePendingInput();
         });
@@ -593,30 +778,30 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     // ── Selection & Save to List ──
-    const rowCheckboxes = document.querySelectorAll(".row-checkbox");
-    const selectAllRows = document.getElementById("selectAllRows");
-    const selectedCountText = document.getElementById("selectedCountText");
-    const saveToListBtn = document.getElementById("saveToListBtn");
+    var rowCheckboxes    = document.querySelectorAll(".row-checkbox");
+    var selectAllRows    = document.getElementById("selectAllRows");
+    var selectedCountText = document.getElementById("selectedCountText");
+    var saveToListBtn    = document.getElementById("saveToListBtn");
 
-    const saveListModal = document.getElementById("saveListModal");
-    const closeSaveListModal = document.getElementById("closeSaveListModal");
-    const cancelSaveListBtn = document.getElementById("cancelSaveListBtn");
-    const confirmSaveListBtn = document.getElementById("confirmSaveListBtn");
+    var saveListModal      = document.getElementById("saveListModal");
+    var closeSaveListModal = document.getElementById("closeSaveListModal");
+    var cancelSaveListBtn  = document.getElementById("cancelSaveListBtn");
+    var confirmSaveListBtn = document.getElementById("confirmSaveListBtn");
 
-    const newListTab = document.getElementById("newListTab");
-    const existingListTab = document.getElementById("existingListTab");
-    const newListSection = document.getElementById("newListSection");
-    const existingListSection = document.getElementById("existingListSection");
-    const newListName = document.getElementById("newListName");
-    const existingListSelect = document.getElementById("existingListSelect");
+    var newListTab         = document.getElementById("newListTab");
+    var existingListTab    = document.getElementById("existingListTab");
+    var newListSection     = document.getElementById("newListSection");
+    var existingListSection = document.getElementById("existingListSection");
+    var newListName        = document.getElementById("newListName");
+    var existingListSelect = document.getElementById("existingListSelect");
 
-    let activeListMode = "new";
+    var activeListMode = "new";
 
     function updateSelectionUI() {
         if (!selectedCountText || !saveToListBtn) return;
-        const checkedCount = document.querySelectorAll(".row-checkbox:checked").length;
-        const totalCount = rowCheckboxes.length;
-        selectedCountText.textContent = `${checkedCount} selected of ${totalCount} results`;
+        var checkedCount = document.querySelectorAll(".row-checkbox:checked").length;
+        var totalCount   = rowCheckboxes.length;
+        selectedCountText.textContent = checkedCount + " selected of " + totalCount + " results";
         saveToListBtn.style.display = checkedCount > 0 ? "inline-flex" : "none";
         if (selectAllRows) {
             selectAllRows.checked = totalCount > 0 && checkedCount === totalCount;
@@ -624,44 +809,45 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function collectSelectedCompanies() {
-        const selected = [];
+        var selected = [];
         document.querySelectorAll(".row-checkbox:checked").forEach(function (cb) {
             selected.push({
-                name:          cb.dataset.name           || "",
-                linkedin_url:  cb.dataset.linkedin_url   || "",
-                website:       cb.dataset.website        || "",
-                industry:      cb.dataset.industry       || "",
-                domain:        cb.dataset.domain         || "",
-                revenue:       cb.dataset.revenue        || "",
-                specialties:   cb.dataset.specialties    || "",
-                headquarter:   cb.dataset.headquarter    || "",
-                location:      cb.dataset.location       || "",
-                company_market:cb.dataset.company_market || ""
+                name:           cb.dataset.name           || "",
+                linkedin_url:   cb.dataset.linkedin_url   || "",
+                website:        cb.dataset.website        || "",
+                industry:       cb.dataset.industry       || "",
+                domain:         cb.dataset.domain         || "",
+                revenue:        cb.dataset.revenue        || "",
+                specialties:    cb.dataset.specialties    || "",
+                headquarter:    cb.dataset.headquarter    || "",
+                location:       cb.dataset.location       || "",
+                company_market: cb.dataset.company_market || ""
             });
         });
         return selected;
     }
 
-    async function loadExistingLists() {
-        if (!existingListSelect) return;
-        try {
-            const response = await fetch(GET_SAVED_LISTS_URL, {
-                method: "GET",
-                headers: { "X-Requested-With": "XMLHttpRequest" }
-            });
-            const data = await response.json();
+    function loadExistingLists() {
+        if (!existingListSelect) return Promise.resolve();
+        return fetch(GET_SAVED_LISTS_URL, {
+            method: "GET",
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
             existingListSelect.innerHTML = '<option value="">Select a list</option>';
             if (data.success && Array.isArray(data.lists)) {
                 data.lists.forEach(function (item) {
-                    const option = document.createElement("option");
+                    var option = document.createElement("option");
                     option.value = item.id;
                     option.textContent = item.name;
                     existingListSelect.appendChild(option);
                 });
             }
-        } catch (error) {
+        })
+        .catch(function (error) {
             console.error("Failed to load existing lists:", error);
-        }
+        });
     }
 
     function openModal() {
@@ -706,10 +892,11 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     if (saveToListBtn) {
-        saveToListBtn.addEventListener("click", async function () {
-            await loadExistingLists();
-            setTab("new");
-            openModal();
+        saveToListBtn.addEventListener("click", function () {
+            loadExistingLists().then(function () {
+                setTab("new");
+                openModal();
+            });
         });
     }
 
@@ -720,103 +907,104 @@ document.addEventListener("DOMContentLoaded", function () {
         newListTab.addEventListener("click", function () { setTab("new"); });
     }
     if (existingListTab) {
-        existingListTab.addEventListener("click", async function () {
+        existingListTab.addEventListener("click", function () {
             setTab("existing");
-            await loadExistingLists();
+            loadExistingLists();
         });
     }
 
     if (confirmSaveListBtn) {
-        confirmSaveListBtn.addEventListener("click", async function () {
-            const selectedCompanies = collectSelectedCompanies();
+        confirmSaveListBtn.addEventListener("click", function () {
+            var selectedCompanies = collectSelectedCompanies();
             if (!selectedCompanies.length) {
                 showMessage("Please select at least one company.", "error");
                 return;
             }
 
-            const payload = { list_type: activeListMode, companies: selectedCompanies };
+            var payload = { list_type: activeListMode, companies: selectedCompanies };
 
             if (activeListMode === "new") {
-                const listName = newListName ? newListName.value.trim() : "";
+                var listName = newListName ? newListName.value.trim() : "";
                 if (!listName) { showMessage("Please enter a list name.", "error"); return; }
                 payload.list_name = listName;
             } else {
-                const listId = existingListSelect ? existingListSelect.value : "";
+                var listId = existingListSelect ? existingListSelect.value : "";
                 if (!listId) { showMessage("Please select an existing list.", "error"); return; }
                 payload.list_id = listId;
             }
 
-            try {
-                confirmSaveListBtn.disabled = true;
-                confirmSaveListBtn.textContent = "Saving...";
+            confirmSaveListBtn.disabled = true;
+            confirmSaveListBtn.textContent = "Saving...";
 
-                const response = await fetch(SAVE_COMPANIES_TO_LIST_URL, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": getCookie("csrftoken"),
-                        "X-Requested-With": "XMLHttpRequest"
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json();
+            fetch(SAVE_COMPANIES_TO_LIST_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken"),
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
                 if (!data.success) {
                     showMessage(data.error || "Could not save list.", "error");
                     return;
                 }
                 showMessage(data.message || "Saved successfully.", "success");
                 closeModal();
-            } catch (error) {
+            })
+            .catch(function (error) {
                 console.error("Save list error:", error);
                 showMessage("Server error while saving list.", "error");
-            } finally {
+            })
+            .finally(function () {
                 confirmSaveListBtn.disabled = false;
                 confirmSaveListBtn.textContent = "Save to List";
-            }
+            });
         });
     }
 
     // ── Single row Save to List button ──
     document.addEventListener("click", function (e) {
-        const singleSaveBtn = e.target.closest(".single-save-btn");
+        var singleSaveBtn = e.target.closest(".single-save-btn");
         if (singleSaveBtn) {
-            document.querySelectorAll(".row-checkbox").forEach(cb => cb.checked = false);
-            const selectAll = document.getElementById("selectAllRows");
+            document.querySelectorAll(".row-checkbox").forEach(function (cb) { cb.checked = false; });
+            var selectAll = document.getElementById("selectAllRows");
             if (selectAll) selectAll.checked = false;
 
-            const row = singleSaveBtn.closest("tr");
+            var row = singleSaveBtn.closest("tr");
             if (row) {
-                const cb = row.querySelector(".row-checkbox");
+                var cb = row.querySelector(".row-checkbox");
                 if (cb) cb.checked = true;
             }
 
             updateSelectionUI();
-            const listBtn = document.getElementById("saveToListBtn");
+            var listBtn = document.getElementById("saveToListBtn");
             if (listBtn) listBtn.click();
         }
     });
 
     // ── Global Tooltip ──
-    const tooltipEl = document.createElement("div");
+    var tooltipEl = document.createElement("div");
     tooltipEl.className = "global-custom-tooltip";
     document.body.appendChild(tooltipEl);
 
     document.addEventListener("mouseover", function (e) {
-        const target = e.target.closest("[data-tooltip]");
+        var target = e.target.closest("[data-tooltip]");
         if (!target) return;
-        const text = target.getAttribute("data-tooltip");
+        var text = target.getAttribute("data-tooltip");
         if (!text) return;
         tooltipEl.textContent = text;
         tooltipEl.classList.add("visible");
-        const rect = target.getBoundingClientRect();
-        let top = rect.bottom + window.scrollY + 6;
-        let left = rect.left + window.scrollX + (rect.width / 2) - (tooltipEl.offsetWidth / 2);
+        var rect = target.getBoundingClientRect();
+        var top  = rect.bottom + window.scrollY + 6;
+        var left = rect.left + window.scrollX + (rect.width / 2) - (tooltipEl.offsetWidth / 2);
         if (left < 10) left = 10;
         if (left + tooltipEl.offsetWidth > window.innerWidth - 10) {
             left = window.innerWidth - tooltipEl.offsetWidth - 10;
         }
-        tooltipEl.style.top = top + "px";
+        tooltipEl.style.top  = top + "px";
         tooltipEl.style.left = left + "px";
     });
 
@@ -826,95 +1014,88 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    window.addEventListener("scroll", () => tooltipEl.classList.remove("visible"));
+    window.addEventListener("scroll", function () { tooltipEl.classList.remove("visible"); });
 
     // ── Mobile Filter Toggle ──
-    const mobileFilterBtn = document.getElementById("mobileFilterBtn");
-    const filtersPanel = document.querySelector(".filters-panel");
-    const overlay = document.createElement("div");
-    overlay.className = "mobile-filter-overlay";
-    document.body.appendChild(overlay);
+    var mobileFilterBtn = document.getElementById("mobileFilterBtn");
+    var filtersPanel    = document.querySelector(".filters-panel");
+    var mobileOverlay   = document.createElement("div");
+    mobileOverlay.className = "mobile-filter-overlay";
+    document.body.appendChild(mobileOverlay);
 
-if (mobileFilterBtn) {
-    if (window.innerWidth <= 860) {
-        mobileFilterBtn.style.display = "inline-flex";
-    } else {
-        mobileFilterBtn.style.display = "none";
-    }
-}
-
-window.addEventListener("resize", function() {
-    if (!mobileFilterBtn) return;
-    if (window.innerWidth <= 860) {
-        mobileFilterBtn.style.display = "inline-flex";
-    } else {
-        mobileFilterBtn.style.display = "none";
-        if (filterOpen) closeFilter();
-    }
-});
-if (mobileFilterBtn && filtersPanel) {
-    var filterOpen = false;
-
-    function openFilter() {
-        filterOpen = true;
-        filtersPanel.style.setProperty("position", "fixed", "important");
-        filtersPanel.style.setProperty("left", "0", "important");
-        filtersPanel.style.setProperty("top", "0", "important");
-        filtersPanel.style.setProperty("width", "300px", "important");
-        filtersPanel.style.setProperty("height", "100vh", "important");
-        filtersPanel.style.setProperty("min-height", "100vh", "important");
-        filtersPanel.style.setProperty("overflow-y", "auto", "important");
-        filtersPanel.style.setProperty("padding", "0.75rem", "important");
-        filtersPanel.style.setProperty("z-index", "9500", "important");
-        filtersPanel.style.setProperty("max-height", "none", "important");
-        filtersPanel.style.setProperty("background", "#fff", "important");
-        mobileFilterBtn.innerHTML = '<i class="fas fa-times"></i> Close';
-        mobileFilterBtn.classList.add("active");
-        overlay.classList.add("show");
-        document.body.style.overflow = "hidden";
+    if (mobileFilterBtn) {
+        mobileFilterBtn.style.display = window.innerWidth <= 860 ? "inline-flex" : "none";
     }
 
-    function closeFilter() {
-        filterOpen = false;
-        filtersPanel.style.removeProperty("position");
-        filtersPanel.style.removeProperty("left");
-        filtersPanel.style.removeProperty("top");
-        filtersPanel.style.removeProperty("width");
-        filtersPanel.style.removeProperty("height");
-        filtersPanel.style.removeProperty("min-height");
-        filtersPanel.style.removeProperty("overflow-y");
-        filtersPanel.style.removeProperty("padding");
-        filtersPanel.style.removeProperty("z-index");
-        filtersPanel.style.removeProperty("max-height");
-        filtersPanel.style.removeProperty("background");
-        mobileFilterBtn.innerHTML = '<i class="fas fa-filter"></i> Filters';
-        mobileFilterBtn.classList.remove("active");
-        overlay.classList.remove("show");
-        document.body.style.overflow = "";
-    }
-
-    mobileFilterBtn.addEventListener("click", function() {
-        if (filterOpen) { closeFilter(); } else { openFilter(); }
+    window.addEventListener("resize", function () {
+        if (!mobileFilterBtn) return;
+        if (window.innerWidth <= 860) {
+            mobileFilterBtn.style.display = "inline-flex";
+        } else {
+            mobileFilterBtn.style.display = "none";
+            if (filterOpen) closeFilter();
+        }
     });
 
-    overlay.addEventListener("click", function() {
-        closeFilter();
-    });
-}
+    if (mobileFilterBtn && filtersPanel) {
+        var filterOpen = false;
+
+        function openFilter() {
+            filterOpen = true;
+            filtersPanel.style.setProperty("position",   "fixed",   "important");
+            filtersPanel.style.setProperty("left",       "0",       "important");
+            filtersPanel.style.setProperty("top",        "0",       "important");
+            filtersPanel.style.setProperty("width",      "300px",   "important");
+            filtersPanel.style.setProperty("height",     "100vh",   "important");
+            filtersPanel.style.setProperty("min-height", "100vh",   "important");
+            filtersPanel.style.setProperty("overflow-y", "auto",    "important");
+            filtersPanel.style.setProperty("padding",    "0.75rem", "important");
+            filtersPanel.style.setProperty("z-index",    "9500",    "important");
+            filtersPanel.style.setProperty("max-height", "none",    "important");
+            filtersPanel.style.setProperty("background", "#fff",    "important");
+            mobileFilterBtn.innerHTML = '<i class="fas fa-times"></i> Close';
+            mobileFilterBtn.classList.add("active");
+            mobileOverlay.classList.add("show");
+            document.body.style.overflow = "hidden";
+        }
+
+        function closeFilter() {
+            filterOpen = false;
+            filtersPanel.style.removeProperty("position");
+            filtersPanel.style.removeProperty("left");
+            filtersPanel.style.removeProperty("top");
+            filtersPanel.style.removeProperty("width");
+            filtersPanel.style.removeProperty("height");
+            filtersPanel.style.removeProperty("min-height");
+            filtersPanel.style.removeProperty("overflow-y");
+            filtersPanel.style.removeProperty("padding");
+            filtersPanel.style.removeProperty("z-index");
+            filtersPanel.style.removeProperty("max-height");
+            filtersPanel.style.removeProperty("background");
+            mobileFilterBtn.innerHTML = '<i class="fas fa-filter"></i> Filters';
+            mobileFilterBtn.classList.remove("active");
+            mobileOverlay.classList.remove("show");
+            document.body.style.overflow = "";
+        }
+
+        mobileFilterBtn.addEventListener("click", function () {
+            if (filterOpen) { closeFilter(); } else { openFilter(); }
+        });
+        mobileOverlay.addEventListener("click", function () { closeFilter(); });
+    }
 
     // ── Profile Drawer Logic ──
-    const companyDrawer = document.getElementById("companyDrawer");
-    const companyDrawerOverlay = document.getElementById("companyDrawerOverlay");
-    const closeCompanyDrawer = document.getElementById("closeCompanyDrawer");
-    const companyDrawerContent = document.getElementById("companyDrawerContent");
-    const drawerViewEmployeesBtn = document.getElementById("drawerViewEmployeesBtn");
-    const drawerSaveToListBtn = document.getElementById("drawerSaveToListBtn");
-    const viewEmployeesForm = document.getElementById("viewEmployeesForm");
-    const viewEmpCompany = document.getElementById("viewEmpCompany");
-    const viewEmpLocation = document.getElementById("viewEmpLocation");
+    var companyDrawer         = document.getElementById("companyDrawer");
+    var companyDrawerOverlay  = document.getElementById("companyDrawerOverlay");
+    var closeCompanyDrawer    = document.getElementById("closeCompanyDrawer");
+    var companyDrawerContent  = document.getElementById("companyDrawerContent");
+    var drawerViewEmployeesBtn = document.getElementById("drawerViewEmployeesBtn");
+    var drawerSaveToListBtn   = document.getElementById("drawerSaveToListBtn");
+    var viewEmployeesForm     = document.getElementById("viewEmployeesForm");
+    var viewEmpCompany        = document.getElementById("viewEmpCompany");
+    var viewEmpLocation       = document.getElementById("viewEmpLocation");
 
-    // Track which table row index the open drawer belongs to (1-based)
-    let openDrawerRowIndex = null;
+    var openDrawerRowIndex = null;
 
     function openCompanyDrawer() {
         if (!companyDrawer || !companyDrawerOverlay) return;
@@ -931,62 +1112,51 @@ if (mobileFilterBtn && filtersPanel) {
         openDrawerRowIndex = null;
     }
 
-    if (closeCompanyDrawer) {
-        closeCompanyDrawer.addEventListener("click", closeCompanyDrawerFn);
-    }
-    if (companyDrawerOverlay) {
-        companyDrawerOverlay.addEventListener("click", closeCompanyDrawerFn);
-    }
+    if (closeCompanyDrawer) closeCompanyDrawer.addEventListener("click", closeCompanyDrawerFn);
+    if (companyDrawerOverlay) companyDrawerOverlay.addEventListener("click", closeCompanyDrawerFn);
 
-    document.addEventListener("keydown", function(e) {
+    document.addEventListener("keydown", function (e) {
         if (e.key === "Escape" && companyDrawer && companyDrawer.classList.contains("open")) {
             closeCompanyDrawerFn();
         }
     });
 
-    // ── View Employees: submit hidden form to search_people ──
     if (drawerViewEmployeesBtn) {
         drawerViewEmployeesBtn.addEventListener("click", function (e) {
             e.preventDefault();
-            if (viewEmployeesForm) {
-                viewEmployeesForm.submit();
-            }
+            if (viewEmployeesForm) viewEmployeesForm.submit();
         });
     }
 
-    // ── Drawer Save to List: select row & open modal ──
     if (drawerSaveToListBtn) {
-        drawerSaveToListBtn.addEventListener("click", async function () {
+        drawerSaveToListBtn.addEventListener("click", function () {
             if (openDrawerRowIndex !== null) {
-                // Deselect all rows first
-                document.querySelectorAll(".row-checkbox").forEach(cb => cb.checked = false);
-                const selectAll = document.getElementById("selectAllRows");
+                document.querySelectorAll(".row-checkbox").forEach(function (cb) { cb.checked = false; });
+                var selectAll = document.getElementById("selectAllRows");
                 if (selectAll) selectAll.checked = false;
 
-                // Select the row that matches the open drawer
-                const row = document.getElementById("company-card-" + openDrawerRowIndex);
+                var row = document.getElementById("company-card-" + openDrawerRowIndex);
                 if (row) {
-                    const cb = row.querySelector(".row-checkbox");
+                    var cb = row.querySelector(".row-checkbox");
                     if (cb) cb.checked = true;
                 }
-
                 updateSelectionUI();
             }
-            await loadExistingLists();
-            setTab("new");
-            openModal();
+            loadExistingLists().then(function () {
+                setTab("new");
+                openModal();
+            });
         });
     }
 
     document.addEventListener("click", function (e) {
-        const descToggle = e.target.closest(".drawer-desc-toggle");
+        var descToggle = e.target.closest(".drawer-desc-toggle");
         if (descToggle) {
-            const descContent = descToggle.previousElementSibling;
+            var descContent = descToggle.previousElementSibling;
             if (descContent) {
-                const icon = descToggle.querySelector("i");
-                const text = descToggle.querySelector(".toggle-text");
-                const isExpanded = (descContent.style.webkitLineClamp === "unset");
-                
+                var icon = descToggle.querySelector("i");
+                var text = descToggle.querySelector(".toggle-text");
+                var isExpanded = (descContent.style.webkitLineClamp === "unset");
                 if (isExpanded) {
                     descContent.style.webkitLineClamp = "3";
                     descContent.style.lineClamp = "3";
@@ -1001,48 +1171,43 @@ if (mobileFilterBtn && filtersPanel) {
             }
         }
 
-        // ── Handle "View All Employees" link inside drawer content ──
-        const viewAllLink = e.target.closest(".drawer-view-employees-link");
+        var viewAllLink = e.target.closest(".drawer-view-employees-link");
         if (viewAllLink) {
             e.preventDefault();
-            const cName = viewAllLink.dataset.company || "";
-            const cLoc  = viewAllLink.dataset.location || "";
-            if (viewEmpCompany) viewEmpCompany.value = cName;
+            var cName = viewAllLink.dataset.company  || "";
+            var cLoc  = viewAllLink.dataset.location || "";
+            if (viewEmpCompany)  viewEmpCompany.value  = cName;
             if (viewEmpLocation) viewEmpLocation.value = cLoc;
             if (viewEmployeesForm) viewEmployeesForm.submit();
             return;
         }
 
-        const trigger = e.target.closest(".drawer-trigger");
+        var trigger = e.target.closest(".drawer-trigger");
         if (trigger) {
-            const tr = trigger.closest("tr");
+            var tr = trigger.closest("tr");
             if (tr) {
-                const idStr = tr.id; // e.g. company-card-1
-                if (idStr && idStr.startsWith("company-card-")) {
-                    const idx = idStr.replace("company-card-", "");
-                    const tpl = document.getElementById("company-profile-" + idx);
+                var idStr = tr.id;
+                if (idStr && idStr.indexOf("company-card-") === 0) {
+                    var idx = idStr.replace("company-card-", "");
+                    var tpl = document.getElementById("company-profile-" + idx);
                     if (tpl && companyDrawerContent) {
                         companyDrawerContent.innerHTML = tpl.innerHTML;
-                        
-                        // Check if description actually overflows 3 lines
-                        const dContent = companyDrawerContent.querySelector(".drawer-desc-content");
-                        const dToggle = companyDrawerContent.querySelector(".drawer-desc-toggle");
+
+                        var dContent = companyDrawerContent.querySelector(".drawer-desc-content");
+                        var dToggle  = companyDrawerContent.querySelector(".drawer-desc-toggle");
                         if (dContent && dToggle) {
                             if (dContent.scrollHeight <= dContent.clientHeight) {
                                 dToggle.style.display = "none";
                             }
                         }
 
-                        // Store row index for Save to List
                         openDrawerRowIndex = idx;
 
-                        // Update "View Employees" button with company name & location
-                        // Pull data from the row's checkbox dataset
-                        const cb = tr.querySelector(".row-checkbox");
-                        const companyName = cb ? (cb.dataset.name || "") : "";
-                        const companyHQ   = cb ? (cb.dataset.headquarter || "") : "";
+                        var cbEl = tr.querySelector(".row-checkbox");
+                        var companyName = cbEl ? (cbEl.dataset.name        || "") : "";
+                        var companyHQ   = cbEl ? (cbEl.dataset.headquarter || "") : "";
 
-                        if (viewEmpCompany) viewEmpCompany.value = companyName;
+                        if (viewEmpCompany)  viewEmpCompany.value  = companyName;
                         if (viewEmpLocation) viewEmpLocation.value = companyHQ;
 
                         openCompanyDrawer();
