@@ -882,7 +882,8 @@ if (confirmSaveListBtn) {
             const total       = requestIds.length;
  
             closeModal();
-            showMessage(`Enriching ${total} contacts… this may take a moment.`, "success");
+            // showMessage(`Enriching ${total} contacts… this may take a moment.`, "success");
+            showMessage("Enriching " + total + " contacts\u2026 this may take a moment.", "success");
  
             // Show a persistent progress bar while polling
             let progressBar = document.getElementById("enrichProgressBar");
@@ -901,15 +902,25 @@ if (confirmSaveListBtn) {
                 document.body.appendChild(progressBar);
             }
  
+            // function updateProgress(done, total) {
+            //     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+            //     progressBar.innerHTML =
+            //         `<i class="fas fa-spinner fa-spin me-2" style="color:#6276ea;"></i>` +
+            //         `Enriching contacts… ${done}/${total} done` +
+            //         `<div style="margin-top:10px;height:6px;background:#eef0f4;border-radius:99px;overflow:hidden;">` +
+            //         `<div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#6276ea,#7c4fc8);border-radius:99px;transition:width .4s;"></div>` +
+            //         `</div>`;
+            // }
+
             function updateProgress(done, total) {
-                const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-                progressBar.innerHTML =
-                    `<i class="fas fa-spinner fa-spin me-2" style="color:#6276ea;"></i>` +
-                    `Enriching contacts… ${done}/${total} done` +
-                    `<div style="margin-top:10px;height:6px;background:#eef0f4;border-radius:99px;overflow:hidden;">` +
-                    `<div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#6276ea,#7c4fc8);border-radius:99px;transition:width .4s;"></div>` +
-                    `</div>`;
-            }
+                    var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+                    progressBar.innerHTML =
+                        '<i class="fas fa-spinner fa-spin me-2" style="color:#6276ea;"></i>'
+                        + 'Enriching contacts\u2026 ' + done + '/' + total + ' done'
+                        + '<div style="margin-top:10px;height:6px;background:#eef0f4;border-radius:99px;overflow:hidden;">'
+                        + '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,#6276ea,#7c4fc8);border-radius:99px;transition:width .4s;"></div>'
+                        + '</div>';
+                }
  
             updateProgress(0, total);
  
