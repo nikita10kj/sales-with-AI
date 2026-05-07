@@ -1015,7 +1015,7 @@ if(existingListTab)existingListTab.addEventListener("click",async()=>{setTab("ex
 if(confirmSaveListBtn){confirmSaveListBtn.addEventListener("click",async function(){
     if(saveMode==="people"){
         if(!pendingPeopleForSave.length){showMessage("Please select at least one person.","error");return;}
-        const payload={list_type:activeListMode,people:pendingPeopleForSave};
+        const payload={list_type:activeListMode,people:pendingPeopleForSave,enrich_phone:false};
         if(activeListMode==="new"){const n=newListName?newListName.value.trim():"";if(!n){showMessage("Please enter a list name.","error");return;}payload.list_name=n;}else{const id=existingListSelect?existingListSelect.value:"";if(!id){showMessage("Please select an existing list.","error");return;}payload.list_id=id;}
         try{confirmSaveListBtn.disabled=true;confirmSaveListBtn.innerHTML=`<span class="spinner-border spinner-border-sm me-2"></span>Saving & Enriching...`;
         const r=await fetch(SAVE_ENRICH_CAMPAIGN_URL,{method:"POST",headers:{"Content-Type":"application/json","X-CSRFToken":getCookie("csrftoken"),"X-Requested-With":"XMLHttpRequest"},body:JSON.stringify(payload)});

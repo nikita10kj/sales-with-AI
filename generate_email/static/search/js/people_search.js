@@ -653,6 +653,9 @@ document.addEventListener("DOMContentLoaded", function () {
         if (saveListModal) saveListModal.style.display = "none";
         if (newListName) newListName.value = "";
         if (existingListSelect) existingListSelect.value = "";
+        // Reset phone enrichment toggle to OFF
+        var phoneCb = document.getElementById("enrichPhoneCheckbox");
+        if (phoneCb) { phoneCb.checked = false; updatePhoneToggleUI(); }
     }
 
     function setTab(mode) {
@@ -682,13 +685,37 @@ document.addEventListener("DOMContentLoaded", function () {
     if (newListTab)      newListTab.addEventListener("click", function() { setTab("new"); });
     if (existingListTab) existingListTab.addEventListener("click", async function() { setTab("existing"); await loadExistingLists(); });
 
+    // ══ Phone enrichment toggle ══
+    var enrichPhoneCb     = document.getElementById("enrichPhoneCheckbox");
+    var enrichPhoneSwitch = document.getElementById("enrichPhoneSwitch");
+    var enrichPhoneKnob   = document.getElementById("enrichPhoneKnob");
+    var enrichPhoneLabel  = document.getElementById("enrichPhoneLabel");
+    var enrichCreditCost  = document.getElementById("enrichCreditCostText");
+
+    function updatePhoneToggleUI() {
+        var isOn = enrichPhoneCb && enrichPhoneCb.checked;
+        if (enrichPhoneSwitch) enrichPhoneSwitch.style.background = isOn ? "#7c4fc8" : "#ccd4e1";
+        if (enrichPhoneKnob)   enrichPhoneKnob.style.left         = isOn ? "18px"    : "2px";
+        if (enrichPhoneLabel)  { enrichPhoneLabel.textContent = isOn ? "On" : "Off"; enrichPhoneLabel.style.color = isOn ? "#7c4fc8" : "#8c93a3"; }
+        if (enrichCreditCost)  enrichCreditCost.textContent = isOn ? "4 credits/person (1 email + 3 phone)" : "1 credit/person (email only)";
+    }
+
+    var enrichPhoneToggle = document.getElementById("enrichPhoneToggle");
+    if (enrichPhoneToggle && enrichPhoneCb) {
+        enrichPhoneToggle.addEventListener("click", function() {
+            enrichPhoneCb.checked = !enrichPhoneCb.checked;
+            updatePhoneToggleUI();
+        });
+    }
+
     // ══ Confirm save to list ══
     if (confirmSaveListBtn) {
         confirmSaveListBtn.addEventListener("click", async function() {
             var selectedPeople = collectSelectedPeople();
             if (!selectedPeople.length) { showMessage("Please select at least one person.", "error"); return; }
 
-            var payload = { list_type: activeListMode, people: selectedPeople };
+            var enrichPhone = enrichPhoneCb ? enrichPhoneCb.checked : false;
+            var payload = { list_type: activeListMode, people: selectedPeople, enrich_phone: enrichPhone };
             if (activeListMode === "new") {
                 var listName = newListName ? newListName.value.trim() : "";
                 if (!listName) { showMessage("Please enter a list name.", "error"); return; }
