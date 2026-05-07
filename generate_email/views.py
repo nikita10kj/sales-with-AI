@@ -2826,8 +2826,15 @@ class CheckBulkEnrichmentView(LoginRequiredMixin, View):
                 if first_email or first_phone:
                     try:
                         sl, _ = UserSearchLimit.objects.get_or_create(user=request.user)
-                        CREDITS_PER_PERSON = 4
-                        if not sl.has_credits() or sl.credits < CREDITS_PER_PERSON:
+                        # Dynamic credit cost: 1 for email, 3 for phone
+                        credit_cost = 0
+                        if first_email:
+                            credit_cost += 1
+                        if first_phone:
+                            credit_cost += 3
+                        if credit_cost == 0:
+                            credit_cost = 1  # minimum deduction if enrichment ran
+                        if not sl.has_credits() or sl.credits < credit_cost:
                             # Not enough credits — mark as deducted to stop
                             # retrying, but do NOT write email/phone back
                             EnrichmentRequest.objects.filter(
@@ -2843,7 +2850,7 @@ class CheckBulkEnrichmentView(LoginRequiredMixin, View):
                                 "all_done":      False,
                                 "items":         items,
                             })
-                        sl.deduct(CREDITS_PER_PERSON)
+                        sl.deduct(credit_cost)
                     except Exception:
                         pass
 
@@ -2935,6 +2942,7 @@ class SaveEnrichAndGoToCampaignView(LoginRequiredMixin, View):
             list_name = (body.get("list_name") or "").strip()
             list_id   = body.get("list_id")
             people    = body.get("people", [])
+            enrich_phone = body.get("enrich_phone", False)
         except Exception:
             return JsonResponse({"success": False, "error": "Invalid JSON."}, status=400)
  
@@ -2998,10 +3006,9 @@ class SaveEnrichAndGoToCampaignView(LoginRequiredMixin, View):
         # ── 4. Credit check ─────────────────────────────────────────────────
         sl, _ = UserSearchLimit.objects.get_or_create(user=request.user)
 
-        # credit_cost = len(to_enrich)
-
-        MAX_CREDITS_PER_PERSON = 4  # 1 email + 3 phone
-        credit_cost = len(to_enrich) * MAX_CREDITS_PER_PERSON
+        # 1 credit for email per person; +3 if phone enrichment requested
+        CREDITS_PER_PERSON = 4 if enrich_phone else 1
+        credit_cost = len(to_enrich) * CREDITS_PER_PERSON
 
         if not sl.has_credits() or sl.credits < credit_cost:
             return JsonResponse({
@@ -3010,8 +3017,8 @@ class SaveEnrichAndGoToCampaignView(LoginRequiredMixin, View):
                 "credits": sl.credits,
                 "needed": credit_cost,
                 "error": (
-                    f"Need up to {credit_cost} credits ({len(to_enrich)} people × max 4) "
-                    f"but you only have {sl.credits}. Actual cost depends on what is found."
+                    f"Need {credit_cost} credits ({len(to_enrich)} people × {CREDITS_PER_PERSON}) "
+                    f"but you only have {sl.credits}."
                 ),
             }, status=403)
  
@@ -3035,10 +3042,11 @@ class SaveEnrichAndGoToCampaignView(LoginRequiredMixin, View):
             bulk_data.append({
                 "linkedinUrl": entry.linkedin.strip(),
                 "enrichEmail": True,
-                "enrichPhone": True,
+                "enrichPhone": enrich_phone,
                 "customFields": {
                     "request_id": str(req_id),
                     "entry_id": entry.pk,
+                    "enrich_phone": enrich_phone,
                 },
             })
 

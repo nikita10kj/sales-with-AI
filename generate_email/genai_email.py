@@ -481,6 +481,8 @@ STEP 3: APPLY FRAMEWORK (INVISIBLE)
  
 Use selected framework to guide flow:
  
+{framework_instruction}
+ 
 AIDA → attention → interest → desire → action  
 PAS → problem → agitation → solution  
 BAB → before → after → bridge  
@@ -489,9 +491,11 @@ ACCA → awareness → comprehension → conviction → action
 MAGIC → motivation → approach → gain → impact → close  
  
 IMPORTANT:
-- DO NOT mention framework
+- The email MUST follow the selected framework's structure and flow
+- DO NOT mention framework by name in the email
 - DO NOT label sections
 - DO NOT sound structured artificially
+- The framework should guide the paragraph transitions and persuasion logic
  
 ---
  
@@ -499,13 +503,22 @@ STEP 4: WRITE EMAIL (STRICT 3 PARAGRAPHS)
  
 RULES:
  
-- 90–140 words  
-- EXACTLY 3 paragraphs  
+- MUST start with "Hi {target.receiver_first_name}," as the greeting line
+- 90–140 words (excluding greeting)  
+- EXACTLY 3 paragraphs (after the greeting line)  
 - Each paragraph = 1–2 sentences  
 - Natural tone  
 - No buzzwords  
 - No fluff  
 - No generic phrases  
+ 
+---
+ 
+GREETING RULE (MANDATORY):
+- The email body MUST begin with: Hi {target.receiver_first_name},
+- This greeting is required for EVERY email (main email AND all follow-ups)
+- The greeting must be on its own line before the first paragraph
+- Use the recipient's first name exactly as provided
  
 ---
  
@@ -590,10 +603,12 @@ STEP 6: FOLLOW-UPS (4)
  
 RULES:
  
-- 50–90 words  
+- MUST start with "Hi {target.receiver_first_name}," greeting  
+- 50–90 words (excluding greeting)  
 - Each adds NEW angle  
 - No repetition  
 - No "just following up"  
+- Each follow-up MUST also follow the selected framework's persuasion logic
  
 ---
  
