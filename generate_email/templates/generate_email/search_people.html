@@ -94,13 +94,17 @@
                             <input type="hidden" name="specialites" id="specialitesHidden" value="{{ form.specialites }}">
                         </div>
                         <div class="filter-field">
-                            <label for="industryInput">Company Industry</label>
-                            <div class="tag-input-row">
-                                <div id="industryTags" class="tags-container"></div>
-                                <div class="tag-input-wrap">
-                                    <input type="text" id="industryInput" placeholder="e.g. Computer Science">
-                                    <button type="button" class="add-tag-btn" id="addIndustryTag"><i class="fas fa-plus"></i></button>
-                                </div>
+                            <label>Company Industry</label>
+                            <div id="industryTagsSelected" class="tags-container" style="margin-bottom:6px;"></div>
+                            <div style="position:relative;">
+                                <input type="text" id="industryInput" placeholder="e.g. Technology" autocomplete="off"
+                                    style="width:100%;padding:8px 12px;border:1px solid #dce0ea;border-radius:8px;font-size:13px;box-sizing:border-box;">
+                                <ul id="industrySuggestions" style="
+                                    display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;
+                                    background:#fff;border:1px solid #dce0ea;border-radius:8px;
+                                    box-shadow:0 4px 16px rgba(0,0,0,0.08);z-index:300;
+                                    max-height:220px;overflow-y:auto;margin:0;padding:6px 0;list-style:none;">
+                                </ul>
                             </div>
                             <input type="hidden" name="industry" id="industryHidden" value="{{ form.industry }}">
                         </div>
@@ -270,7 +274,8 @@
                     <button type="submit" form="peopleSearchForm" class="sidebar-search-btn">
                         <i class="fas fa-search"></i> Search
                     </button>
-                    <a href="{% url 'search_people' %}" class="sidebar-reset-btn" title="Clear all filters">
+                   <a href="{% url 'search_people' %}" class="sidebar-reset-btn" title="Clear all filters"
+                    onclick="localStorage.removeItem('people_last_results'); localStorage.removeItem('people_last_form');">
                         <i class="fas fa-redo"></i>
                     </a>
                 </div>
@@ -1250,8 +1255,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const SEARCH_PEOPLE_URL = "{% url 'search_people' %}";
     const CSRF_TOKEN = "{{ csrf_token }}";
 
+    const CHECK_ENRICHMENT_JOB_URL = "{% url 'check_enrichment_job' job_id='00000000-0000-0000-0000-000000000000' %}"
+    .replace("00000000-0000-0000-0000-000000000000", "PLACEHOLDER");
 </script>
-<script src="{% static 'search/js/people_search.js' %}?v=19"></script>
+
+{{ industry_choices|json_script:"industryChoicesData" }}
+
+<script src="{% static 'search/js/people_search.js' %}"></script>
 <script>
 function changePage(page) {
     if (page < 1) return;

@@ -44,8 +44,8 @@ redrob_get_enrichment,
 redrob_search_by_linkedin_url,
 redrob_search_by_company,
 )
-
-from .models import SavedPeopleList, SavedPeopleEntry,SavedCompanyEntry,EnrichmentRequest
+from .threads import run_enrichment_polling
+from .models import SavedPeopleList, SavedPeopleEntry,SavedCompanyEntry,EnrichmentRequest, EnrichmentJob
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 import os
@@ -827,6 +827,8 @@ class SearchPeopleByLinkdinView(View):
                     "location": p.get("locationRawAddress", ""),
                     "company_headquarter": company_headquarter,
                     "photo":               p.get("pictureUrl", "") or p.get("profilePic", ""),
+                    "pictureUrl":          p.get("pictureUrl", ""),
+                    "profilePic":          p.get("profilePic", ""),
                     "rich_json":           rich_json,
                     # ── Rich fields for server-side HTML rendering ──
                     "experience":          experiences,
@@ -910,6 +912,133 @@ class SearchPeopleByLinkdinView(View):
         request.session["error"] = error
         request.session["form"] = form
         return redirect("search_by_linkdin")
+    
+
+INDUSTRY_CHOICES = [
+    'Abrasives and Nonmetallic Minerals Manufacturing', 'Accessible Architecture and Design', 'Accessible Hardware Manufacturing', 'Accommodation and Food Services',
+    'Accounting', 'Administration of Justice', 'Administrative and Support Services', 'Advertising Services',
+    'Agricultural Chemical Manufacturing', 'Agriculture, Construction, Mining Machinery Manufacturing', 'Air, Water, and Waste Program Management', 'Airlines and Aviation',
+    'Alternative Dispute Resolution', 'Alternative Fuel Vehicle Manufacturing', 'Alternative Medicine', 'Ambulance Services',
+    'Amusement Parks and Arcades', 'Animal Feed Manufacturing', 'Animation', 'Animation and Post-production',
+    'Apparel & Fashion', 'Apparel Manufacturing', 'Appliances, Electrical, and Electronics Manufacturing', 'Architectural and Structural Metal Manufacturing',
+    'Architecture and Planning', 'Armed Forces', 'Artificial Rubber and Synthetic Fiber Manufacturing', 'Artists and Writers',
+    'Arts & Crafts', 'Audio and Video Equipment Manufacturing', 'Automation Machinery Manufacturing', 'Automotive',
+    'Aviation & Aerospace', 'Aviation and Aerospace Component Manufacturing', 'Baked Goods Manufacturing', 'Banking',
+    'Bars, Taverns, and Nightclubs', 'Bed-and-Breakfasts, Hostels, Homestays', 'Beverage Manufacturing', 'Biomass Electric Power Generation',
+    'Biotechnology', 'Biotechnology Research', 'Blockchain Services', 'Blogs',
+    'Boilers, Tanks, and Shipping Container Manufacturing', 'Book Publishing', 'Book and Periodical Publishing', 'Breweries',
+    'Broadcast Media Production and Distribution', 'Building Construction', 'Building Equipment Contractors', 'Building Finishing Contractors',
+    'Building Materials', 'Building Structure and Exterior Contractors', 'Business Consulting and Services', 'Business Content',
+    'Business Intelligence Platforms', 'Business Supplies & Equipment', 'Cable and Satellite Programming', 'Capital Markets',
+    'Caterers', 'Chemical Manufacturing', 'Chemical Raw Materials Manufacturing', 'Child Day Care Services',
+    'Chiropractors', 'Circuses and Magic Shows', 'Civic and Social Organizations', 'Civil Engineering',
+    'Claims Adjusting, Actuarial Services', 'Clay and Refractory Products Manufacturing', 'Climate Data and Analytics', 'Climate Technology Product Manufacturing',
+    'Coal Mining', 'Collection Agencies', 'Commercial Real Estate', 'Commercial and Industrial Equipment Rental',
+    'Commercial and Industrial Machinery Maintenance', 'Commercial and Service Industry Machinery Manufacturing', 'Communications Equipment Manufacturing', 'Community Development and Urban Planning',
+    'Community Services', 'Computer Games', 'Computer Hardware', 'Computer Hardware Manufacturing',
+    'Computer Networking', 'Computer Networking Products', 'Computer and Network Security', 'Computers and Electronics Manufacturing',
+    'Conservation Programs', 'Construction', 'Construction Hardware Manufacturing', 'Consumer Electronics',
+    'Consumer Goods', 'Consumer Goods Rental', 'Consumer Services', 'Correctional Institutions',
+    'Cosmetics', 'Cosmetology and Barber Schools', 'Courts of Law', 'Credit Intermediation',
+    'Cutlery and Handtool Manufacturing', 'Dairy', 'Dairy Product Manufacturing', 'Dance Companies',
+    'Data Infrastructure and Analytics', 'Data Security Software Products', 'Death Care Services', 'Defense & Space',
+    'Defense and Space Manufacturing', 'Dentists', 'Design', 'Design Services',
+    'Desktop Computing Software Products', 'Digital Accessibility Services', 'Distilleries', 'E-Learning Providers',
+    'E-learning', 'Economic Programs', 'Education', 'Education Administration Programs',
+    'Education Management', 'Electric Lighting Equipment Manufacturing', 'Electric Power Generation', 'Electric Power Transmission, Control, and Distribution',
+    'Electrical Equipment Manufacturing', 'Electronic and Precision Equipment Maintenance', 'Embedded Software Products', 'Emergency and Relief Services',
+    'Energy Technology', 'Engineering Services', 'Engines and Power Transmission Equipment Manufacturing', 'Entertainment',
+    'Entertainment Providers', 'Environmental Quality Programs', 'Environmental Services', 'Equipment Rental Services',
+    'Events Services', 'Executive Offices', 'Executive Search Services', 'Fabricated Metal Products',
+    'Facilities Services', 'Family Planning Centers', 'Farming', 'Farming, Ranching, Forestry',
+    'Fashion Accessories Manufacturing', 'Financial Services', 'Fine Art', 'Fine Arts Schools',
+    'Fire Protection', 'Fisheries', 'Flight Training', 'Food & Beverages',
+    'Food Production', 'Food and Beverage Manufacturing', 'Food and Beverage Retail', 'Food and Beverage Services',
+    'Footwear Manufacturing', 'Footwear and Leather Goods Repair', 'Forestry and Logging', 'Fossil Fuel Electric Power Generation',
+    'Freight and Package Transportation', 'Fruit and Vegetable Preserves Manufacturing', 'Fuel Cell Manufacturing', 'Fundraising',
+    'Funds and Trusts', 'Funeral Services', 'Furniture', 'Furniture and Home Furnishings Manufacturing',
+    'Gambling Facilities and Casinos', 'Geothermal Electric Power Generation', 'Glass Product Manufacturing', 'Glass, Ceramics and Concrete Manufacturing',
+    'Golf Courses and Country Clubs', 'Government Administration', 'Government Relations', 'Government Relations Services',
+    'Graphic Design', 'Ground Passenger Transportation', 'HVAC and Refrigeration Equipment Manufacturing', 'Health and Human Services',
+    'Health, Wellness & Fitness', 'Higher Education', 'Highway, Street, and Bridge Construction', 'Historical Sites',
+    'Holding Companies', 'Home Health Care Services', 'Horticulture', 'Hospitality',
+    'Hospitals', 'Hospitals and Health Care', 'Hotels and Motels', 'Household Appliance Manufacturing',
+    'Household Services', 'Household and Institutional Furniture Manufacturing', 'Housing Programs', 'Housing and Community Development',
+    'Human Resources', 'Human Resources Services', 'Hydroelectric Power Generation', 'IT Services and IT Consulting',
+    'IT System Custom Software Development', 'IT System Data Services', 'IT System Design Services', 'IT System Installation and Disposal',
+    'IT System Operations and Maintenance', 'IT System Testing and Evaluation', 'IT System Training and Support', 'Import & Export',
+    'Individual and Family Services', 'Industrial Automation', 'Industrial Machinery Manufacturing', 'Industry Associations',
+    'Information Services', 'Information Technology & Services', 'Insurance', 'Insurance Agencies and Brokerages',
+    'Insurance Carriers', 'Insurance and Employee Benefit Funds', 'Interior Design', 'International Affairs',
+    'International Trade and Development', 'Internet Marketplace Platforms', 'Internet News', 'Internet Publishing',
+    'Interurban and Rural Bus Services', 'Investment Advice', 'Investment Banking', 'Investment Management',
+    'Janitorial Services', 'Landscaping Services', 'Language Schools', 'Laundry and Drycleaning Services',
+    'Law Enforcement', 'Law Practice', 'Leasing Non-residential Real Estate', 'Leasing Residential Real Estate',
+    'Leather Product Manufacturing', 'Legal Services', 'Legislative Offices', 'Leisure, Travel & Tourism',
+    'Libraries', 'Lime and Gypsum Products Manufacturing', 'Loan Brokers', 'Luxury Goods & Jewelry',
+    'Machinery Manufacturing', 'Magnetic and Optical Media Manufacturing', 'Manufacturing', 'Maritime',
+    'Maritime Transportation', 'Market Research', 'Marketing Services', 'Mattress and Blinds Manufacturing',
+    'Measuring and Control Instrument Manufacturing', 'Meat Products Manufacturing', 'Mechanical Or Industrial Engineering', 'Media Production',
+    'Media and Telecommunications', 'Medical Device', 'Medical Equipment Manufacturing', 'Medical Practices',
+    'Medical and Diagnostic Laboratories', 'Mental Health Care', 'Metal Ore Mining', 'Metal Treatments',
+    'Metal Valve, Ball, and Roller Manufacturing', 'Metalworking Machinery Manufacturing', 'Military and International Affairs', 'Mining',
+    'Mobile Computing Software Products', 'Mobile Food Services', 'Mobile Gaming Apps', 'Motor Vehicle Manufacturing',
+    'Motor Vehicle Parts Manufacturing', 'Movies and Sound Recording', 'Movies, Videos, and Sound', 'Museums',
+    'Museums, Historical Sites, and Zoos', 'Music', 'Musicians', 'Nanotechnology Research',
+    'Natural Gas Distribution', 'Natural Gas Extraction', 'Newspaper Publishing', 'Non-profit Organization Management',
+    'Non-profit Organizations', 'Nonmetallic Mineral Mining', 'Nonresidential Building Construction', 'Nuclear Electric Power Generation',
+    'Nursing Homes and Residential Care Facilities', 'Office Administration', 'Office Furniture and Fixtures Manufacturing', 'Oil Extraction',
+    'Oil and Coal Product Manufacturing', 'Oil and Gas', 'Oil, Gas, and Mining', 'Online Audio and Video Media',
+    'Online Media', 'Online and Mail Order Retail', 'Operations Consulting', 'Optometrists',
+    'Outpatient Care Centers', 'Outsourcing and Offshoring Consulting', 'Outsourcing/Offshoring', 'Packaging & Containers',
+    'Packaging and Containers Manufacturing', 'Paint, Coating, and Adhesive Manufacturing', 'Paper & Forest Products', 'Paper and Forest Product Manufacturing',
+    'Parts Distribution', 'Pension Funds', 'Performing Arts', 'Performing Arts and Spectator Sports',
+    'Periodical Publishing', 'Personal Care Product Manufacturing', 'Personal Care Services', 'Personal and Laundry Services',
+    'Pet Services', 'Pharmaceutical Manufacturing', 'Philanthropic Fundraising Services', 'Philanthropy',
+    'Photography', 'Physical, Occupational and Speech Therapists', 'Physicians', 'Pipeline Transportation',
+    'Plastics Manufacturing', 'Plastics and Rubber Product Manufacturing', 'Political Organizations', 'Postal Services',
+    'Primary Metal Manufacturing', 'Primary and Secondary Education', 'Printing Services', 'Professional Organizations',
+    'Professional Services', 'Professional Training and Coaching', 'Program Development', 'Public Assistance Programs',
+    'Public Health', 'Public Policy', 'Public Policy Offices', 'Public Relations and Communications Services',
+    'Public Safety', 'Public Works', 'Racetracks', 'Radio and Television Broadcasting',
+    'Rail Transportation', 'Railroad Equipment Manufacturing', 'Ranching', 'Ranching and Fisheries',
+    'Real Estate', 'Real Estate Agents and Brokers', 'Real Estate and Equipment Rental Services', 'Recreational Facilities',
+    'Regenerative Design', 'Religious Institutions', 'Renewable Energy Equipment Manufacturing', 'Renewable Energy Power Generation',
+    'Renewable Energy Semiconductor Manufacturing', 'Renewables & Environment', 'Repair and Maintenance', 'Research',
+    'Research Services', 'Residential Building Construction', 'Restaurants', 'Retail',
+    'Retail Apparel and Fashion', 'Retail Appliances, Electrical, and Electronic Equipment', 'Retail Art Dealers', 'Retail Art Supplies',
+    'Retail Books and Printed News', 'Retail Building Materials and Garden Equipment', 'Retail Florists', 'Retail Furniture and Home Furnishings',
+    'Retail Gasoline', 'Retail Groceries', 'Retail Health and Personal Care Products', 'Retail Luxury Goods and Jewelry',
+    'Retail Motor Vehicles', 'Retail Musical Instruments', 'Retail Office Equipment', 'Retail Office Supplies and Gifts',
+    'Retail Pharmacies', 'Retail Recyclable Materials & Used Merchandise', 'Reupholstery and Furniture Repair', 'Robot Manufacturing',
+    'Robotics Engineering', 'Rubber Products Manufacturing', 'Satellite Telecommunications', 'Savings Institutions',
+    'School and Employee Bus Services', 'Seafood Product Manufacturing', 'Secretarial Schools', 'Securities and Commodity Exchanges',
+    'Security Guards and Patrol Services', 'Security Systems Services', 'Security and Investigations', 'Semiconductor Manufacturing',
+    'Semiconductors', 'Services for Renewable Energy', 'Services for the Elderly and Disabled', 'Sheet Music Publishing',
+    'Shipbuilding', 'Shuttles and Special Needs Transportation Services', 'Sightseeing Transportation', 'Skiing Facilities',
+    'Smart Meter Manufacturing', 'Soap and Cleaning Product Manufacturing', 'Social Networking Platforms', 'Software Development',
+    'Solar Electric Power Generation', 'Sound Recording', 'Space Research and Technology', 'Specialty Trade Contractors',
+    'Spectator Sports', 'Sporting Goods', 'Sporting Goods Manufacturing', 'Sports Teams and Clubs',
+    'Sports and Recreation Instruction', 'Spring and Wire Product Manufacturing', 'Staffing and Recruiting', 'Steam and Air-Conditioning Supply',
+    'Strategic Management Services', 'Subdivision of Land', 'Sugar and Confectionery Product Manufacturing', 'Surveying and Mapping Services',
+    'Taxi and Limousine Services', 'Technical and Vocational Training', 'Technology, Information and Internet', 'Technology, Information and Media',
+    'Telecommunications', 'Telecommunications Carriers', 'Telephone Call Centers', 'Temporary Help Services',
+    'Textile Manufacturing', 'Theater Companies', 'Think Tanks', 'Tobacco',
+    'Tobacco Manufacturing', 'Translation and Localization', 'Transportation Equipment Manufacturing', 'Transportation Programs',
+    'Transportation, Logistics, Supply Chain and Storage', 'Transportation/Trucking/Railroad', 'Travel Arrangements', 'Truck Transportation',
+    'Trusts and Estates', 'Turned Products and Fastener Manufacturing', 'Urban Transit Services', 'Utilities',
+    'Utilities Administration', 'Utility System Construction', 'Vehicle Repair and Maintenance', 'Venture Capital and Private Equity Principals',
+    'Veterinary', 'Veterinary Services', 'Vocational Rehabilitation Services', 'Warehousing',
+    'Warehousing and Storage', 'Waste Collection', 'Waste Treatment and Disposal', 'Water Supply and Irrigation Systems',
+    'Water, Waste, Steam, and Air Conditioning Services', 'Wellness and Fitness Services', 'Wholesale', 'Wholesale Alcoholic Beverages',
+    'Wholesale Apparel and Sewing Supplies', 'Wholesale Appliances, Electrical, and Electronics', 'Wholesale Building Materials', 'Wholesale Chemical and Allied Products',
+    'Wholesale Computer Equipment', 'Wholesale Drugs and Sundries', 'Wholesale Food and Beverage', 'Wholesale Footwear',
+    'Wholesale Furniture and Home Furnishings', 'Wholesale Hardware, Plumbing, Heating Equipment', 'Wholesale Import and Export', 'Wholesale Luxury Goods and Jewelry',
+    'Wholesale Machinery', 'Wholesale Metals and Minerals', 'Wholesale Motor Vehicles and Parts', 'Wholesale Paper Products',
+    'Wholesale Petroleum and Petroleum Products', 'Wholesale Photography Equipment and Supplies', 'Wholesale Raw Farm Products', 'Wholesale Recyclable Materials',
+    'Wind Electric Power Generation', 'Wine & Spirits', 'Wineries', 'Wireless Services',
+    "Women's Handbag Manufacturing", 'Wood Product Manufacturing', 'Writing and Editing', 'Zoos and Botanical Gardens',
+]
 
 class SearchPeopleView(View):
     template_name = "generate_email/search_people.html"
@@ -941,6 +1070,7 @@ class SearchPeopleView(View):
             "form": form,
             "pagination": pagination,
             "search_limit": limit,
+            "industry_choices": INDUSTRY_CHOICES,
         })
 
     def post(self, request, *args, **kwargs):
@@ -1233,6 +1363,8 @@ class SearchPeopleView(View):
                     "location":            p.get("locationRawAddress", ""),
                     "company_headquarter": company_headquarter,
                     "photo":               p.get("pictureUrl", "") or p.get("profilePic", ""),
+                    "pictureUrl":          p.get("pictureUrl", ""),
+                    "profilePic":          p.get("profilePic", ""),
                     "rich_json":           rich_json,
                     # ── Rich fields for server-side HTML rendering ──
                     "experience":          experiences,
@@ -1747,132 +1879,6 @@ EMPLOYEE_COUNT_CHOICES = [
     ("10001+", "10001+"),
 ]
 
-
-INDUSTRY_CHOICES = [
-    'Abrasives and Nonmetallic Minerals Manufacturing', 'Accessible Architecture and Design', 'Accessible Hardware Manufacturing', 'Accommodation and Food Services',
-    'Accounting', 'Administration of Justice', 'Administrative and Support Services', 'Advertising Services',
-    'Agricultural Chemical Manufacturing', 'Agriculture, Construction, Mining Machinery Manufacturing', 'Air, Water, and Waste Program Management', 'Airlines and Aviation',
-    'Alternative Dispute Resolution', 'Alternative Fuel Vehicle Manufacturing', 'Alternative Medicine', 'Ambulance Services',
-    'Amusement Parks and Arcades', 'Animal Feed Manufacturing', 'Animation', 'Animation and Post-production',
-    'Apparel & Fashion', 'Apparel Manufacturing', 'Appliances, Electrical, and Electronics Manufacturing', 'Architectural and Structural Metal Manufacturing',
-    'Architecture and Planning', 'Armed Forces', 'Artificial Rubber and Synthetic Fiber Manufacturing', 'Artists and Writers',
-    'Arts & Crafts', 'Audio and Video Equipment Manufacturing', 'Automation Machinery Manufacturing', 'Automotive',
-    'Aviation & Aerospace', 'Aviation and Aerospace Component Manufacturing', 'Baked Goods Manufacturing', 'Banking',
-    'Bars, Taverns, and Nightclubs', 'Bed-and-Breakfasts, Hostels, Homestays', 'Beverage Manufacturing', 'Biomass Electric Power Generation',
-    'Biotechnology', 'Biotechnology Research', 'Blockchain Services', 'Blogs',
-    'Boilers, Tanks, and Shipping Container Manufacturing', 'Book Publishing', 'Book and Periodical Publishing', 'Breweries',
-    'Broadcast Media Production and Distribution', 'Building Construction', 'Building Equipment Contractors', 'Building Finishing Contractors',
-    'Building Materials', 'Building Structure and Exterior Contractors', 'Business Consulting and Services', 'Business Content',
-    'Business Intelligence Platforms', 'Business Supplies & Equipment', 'Cable and Satellite Programming', 'Capital Markets',
-    'Caterers', 'Chemical Manufacturing', 'Chemical Raw Materials Manufacturing', 'Child Day Care Services',
-    'Chiropractors', 'Circuses and Magic Shows', 'Civic and Social Organizations', 'Civil Engineering',
-    'Claims Adjusting, Actuarial Services', 'Clay and Refractory Products Manufacturing', 'Climate Data and Analytics', 'Climate Technology Product Manufacturing',
-    'Coal Mining', 'Collection Agencies', 'Commercial Real Estate', 'Commercial and Industrial Equipment Rental',
-    'Commercial and Industrial Machinery Maintenance', 'Commercial and Service Industry Machinery Manufacturing', 'Communications Equipment Manufacturing', 'Community Development and Urban Planning',
-    'Community Services', 'Computer Games', 'Computer Hardware', 'Computer Hardware Manufacturing',
-    'Computer Networking', 'Computer Networking Products', 'Computer and Network Security', 'Computers and Electronics Manufacturing',
-    'Conservation Programs', 'Construction', 'Construction Hardware Manufacturing', 'Consumer Electronics',
-    'Consumer Goods', 'Consumer Goods Rental', 'Consumer Services', 'Correctional Institutions',
-    'Cosmetics', 'Cosmetology and Barber Schools', 'Courts of Law', 'Credit Intermediation',
-    'Cutlery and Handtool Manufacturing', 'Dairy', 'Dairy Product Manufacturing', 'Dance Companies',
-    'Data Infrastructure and Analytics', 'Data Security Software Products', 'Death Care Services', 'Defense & Space',
-    'Defense and Space Manufacturing', 'Dentists', 'Design', 'Design Services',
-    'Desktop Computing Software Products', 'Digital Accessibility Services', 'Distilleries', 'E-Learning Providers',
-    'E-learning', 'Economic Programs', 'Education', 'Education Administration Programs',
-    'Education Management', 'Electric Lighting Equipment Manufacturing', 'Electric Power Generation', 'Electric Power Transmission, Control, and Distribution',
-    'Electrical Equipment Manufacturing', 'Electronic and Precision Equipment Maintenance', 'Embedded Software Products', 'Emergency and Relief Services',
-    'Energy Technology', 'Engineering Services', 'Engines and Power Transmission Equipment Manufacturing', 'Entertainment',
-    'Entertainment Providers', 'Environmental Quality Programs', 'Environmental Services', 'Equipment Rental Services',
-    'Events Services', 'Executive Offices', 'Executive Search Services', 'Fabricated Metal Products',
-    'Facilities Services', 'Family Planning Centers', 'Farming', 'Farming, Ranching, Forestry',
-    'Fashion Accessories Manufacturing', 'Financial Services', 'Fine Art', 'Fine Arts Schools',
-    'Fire Protection', 'Fisheries', 'Flight Training', 'Food & Beverages',
-    'Food Production', 'Food and Beverage Manufacturing', 'Food and Beverage Retail', 'Food and Beverage Services',
-    'Footwear Manufacturing', 'Footwear and Leather Goods Repair', 'Forestry and Logging', 'Fossil Fuel Electric Power Generation',
-    'Freight and Package Transportation', 'Fruit and Vegetable Preserves Manufacturing', 'Fuel Cell Manufacturing', 'Fundraising',
-    'Funds and Trusts', 'Funeral Services', 'Furniture', 'Furniture and Home Furnishings Manufacturing',
-    'Gambling Facilities and Casinos', 'Geothermal Electric Power Generation', 'Glass Product Manufacturing', 'Glass, Ceramics and Concrete Manufacturing',
-    'Golf Courses and Country Clubs', 'Government Administration', 'Government Relations', 'Government Relations Services',
-    'Graphic Design', 'Ground Passenger Transportation', 'HVAC and Refrigeration Equipment Manufacturing', 'Health and Human Services',
-    'Health, Wellness & Fitness', 'Higher Education', 'Highway, Street, and Bridge Construction', 'Historical Sites',
-    'Holding Companies', 'Home Health Care Services', 'Horticulture', 'Hospitality',
-    'Hospitals', 'Hospitals and Health Care', 'Hotels and Motels', 'Household Appliance Manufacturing',
-    'Household Services', 'Household and Institutional Furniture Manufacturing', 'Housing Programs', 'Housing and Community Development',
-    'Human Resources', 'Human Resources Services', 'Hydroelectric Power Generation', 'IT Services and IT Consulting',
-    'IT System Custom Software Development', 'IT System Data Services', 'IT System Design Services', 'IT System Installation and Disposal',
-    'IT System Operations and Maintenance', 'IT System Testing and Evaluation', 'IT System Training and Support', 'Import & Export',
-    'Individual and Family Services', 'Industrial Automation', 'Industrial Machinery Manufacturing', 'Industry Associations',
-    'Information Services', 'Information Technology & Services', 'Insurance', 'Insurance Agencies and Brokerages',
-    'Insurance Carriers', 'Insurance and Employee Benefit Funds', 'Interior Design', 'International Affairs',
-    'International Trade and Development', 'Internet Marketplace Platforms', 'Internet News', 'Internet Publishing',
-    'Interurban and Rural Bus Services', 'Investment Advice', 'Investment Banking', 'Investment Management',
-    'Janitorial Services', 'Landscaping Services', 'Language Schools', 'Laundry and Drycleaning Services',
-    'Law Enforcement', 'Law Practice', 'Leasing Non-residential Real Estate', 'Leasing Residential Real Estate',
-    'Leather Product Manufacturing', 'Legal Services', 'Legislative Offices', 'Leisure, Travel & Tourism',
-    'Libraries', 'Lime and Gypsum Products Manufacturing', 'Loan Brokers', 'Luxury Goods & Jewelry',
-    'Machinery Manufacturing', 'Magnetic and Optical Media Manufacturing', 'Manufacturing', 'Maritime',
-    'Maritime Transportation', 'Market Research', 'Marketing Services', 'Mattress and Blinds Manufacturing',
-    'Measuring and Control Instrument Manufacturing', 'Meat Products Manufacturing', 'Mechanical Or Industrial Engineering', 'Media Production',
-    'Media and Telecommunications', 'Medical Device', 'Medical Equipment Manufacturing', 'Medical Practices',
-    'Medical and Diagnostic Laboratories', 'Mental Health Care', 'Metal Ore Mining', 'Metal Treatments',
-    'Metal Valve, Ball, and Roller Manufacturing', 'Metalworking Machinery Manufacturing', 'Military and International Affairs', 'Mining',
-    'Mobile Computing Software Products', 'Mobile Food Services', 'Mobile Gaming Apps', 'Motor Vehicle Manufacturing',
-    'Motor Vehicle Parts Manufacturing', 'Movies and Sound Recording', 'Movies, Videos, and Sound', 'Museums',
-    'Museums, Historical Sites, and Zoos', 'Music', 'Musicians', 'Nanotechnology Research',
-    'Natural Gas Distribution', 'Natural Gas Extraction', 'Newspaper Publishing', 'Non-profit Organization Management',
-    'Non-profit Organizations', 'Nonmetallic Mineral Mining', 'Nonresidential Building Construction', 'Nuclear Electric Power Generation',
-    'Nursing Homes and Residential Care Facilities', 'Office Administration', 'Office Furniture and Fixtures Manufacturing', 'Oil Extraction',
-    'Oil and Coal Product Manufacturing', 'Oil and Gas', 'Oil, Gas, and Mining', 'Online Audio and Video Media',
-    'Online Media', 'Online and Mail Order Retail', 'Operations Consulting', 'Optometrists',
-    'Outpatient Care Centers', 'Outsourcing and Offshoring Consulting', 'Outsourcing/Offshoring', 'Packaging & Containers',
-    'Packaging and Containers Manufacturing', 'Paint, Coating, and Adhesive Manufacturing', 'Paper & Forest Products', 'Paper and Forest Product Manufacturing',
-    'Parts Distribution', 'Pension Funds', 'Performing Arts', 'Performing Arts and Spectator Sports',
-    'Periodical Publishing', 'Personal Care Product Manufacturing', 'Personal Care Services', 'Personal and Laundry Services',
-    'Pet Services', 'Pharmaceutical Manufacturing', 'Philanthropic Fundraising Services', 'Philanthropy',
-    'Photography', 'Physical, Occupational and Speech Therapists', 'Physicians', 'Pipeline Transportation',
-    'Plastics Manufacturing', 'Plastics and Rubber Product Manufacturing', 'Political Organizations', 'Postal Services',
-    'Primary Metal Manufacturing', 'Primary and Secondary Education', 'Printing Services', 'Professional Organizations',
-    'Professional Services', 'Professional Training and Coaching', 'Program Development', 'Public Assistance Programs',
-    'Public Health', 'Public Policy', 'Public Policy Offices', 'Public Relations and Communications Services',
-    'Public Safety', 'Public Works', 'Racetracks', 'Radio and Television Broadcasting',
-    'Rail Transportation', 'Railroad Equipment Manufacturing', 'Ranching', 'Ranching and Fisheries',
-    'Real Estate', 'Real Estate Agents and Brokers', 'Real Estate and Equipment Rental Services', 'Recreational Facilities',
-    'Regenerative Design', 'Religious Institutions', 'Renewable Energy Equipment Manufacturing', 'Renewable Energy Power Generation',
-    'Renewable Energy Semiconductor Manufacturing', 'Renewables & Environment', 'Repair and Maintenance', 'Research',
-    'Research Services', 'Residential Building Construction', 'Restaurants', 'Retail',
-    'Retail Apparel and Fashion', 'Retail Appliances, Electrical, and Electronic Equipment', 'Retail Art Dealers', 'Retail Art Supplies',
-    'Retail Books and Printed News', 'Retail Building Materials and Garden Equipment', 'Retail Florists', 'Retail Furniture and Home Furnishings',
-    'Retail Gasoline', 'Retail Groceries', 'Retail Health and Personal Care Products', 'Retail Luxury Goods and Jewelry',
-    'Retail Motor Vehicles', 'Retail Musical Instruments', 'Retail Office Equipment', 'Retail Office Supplies and Gifts',
-    'Retail Pharmacies', 'Retail Recyclable Materials & Used Merchandise', 'Reupholstery and Furniture Repair', 'Robot Manufacturing',
-    'Robotics Engineering', 'Rubber Products Manufacturing', 'Satellite Telecommunications', 'Savings Institutions',
-    'School and Employee Bus Services', 'Seafood Product Manufacturing', 'Secretarial Schools', 'Securities and Commodity Exchanges',
-    'Security Guards and Patrol Services', 'Security Systems Services', 'Security and Investigations', 'Semiconductor Manufacturing',
-    'Semiconductors', 'Services for Renewable Energy', 'Services for the Elderly and Disabled', 'Sheet Music Publishing',
-    'Shipbuilding', 'Shuttles and Special Needs Transportation Services', 'Sightseeing Transportation', 'Skiing Facilities',
-    'Smart Meter Manufacturing', 'Soap and Cleaning Product Manufacturing', 'Social Networking Platforms', 'Software Development',
-    'Solar Electric Power Generation', 'Sound Recording', 'Space Research and Technology', 'Specialty Trade Contractors',
-    'Spectator Sports', 'Sporting Goods', 'Sporting Goods Manufacturing', 'Sports Teams and Clubs',
-    'Sports and Recreation Instruction', 'Spring and Wire Product Manufacturing', 'Staffing and Recruiting', 'Steam and Air-Conditioning Supply',
-    'Strategic Management Services', 'Subdivision of Land', 'Sugar and Confectionery Product Manufacturing', 'Surveying and Mapping Services',
-    'Taxi and Limousine Services', 'Technical and Vocational Training', 'Technology, Information and Internet', 'Technology, Information and Media',
-    'Telecommunications', 'Telecommunications Carriers', 'Telephone Call Centers', 'Temporary Help Services',
-    'Textile Manufacturing', 'Theater Companies', 'Think Tanks', 'Tobacco',
-    'Tobacco Manufacturing', 'Translation and Localization', 'Transportation Equipment Manufacturing', 'Transportation Programs',
-    'Transportation, Logistics, Supply Chain and Storage', 'Transportation/Trucking/Railroad', 'Travel Arrangements', 'Truck Transportation',
-    'Trusts and Estates', 'Turned Products and Fastener Manufacturing', 'Urban Transit Services', 'Utilities',
-    'Utilities Administration', 'Utility System Construction', 'Vehicle Repair and Maintenance', 'Venture Capital and Private Equity Principals',
-    'Veterinary', 'Veterinary Services', 'Vocational Rehabilitation Services', 'Warehousing',
-    'Warehousing and Storage', 'Waste Collection', 'Waste Treatment and Disposal', 'Water Supply and Irrigation Systems',
-    'Water, Waste, Steam, and Air Conditioning Services', 'Wellness and Fitness Services', 'Wholesale', 'Wholesale Alcoholic Beverages',
-    'Wholesale Apparel and Sewing Supplies', 'Wholesale Appliances, Electrical, and Electronics', 'Wholesale Building Materials', 'Wholesale Chemical and Allied Products',
-    'Wholesale Computer Equipment', 'Wholesale Drugs and Sundries', 'Wholesale Food and Beverage', 'Wholesale Footwear',
-    'Wholesale Furniture and Home Furnishings', 'Wholesale Hardware, Plumbing, Heating Equipment', 'Wholesale Import and Export', 'Wholesale Luxury Goods and Jewelry',
-    'Wholesale Machinery', 'Wholesale Metals and Minerals', 'Wholesale Motor Vehicles and Parts', 'Wholesale Paper Products',
-    'Wholesale Petroleum and Petroleum Products', 'Wholesale Photography Equipment and Supplies', 'Wholesale Raw Farm Products', 'Wholesale Recyclable Materials',
-    'Wind Electric Power Generation', 'Wine & Spirits', 'Wineries', 'Wireless Services',
-    "Women's Handbag Manufacturing", 'Wood Product Manufacturing', 'Writing and Editing', 'Zoos and Botanical Gardens',
-]
 
 
 class SearchCompanyView(View):
@@ -3070,17 +3076,53 @@ class SaveEnrichAndGoToCampaignView(LoginRequiredMixin, View):
                 "error": f"Failed to start enrichment: {str(exc)}"
             }, status=500)
     
+        job = EnrichmentJob.objects.create(
+            user         = request.user,
+            request_ids  = request_ids,
+            status       = "RUNNING",
+            total        = len(request_ids),
+            redirect_url = campaign_url,
+            list_id      = saved_list.id,
+        )
+
+        # ── Fire background thread — runs independently of this request ────────
+        run_enrichment_polling(str(job.id))
+
+        # ── Return immediately — no waiting ───────────────────────────────────
         return JsonResponse({
             "success":      True,
             "pending":      True,
-            "message":      (
-                f"'{saved_list.name}' saved. Enriching {len(request_ids)} contacts…"
-                + (f" {len(errors)} failed to start." if errors else "")
-            ),
+            "job_id":       str(job.id),
+            "message":      f"'{saved_list.name}' saved. Enriching {len(request_ids)} contacts.",
             "redirect_url": campaign_url,
             "list_id":      saved_list.id,
             "request_ids":  request_ids,
-            "credit_cost":  len(request_ids),
+        })
+
+
+class CheckEnrichmentJobView(LoginRequiredMixin, View):
+    def get(self, request, job_id):
+        from .models import EnrichmentJob
+
+        try:
+            job = EnrichmentJob.objects.get(id=job_id, user=request.user)
+        except EnrichmentJob.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Job not found."}, status=404)
+
+        try:
+            sl, _   = UserSearchLimit.objects.get_or_create(user=request.user)
+            credits = sl.credits
+        except Exception:
+            credits = None
+
+        return JsonResponse({
+            "success":      True,
+            "status":       job.status,
+            "total":        job.total,
+            "done":         job.done_count,
+            "all_done":     job.status == "COMPLETED",
+            "redirect_url": job.redirect_url,
+            "credits":      credits,
         })
  
         
@@ -5551,11 +5593,176 @@ import json
 
 
 @login_required(login_url="login")
+def campaign_generate_emails(request):
+    """
+    AJAX endpoint: generates AI emails for each person in the campaign
+    and returns them as JSON for preview before sending.
+    """
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "POST required"}, status=405)
+
+    # ── FORM DATA ──
+    tag_id           = request.POST.get("tag_id", "").strip()
+    selected_list_id = request.POST.get("selected_list_id", "").strip()
+    person_ids_raw   = request.POST.get("person_ids", "").strip()
+    service_name     = request.POST.get("selected_service")
+    framework        = request.POST.get("framework")
+    campaign_goal    = request.POST.get("campaign_goal")
+    signature_id     = request.POST.get("signature_id")
+
+    # ── VALIDATIONS ──
+    if not service_name:
+        return JsonResponse({"success": False, "error": "Service is required."}, status=400)
+    if not selected_list_id and not tag_id:
+        return JsonResponse({"success": False, "error": "Please select a Tag or a Saved List."}, status=400)
+
+    selected_service = ProductService.objects.filter(
+        service_name=service_name,
+        user=request.user
+    ).first()
+    if not selected_service:
+        return JsonResponse({"success": False, "error": "Invalid service selected."}, status=400)
+
+    # ── RESOLVE AUDIENCES ──
+    audiences = None
+    if selected_list_id:
+        try:
+            saved_list = SavedPeopleList.objects.get(id=selected_list_id, user=request.user)
+        except SavedPeopleList.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Selected list not found."}, status=400)
+
+        entries_with_email = saved_list.entries.exclude(email="")
+        if person_ids_raw:
+            pid_list = [int(x) for x in person_ids_raw.split(",") if x.strip().isdigit()]
+            if pid_list:
+                entries_with_email = entries_with_email.filter(id__in=pid_list)
+
+        if not entries_with_email.exists():
+            return JsonResponse({"success": False, "error": f"No enriched emails found in '{saved_list.name}'."}, status=400)
+
+        tag_obj, _ = AudienceTag.objects.get_or_create(
+            user=request.user,
+            name=f"[List] {saved_list.name}"
+        )
+        for entry in entries_with_email:
+            obj, created = TargetAudience.objects.get_or_create(
+                user=request.user,
+                email=entry.email,
+                tag=tag_obj,
+                defaults={
+                    "receiver_first_name":   entry.first,
+                    "receiver_last_name":    entry.last,
+                    "receiver_linkedin_url": entry.linkedin,
+                    "company_url":           entry.company_website,
+                }
+            )
+            obj.receiver_first_name   = entry.first or obj.receiver_first_name
+            obj.receiver_last_name    = entry.last or obj.receiver_last_name
+            obj.receiver_linkedin_url = entry.linkedin or obj.receiver_linkedin_url
+            obj.company_url           = entry.company_website or obj.company_url
+            obj.campaign_goal         = campaign_goal
+            obj.framework             = framework
+            obj.selected_service      = service_name
+            obj.save(update_fields=[
+                "receiver_first_name", "receiver_last_name",
+                "receiver_linkedin_url", "company_url",
+                "campaign_goal", "framework", "selected_service",
+            ])
+        audiences = TargetAudience.objects.filter(user=request.user, tag=tag_obj)
+
+    elif tag_id:
+        audiences = TargetAudience.objects.filter(user=request.user, tag_id=tag_id)
+
+    if not audiences or not audiences.exists():
+        return JsonResponse({"success": False, "error": "No leads found."}, status=400)
+
+    # ── SIGNATURE ──
+    signature_html = ""
+    if signature_id:
+        try:
+            signature_obj = Signature.objects.get(id=signature_id, user=request.user)
+        except Signature.DoesNotExist:
+            signature_obj = None
+    else:
+        signature_obj = Signature.objects.filter(user=request.user).first()
+
+    if signature_obj:
+        signature_html = signature_obj.signature or ""
+        if signature_obj.photo:
+            photo_url = request.build_absolute_uri(signature_obj.photo.url)
+            signature_html += f"""
+                <p>
+                    <img src="{photo_url}"
+                        alt="Signature Photo"
+                        style="max-width:420px;margin-top:8px;width:100%;height:auto;display:block;">
+                </p>
+            """
+
+    if not signature_html:
+        signature_html = (
+            '<div style="margin:0;padding:0;line-height:1.4;">'
+            f'Best,<br>{request.user.full_name}'
+            '</div>'
+        )
+
+    # ── GENERATE EMAILS FOR EACH AUDIENCE ──
+    generated_data = []
+    for audience in audiences:
+        try:
+            ai_raw  = get_response(request.user, audience, selected_service)
+            ai_data = json.loads(ai_raw)
+
+            subject       = ai_data["main_email"]["subject"]
+            body          = ai_data["main_email"]["body"]
+            final_body    = body + "<br><br>" + signature_html if signature_html else body
+
+            follow_ups = ai_data.get("follow_ups", [])
+            for fu in follow_ups:
+                fu["body"] = fu.get("body", "") + ("<br><br>" + signature_html if signature_html else "")
+
+            generated_data.append({
+                "audience_id":  audience.id,
+                "email":        audience.email,
+                "first_name":   audience.receiver_first_name or "",
+                "last_name":    audience.receiver_last_name or "",
+                "framework":    ai_data.get("framework", framework),
+                "main_email": {
+                    "subject": subject,
+                    "body":    final_body,
+                },
+                "follow_ups": follow_ups,
+            })
+        except Exception as e:
+            generated_data.append({
+                "audience_id":  audience.id,
+                "email":        audience.email,
+                "first_name":   audience.receiver_first_name or "",
+                "last_name":    audience.receiver_last_name or "",
+                "error":        str(e),
+            })
+
+    return JsonResponse({
+        "success": True,
+        "generated": generated_data,
+        "framework": framework,
+    })
+
+
+@login_required(login_url="login")
 def campaign_view(request):
 
-    if request.method == "GET" and not request.META.get("HTTP_REFERER"):
-        # allow redirect from save-enrich (has list_id param)
-        if not request.GET.get("list_id"):
+    # if request.method == "GET" and not request.META.get("HTTP_REFERER"):
+    #     # allow redirect from save-enrich (has list_id param)
+    #     if not request.GET.get("list_id"):
+    #         return redirect("/")
+
+    if request.method == "GET":
+        has_referer  = bool(request.META.get("HTTP_REFERER"))
+        has_list_id  = bool(request.GET.get("list_id"))
+        has_tag_id   = bool(request.GET.get("tag_id"))
+        has_person_ids = bool(request.GET.get("person_ids"))
+        
+        if not has_referer and not has_list_id and not has_tag_id and not has_person_ids:
             return redirect("/")
 
     tags             = AudienceTag.objects.filter(user=request.user)
@@ -5768,6 +5975,20 @@ def campaign_view(request):
                 attachment_file = None
 
         # =========================
+        # PRE-GENERATED EMAILS (from preview step)
+        # =========================
+        generated_emails_json = request.POST.get("generated_emails_json", "").strip()
+        pre_generated = {}
+        if generated_emails_json:
+            try:
+                gen_list = json.loads(generated_emails_json)
+                for item in gen_list:
+                    if not item.get("error"):
+                        pre_generated[item["audience_id"]] = item
+            except (json.JSONDecodeError, KeyError):
+                pass
+
+        # =========================
         # SCHEDULED SEND
         # =========================
         if schedule_time:
@@ -5791,13 +6012,19 @@ def campaign_view(request):
                     "selected_service"
                 ])
 
-                ai_raw  = get_response(request.user, audience, selected_service)
-                ai_data = json.loads(ai_raw)
+                # Use pre-generated email if available
+                pg = pre_generated.get(audience.id)
+                if pg:
+                    ai_data = {"main_email": pg["main_email"], "follow_ups": pg.get("follow_ups", [])}
+                else:
+                    ai_raw  = get_response(request.user, audience, selected_service)
+                    ai_data = json.loads(ai_raw)
 
                 subject       = ai_data["main_email"]["subject"]
                 message       = ai_data["main_email"]["body"]
+                # If pre-generated, signature is already appended
                 final_message = message
-                if signature_html:
+                if not pg and signature_html:
                     final_message += "<br><br>" + signature_html
 
                 SentEmail.objects.create(
@@ -5833,7 +6060,7 @@ def campaign_view(request):
                             break
 
                         follow_body = follow.get("body", "")
-                        if signature_html:
+                        if not pg and signature_html:
                             follow_body += "<br><br>" + signature_html
 
                         ReminderEmail.objects.create(
@@ -5849,9 +6076,10 @@ def campaign_view(request):
                             ).date(),
                             sent=False
                         )
-
             messages.success(request, "Campaign Scheduled Successfully.")
-            return redirect("campaign_view")
+            return redirect(f"{request.path}?list_id={request.POST.get('selected_list_id', '')}")
+            # messages.success(request, "Campaign Scheduled Successfully.")
+            # return redirect("campaign_view")
 
         # =========================
         # IMMEDIATE SEND
@@ -5873,13 +6101,18 @@ def campaign_view(request):
                 if shuffle_accounts and account_list:
                     selected_account = account_list[index % len(account_list)]
 
-                ai_raw  = get_response(request.user, audience, selected_service)
-                ai_data = json.loads(ai_raw)
+                # Use pre-generated email if available
+                pg = pre_generated.get(audience.id)
+                if pg:
+                    ai_data = {"main_email": pg["main_email"], "follow_ups": pg.get("follow_ups", [])}
+                else:
+                    ai_raw  = get_response(request.user, audience, selected_service)
+                    ai_data = json.loads(ai_raw)
 
                 subject       = ai_data["main_email"]["subject"]
                 message       = ai_data["main_email"]["body"]
                 final_message = message
-                if signature_html:
+                if not pg and signature_html:
                     final_message += "<br><br>" + signature_html
 
                 main_email = {
@@ -5916,7 +6149,7 @@ def campaign_view(request):
                         break
 
                     follow_body = follow.get("body", "")
-                    if signature_html:
+                    if not pg and signature_html:
                         follow_body += "<br><br>" + signature_html
 
                     send_at = today + timezone.timedelta(days=follow_up_days[i])
@@ -5942,7 +6175,9 @@ def campaign_view(request):
                 )
             else:
                 messages.success(request, "Campaign Sent Successfully")
-            return redirect("campaign_view")
+            return redirect(f"{request.path}?list_id={request.POST.get('selected_list_id', '')}")
+            #     messages.success(request, "Campaign Sent Successfully")
+            # return redirect("campaign_view")
 
 
     # =========================

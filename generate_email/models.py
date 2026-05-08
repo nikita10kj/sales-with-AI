@@ -263,3 +263,29 @@ def create_search_limit_for_new_user(sender, instance, created, **kwargs):
             user=instance,
             defaults={"credits": 50, "search_credits": 25}
         )
+
+
+class EnrichmentJob(models.Model):
+    STATUS_CHOICES = [
+        ("PENDING",   "Pending"),
+        ("RUNNING",   "Running"),
+        ("COMPLETED", "Completed"),
+        ("FAILED",    "Failed"),
+    ]
+
+    id           = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user         = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="enrichment_jobs")
+    request_ids  = models.JSONField(default=list)      # list of EnrichmentRequest UUID strings
+    status       = models.CharField(max_length=20, choices=STATUS_CHOICES, default="PENDING")
+    total        = models.PositiveIntegerField(default=0)
+    done_count   = models.PositiveIntegerField(default=0)
+    redirect_url = models.CharField(max_length=500, blank=True)
+    list_id      = models.PositiveIntegerField(null=True, blank=True)
+    created_at   = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"EnrichmentJob {self.id} [{self.status}] {self.done_count}/{self.total}"

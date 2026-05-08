@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import TargetAudience, SentEmail, ReminderEmail, EmailSubscription,AudienceTag,SavedPeopleList,SavedPeopleEntry,GlobalSearchLog,EnrichmentRequest
+from .models import TargetAudience, SentEmail, ReminderEmail, EmailSubscription,AudienceTag,SavedPeopleList,SavedPeopleEntry,GlobalSearchLog,EnrichmentRequest,EnrichmentJob
 from .models import UserSearchLimit
 from django.contrib import admin
 from django.utils.html import format_html
@@ -18,6 +18,7 @@ admin.site.register(SavedPeopleList)
 admin.site.register(SavedPeopleEntry)
 # admin.site.register(GlobalSearchLog)
 admin.site.register(EnrichmentRequest)
+admin.site.register(EnrichmentJob)
 
 @admin.register(GlobalSearchLog)
 class GlobalSearchLogAdmin(admin.ModelAdmin):
