@@ -1,11 +1,11 @@
 from django.urls import path
 from .views import (CheckBulkEnrichmentView, GenerateEmailView, SendEmailView, EmailListView,EmailMessageView,
-                    LeadListView, LeadEmailListView, campaign_view, email_open_pixel, export_target_audience_csv, import_leads, msgraph_webhook, CheckEmailHistoryView)
+                    LeadListView, LeadEmailListView, campaign_view, campaign_generate_emails, email_open_pixel, export_target_audience_csv, import_leads, msgraph_webhook, CheckEmailHistoryView)
 
 from .views import (SearchPeopleView,EnrichPersonView,CheckEnrichmentView,SelectPersonForEmailView,SearchPeopleByLinkdinView,SearchCompanyView,DataEnrichmentView,PeopleListView,
                     GetSavedListsView,EnrichSavedListView,ExportSavedListCsvView,SavePeopleToListView,DownloadListCSVView,DeleteSavedListView,RemovePersonFromListView,
                     SaveCompaniesToListView,RemoveCompanyFromListView,UseSavedListInCampaignView,SaveEnrichAndGoToCampaignView,SearchHistoryView,
-                    AiParseSearchView)
+                    AiParseSearchView,CheckEnrichmentJobView)
 
 
 urlpatterns = [
@@ -22,6 +22,7 @@ urlpatterns = [
 
     path("import-leads/", import_leads, name="import_leads"),
     path("campaign/", campaign_view, name="campaign_view"),
+    path("campaign/generate-emails/", campaign_generate_emails, name="campaign_generate_emails"),
 
 
     path("search-people/", SearchPeopleView.as_view(), name="search_people"),
@@ -50,6 +51,7 @@ urlpatterns = [
     path("list/<int:list_id>/entries/<int:entry_id>/remove/", RemovePersonFromListView.as_view(), name="remove_person_from_list"),
     path("save-companies-to-list/", SaveCompaniesToListView.as_view(), name="save_companies_to_list"),
     path("lists/<int:list_id>/remove-company/<int:company_id>/",RemoveCompanyFromListView.as_view(),name="remove_company_from_list"),
+    path("check-enrichment-job/<uuid:job_id>/",CheckEnrichmentJobView.as_view(),name="check_enrichment_job",),
 
     path("search-history/", SearchHistoryView.as_view(), name="search_history"),
 

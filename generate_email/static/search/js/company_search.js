@@ -481,6 +481,95 @@ document.addEventListener("DOMContentLoaded", function () {
         reattachCompanySelectionEvents();
     }
 
+    function getCompanyFormValues() {
+    var form = document.getElementById("companySearchForm");
+    if (!form) return {};
+    var data = {};
+    new FormData(form).forEach(function(val, key) {
+        data[key] = val;
+    });
+    return data;
+}
+
+function restoreCompanyFormValues(saved) {
+    if (!saved) return;
+
+    // Restore hidden input values
+    Object.keys(saved).forEach(function(key) {
+        var el = document.querySelector('[name="' + key + '"]');
+        if (el && el.type !== "checkbox") el.value = saved[key] || "";
+    });
+
+    // Re-render tag inputs visually
+    [
+        { hiddenInputId:"companyHidden",             tagsContainerId:"companyTags" },
+        { hiddenInputId:"companyLocationHidden",     tagsContainerId:"companyLocationTags" },
+        { hiddenInputId:"companySpecialitesHidden",  tagsContainerId:"companySpecialitesTags" },
+        { hiddenInputId:"companyTechnologiesHidden", tagsContainerId:"companyTechnologiesTags" },
+        { hiddenInputId:"jobPostsHidden",            tagsContainerId:"jobPostsTags" },
+    ].forEach(function(cfg) {
+        var hidden = document.getElementById(cfg.hiddenInputId);
+        var cont   = document.getElementById(cfg.tagsContainerId);
+        if (!hidden || !cont) return;
+
+        var tags = hidden.value.trim()
+            ? hidden.value.split(",").map(function(t){ return t.trim(); }).filter(Boolean)
+            : [];
+
+        cont.innerHTML = "";
+        tags.forEach(function(t, i) {
+            var tag = document.createElement("div");
+            tag.className = "tag";
+            tag.innerHTML = '<span class="tag-text">' + t + '</span>'
+                + '<span class="tag-remove" data-index="' + i + '">&times;</span>';
+            cont.appendChild(tag);
+        });
+
+        cont.querySelectorAll(".tag-remove").forEach(function(btn) {
+            btn.addEventListener("click", function() {
+                var idx = parseInt(btn.getAttribute("data-index"), 10);
+                tags.splice(idx, 1);
+                hidden.value = tags.join(",");
+            });
+        });
+    });
+
+    // Restore industry tags
+    var industryHidden  = document.getElementById("industryHidden");
+    var industryTagsCont = document.getElementById("industryTagsSelected");
+    if (industryHidden && industryTagsCont) {
+        var industryTags = industryHidden.value.trim()
+            ? industryHidden.value.split(",").map(function(t){ return t.trim(); }).filter(Boolean)
+            : [];
+        industryTagsCont.innerHTML = "";
+        industryTags.forEach(function(val, i) {
+            var tag = document.createElement("div");
+            tag.className = "tag";
+            tag.innerHTML = '<span class="tag-text">' + val + '</span>'
+                + '<span class="tag-remove" data-index="' + i + '">&times;</span>';
+            industryTagsCont.appendChild(tag);
+        });
+    }
+
+    // Restore employee count checkboxes
+    var employeeHidden = document.getElementById("employeeCountHidden");
+    if (employeeHidden && employeeHidden.value) {
+        var savedVals = employeeHidden.value.split(",").map(function(v){ return v.trim(); });
+        document.querySelectorAll(".employee-count-cb").forEach(function(cb) {
+            cb.checked = savedVals.indexOf(cb.value) !== -1;
+        });
+    }
+
+    // Restore company market checkboxes
+    var marketHidden = document.getElementById("companyMarketHidden");
+    if (marketHidden && marketHidden.value) {
+        var savedMarket = marketHidden.value.split(",").map(function(v){ return v.trim(); });
+        document.querySelectorAll(".company-market-cb").forEach(function(cb) {
+            cb.checked = savedMarket.indexOf(cb.value) !== -1;
+        });
+    }
+}
+
     // ══ Shared AJAX fetch helper ══
     function doCompanySearch(pageOverride) {
         if (!companySearchForm) return;
@@ -498,6 +587,13 @@ document.addEventListener("DOMContentLoaded", function () {
             hideSearchLoader();
             if (data.limit_reached) { if (typeof slShowModal === "function") slShowModal(data.credits || 0); return; }
             renderCompanyAjaxResults(data);
+
+            try {
+                localStorage.removeItem("company_last_results");
+                localStorage.removeItem("company_last_form");
+                localStorage.setItem("company_last_results", JSON.stringify(data));
+                localStorage.setItem("company_last_form", JSON.stringify(getCompanyFormValues()));
+            } catch(e) {}
         })
         .catch(function(err) {
             hideSearchLoader();
@@ -744,6 +840,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var viewEmpCompany       = document.getElementById("viewEmpCompany");
     var viewEmpLocation      = document.getElementById("viewEmpLocation");
     var openDrawerRowIndex   = null;
+    var drawerViewEmployeesBtn = document.getElementById("drawerViewEmployeesBtn")
 
     function openCompanyDrawer() {
         if (!companyDrawer || !companyDrawerOverlay) return;
@@ -772,6 +869,21 @@ document.addEventListener("DOMContentLoaded", function () {
             loadExistingLists().then(function() { setTab("new"); openModal(); });
         });
     }
+if (drawerViewEmployeesBtn) {
+    drawerViewEmployeesBtn.addEventListener("click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var company  = drawerViewEmployeesBtn.dataset.company  || "";
+        var location = drawerViewEmployeesBtn.dataset.location || "";
+        localStorage.removeItem("people_last_results");
+        localStorage.removeItem("people_last_form");
+        var params = new URLSearchParams();
+        if (company)  params.set("company",  company);
+        if (location) params.set("location", location);
+        params.set("auto_search", "1");
+        window.location.href = SEARCH_PEOPLE_URL + "?" + params.toString();
+    });
+}
 
     document.addEventListener("click", function(e) {
         // Description toggle
@@ -791,13 +903,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // View all employees link
         var viewAllLink = e.target.closest(".drawer-view-employees-link");
-        if (viewAllLink) {
-            e.preventDefault();
-            if (viewEmpCompany)  viewEmpCompany.value  = viewAllLink.dataset.company  || "";
-            if (viewEmpLocation) viewEmpLocation.value = viewAllLink.dataset.location || "";
-            if (viewEmployeesForm) viewEmployeesForm.submit();
-            return;
-        }
+if (viewAllLink && !e.target.closest("#drawerViewEmployeesBtn")) {
+    e.preventDefault();
+    var company  = viewAllLink.dataset.company  || "";
+    var location = viewAllLink.dataset.location || "";
+    localStorage.removeItem("people_last_results");
+    localStorage.removeItem("people_last_form");
+    var params = new URLSearchParams();
+    if (company)  params.set("company",  company);
+    if (location) params.set("location", location);
+    params.set("auto_search", "1");
+    window.location.href = SEARCH_PEOPLE_URL + "?" + params.toString();
+    return;
+}
 
         // Drawer trigger
         var trigger = e.target.closest(".drawer-trigger");
@@ -817,11 +935,28 @@ document.addEventListener("DOMContentLoaded", function () {
                     var cbEl = tr.querySelector(".row-checkbox");
                     if (viewEmpCompany)  viewEmpCompany.value  = cbEl ? (cbEl.dataset.name        || "") : "";
                     if (viewEmpLocation) viewEmpLocation.value = cbEl ? (cbEl.dataset.headquarter || "") : "";
+                    if (drawerViewEmployeesBtn) drawerViewEmployeesBtn.dataset.company  = cbEl ? (cbEl.dataset.name        || "") : "";
+                    if (drawerViewEmployeesBtn) drawerViewEmployeesBtn.dataset.location = cbEl ? (cbEl.dataset.headquarter || "") : "";
+
                     openCompanyDrawer();
                 }
             }
         }
     });
+
+    (function restoreLastSearch() {
+    try {
+        var savedResults = localStorage.getItem("company_last_results");
+        var savedForm    = localStorage.getItem("company_last_form");
+        if (!savedResults) return;
+
+        var data = JSON.parse(savedResults);
+        var form = JSON.parse(savedForm || "{}");
+
+        restoreCompanyFormValues(form);
+        renderCompanyAjaxResults(data);
+    } catch(e) {}
+})();
 
     setTab("new");
     updateSelectionUI();

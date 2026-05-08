@@ -56,6 +56,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function cbData(cb) {
+        // Try to get the best available photo URL (prioritize main photo field)
+        var photo = cb.getAttribute("data-photo") || cb.getAttribute("data-pictureUrl") || cb.getAttribute("data-profilePic") || "";
+        
         return {
             first: cb.getAttribute("data-first") || "",
             last: cb.getAttribute("data-last") || "",
@@ -67,7 +70,10 @@ document.addEventListener("DOMContentLoaded", function () {
             location: cb.getAttribute("data-location") || "",
             company_headquarter: cb.getAttribute("data-company_headquarter") || "",
             email: cb.getAttribute("data-email") || "",
-            phone: cb.getAttribute("data-phone") || ""
+            phone: cb.getAttribute("data-phone") || "",
+            photo: photo,
+            pictureUrl: cb.getAttribute("data-picture-url") || cb.getAttribute("data-pictureUrl") || "",
+            profilePic: cb.getAttribute("data-profile-pic") || cb.getAttribute("data-profilePic") || ""
         };
     }
 
@@ -235,13 +241,85 @@ document.addEventListener("DOMContentLoaded", function () {
         { inputId:"locationInput",    addBtnId:"addLocationTag",    tagsContainerId:"locationTags",    hiddenInputId:"locationHidden" },
         { inputId:"companyInput",     addBtnId:"addCompanyTag",     tagsContainerId:"companyTags",     hiddenInputId:"companyHidden" },
         { inputId:"specialitesInput", addBtnId:"addSpecialitesTag", tagsContainerId:"specialitesTags", hiddenInputId:"specialitesHidden" },
-        { inputId:"industryInput",    addBtnId:"addIndustryTag",    tagsContainerId:"industryTags",    hiddenInputId:"industryHidden" },
+        // { inputId:"industryInput",    addBtnId:"addIndustryTag",    tagsContainerId:"industryTags",    hiddenInputId:"industryHidden" },
         { inputId:"jobTitleInput",    addBtnId:"addJobTitleTag",    tagsContainerId:"jobTitleTags",    hiddenInputId:"jobTitleHidden" },
         { inputId:"skillsInput",      addBtnId:"addSkillsTag",      tagsContainerId:"skillsTags",      hiddenInputId:"skillsHidden" },
         { inputId:"institutionInput", addBtnId:"addInstitutionTag", tagsContainerId:"institutionTags", hiddenInputId:"institutionHidden" },
         { inputId:"degreeInput",      addBtnId:"addDegreeTag",      tagsContainerId:"degreeTags",      hiddenInputId:"degreeHidden" }
     ].forEach(setupTagInput);
 
+    (function() {
+        var dataEl = document.getElementById("industryChoicesData");
+        if (!dataEl) return;
+        var INDUSTRIES = JSON.parse(dataEl.textContent);
+
+        var input      = document.getElementById("industryInput");
+        var suggestions = document.getElementById("industrySuggestions");
+        var tagsCont   = document.getElementById("industryTagsSelected");
+        var hidden     = document.getElementById("industryHidden");
+        if (!input || !suggestions || !tagsCont || !hidden) return;
+
+        var searchBtn = document.querySelector('#peopleSearchForm button[type="submit"]');
+        var selected  = hidden.value ? hidden.value.split(",").map(function(v){ return v.trim(); }).filter(Boolean) : [];
+
+        function enableBtn() {
+            if (searchBtn) { searchBtn.disabled = false; searchBtn.title = ""; searchBtn.style.opacity = ""; searchBtn.style.cursor = ""; }
+        }
+        function disableBtn() {
+            if (searchBtn) { searchBtn.disabled = true; searchBtn.title = "Please select an industry from the suggestions list"; searchBtn.style.opacity = "0.5"; searchBtn.style.cursor = "not-allowed"; }
+        }
+
+        function renderTags() {
+            tagsCont.innerHTML = "";
+            selected.forEach(function(val, i) {
+                var tag = document.createElement("div");
+                tag.className = "tag";
+                tag.innerHTML = '<span class="tag-text">' + esc(val) + '</span><span class="tag-remove" data-index="' + i + '">&times;</span>';
+                tagsCont.appendChild(tag);
+            });
+            tagsCont.querySelectorAll(".tag-remove").forEach(function(btn) {
+                btn.addEventListener("click", function() {
+                    selected.splice(parseInt(btn.dataset.index), 1);
+                    hidden.value = selected.join(",");
+                    renderTags();
+                });
+            });
+        }
+
+        function showSuggestions(q) {
+            q = q.toLowerCase().trim();
+            if (!q) { suggestions.style.display = "none"; return; }
+            var matches = INDUSTRIES.filter(function(ind) {
+                return ind.toLowerCase().indexOf(q) !== -1 && selected.indexOf(ind) === -1;
+            }).slice(0, 10);
+            if (!matches.length) { suggestions.style.display = "none"; return; }
+            suggestions.innerHTML = matches.map(function(ind) {
+                var hi = ind.replace(new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&") + ")", "gi"), "<strong>$1</strong>");
+                return '<li data-value="' + esc(ind) + '" style="padding:8px 14px;font-size:13px;color:#1a2038;cursor:pointer;" onmouseover="this.style.background=\'#f4f5fb\'" onmouseout="this.style.background=\'\'">' + hi + '</li>';
+            }).join("");
+            suggestions.querySelectorAll("li").forEach(function(li) {
+                li.addEventListener("click", function() {
+                    var val = li.dataset.value;
+                    if (val && selected.indexOf(val) === -1) { selected.push(val); hidden.value = selected.join(","); renderTags(); }
+                    input.value = ""; suggestions.style.display = "none"; input.focus(); enableBtn();
+                });
+            });
+            suggestions.style.display = "block";
+        }
+
+        input.addEventListener("input", function() { showSuggestions(input.value); input.value.trim() ? disableBtn() : enableBtn(); });
+        input.addEventListener("keydown", function(e) {
+            if (e.key === "Escape") { suggestions.style.display = "none"; input.value = ""; enableBtn(); }
+        });
+        document.addEventListener("click", function(e) {
+            if (!input.contains(e.target) && !suggestions.contains(e.target)) {
+                suggestions.style.display = "none";
+                if (input.value.trim()) { input.value = ""; enableBtn(); }
+            }
+        });
+
+        renderTags(); hidden.value = selected.join(",");
+    })();
     // ══ Search loader ══
     const searchLoaderOverlay = document.getElementById("searchLoaderOverlay");
     function showSearchLoader() { if (searchLoaderOverlay) searchLoaderOverlay.classList.add("active"); }
@@ -292,7 +370,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 + ' data-company_website="' + esc(p.company_website || "") + '" data-job_title="' + esc(p.job_title) + '"'
                 + ' data-institution="' + esc(p.institution) + '" data-location="' + esc(p.location) + '"'
                 + ' data-company_headquarter="' + esc(p.company_headquarter) + '"'
-                + ' data-email="' + esc(email) + '" data-phone="' + esc(phone) + '" data-photo="' + esc(p.photo || "") + '"';
+                + ' data-email="' + esc(email) + '" data-phone="' + esc(phone) + '"'
+                + ' data-photo="' + esc(p.photo || "") + '"'
+                + ' data-pictureUrl="' + esc(p.pictureUrl || "") + '"'
+                + ' data-profilePic="' + esc(p.profilePic || "") + '"';
 
             html += '<tr id="person-card-' + idx + '" data-person="' + richJsonAttr + '">'
                 + '<td class="col-chk"><input type="checkbox" class="row-checkbox"' + cbAttrs + '></td>';
@@ -388,9 +469,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         var pageRange = (pagination && pagination.page_range) || buildPageRange(cur, totalPages, 2);
 
-        html += '<div class="results-footer"><div class="pagination-wrap">'
-            + '<button class="page-btn page-btn-text" type="button"' + (cur <= 1 ? ' disabled' : ' onclick="changePage(1)"') + '>&lt;&lt; First</button>'
-            + '<button class="page-btn page-btn-text" type="button"' + (cur <= 1 ? ' disabled' : ' onclick="changePage(' + (cur - 1) + ')"') + '>&lt; Prev</button>';
+        html += '<div class="results-footer" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">'
+    + '<div class="pagination-wrap">'
+    + '<button class="page-btn page-btn-text" type="button"' + (cur <= 1 ? ' disabled' : ' onclick="changePage(1)"') + '>&lt;&lt; First</button>'
+    + '<button class="page-btn page-btn-text" type="button"' + (cur <= 1 ? ' disabled' : ' onclick="changePage(' + (cur - 1) + ')"') + '>&lt; Prev</button>';
 
         pageRange.forEach(function(p) {
             if (p === -1) html += '<span class="page-ellipsis">…</span>';
@@ -399,8 +481,10 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         html += '<button class="page-btn page-btn-text" type="button"' + (hasNext ? ' onclick="changePage(' + (cur + 1) + ')"' : ' disabled') + '>Next &gt;</button>'
-            + '<button class="page-btn page-btn-text" type="button"' + (cur >= totalPages ? ' disabled' : ' onclick="changePage(' + totalPages + ')"') + '>Last &gt;&gt;</button>'
-            + '</div></div></div>';
+    + '<button class="page-btn page-btn-text" type="button"' + (cur >= totalPages ? ' disabled' : ' onclick="changePage(' + totalPages + ')"') + '>Last &gt;&gt;</button>'
+    + '</div>'
+    + '<button type="button" id="saveToListBtnBottom" class="save-list-btn" style="display:none;"><i class="fas fa-plus"></i> Save to List</button>'
+    + '</div></div>';
 
         return html;
     }
@@ -545,12 +629,15 @@ document.addEventListener("DOMContentLoaded", function () {
         var saveBtn     = document.getElementById("saveToListBtn");
 
         function updateUI() {
-            if (!countText || !saveBtn) return;
-            var checked = document.querySelectorAll(".row-checkbox:checked").length;
-            countText.textContent = checked + " selected of " + checkboxes.length + " results";
-            saveBtn.style.display = checked > 0 ? "inline-flex" : "none";
-            if (selectAll) selectAll.checked = checkboxes.length > 0 && checked === checkboxes.length;
-        }
+    if (!countText || !saveBtn) return;
+    var checked = document.querySelectorAll(".row-checkbox:checked").length;
+    countText.textContent = checked + " selected of " + checkboxes.length + " results";
+    saveBtn.style.display = checked > 0 ? "inline-flex" : "none";
+    // Sync bottom button
+    var saveBtnBottom = document.getElementById("saveToListBtnBottom");
+    if (saveBtnBottom) saveBtnBottom.style.display = checked > 0 ? "inline-flex" : "none";
+    if (selectAll) selectAll.checked = checkboxes.length > 0 && checked === checkboxes.length;
+}
 
         if (selectAll) {
             selectAll.addEventListener("change", function() {
@@ -565,6 +652,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 await loadExistingLists(); setTab("new"); openModal();
             });
         }
+        var saveBtnBottom = document.getElementById("saveToListBtnBottom");
+        if (saveBtnBottom) {
+            saveBtnBottom.addEventListener("click", async function() {
+                await loadExistingLists(); setTab("new"); openModal();
+            });
+        }
 
         var contactPill = document.getElementById("contactPill");
         if (contactPill) contactPill.textContent = "0/" + checkboxes.length;
@@ -573,6 +666,100 @@ document.addEventListener("DOMContentLoaded", function () {
     // ══ AJAX search ══
     const loader = document.getElementById("enrichLoader");
     const peopleSearchForm = document.getElementById("peopleSearchForm");
+
+    function getPeopleFormValues() {
+    var form = document.getElementById("peopleSearchForm");
+    if (!form) return {};
+    var data = {};
+    new FormData(form).forEach(function(val, key) {
+        data[key] = val;
+    });
+    return data;
+}
+
+function restorePeopleFormValues(saved) {
+    if (!saved) return;
+
+    // Restore all hidden input values first
+    Object.keys(saved).forEach(function(key) {
+        var el = document.querySelector('[name="' + key + '"]');
+        if (el && el.type !== "checkbox") el.value = saved[key] || "";
+    });
+
+    // Re-render tag inputs visually
+    // Each tag input reads from its hidden input and renders tags
+    [
+        { hiddenInputId:"nameHidden",        tagsContainerId:"nameTags",        inputId:"nameInput" },
+        { hiddenInputId:"locationHidden",    tagsContainerId:"locationTags",    inputId:"locationInput" },
+        { hiddenInputId:"companyHidden",     tagsContainerId:"companyTags",     inputId:"companyInput" },
+        { hiddenInputId:"specialitesHidden", tagsContainerId:"specialitesTags", inputId:"specialitesInput" },
+        { hiddenInputId:"jobTitleHidden",    tagsContainerId:"jobTitleTags",    inputId:"jobTitleInput" },
+        { hiddenInputId:"skillsHidden",      tagsContainerId:"skillsTags",      inputId:"skillsInput" },
+        { hiddenInputId:"institutionHidden", tagsContainerId:"institutionTags", inputId:"institutionInput" },
+        { hiddenInputId:"degreeHidden",      tagsContainerId:"degreeTags",      inputId:"degreeInput" },
+    ].forEach(function(cfg) {
+        var hidden = document.getElementById(cfg.hiddenInputId);
+        var cont   = document.getElementById(cfg.tagsContainerId);
+        if (!hidden || !cont) return;
+
+        var tags = hidden.value.trim()
+            ? hidden.value.split(",").map(function(t){ return t.trim(); }).filter(Boolean)
+            : [];
+
+        // Render tags visually
+        cont.innerHTML = "";
+        tags.forEach(function(t, i) {
+            var tag = document.createElement("div");
+            tag.className = "tag";
+            tag.innerHTML = '<span class="tag-text">' + t + '</span>'
+                + '<span class="tag-remove" data-index="' + i + '">&times;</span>';
+            cont.appendChild(tag);
+        });
+
+        // Re-attach remove buttons
+        cont.querySelectorAll(".tag-remove").forEach(function(btn) {
+            btn.addEventListener("click", function() {
+                var idx = parseInt(btn.getAttribute("data-index"), 10);
+                tags.splice(idx, 1);
+                hidden.value = tags.join(",");
+                restorePeopleFormValues(JSON.parse(localStorage.getItem("people_last_form") || "{}"));
+            });
+        });
+    });
+
+    // Restore industry tags
+    var industryHidden = document.getElementById("industryHidden");
+    var industryTagsCont = document.getElementById("industryTagsSelected");
+    if (industryHidden && industryTagsCont) {
+        var industryTags = industryHidden.value.trim()
+            ? industryHidden.value.split(",").map(function(t){ return t.trim(); }).filter(Boolean)
+            : [];
+        industryTagsCont.innerHTML = "";
+        industryTags.forEach(function(val, i) {
+            var tag = document.createElement("div");
+            tag.className = "tag";
+            tag.innerHTML = '<span class="tag-text">' + val + '</span>'
+                + '<span class="tag-remove" data-index="' + i + '">&times;</span>';
+            industryTagsCont.appendChild(tag);
+        });
+        industryTagsCont.querySelectorAll(".tag-remove").forEach(function(btn) {
+            btn.addEventListener("click", function() {
+                var idx = parseInt(btn.getAttribute("data-index"), 10);
+                industryTags.splice(idx, 1);
+                industryHidden.value = industryTags.join(",");
+            });
+        });
+    }
+
+    // Restore seniority dropdown
+    var seniorityHidden = document.getElementById("seniorityHidden");
+    if (seniorityHidden && seniorityHidden.value) {
+        var saved_seniority = seniorityHidden.value.split(",").map(function(v){ return v.trim(); });
+        document.querySelectorAll(".seniority-cb").forEach(function(cb) {
+            cb.checked = saved_seniority.indexOf(cb.value) !== -1;
+        });
+    }
+}
 
     window.doAjaxSearch = function(pageOverride) {
         tagInputInstances.forEach(function(inst) { inst.finalizePendingInput(); });
@@ -589,6 +776,13 @@ document.addEventListener("DOMContentLoaded", function () {
             hideSearchLoader();
             if (data.limit_reached) { if (typeof slShowModal === "function") slShowModal(data.credits || 0); return; }
             renderAjaxResults(data);
+
+            try {
+                localStorage.removeItem("people_last_results");
+                localStorage.removeItem("people_last_form");
+                localStorage.setItem("people_last_results", JSON.stringify(data));
+                localStorage.setItem("people_last_form", JSON.stringify(getPeopleFormValues()));
+            } catch(e) {}
         })
         .catch(function(err) {
             hideSearchLoader();
@@ -735,6 +929,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken"), "X-Requested-With": "XMLHttpRequest" },
                     body: JSON.stringify(payload)
                 });
+
                 var data = await res.json();
 
                 if (!data.success) {
@@ -745,61 +940,19 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
 
-                if (!data.pending || !data.request_ids || !data.request_ids.length) {
-                    confirmSaveListBtn.innerHTML = "✅ Done! Redirecting...";
+                // No redirect — stay on search page
+                closeModal();
+                confirmSaveListBtn.disabled = false;
+                confirmSaveListBtn.innerHTML = "Save to List";
+
+                if (!data.pending || !data.job_id) {
                     showMessage(data.message || "Saved successfully.", "success");
-                    closeModal();
-                    setTimeout(function() { window.location.href = data.redirect_url; }, 1200);
                     return;
                 }
 
-                var requestIds  = data.request_ids;
-                var redirectUrl = data.redirect_url;
-                var total       = requestIds.length;
-                closeModal();
-                showMessage("Enriching " + total + " contacts\u2026 this may take a moment.", "success");
-
-                var progressBar = document.getElementById("enrichProgressBar");
-                if (!progressBar) {
-                    progressBar = document.createElement("div");
-                    progressBar.id = "enrichProgressBar";
-                    progressBar.style.cssText = "position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:16px 24px;z-index:99999;min-width:300px;text-align:center;font-size:14px;font-weight:600;color:#2e374d";
-                    document.body.appendChild(progressBar);
-                }
-
-                function updateProgress(done, tot) {
-                    var pct = tot > 0 ? Math.round((done / tot) * 100) : 0;
-                    progressBar.innerHTML = '<i class="fas fa-spinner fa-spin me-2" style="color:#6276ea;"></i>Enriching contacts\u2026 ' + done + '/' + tot + ' done'
-                        + '<div style="margin-top:10px;height:6px;background:#eef0f4;border-radius:99px;overflow:hidden;">'
-                        + '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,#6276ea,#7c4fc8);border-radius:99px;transition:width .4s;"></div></div>';
-                }
-
-                updateProgress(0, total);
-                var allDone = false;
-
-                for (var attempt = 0; attempt < 40; attempt++) {
-                    await new Promise(function(r) { setTimeout(r, 3000); });
-                    var checkData;
-                    try {
-                        var pollResp = await fetch(CHECK_BULK_ENRICHMENT_URL + "?request_ids=" + requestIds.join(","), { headers: { "X-Requested-With": "XMLHttpRequest" } });
-                        checkData = await pollResp.json();
-                    } catch(e) { continue; }
-
-                    if (checkData.limit_reached) {
-                        if (progressBar) progressBar.remove();
-                        if (typeof slShowModal === "function") slShowModal(checkData.credits || 0);
-                        confirmSaveListBtn.disabled = false;
-                        confirmSaveListBtn.innerHTML = "Save to List";
-                        return;
-                    }
-                    updateProgress(checkData.done || 0, checkData.total || total);
-                    if (typeof checkData.credits === "number" && typeof slUpdatePill === "function") slUpdatePill(checkData.credits);
-                    if (checkData.all_done) { allDone = true; break; }
-                }
-
-                if (progressBar) progressBar.remove();
-                showMessage(allDone ? "Enrichment complete! Redirecting to campaign..." : "Enrichment is still running in background. Redirecting...", "success");
-                setTimeout(function() { window.location.href = redirectUrl; }, 1500);
+                // Show a non-blocking badge — thread does the real work server-side
+                showMessage(data.message, "success");
+                showBgEnrichBadge(data.job_id, data.request_ids.length, data.redirect_url);
 
             } catch(e) {
                 console.error("Save & enrich error:", e);
@@ -809,6 +962,75 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
+
+            function showBgEnrichBadge(jobId, total, redirectUrl) {
+            var existing = document.getElementById("bgEnrichBadge");
+            if (existing) existing.remove();
+
+            var badge = document.createElement("div");
+            badge.id = "bgEnrichBadge";
+            badge.style.cssText = [
+                "position:fixed", "bottom:24px", "right:24px",
+                "background:#fff", "border:1px solid #e4e8f0",
+                "border-radius:14px", "padding:12px 20px",
+                "box-shadow:0 4px 18px rgba(0,0,0,.12)",
+                "font-size:13px", "font-weight:600", "color:#2e374d",
+                "z-index:99999", "display:flex", "align-items:center",
+                "gap:10px", "min-width:260px"
+            ].join(";");
+            document.body.appendChild(badge);
+
+            function update(done, tot) {
+                badge.innerHTML =
+                    '<i class="fas fa-spinner fa-spin" style="color:#6276ea;font-size:15px;"></i>'
+                    + '<span>Enriching: ' + done + '/' + tot + ' contacts</span>'
+                    + '<button onclick="document.getElementById(\'bgEnrichBadge\').remove()"'
+                    + ' style="border:none;background:none;color:#aaa;cursor:pointer;'
+                    + 'font-size:18px;line-height:1;margin-left:auto;">×</button>';
+            }
+
+            function done(successMsg) {
+                badge.innerHTML =
+                    '<i class="fas fa-check-circle" style="color:#50b87a;font-size:15px;"></i>'
+                    + '<span>' + successMsg + '</span>'
+                    + '<a href="' + redirectUrl + '" style="color:#6276ea;margin-left:auto;'
+                    + 'font-size:12px;text-decoration:none;white-space:nowrap;">View list →</a>';
+                // Auto-remove after 8 seconds
+                setTimeout(function() {
+                    var b = document.getElementById("bgEnrichBadge");
+                    if (b) b.remove();
+                }, 8000);
+            }
+
+            update(0, total);
+
+            // Lightweight poll — just for the badge display
+            // The real work is done by the server thread regardless
+            (async function poll() {
+                var url = CHECK_ENRICHMENT_JOB_URL.replace("PLACEHOLDER", jobId);
+                for (var i = 0; i < 30; i++) {
+                    await new Promise(function(r) { setTimeout(r, 5000); });
+                    try {
+                        var res      = await fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+                        var jobData  = await res.json();
+
+                        if (typeof jobData.credits === "number" && typeof slUpdatePill === "function") {
+                            slUpdatePill(jobData.credits);
+                        }
+
+                        update(jobData.done || 0, jobData.total || total);
+
+                        if (jobData.all_done) {
+                            done("Enrichment complete!");
+                            return;
+                        }
+                    } catch(e) { /* network blip — keep polling */ }
+                }
+                // After 30 polls (~2.5 min) stop badge polling
+                // Thread on server still runs up to 10 minutes
+                done("Enrichment running in background.");
+            })();
+        }
 
     // ══ Enrich events ══
     function attachEnrichEvents() {
@@ -902,6 +1124,59 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     }
+
+(function restoreLastSearch() {
+    var urlParams = new URLSearchParams(window.location.search);
+    var autoSearch = urlParams.get("auto_search");
+
+    if (autoSearch === "1") {
+        var company  = urlParams.get("company")  || "";
+        var location = urlParams.get("location") || "";
+
+        // Set company hidden + render tag
+        var companyHidden = document.getElementById("companyHidden");
+        var companyTags   = document.getElementById("companyTags");
+        if (companyHidden) companyHidden.value = company;
+        if (companyTags && company) {
+            companyTags.innerHTML = "";
+            var tag = document.createElement("div");
+            tag.className = "tag";
+            tag.innerHTML = '<span class="tag-text">' + company + '</span>';
+            companyTags.appendChild(tag);
+        }
+
+        // Set location hidden + render single tag (do NOT split by comma)
+        var locationHidden = document.getElementById("locationHidden");
+        var locationTags   = document.getElementById("locationTags");
+        if (locationHidden) locationHidden.value = location;
+        if (locationTags && location) {
+            locationTags.innerHTML = "";
+            var tag2 = document.createElement("div");
+            tag2.className = "tag";
+            tag2.innerHTML = '<span class="tag-text">' + location + '</span>';
+            locationTags.appendChild(tag2);
+        }
+
+        // Use a flag to prevent double search
+        if (window._autoSearchDone) return;
+        window._autoSearchDone = true;
+
+        window.doAjaxSearch();
+        return;
+    }
+
+    try {
+        var savedResults = localStorage.getItem("people_last_results");
+        var savedForm    = localStorage.getItem("people_last_form");
+        if (!savedResults) return;
+
+        var data = JSON.parse(savedResults);
+        var form = JSON.parse(savedForm || "{}");
+
+        restorePeopleFormValues(form);
+        renderAjaxResults(data);
+    } catch(e) {}
+})();
 
     setTab("new"); updateSelectionUI(); attachEnrichEvents();
 

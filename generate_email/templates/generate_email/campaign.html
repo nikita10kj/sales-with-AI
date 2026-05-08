@@ -18,13 +18,10 @@
                 </div>
             </div>
 
-
         <!-- Notification Bell Icon -->
             {% if scheduled_emails %}
-            <button type="button"
-                    id="scheduleNotifBtn"
-                    class="btn position-relative p-0 border-0 bg-transparent"
-                    title="Scheduled Emails">
+            <button type="button" id="scheduleNotifBtn"
+                    class="btn position-relative p-0 border-0 bg-transparent" title="Scheduled Emails">
                 <i class="fas fa-bell text-white" style="font-size:22px;"></i>
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                       style="font-size:10px; min-width:18px; padding:3px 6px;">
@@ -77,7 +74,6 @@
                             <td style="white-space:nowrap;">
                                 {{ em.scheduled_at|date:"d M Y, h:i A" }}
                             </td>
-                            
                             <td style="white-space:nowrap;">
                                 {% if em.sending_account %}
                                     {% if em.sending_account.provider == "google" %}
@@ -112,166 +108,201 @@
 
         <div class="card-body p-4">
 
-            <form method="POST" id="campaignForm" enctype="multipart/form-data">
-                {% csrf_token %}
-                {% if selected_person_ids %}
-                    <input type="hidden" name="person_ids" value="{{ selected_person_ids }}">
-                {% endif %}
+            <!-- ══════ STEP 1: CONFIGURATION FORM ══════ -->
+            <div id="campaignStep1">
+                <form id="campaignConfigForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {% if selected_person_ids %}
+                        <input type="hidden" name="person_ids" value="{{ selected_person_ids }}">
+                    {% endif %}
 
-                <!-- TAG -->
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Choose Target Group (optional)</label>
-                    <select name="tag_id" class="form-select" id="tagSelect">
-                        <option value="">Choose Target Group </option>
-                        {% for tag in tags %}
-                            <option value="{{ tag.id }}"
-                                {% if selected_tag_id == tag.id|stringformat:"s" %}selected{% endif %}>
-                                {{ tag.name }}
+                    <!-- TAG -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Choose Target Group (optional)</label>
+                        <select name="tag_id" class="form-select" id="tagSelect">
+                            <option value="">Choose Target Group </option>
+                            {% for tag in tags %}
+                                <option value="{{ tag.id }}"
+                                    {% if selected_tag_id == tag.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ tag.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- SAVED PEOPLE LIST -->
+                    {% if saved_lists %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Send to Saved List (optional)</label>
+                        <select name="selected_list_id" class="form-select" id="savedListSelect">
+                            <option value="">-- Select a Saved List --</option>
+                            {% for lst in saved_lists %}
+                            <option value="{{ lst.id }}"
+                                {% if selected_list_id == lst.id|stringformat:"s" %}selected{% endif %}>
+                                {{ lst.name }} &nbsp;({{ lst.email_count }} email{% if lst.email_count != 1 %}s{% endif %} ready)
                             </option>
-                        {% endfor %}
-                    </select>
-                </div>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
 
-                <!-- SAVED PEOPLE LIST -->
-                {% if saved_lists %} 
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">
-                        Send to Saved List (optional)
-                        {% comment %} <span style="font-size:11px;color:#6c757d;font-weight:400;">
-                            — overrides Tag above if selected
-                        </span> {% endcomment %}
-                    </label>
-                    <select name="selected_list_id" class="form-select" id="savedListSelect">
-                        <option value="">-- Select a Saved List --</option>
-                        {% for lst in saved_lists %}
-                        <option value="{{ lst.id }}"
-                            {% if selected_list_id == lst.id|stringformat:"s" %}selected{% endif %}>
-                            {{ lst.name }} &nbsp;({{ lst.email_count }} email{% if lst.email_count != 1 %}s{% endif %} ready)
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                {% endif %}
+                    <!-- SERVICE -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Service *</label>
+                        <select class="form-select" name="selected_service" required>
+                            {% for service in user_services %}
+                                <option value="{{ service.service_name }}">{{ service.service_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                <!-- SERVICE -->
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Service *</label>
-                    <select class="form-select" name="selected_service" required>
-                        {% for service in user_services %}
-                            <option value="{{ service.service_name }}">
-                                {{ service.service_name }}
+                    <!-- FRAMEWORK -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Framework *</label>
+                        <select class="form-select" name="framework" required>
+                            <option value="AIDA" selected>AIDA — Attention → Interest → Desire → Action</option>
+                            <option value="PAS">PAS — Problem → Agitate → Solution</option>
+                            <option value="Before-After-Bridge">Before-After-Bridge — Current → Desired → Solution</option>
+                            <option value="STAR">STAR — Situation → Task → Action → Result</option>
+                            <option value="Magic">Magic — Hook → Story → Offer → Close</option>
+                            <option value="ACCA">ACCA — Awareness → Comprehension → Conviction → Action</option>
+                        </select>
+                    </div>
+
+                    <!-- GOAL -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Campaign Goal *</label>
+                        <select class="form-select" name="campaign_goal" required>
+                            <option value="lead-generation">Lead Generation</option>
+                            <option value="product-demo">Product Demo</option>
+                            <option value="meeting-request">Meeting Request</option>
+                            <option value="collaboration">Collaboration</option>
+                        </select>
+                    </div>
+
+                    <!-- SIGNATURE -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Signature</label>
+                        <select name="signature_id" class="form-select">
+                            <option value="">Default Signature</option>
+                            {% for sig in signatures %}
+                                <option value="{{ sig.id }}">{{ sig.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- SENT FROM -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Sent From *</label>
+                        <select name="sent_from" class="form-select" id="sentFromSelect" required>
+                            {% for acc in google_accounts %}
+                                <option value="{{ acc.id }}">
+                                    {% if acc.provider == "google" %}
+                                    🟢 {{ acc.extra_data.email }}
+                                    {% elif acc.provider == "microsoft" %}
+                                    🔵 {{ acc.extra_data.userPrincipalName|default:acc.extra_data.mail }}
+                                    {% else %}
+                                        {{ acc.uid }}
+                                    {% endif %}
+                                    ({{ acc.provider|title }})
                             </option>
-                        {% endfor %}
-                    </select>
-                </div>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                <!-- FRAMEWORK -->
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Framework *</label>
-                    <select class="form-select" name="framework" required>
-                        <option value="AIDA" selected>AIDA — Attention → Interest → Desire → Action</option>
-                        <option value="PAS">PAS — Problem → Agitate → Solution</option>
-                        <option value="Before-After-Bridge">Before-After-Bridge — Current → Desired → Solution</option>
-                        <option value="STAR">STAR — Situation → Task → Action → Result</option>
-                        <option value="Magic">Magic — Hook → Story → Offer → Close</option>
-                        <option value="ACCA">ACCA — Awareness → Comprehension → Conviction → Action</option>
-                    </select>
-                </div>
+                    <!-- Shuffle -->
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" name="shuffle_accounts" id="shuffleAccounts">
+                        <label class="form-check-label">Shuffle Accounts Automatically</label>
+                    </div>
 
-                <!-- GOAL -->
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Campaign Goal *</label>
-                    <select class="form-select" name="campaign_goal" required>
-                        <option value="lead-generation">Lead Generation</option>
-                        <option value="product-demo">Product Demo</option>
-                        <option value="meeting-request">Meeting Request</option>
-                        <option value="collaboration">Collaboration</option>
-                    </select>
-                </div>
+                    <!-- SAVED ATTACHMENT -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select Saved Attachment</label>
+                        <select id="saved_attachment" name="saved_attachment" class="form-select">
+                            <option value="">-- Select Attachment --</option>
+                            {% for att in user_attachments %}
+                            <option value="{{ att.id }}">
+                                {{ att.file.name|cut:"attachments/" }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                <!-- SIGNATURE -->
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Signature</label>
-                    <select name="signature_id" class="form-select">
-                        <option value="">Default Signature</option>
-                        {% for sig in signatures %}
-                            <option value="{{ sig.id }}">{{ sig.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                    <!-- Schedule -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Schedule</label>
+                        <input type="datetime-local" name="schedule_time" class="form-control" id="scheduleTimeInput">
+                    </div>
 
-                <!-- SENT FROM -->
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Sent From *</label>
-                    <select name="sent_from" class="form-select" required>
-                        {% for acc in google_accounts %}
-                            <option value="{{ acc.id }}">
-                                {% if acc.provider == "google" %}
-                                🟢 {{ acc.extra_data.email }}
-                                {% elif acc.provider == "microsoft" %}
-                                🔵 {{ acc.extra_data.userPrincipalName|default:acc.extra_data.mail }}
-                                {% else %}
-                                    {{ acc.uid }}
-                                {% endif %}
-                                ({{ acc.provider|title }})
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
+                    <!-- Button -->
+                    <div class="d-grid">
+                        <button type="submit" id="generatePreviewBtn"
+                                class="btn text-white fw-semibold"
+                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                       border:none; padding:10px;">
+                            <i class="fas fa-magic me-2"></i> Generate & Preview Emails
+                        </button>
+                    </div>
+                </form>
+            </div>
 
-                <!-- Shuffle -->
-                <div class="form-check form-switch mb-3">
-                    <input class="form-check-input" type="checkbox" name="shuffle_accounts">
-                    <label class="form-check-label">Shuffle Accounts Automatically</label>
+            <!-- ══════ STEP 2: EMAIL PREVIEWS ══════ -->
+            <div id="campaignStep2" style="display:none;">
+                <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                    <div>
+                        <h5 class="fw-bold mb-1" style="color:#162033;">
+                            <i class="fas fa-envelope-open-text me-2" style="color:#667eea;"></i>Generated Emails
+                        </h5>
+                        <p class="text-muted mb-0" style="font-size:13px;">Review and edit each person's email before sending</p>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="button" id="backToConfigBtn" class="btn btn-outline-secondary fw-semibold" style="border-radius:10px;">
+                            <i class="fas fa-arrow-left me-1"></i> Back
+                        </button>
+                        <button type="button" id="sendCampaignBtn"
+                                class="btn text-white fw-semibold"
+                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border:none; border-radius:10px; padding:8px 20px;">
+                            🚀 Launch Campaign
+                        </button>
+                    </div>
                 </div>
-
-                <!-- SAVED ATTACHMENT -->
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Select Saved Attachment</label>
-                    <select id="saved_attachment" name="saved_attachment" class="form-select">
-                        <option value="">-- Select Attachment --</option>
-                        {% for att in user_attachments %}
-                        <option value="{{ att.id }}">
-                            {{ att.file.name|cut:"attachments/" }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <!-- Schedule -->
-                <div class="mb-4">
-                    <label class="form-label fw-semibold">Schedule</label>
-                    <input type="datetime-local" name="schedule_time" class="form-control">
-                </div>
-
-                <!-- Button -->
-                <div class="d-grid">
-                    <button type="submit"
-                            class="btn text-white fw-semibold"
-                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                                   border:none; padding:10px;">
-                        🚀 Launch Campaign
-                    </button>
-                </div>
-            </form>
-
-            <!-- Full Screen Loading Overlay -->
-            <div id="loadingOverlay" class="loading-overlay d-none">
-                <div class="loading-content text-center">
-                    <div class="spinner-border text-light mb-3" style="width:3rem;height:3rem;"></div>
-                    <h5 class="text-white fw-semibold">Generating Campaign...</h5>
-                    <p class="text-white-50 small">Please wait while we prepare your emails</p>
-                </div>
+                <div id="emailPreviewsContainer"></div>
             </div>
 
         </div>
     </div>
 </div>
 
+<!-- Email Edit Modal -->
+<div class="modal fade" id="campaignEmailEditModal" tabindex="-1">
+<div class="modal-dialog modal-lg">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Edit Email</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="campaignEditModalBody"></div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" id="saveCampaignEmailEdit">Save Changes</button>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Full Screen Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay d-none">
+    <div class="loading-content text-center">
+        <div class="spinner-border text-light mb-3" style="width:3rem;height:3rem;"></div>
+        <h5 class="text-white fw-semibold" id="loadingTitle">Generating Campaign Emails...</h5>
+        <p class="text-white-50 small" id="loadingSubtext">Please wait while we prepare personalized emails for each contact</p>
+    </div>
+</div>
+
 <style>
 .loading-overlay {
-    position: fixed;
-    top: 0; left: 0;
+    position: fixed; top: 0; left: 0;
     width: 100%; height: 100%;
     background: rgba(25, 25, 40, 0.85);
     backdrop-filter: blur(6px);
@@ -283,44 +314,335 @@
 .loading-content { text-align: center; }
 .card-body { font-size: 14px; }
 .form-label { font-size: 13px; margin-bottom: 5px; }
-.framework-card {
+
+/* Person accordion cards */
+.cmp-person-card {
+    background: #fff;
+    border: 1.5px solid #e1e5ee;
+    border-radius: 14px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+.cmp-person-card:hover { border-color: #667eea; }
+.cmp-person-card.has-error { border-color: #e53935; }
+
+.cmp-person-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    cursor: pointer;
+    background: #f8f9fc;
+    border-bottom: 1px solid #e9edf4;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.cmp-person-header:hover { background: #f0f2ff; }
+
+.cmp-person-info { display: flex; align-items: center; gap: 10px; }
+.cmp-person-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff; display: flex; align-items: center;
+    justify-content: center; font-size: 13px; font-weight: 700;
+    flex-shrink: 0; text-transform: uppercase;
+}
+.cmp-person-name { font-size: 14px; font-weight: 700; color: #162033; }
+.cmp-person-email { font-size: 12px; color: #7c879d; }
+.cmp-toggle-icon { font-size: 14px; color: #9aa5be; transition: transform 0.2s; }
+.cmp-person-card.open .cmp-toggle-icon { transform: rotate(180deg); }
+
+.cmp-person-body { display: none; padding: 18px; }
+.cmp-person-card.open .cmp-person-body { display: block; }
+
+/* Email cards inside person */
+.cmp-email-block {
+    background: #f8f9fc;
+    border: 1px solid #e9edf4;
+    border-radius: 10px;
     padding: 14px;
-    background: #f8f9ff;
-    border: 1.5px solid transparent;
-    transition: 0.2s ease;
+    margin-bottom: 12px;
+}
+.cmp-email-block-header {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+.cmp-email-label {
+    font-size: 12px; font-weight: 700;
+    color: #667eea; text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.cmp-email-subject {
+    font-size: 13px; font-weight: 600;
+    color: #162033; margin-bottom: 6px;
+}
+.cmp-email-body {
+    font-size: 13px; color: #42506b;
+    line-height: 1.6;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #e9edf4;
+}
+.cmp-edit-btn {
+    border: 1px solid #e0e5f0;
+    background: #fff;
+    color: #667eea;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
     cursor: pointer;
 }
-.framework-option input:checked + .framework-card {
-    border-color: #667eea;
-    background: #eef1ff;
-    box-shadow: 0 4px 12px rgba(102,126,234,0.2);
+.cmp-edit-btn:hover { background: #eef1ff; border-color: #667eea; }
+
+.cmp-error-msg {
+    padding: 12px 16px;
+    background: #ffebee;
+    color: #c62828;
+    border-radius: 8px;
+    font-size: 13px;
 }
-.framework-card:hover { transform: translateY(-2px); }
-.framework-card small { font-size: 11.5px; color: #6c757d; }
 </style>
 
 <script>
-// ── Loading overlay on submit ──
-document.getElementById("campaignForm").addEventListener("submit", function () {
-    document.getElementById("loadingOverlay").classList.remove("d-none");
-});
+// ── State ──
+let campaignGeneratedData = [];
+let campaignFormData = null;
 
-// ── Tag required only when no saved list is selected ──
+function getCsrf() {
+    let v = null;
+    document.cookie.split(";").forEach(c => {
+        c = c.trim();
+        if (c.startsWith("csrftoken=")) v = decodeURIComponent(c.substring(10));
+    });
+    return v;
+}
+
+// ── Tag required logic ──
 const tagSelect       = document.getElementById("tagSelect");
 const savedListSelect = document.getElementById("savedListSelect");
-
 function updateTagRequired() {
     if (!tagSelect) return;
-    // If saved list dropdown exists and has a value selected → tag not required
     tagSelect.required = !savedListSelect || savedListSelect.value === "";
 }
+if (savedListSelect) savedListSelect.addEventListener("change", updateTagRequired);
+updateTagRequired();
 
-if (savedListSelect) {
-    savedListSelect.addEventListener("change", updateTagRequired);
+// ── Step 1: Generate Preview ──
+document.getElementById("campaignConfigForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const overlay = document.getElementById("loadingOverlay");
+    document.getElementById("loadingTitle").textContent = "Generating Campaign Emails...";
+    document.getElementById("loadingSubtext").textContent = "Please wait while we prepare personalized emails for each contact";
+    overlay.classList.remove("d-none");
+
+    const formData = new FormData(this);
+    campaignFormData = formData;
+
+    try {
+        const resp = await fetch("{% url 'campaign_generate_emails' %}", {
+            method: "POST",
+            headers: { "X-CSRFToken": getCsrf() },
+            body: formData
+        });
+        const data = await resp.json();
+        overlay.classList.add("d-none");
+
+        if (!data.success) {
+            alert(data.error || "Failed to generate emails.");
+            return;
+        }
+
+        campaignGeneratedData = data.generated;
+        renderEmailPreviews(data.generated, data.framework);
+        document.getElementById("campaignStep1").style.display = "none";
+        document.getElementById("campaignStep2").style.display = "block";
+
+    } catch (err) {
+        overlay.classList.add("d-none");
+        alert("Error generating emails. Please try again.");
+        console.error(err);
+    }
+});
+
+// ── Render Previews ──
+function renderEmailPreviews(generated, framework) {
+    const container = document.getElementById("emailPreviewsContainer");
+    container.innerHTML = "";
+
+    generated.forEach((person, pIdx) => {
+        const card = document.createElement("div");
+        card.className = "cmp-person-card" + (person.error ? " has-error" : "") + (pIdx === 0 ? " open" : "");
+        card.dataset.personIdx = pIdx;
+
+        const initials = ((person.first_name || "U")[0] + (person.last_name || "")[0]).toUpperCase();
+
+        let bodyHtml = "";
+        if (person.error) {
+            bodyHtml = `<div class="cmp-error-msg"><i class="fas fa-exclamation-triangle me-2"></i>${person.error}</div>`;
+        } else {
+            // Main email
+            bodyHtml += `
+                <div class="cmp-email-block" data-person="${pIdx}" data-type="main">
+                    <div class="cmp-email-block-header">
+                        <span class="cmp-email-label"><i class="fas fa-envelope me-1"></i> Main Email — ${person.framework || framework}</span>
+                        <button class="cmp-edit-btn" onclick="editCampaignEmail(${pIdx}, 'main')">
+                            <i class="fas fa-edit me-1"></i> Edit
+                        </button>
+                    </div>
+                    <div class="cmp-email-subject" id="cmp-subj-${pIdx}">
+                        <strong>Subject:</strong> ${person.main_email.subject}
+                    </div>
+                    <div class="cmp-email-body" id="cmp-body-${pIdx}">${person.main_email.body}</div>
+                </div>
+            `;
+            // Follow-ups
+            if (person.follow_ups && person.follow_ups.length) {
+                person.follow_ups.forEach((fu, fIdx) => {
+                    bodyHtml += `
+                        <div class="cmp-email-block" data-person="${pIdx}" data-type="followup" data-fu="${fIdx}">
+                            <div class="cmp-email-block-header">
+                                <span class="cmp-email-label"><i class="fas fa-reply me-1"></i> Follow-up ${fIdx + 1}</span>
+                                <button class="cmp-edit-btn" onclick="editCampaignEmail(${pIdx}, 'followup', ${fIdx})">
+                                    <i class="fas fa-edit me-1"></i> Edit
+                                </button>
+                            </div>
+                            <div class="cmp-email-body" id="cmp-fu-body-${pIdx}-${fIdx}">${fu.body}</div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        card.innerHTML = `
+            <div class="cmp-person-header" onclick="togglePersonCard(this)">
+                <div class="cmp-person-info">
+                    <div class="cmp-person-avatar">${initials}</div>
+                    <div>
+                        <div class="cmp-person-name">${person.first_name} ${person.last_name}</div>
+                        <div class="cmp-person-email">${person.email}</div>
+                    </div>
+                </div>
+                <div>
+                    ${person.error
+                        ? '<span style="font-size:11px;color:#e53935;font-weight:600;"><i class="fas fa-exclamation-circle me-1"></i>Error</span>'
+                        : '<span style="font-size:11px;color:#2e7d32;font-weight:600;"><i class="fas fa-check-circle me-1"></i>Ready</span>'
+                    }
+                    <i class="fas fa-chevron-down cmp-toggle-icon ms-2"></i>
+                </div>
+            </div>
+            <div class="cmp-person-body">${bodyHtml}</div>
+        `;
+        container.appendChild(card);
+    });
 }
 
-// Run immediately on page load so auto-selected list disables tag requirement
-updateTagRequired();
+function togglePersonCard(header) {
+    header.closest(".cmp-person-card").classList.toggle("open");
+}
+
+// ── Edit Email ──
+function editCampaignEmail(pIdx, type, fIdx) {
+    const person = campaignGeneratedData[pIdx];
+    if (!person) return;
+
+    const modal = new bootstrap.Modal(document.getElementById("campaignEmailEditModal"));
+    const body = document.getElementById("campaignEditModalBody");
+
+    if (type === "main") {
+        body.innerHTML = `
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Subject</label>
+                <input type="text" class="form-control" id="ceEditSubject" value="${person.main_email.subject}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Body</label>
+                <div id="ceEditBody" contenteditable="true" class="form-control" style="min-height:200px;">${person.main_email.body}</div>
+            </div>
+        `;
+        document.getElementById("saveCampaignEmailEdit").onclick = () => {
+            person.main_email.subject = document.getElementById("ceEditSubject").value;
+            person.main_email.body = document.getElementById("ceEditBody").innerHTML;
+            document.getElementById(`cmp-subj-${pIdx}`).innerHTML = `<strong>Subject:</strong> ${person.main_email.subject}`;
+            document.getElementById(`cmp-body-${pIdx}`).innerHTML = person.main_email.body;
+            modal.hide();
+        };
+    } else {
+        const fu = person.follow_ups[fIdx];
+        body.innerHTML = `
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Follow-up ${fIdx + 1} Body</label>
+                <div id="ceEditBody" contenteditable="true" class="form-control" style="min-height:200px;">${fu.body}</div>
+            </div>
+        `;
+        document.getElementById("saveCampaignEmailEdit").onclick = () => {
+            fu.body = document.getElementById("ceEditBody").innerHTML;
+            document.getElementById(`cmp-fu-body-${pIdx}-${fIdx}`).innerHTML = fu.body;
+            modal.hide();
+        };
+    }
+    modal.show();
+}
+
+// ── Back button ──
+document.getElementById("backToConfigBtn").addEventListener("click", function() {
+    document.getElementById("campaignStep2").style.display = "none";
+    document.getElementById("campaignStep1").style.display = "block";
+});
+
+// ── Send Campaign ──
+document.getElementById("sendCampaignBtn").addEventListener("click", async function() {
+    if (!campaignFormData || !campaignGeneratedData.length) {
+        alert("No emails to send.");
+        return;
+    }
+
+    const validEmails = campaignGeneratedData.filter(p => !p.error);
+    if (!validEmails.length) {
+        alert("No valid emails to send. All generations had errors.");
+        return;
+    }
+
+    const overlay = document.getElementById("loadingOverlay");
+    document.getElementById("loadingTitle").textContent = "Sending Campaign...";
+    document.getElementById("loadingSubtext").textContent = "Sending personalized emails to each contact";
+    overlay.classList.remove("d-none");
+
+    // Build a new form with all the original data plus generated emails
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "{% url 'campaign_view' %}";
+    form.style.display = "none";
+
+    // CSRF
+    const csrfInput = document.createElement("input");
+    csrfInput.type = "hidden"; csrfInput.name = "csrfmiddlewaretoken"; csrfInput.value = getCsrf();
+    form.appendChild(csrfInput);
+
+    // Copy original form fields
+    for (const [key, value] of campaignFormData.entries()) {
+        if (key === "csrfmiddlewaretoken") continue;
+        const inp = document.createElement("input");
+        inp.type = "hidden"; inp.name = key; inp.value = value;
+        form.appendChild(inp);
+    }
+
+    // Attach generated emails JSON
+    const genInput = document.createElement("input");
+    genInput.type = "hidden";
+    genInput.name = "generated_emails_json";
+    genInput.value = JSON.stringify(campaignGeneratedData);
+    form.appendChild(genInput);
+
+    document.body.appendChild(form);
+    form.submit();
+});
 </script>
 
 {% endblock %}

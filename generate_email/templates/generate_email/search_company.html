@@ -233,7 +233,8 @@
                     <button type="submit" form="companySearchForm" class="sidebar-search-btn">
                         <i class="fas fa-search"></i> Search
                     </button>
-                    <a href="{% url 'search_company' %}" class="sidebar-reset-btn" title="Clear all filters">
+                    <a href="{% url 'search_company' %}" class="sidebar-reset-btn" title="Clear all filters"
+                    onclick="localStorage.removeItem('company_last_results'); localStorage.removeItem('company_last_form');">
                         <i class="fas fa-redo"></i>
                     </a>
                 </div>
@@ -916,13 +917,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const GET_SAVED_LISTS_URL = "{% url 'get_saved_lists' %}";
     const SAVE_COMPANIES_TO_LIST_URL = "{% url 'save_companies_to_list' %}";
     const SEARCH_COMPANY_URL = "{% url 'search_company' %}";
+    const SEARCH_PEOPLE_URL = "{% url 'search_people' %}";
     const CSRF_TOKEN = "{{ csrf_token }}";
 </script>
 
 {{ industry_choices|json_script:"industryChoicesData" }}
 
 
-<script src="{% static 'search/js/company_search.js' %}?v=7"></script>
+<script src="{% static 'search/js/company_search.js' %}"></script>
 
 <!-- ── AI Mode JavaScript ── -->
 <script>
