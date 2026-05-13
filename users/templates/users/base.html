@@ -17,6 +17,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 
     <link href="{% static 'users/css/common.css' %}" rel="stylesheet">
     <link href="{% static 'users/css/analytics-styles.css' %}" rel="stylesheet">
@@ -567,8 +568,133 @@ document.addEventListener("DOMContentLoaded", function(){
     
     document.addEventListener("DOMContentLoaded", truncateSelectOptions);
 })();
-</script>
 
+
+</script>
+<script>
+function showBgEnrichBadgeGlobal(jobId, total, redirectUrl, checkUrl) {
+    // Kill any existing badge + its poll loop
+    var existing = document.getElementById("bgEnrichBadge");
+    if (existing) existing.remove();
+    if (window._bgEnrichPollActive) {
+        window._bgEnrichPollActive = false;
+    }
+
+    var badge = document.createElement("div");
+    badge.id = "bgEnrichBadge";
+    badge.style.cssText = [
+        "position:fixed", "bottom:24px", "right:24px",
+        "background:#fff", "border:1px solid #e4e8f0",
+        "border-radius:14px", "padding:12px 20px",
+        "box-shadow:0 4px 18px rgba(0,0,0,.12)",
+        "font-size:13px", "font-weight:600", "color:#2e374d",
+        "z-index:99999", "display:flex", "align-items:center",
+        "gap:10px", "min-width:260px"
+    ].join(";");
+    document.body.appendChild(badge);
+
+    function update(done, tot) {
+        badge.innerHTML =
+            '<i class="fas fa-spinner fa-spin" style="color:#6276ea;font-size:15px;"></i>'
+            + '<span>Enriching: ' + tot + ' contacts</span>'
+            + '<button onclick="window._bgEnrichPollActive=false; document.getElementById(\'bgEnrichBadge\').remove();"'
+            + ' style="border:none;background:none;color:#aaa;cursor:pointer;font-size:18px;line-height:1;margin-left:auto;">×</button>';
+    }
+
+    function markDone(successMsg) {
+        window._bgEnrichPollActive = false;
+        localStorage.removeItem("bgEnrichJob");
+        badge.innerHTML =
+            '<i class="fas fa-check-circle" style="color:#50b87a;font-size:15px;"></i>'
+            + '<span>' + successMsg + '</span>'
+            + '<a href="' + redirectUrl + '" style="color:#6276ea;margin-left:auto;font-size:12px;text-decoration:none;white-space:nowrap;">View list →</a>';
+        setTimeout(function() {
+            var b = document.getElementById("bgEnrichBadge");
+            if (b) b.remove();
+        }, 8000);
+    }
+
+    update(0, total);
+    window._bgEnrichPollActive = true;
+    var pollToken = window._bgEnrichPollActive; // captured by closure
+
+    (async function poll() {
+        var maxAttempts = 60; // 5 min at 5s intervals
+        for (var i = 0; i < maxAttempts; i++) {
+            // Check if this poll was cancelled (badge closed or new poll started)
+            if (!window._bgEnrichPollActive) return;
+
+            await new Promise(function(r) { setTimeout(r, 5000); });
+
+            if (!window._bgEnrichPollActive) return;
+
+            try {
+                var res = await fetch(checkUrl, {
+                    headers: { "X-Requested-With": "XMLHttpRequest" }
+                });
+
+                if (!res.ok) {
+                    console.warn("bgEnrich poll: HTTP", res.status);
+                    continue;
+                }
+
+                var jobData = await res.json();
+                console.log("bgEnrich poll response:", jobData);
+
+                // Update the badge count
+                var done = jobData.done || jobData.completed || 0;
+                var tot  = jobData.total || total;
+                update(done, tot);
+
+                // Also update localStorage with latest total
+                try {
+                    var stored = JSON.parse(localStorage.getItem("bgEnrichJob") || "{}");
+                    stored.total = tot;
+                    localStorage.setItem("bgEnrichJob", JSON.stringify(stored));
+                } catch(e) {}
+
+                if (jobData.all_done || jobData.status === "done" || jobData.status === "complete") {
+                    markDone("Enrichment complete! " + done + "/" + tot + " contacts enriched.");
+                    return;
+                }
+
+            } catch(e) {
+                console.warn("bgEnrich poll error:", e);
+                // keep polling — don't break on network hiccup
+            }
+        }
+
+        // Timed out after maxAttempts
+        localStorage.removeItem("bgEnrichJob");
+        markDone("Enrichment running in background.");
+    })();
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    try {
+        var saved = localStorage.getItem("bgEnrichJob");
+        if (!saved) return;
+
+        var job = JSON.parse(saved);
+
+        // Clean up bad data where checkUrl was saved as "undefined"
+        if (!job.checkUrl || job.checkUrl.includes("undefined")) {
+            localStorage.removeItem("bgEnrichJob");
+            return;
+        }
+
+        // Expire after 15 minutes
+        if (Date.now() - job.startedAt > 15 * 60 * 1000) {
+            localStorage.removeItem("bgEnrichJob");
+            return;
+        }
+
+        showBgEnrichBadgeGlobal(job.jobId, job.total, job.redirectUrl, job.checkUrl);
+    } catch(e) {
+        localStorage.removeItem("bgEnrichJob");
+    }
+});
+</script>
 {% block js %}
 
 {% endblock js %}

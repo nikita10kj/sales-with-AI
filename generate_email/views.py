@@ -4106,11 +4106,11 @@ import logging
 from django.views.decorators.cache import never_cache
 logger = logging.getLogger(__name__)
 
-class EmailListView(BlockDirectAccessMixin,LoginRequiredMixin, ListView):
+class EmailListView(BlockDirectAccessMixin, LoginRequiredMixin, ListView):
     model = SentEmail
     template_name = 'generate_email/email_list.html'
     context_object_name = 'sent_emails'
-   
+    paginate_by = 20   # IMPORTANT
 
     def parse_full_datetime(self, value):
         """
@@ -4121,6 +4121,7 @@ class EmailListView(BlockDirectAccessMixin,LoginRequiredMixin, ListView):
             return timezone.make_aware(dt)
         except ValueError:
             return None
+
     def parse_natural_date(self, value):
         """
         13 jan
@@ -4130,6 +4131,7 @@ class EmailListView(BlockDirectAccessMixin,LoginRequiredMixin, ListView):
 
         if len(parts) not in (2, 3):
             return None
+
         month = day = year = None
 
         for part in parts:
@@ -4157,66 +4159,70 @@ class EmailListView(BlockDirectAccessMixin,LoginRequiredMixin, ListView):
             return datetime(year, month, day).date()
         except ValueError:
             return None
-        
+
     def parse_month(self, value):
         """
         jan, january
         """
         value = value.lower()
+
         for i in range(1, 13):
             if value in (
                 calendar.month_name[i].lower(),
                 calendar.month_abbr[i].lower()
             ):
                 return i
+
         return None
-    
+
     def get_queryset(self):
+
         search = self.request.GET.get('search', '').strip()
 
-        today= timezone.now().date()
+        today = timezone.now().date()
+
         next_reminder = ReminderEmail.objects.filter(
             sent_email=OuterRef('pk'),
             sent=False,
-            # send_at__gte=now().date()
             send_at__gte=today
         ).order_by('send_at').values('send_at')[:1]
 
         qs = (
-        SentEmail.objects
-        .filter(user=self.request.user,is_scheduled=False)
-
-        .select_related('target_audience')
-        .annotate(next_reminder_date=Subquery(next_reminder))
-        .order_by('-created')
+            SentEmail.objects
+            .filter(user=self.request.user, is_scheduled=False)
+            .select_related('target_audience')
+            .annotate(next_reminder_date=Subquery(next_reminder))
+            .order_by('-created')
         )
+
         selected_account_id = self.request.GET.get("account")
 
         if selected_account_id:
             qs = qs.filter(sending_account_id=selected_account_id)
 
-        full_dt=self.parse_full_datetime(search)
+        full_dt = self.parse_full_datetime(search)
+
         if full_dt:
             start = full_dt.replace(second=0, microsecond=0)
             end = start + timedelta(minutes=1)
-            qs= qs.filter(created__gte=start, created__lt=end)
-            return qs
-        
-        natural_date=self.parse_natural_date(search)
+
+            return qs.filter(created__gte=start, created__lt=end)
+
+        natural_date = self.parse_natural_date(search)
+
         if natural_date:
-            qs= qs.filter(
+            return qs.filter(
                 Q(created__date=natural_date) |
                 Q(next_reminder_date=natural_date)
             )
-            return qs
-        
-        month=self.parse_month(search)
+
+        month = self.parse_month(search)
+
         if month:
-            qs= qs.filter(
+            return qs.filter(
                 Q(created__month=month) |
                 Q(next_reminder_date__month=month)
             )
-            return qs
 
         if search:
             qs = qs.filter(
@@ -4225,10 +4231,16 @@ class EmailListView(BlockDirectAccessMixin,LoginRequiredMixin, ListView):
                 Q(target_audience__receiver_first_name__icontains=search) |
                 Q(target_audience__receiver_last_name__icontains=search)
             )
+
         return qs
+
     def render_to_response(self, context, **response_kwargs):
+
         if self.request.GET.get('ajax') == '1':
-            emails = context['sent_emails'].values(
+
+            emails = context['page_obj'].object_list.values(
+                'id',
+                'uid',
                 'subject',
                 'target_audience__email',
                 'target_audience__receiver_first_name',
@@ -4237,25 +4249,45 @@ class EmailListView(BlockDirectAccessMixin,LoginRequiredMixin, ListView):
                 'next_reminder_date',
                 'stop_reminder'
             )
+
             data = [
                 {
+                    'id': e['id'],
+                    'uid': str(e['uid']),
                     'subject': e['subject'],
                     'email': e['target_audience__email'],
                     'name': f"{e['target_audience__receiver_first_name']} {e['target_audience__receiver_last_name']}",
                     'created': e['created'].strftime("%d %b %Y, %I:%M %p"),
-                    'next_reminder_date': e['next_reminder_date'].strftime("%d %b %Y") if e['next_reminder_date'] else None,
-                    'stop_reminder': e['stop_reminder'] 
+                    'next_reminder_date': (
+                        e['next_reminder_date'].strftime("%d %b %Y")
+                        if e['next_reminder_date']
+                        else None
+                    ),
+                    'stop_reminder': e['stop_reminder']
                 }
                 for e in emails
             ]
-            return JsonResponse(data, safe=False)
+
+            return JsonResponse({
+                "emails": data,
+                "has_next": context['page_obj'].has_next(),
+                "next_page": (
+                    context['page_obj'].next_page_number()
+                    if context['page_obj'].has_next()
+                    else None
+                )
+            })
+
         return super().render_to_response(context, **response_kwargs)
 
     def post(self, request):
+
         data = json.loads(request.body)
 
         email_id = data.get("email_id")
+
         email = SentEmail.objects.get(id=email_id)
+
         email.stop_reminder = True
         email.save()
 
@@ -5592,12 +5624,229 @@ import json
 #     })
 
 
+# @login_required(login_url="login")
+# def campaign_generate_emails(request):
+#     """
+#     AJAX endpoint: generates AI emails for each person in the campaign
+#     and returns them as JSON for preview before sending.
+#     """
+#     if request.method != "POST":
+#         return JsonResponse({"success": False, "error": "POST required"}, status=405)
+
+#     # ── FORM DATA ──
+#     tag_id           = request.POST.get("tag_id", "").strip()
+#     selected_list_id = request.POST.get("selected_list_id", "").strip()
+#     person_ids_raw   = request.POST.get("person_ids", "").strip()
+#     service_name     = request.POST.get("selected_service")
+#     framework        = request.POST.get("framework")
+#     campaign_goal    = request.POST.get("campaign_goal")
+#     signature_id     = request.POST.get("signature_id")
+
+#     # ── VALIDATIONS ──
+#     if not service_name:
+#         return JsonResponse({"success": False, "error": "Service is required."}, status=400)
+#     if not selected_list_id and not tag_id:
+#         return JsonResponse({"success": False, "error": "Please select a Tag or a Saved List."}, status=400)
+
+#     selected_service = ProductService.objects.filter(
+#         service_name=service_name,
+#         user=request.user
+#     ).first()
+#     if not selected_service:
+#         return JsonResponse({"success": False, "error": "Invalid service selected."}, status=400)
+
+#     # ── RESOLVE AUDIENCES ──
+#     audiences = None
+#     if selected_list_id:
+#         try:
+#             saved_list = SavedPeopleList.objects.get(id=selected_list_id, user=request.user)
+#         except SavedPeopleList.DoesNotExist:
+#             return JsonResponse({"success": False, "error": "Selected list not found."}, status=400)
+
+#         entries_with_email = saved_list.entries.exclude(email="")
+#         if person_ids_raw:
+#             pid_list = [int(x) for x in person_ids_raw.split(",") if x.strip().isdigit()]
+#             if pid_list:
+#                 entries_with_email = entries_with_email.filter(id__in=pid_list)
+
+#         if not entries_with_email.exists():
+#             return JsonResponse({"success": False, "error": f"No enriched emails found in '{saved_list.name}'."}, status=400)
+
+#         tag_obj, _ = AudienceTag.objects.get_or_create(
+#             user=request.user,
+#             name=f"[List] {saved_list.name}"
+#         )
+#         for entry in entries_with_email:
+#             obj, created = TargetAudience.objects.get_or_create(
+#                 user=request.user,
+#                 email=entry.email,
+#                 tag=tag_obj,
+#                 defaults={
+#                     "receiver_first_name":   entry.first,
+#                     "receiver_last_name":    entry.last,
+#                     "receiver_linkedin_url": entry.linkedin,
+#                     "company_url":           entry.company_website,
+#                 }
+#             )
+#             obj.receiver_first_name   = entry.first or obj.receiver_first_name
+#             obj.receiver_last_name    = entry.last or obj.receiver_last_name
+#             obj.receiver_linkedin_url = entry.linkedin or obj.receiver_linkedin_url
+#             obj.company_url           = entry.company_website or obj.company_url
+#             obj.campaign_goal         = campaign_goal
+#             obj.framework             = framework
+#             obj.selected_service      = service_name
+#             obj.save(update_fields=[
+#                 "receiver_first_name", "receiver_last_name",
+#                 "receiver_linkedin_url", "company_url",
+#                 "campaign_goal", "framework", "selected_service",
+#             ])
+#         audiences = TargetAudience.objects.filter(user=request.user, tag=tag_obj)
+
+#     elif tag_id:
+#         audiences = TargetAudience.objects.filter(user=request.user, tag_id=tag_id)
+
+#     if not audiences or not audiences.exists():
+#         return JsonResponse({"success": False, "error": "No leads found."}, status=400)
+
+#     # ── SIGNATURE ──
+#     signature_html = ""
+#     if signature_id:
+#         try:
+#             signature_obj = Signature.objects.get(id=signature_id, user=request.user)
+#         except Signature.DoesNotExist:
+#             signature_obj = None
+#     else:
+#         signature_obj = Signature.objects.filter(user=request.user).first()
+
+#     if signature_obj:
+#         signature_html = signature_obj.signature or ""
+#         if signature_obj.photo:
+#             photo_url = request.build_absolute_uri(signature_obj.photo.url)
+#             signature_html += f"""
+#                 <p>
+#                     <img src="{photo_url}"
+#                         alt="Signature Photo"
+#                         style="max-width:420px;margin-top:8px;width:100%;height:auto;display:block;">
+#                 </p>
+#             """
+
+#     if not signature_html:
+#         signature_html = (
+#             '<div style="margin:0;padding:0;line-height:1.4;">'
+#             f'Best,<br>{request.user.full_name}'
+#             '</div>'
+#         )
+
+#     # ── GENERATE EMAILS FOR EACH AUDIENCE ──
+#     generated_data = []
+#     for audience in audiences:
+#         try:
+#             ai_raw  = get_response(request.user, audience, selected_service)
+#             ai_data = json.loads(ai_raw)
+
+#             subject       = ai_data["main_email"]["subject"]
+#             body          = ai_data["main_email"]["body"]
+#             final_body    = body + "<br><br>" + signature_html if signature_html else body
+
+#             follow_ups = ai_data.get("follow_ups", [])
+#             for fu in follow_ups:
+#                 fu["body"] = fu.get("body", "") + ("<br><br>" + signature_html if signature_html else "")
+
+#             generated_data.append({
+#                 "audience_id":  audience.id,
+#                 "email":        audience.email,
+#                 "first_name":   audience.receiver_first_name or "",
+#                 "last_name":    audience.receiver_last_name or "",
+#                 "framework":    ai_data.get("framework", framework),
+#                 "main_email": {
+#                     "subject": subject,
+#                     "body":    final_body,
+#                 },
+#                 "follow_ups": follow_ups,
+#             })
+#         except Exception as e:
+#             generated_data.append({
+#                 "audience_id":  audience.id,
+#                 "email":        audience.email,
+#                 "first_name":   audience.receiver_first_name or "",
+#                 "last_name":    audience.receiver_last_name or "",
+#                 "error":        str(e),
+#             })
+
+#     return JsonResponse({
+#         "success": True,
+#         "generated": generated_data,
+#         "framework": framework,
+#     })
+
+import uuid
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from .tasks import set_task, get_task, update_task
+
+
+def _generate_single_email(user, audience, selected_service, framework, signature_html):
+    """Called in parallel for each person."""
+    try:
+        ai_raw  = get_response(user, audience, selected_service)
+        ai_data = json.loads(ai_raw)
+
+        subject    = ai_data["main_email"]["subject"]
+        body       = ai_data["main_email"]["body"]
+        final_body = body + "<br><br>" + signature_html if signature_html else body
+
+        follow_ups = ai_data.get("follow_ups", [])
+        for fu in follow_ups:
+            fu["body"] = fu.get("body", "") + ("<br><br>" + signature_html if signature_html else "")
+
+        return {
+            "audience_id": audience.id,
+            "email":       audience.email,
+            "first_name":  audience.receiver_first_name or "",
+            "last_name":   audience.receiver_last_name or "",
+            "framework":   ai_data.get("framework", framework),
+            "main_email":  {"subject": subject, "body": final_body},
+            "follow_ups":  follow_ups,
+            "error":       None,
+        }
+    except Exception as e:
+        return {
+            "audience_id": audience.id,
+            "email":       audience.email,
+            "first_name":  audience.receiver_first_name or "",
+            "last_name":   audience.receiver_last_name or "",
+            "error":       str(e),
+        }
+
+
+def _run_generation_background(task_id, user, audiences_list, selected_service, framework, signature_html):
+    """Runs in a background thread — generates all emails in parallel."""
+    results = [None] * len(audiences_list)
+
+    try:
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            future_to_index = {
+                executor.submit(
+                    _generate_single_email,
+                    user, audience, selected_service, framework, signature_html
+                ): idx
+                for idx, audience in enumerate(audiences_list)
+            }
+
+            for future in as_completed(future_to_index):
+                idx = future_to_index[future]
+                results[idx] = future.result()
+                completed = sum(1 for r in results if r is not None)
+                update_task(task_id, progress=completed)
+
+        update_task(task_id, status="done", result=results)
+
+    except Exception as e:
+        update_task(task_id, status="error", error=str(e))
+
+
 @login_required(login_url="login")
 def campaign_generate_emails(request):
-    """
-    AJAX endpoint: generates AI emails for each person in the campaign
-    and returns them as JSON for preview before sending.
-    """
     if request.method != "POST":
         return JsonResponse({"success": False, "error": "POST required"}, status=405)
 
@@ -5617,8 +5866,7 @@ def campaign_generate_emails(request):
         return JsonResponse({"success": False, "error": "Please select a Tag or a Saved List."}, status=400)
 
     selected_service = ProductService.objects.filter(
-        service_name=service_name,
-        user=request.user
+        service_name=service_name, user=request.user
     ).first()
     if not selected_service:
         return JsonResponse({"success": False, "error": "Invalid service selected."}, status=400)
@@ -5690,63 +5938,67 @@ def campaign_generate_emails(request):
         signature_html = signature_obj.signature or ""
         if signature_obj.photo:
             photo_url = request.build_absolute_uri(signature_obj.photo.url)
-            signature_html += f"""
-                <p>
-                    <img src="{photo_url}"
-                        alt="Signature Photo"
-                        style="max-width:420px;margin-top:8px;width:100%;height:auto;display:block;">
-                </p>
-            """
+            signature_html += f'<p><img src="{photo_url}" alt="Signature Photo" style="max-width:420px;margin-top:8px;width:100%;height:auto;display:block;"></p>'
 
     if not signature_html:
-        signature_html = (
-            '<div style="margin:0;padding:0;line-height:1.4;">'
-            f'Best,<br>{request.user.full_name}'
-            '</div>'
-        )
+        signature_html = f'<div style="margin:0;padding:0;line-height:1.4;">Best,<br>{request.user.full_name}</div>'
 
-    # ── GENERATE EMAILS FOR EACH AUDIENCE ──
-    generated_data = []
-    for audience in audiences:
-        try:
-            ai_raw  = get_response(request.user, audience, selected_service)
-            ai_data = json.loads(ai_raw)
+    # ── START BACKGROUND GENERATION ──
+    audiences_list = list(audiences[:100])  # cap at 100
+    task_id = str(uuid.uuid4())
+    
+    # Extract contact names for real-time display in loader
+    contact_names = [
+        {
+            "first_name": audience.receiver_first_name or "Contact",
+            "last_name": audience.receiver_last_name or "",
+            "email": audience.email,
+        }
+        for audience in audiences_list
+    ]
 
-            subject       = ai_data["main_email"]["subject"]
-            body          = ai_data["main_email"]["body"]
-            final_body    = body + "<br><br>" + signature_html if signature_html else body
-
-            follow_ups = ai_data.get("follow_ups", [])
-            for fu in follow_ups:
-                fu["body"] = fu.get("body", "") + ("<br><br>" + signature_html if signature_html else "")
-
-            generated_data.append({
-                "audience_id":  audience.id,
-                "email":        audience.email,
-                "first_name":   audience.receiver_first_name or "",
-                "last_name":    audience.receiver_last_name or "",
-                "framework":    ai_data.get("framework", framework),
-                "main_email": {
-                    "subject": subject,
-                    "body":    final_body,
-                },
-                "follow_ups": follow_ups,
-            })
-        except Exception as e:
-            generated_data.append({
-                "audience_id":  audience.id,
-                "email":        audience.email,
-                "first_name":   audience.receiver_first_name or "",
-                "last_name":    audience.receiver_last_name or "",
-                "error":        str(e),
-            })
-
-    return JsonResponse({
-        "success": True,
-        "generated": generated_data,
+    set_task(task_id, {
+        "status":    "pending",
+        "progress":  0,
+        "total":     len(audiences_list),
+        "result":    None,
         "framework": framework,
+        "error":     None,
+        "contact_names": contact_names,
     })
 
+    t = threading.Thread(
+        target=_run_generation_background,
+        args=(task_id, request.user, audiences_list, selected_service, framework, signature_html),
+        daemon=True
+    )
+    t.start()
+
+    # ── Return immediately — no timeout risk ──
+    return JsonResponse({
+        "success": True,
+        "task_id": task_id,
+        "total":   len(audiences_list),
+        "contact_names": contact_names,
+    })
+
+
+@login_required(login_url="login")
+def campaign_task_status(request, task_id):
+    """Frontend polls this every 2 seconds to check generation progress."""
+    task = get_task(task_id)
+    if not task:
+        return JsonResponse({"status": "error", "error": "Task not found"})
+
+    return JsonResponse({
+        "status":         task["status"],
+        "progress":       task["progress"],
+        "total":          task["total"],
+        "framework":      task.get("framework"),
+        "result":         task["result"] if task["status"] == "done" else None,
+        "error":          task.get("error"),
+        "contact_names":  task.get("contact_names", []),
+    })
 
 @login_required(login_url="login")
 def campaign_view(request):

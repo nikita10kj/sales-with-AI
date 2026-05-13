@@ -488,6 +488,7 @@ document.addEventListener("DOMContentLoaded", function () {
     new FormData(form).forEach(function(val, key) {
         data[key] = val;
     });
+    console.log("Form values captured for company search:", data);
     return data;
 }
 
@@ -527,9 +528,17 @@ function restoreCompanyFormValues(saved) {
 
         cont.querySelectorAll(".tag-remove").forEach(function(btn) {
             btn.addEventListener("click", function() {
-                var idx = parseInt(btn.getAttribute("data-index"), 10);
-                tags.splice(idx, 1);
+                btn.closest(".tag").remove();
+                tags.splice(parseInt(btn.getAttribute("data-index"), 10), 1);
                 hidden.value = tags.join(",");
+                cont.querySelectorAll(".tag-remove").forEach(function(b, i) {
+                    b.setAttribute("data-index", i);
+                });
+                try {
+                    var sf = JSON.parse(localStorage.getItem("company_last_form") || "{}");
+                    sf[hidden.getAttribute("name")] = hidden.value;
+                    localStorage.setItem("company_last_form", JSON.stringify(sf));
+                } catch(e) {}
             });
         });
     });
@@ -570,6 +579,81 @@ function restoreCompanyFormValues(saved) {
     }
 }
 
+    // ══ Helper: Add to recent searches ══
+    function addToRecentCompanySearches(formValues, results) {
+        try {
+            console.log("Adding to recent company searches:", formValues);
+            var recentSearches = [];
+            var existing = localStorage.getItem("company_recent_searches");
+            if (existing) recentSearches = JSON.parse(existing);
+            if (!Array.isArray(recentSearches)) recentSearches = [];
+
+            // Create a search entry with a summary label
+            var searchSummary = buildCompanySearchSummary(formValues);
+            console.log("Search summary generated:", searchSummary);
+            var entry = {
+                timestamp: Date.now(),
+                label: searchSummary.label,
+                icon: searchSummary.icon,
+                formValues: formValues,
+                results: results,
+                resultCount: (results && results.companies) ? results.companies.length : 0
+            };
+
+            console.log("Before dedup - total searches:", recentSearches.length);
+            console.log("New entry label:", entry.label);
+            
+            // Remove duplicates (same label within last 10 seconds) to avoid storing identical searches
+            // But keep searches that are different or happened more than 10 seconds apart
+            var now = Date.now();
+            recentSearches = recentSearches.filter(function(s) { 
+                var isSameLabel = s.label === entry.label;
+                var isRecent = (now - s.timestamp) < 10000; // within 10 seconds
+                var isDuplicate = isSameLabel && isRecent;
+                console.log("Comparing:", s.label, "vs", entry.label, "- same label:", isSameLabel, "- recent:", isRecent, "- remove:", isDuplicate);
+                return !isDuplicate; 
+            });
+            
+            console.log("After dedup - total searches:", recentSearches.length);
+
+            // Keep only last 12 searches
+            recentSearches.unshift(entry);
+            if (recentSearches.length > 12) recentSearches = recentSearches.slice(0, 12);
+
+            localStorage.setItem("company_recent_searches", JSON.stringify(recentSearches));
+            console.log("Saved recent company searches, total:", recentSearches.length);
+            console.log("All stored searches:", recentSearches.map(function(s){ return s.label; }));
+        } catch(e) {
+            console.error("Error saving recent company search:", e);
+        }
+    }
+
+    // ══ Helper: Build company search summary label ══
+    function buildCompanySearchSummary(formValues) {
+        var parts = [];
+        if (formValues.name) parts.push(formValues.name);
+        if (formValues.industry) parts.push(formValues.industry + " (industry)");
+        if (formValues.company_market) parts.push(formValues.company_market + " (market)");
+        if (formValues.company_location) parts.push(formValues.company_location + " (location)");
+        if (formValues.employee_count) parts.push(formValues.employee_count + " (size)");
+        if (formValues.min_revenue || formValues.max_revenue) {
+            var revRange = (formValues.min_revenue || "0") + "-" + (formValues.max_revenue || "∞");
+            parts.push("Revenue: " + revRange);
+        }
+        if (formValues.year_founded_min || formValues.year_founded_max) {
+            var yearRange = (formValues.year_founded_min || "0") + "-" + (formValues.year_founded_max || "now");
+            parts.push("Founded: " + yearRange);
+        }
+
+        var label = parts.length > 0 ? parts.slice(0, 2).join(", ") : "Recent Search";
+        if (parts.length > 2) label += " (+" + (parts.length - 2) + ")";
+
+        var icon = formValues.employee_count ? "fa-building" : "fa-search";
+
+        console.log("Summary parts:", parts, "Final label:", label);
+        return { label: label.substring(0, 60), icon: icon };
+    }
+
     // ══ Shared AJAX fetch helper ══
     function doCompanySearch(pageOverride) {
         if (!companySearchForm) return;
@@ -591,9 +675,12 @@ function restoreCompanyFormValues(saved) {
             try {
                 localStorage.removeItem("company_last_results");
                 localStorage.removeItem("company_last_form");
+                var formValues = getCompanyFormValues();
                 localStorage.setItem("company_last_results", JSON.stringify(data));
-                localStorage.setItem("company_last_form", JSON.stringify(getCompanyFormValues()));
-            } catch(e) {}
+                localStorage.setItem("company_last_form", JSON.stringify(formValues));
+                addToRecentCompanySearches(formValues, data);
+                if (window.renderSidebarRecentCompanySearches) window.renderSidebarRecentCompanySearches();
+            } catch(e) { console.error("Error updating recent searches:", e); }
         })
         .catch(function(err) {
             hideSearchLoader();
@@ -948,15 +1035,197 @@ if (viewAllLink && !e.target.closest("#drawerViewEmployeesBtn")) {
     try {
         var savedResults = localStorage.getItem("company_last_results");
         var savedForm    = localStorage.getItem("company_last_form");
-        if (!savedResults) return;
-
-        var data = JSON.parse(savedResults);
-        var form = JSON.parse(savedForm || "{}");
-
-        restoreCompanyFormValues(form);
-        renderCompanyAjaxResults(data);
+        // Don't auto-render on page load - only show sidebar
+        // Results will render only when user clicks a recent search
+        // if (!savedResults) return;
+        // var data = JSON.parse(savedResults);
+        // var form = JSON.parse(savedForm || "{}");
+        // restoreCompanyFormValues(form);
+        // renderCompanyAjaxResults(data);
     } catch(e) {}
 })();
+
+    // ══════════════════════════════════════════════
+    // ══ Sidebar Recent Searches Panel (Companies)══
+    // ══════════════════════════════════════════════
+    (function() {
+        var panel = document.getElementById("sidebarRecentResults");
+        if (!panel) {
+            console.error("sidebarRecentResults panel not found");
+            return;
+        }
+
+        window.renderSidebarRecentCompanySearches = function() {
+            try {
+                console.log("renderSidebarRecentCompanySearches called");
+                var raw = localStorage.getItem("company_recent_searches");
+                console.log("Raw data from localStorage:", raw);
+                
+                if (!raw) { 
+                    console.log("No recent company searches data found");
+                    // Show empty state instead of hiding
+                    var list = panel.querySelector(".srp-list");
+                    if (list) {
+                        list.innerHTML = '<div style="padding: 12px; text-align: center; color: #8a94b0; font-size: 12px;">No recent searches yet. Perform a search to get started!</div>';
+                    }
+                    panel.style.display = "block";
+                    var badge = panel.querySelector(".srp-count");
+                    if (badge) badge.textContent = "0 searches";
+                    return; 
+                }
+                
+                var searches = JSON.parse(raw);
+                console.log("Parsed searches:", searches);
+                console.log("Is array:", Array.isArray(searches));
+                console.log("Array length:", searches ? searches.length : "N/A");
+                
+                // Handle case where data might be stored as a single object instead of array
+                if (searches && !Array.isArray(searches)) {
+                    console.warn("Stored data is not an array, converting...");
+                    searches = [searches];
+                }
+                
+                if (!Array.isArray(searches) || !searches.length) { 
+                    console.log("Recent company searches array is empty");
+                    var list = panel.querySelector(".srp-list");
+                    if (list) {
+                        list.innerHTML = '<div style="padding: 12px; text-align: center; color: #8a94b0; font-size: 12px;">No recent searches yet. Perform a search to get started!</div>';
+                    }
+                    panel.style.display = "block";
+                    return; 
+                }
+
+                console.log("Found " + searches.length + " recent company searches");
+                panel.style.display = "block";
+                var body = panel.querySelector(".srp-body");
+                if (body) body.style.display = "block";  // Ensure body is visible
+                var list = panel.querySelector(".srp-list");
+                console.log("List element found:", !!list);
+                if (!list) {
+                    console.error("Could not find .srp-list element inside panel");
+                    return;
+                }
+                list.innerHTML = "";
+                console.log("Cleared list innerHTML, now adding items...");
+
+                // Display only the 5 most recent searches
+                var displayedSearches = searches.slice(0, 5);
+
+                displayedSearches.forEach(function(entry, idx) {
+                    console.log("Adding item " + idx + ":", entry.label);
+                    var item = document.createElement("div");
+                    item.className = "srp-item";
+                    item.setAttribute("data-search-idx", idx);
+                    item.setAttribute("data-label", entry.label);
+
+                    var timeAgo = getCompanyTimeAgo(entry.timestamp);
+
+                    item.innerHTML =
+                        '<div class="srp-avatar srp-avatar-company" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">' +
+                            '<i class="fas ' + esc(entry.icon || "fa-search") + '" style="font-size:14px;"></i>' +
+                        '</div>' +
+                        '<div class="srp-info">' +
+                            '<div class="srp-name">' + esc(entry.label) + '</div>' +
+                            '<div class="srp-sub">' + esc(entry.resultCount) + ' results • ' + timeAgo + '</div>' +
+                        '</div>' +
+                        '<i class="fas fa-chevron-right srp-arrow"></i>';
+
+                    item.addEventListener("click", function() {
+                        loadRecentCompanySearch(entry, this);
+                    });
+
+                    list.appendChild(item);
+                    console.log("Item " + idx + " appended to list");
+                });
+
+                console.log("Total items in list:", list.children.length);
+                
+                // Count badge
+                var badge = panel.querySelector(".srp-count");
+                if (badge) {
+                    badge.textContent = displayedSearches.length + " search" + (displayedSearches.length !== 1 ? "es" : "");
+                    console.log("Updated badge to:", badge.textContent);
+                }
+
+            } catch(e) {
+                console.error("Error rendering recent company searches:", e);
+                var list = panel.querySelector(".srp-list");
+                if (list) {
+                    list.innerHTML = '<div style="padding: 12px; text-align: center; color: #e74c3c; font-size: 11px;">Error loading recent searches</div>';
+                }
+                panel.style.display = "block";
+            }
+        };
+
+        // Helper: Get time ago string
+        function getCompanyTimeAgo(timestamp) {
+            var now = Date.now();
+            var diff = now - timestamp;
+            var minutes = Math.floor(diff / 60000);
+            var hours = Math.floor(diff / 3600000);
+            var days = Math.floor(diff / 86400000);
+
+            if (minutes < 1) return "just now";
+            if (minutes < 60) return minutes + "m ago";
+            if (hours < 24) return hours + "h ago";
+            if (days < 7) return days + "d ago";
+            return new Date(timestamp).toLocaleDateString();
+        }
+
+        // Load a recent search: restore form and display cached results
+        function loadRecentCompanySearch(entry, itemEl) {
+            try {
+                if (!entry.formValues || !entry.results) return;
+
+                // Restore form values
+                restoreCompanyFormValues(entry.formValues);
+
+                // Highlight the sidebar item
+                document.querySelectorAll(".srp-item.active").forEach(function(el){ el.classList.remove("active"); });
+                itemEl.classList.add("active");
+
+                // Display cached results without API call
+                renderCompanyAjaxResults(entry.results);
+
+                // Show success message
+                // showMessage("Loaded cached search results (" + entry.resultCount + " results)", "success");
+
+            } catch(e) {
+                console.error("Error loading recent company search:", e);
+                showMessage("Could not load recent search.", "error");
+            }
+        }
+
+        // Toggle collapse/expand
+        var header  = panel.querySelector(".srp-header");
+        var body    = panel.querySelector(".srp-body");
+        var chevron = panel.querySelector(".srp-chevron");
+        if (header && body) {
+            header.addEventListener("click", function() {
+                var collapsed = body.style.display === "none";
+                body.style.display = collapsed ? "block" : "none";
+                if (chevron) chevron.style.transform = collapsed ? "rotate(0deg)" : "rotate(-90deg)";
+            });
+        }
+
+        // Initialize on page load
+        console.log("Initializing company recent searches");
+        window.renderSidebarRecentCompanySearches();
+    })();
+
+    // ══ Clear initial results on page load - show only AI panel ══
+    (function clearInitialResults() {
+        // Remove any server-rendered results on initial page load
+        // Results should only show when user clicks a recent search
+        var resultsCard = document.getElementById("resultsCard");
+        var profileTpls = document.querySelectorAll(".company-profile-tpl");
+        if (resultsCard) resultsCard.remove();
+        profileTpls.forEach(function(el) { el.remove(); });
+        
+        // Show AI search panel or empty state
+        var aiPanel = document.getElementById("aiSearchPanel");
+        if (aiPanel) aiPanel.style.display = "block";
+    })();
 
     setTab("new");
     updateSelectionUI();

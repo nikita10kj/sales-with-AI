@@ -292,25 +292,144 @@
 </div>
 
 <!-- Full Screen Loading Overlay -->
-<div id="loadingOverlay" class="loading-overlay d-none">
+{% comment %} <div id="loadingOverlay" class="loading-overlay d-none">
     <div class="loading-content text-center">
         <div class="spinner-border text-light mb-3" style="width:3rem;height:3rem;"></div>
         <h5 class="text-white fw-semibold" id="loadingTitle">Generating Campaign Emails...</h5>
         <p class="text-white-50 small" id="loadingSubtext">Please wait while we prepare personalized emails for each contact</p>
     </div>
+</div> {% endcomment %}
+
+<!-- Full Screen Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay d-none">
+  <div style="width:100%;max-width:520px;padding:1.5rem;display:flex;flex-direction:column;align-items:center;gap:16px;">
+
+    <!-- VS Scene -->
+    <div style="background:#fff;border:1.5px solid #ede9fb;border-radius:16px;padding:18px 20px;width:100%;display:flex;gap:18px;align-items:flex-start;">
+      <!-- Person SVG -->
+      <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <svg width="72" height="100" viewBox="0 0 80 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="40" cy="18" r="14" fill="#fde8d8" stroke="#f0997b" stroke-width="1.5"/>
+          <ellipse cx="40" cy="16" rx="7" ry="6" fill="#e8956d"/>
+          <circle cx="35" cy="16" r="1.5" fill="#333"/><circle cx="45" cy="16" r="1.5" fill="#333"/>
+          <path d="M36 21 Q40 24 44 21" stroke="#c06040" stroke-width="1" fill="none" stroke-linecap="round"/>
+          <rect x="22" y="34" width="36" height="40" rx="8" fill="#667eea"/>
+          <rect x="26" y="38" width="28" height="22" rx="4" fill="#fff" opacity="0.2"/>
+          <g style="transform-origin:22px 54px;animation:loaderArmWrite 1.2s ease-in-out infinite">
+            <rect x="8" y="50" width="22" height="8" rx="4" fill="#fde8d8" stroke="#f0997b" stroke-width="1"/>
+            <rect x="27" y="52" width="8" height="3" rx="1.5" fill="#764ba2"/>
+          </g>
+          <rect x="50" y="50" width="20" height="8" rx="4" fill="#fde8d8" stroke="#f0997b" stroke-width="1"/>
+          <rect x="28" y="74" width="10" height="28" rx="5" fill="#4a3880"/>
+          <rect x="42" y="74" width="10" height="28" rx="5" fill="#4a3880"/>
+          <rect x="26" y="98" width="14" height="7" rx="3" fill="#2d1f5e"/>
+          <rect x="40" y="98" width="14" height="7" rx="3" fill="#2d1f5e"/>
+        </svg>
+        <div style="font-size:11px;color:#9f99c0;text-align:center;line-height:1.3;">Writing<br>manually?</div>
+      </div>
+      <!-- Email mock -->
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;color:#b3aed4;margin-bottom:6px;">Manually writing for each person...</div>
+        <div style="background:#f9f8ff;border:1.5px solid #ddd8f5;border-radius:10px;padding:12px;position:relative;overflow:hidden;">
+          <div style="display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid #ede9fb;margin-bottom:8px;">
+            <div style="width:24px;height:24px;border-radius:50%;background:#667eea;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:500;">RJ</div>
+            <div><div style="font-size:11px;color:#9f99c0;">To</div><div style="font-size:12px;font-weight:500;color:#1e1346;">Rahul Joshi</div></div>
+          </div>
+          <div style="height:7px;border-radius:4px;background:#e0dbf7;margin-bottom:5px;animation:loaderLineGrow 0.6s ease forwards;--w:100%;width:0"></div>
+          <div style="height:7px;border-radius:4px;background:#e0dbf7;margin-bottom:5px;width:75%"></div>
+          <div style="height:7px;border-radius:4px;background:#e0dbf7;margin-bottom:5px;width:55%"></div>
+          <span style="display:inline-block;width:2px;height:10px;background:#667eea;vertical-align:middle;animation:loaderCursorBlink 0.8s step-end infinite;"></span>
+          <div style="position:absolute;right:10px;top:10px;animation:loaderFloatEnv 1.8s ease-in-out infinite;">
+            <svg width="20" height="15" viewBox="0 0 22 16" fill="none"><rect x=".5" y=".5" width="21" height="15" rx="3" fill="#f0eeff" stroke="#667eea" stroke-width="1"/><path d="M.5 3.5L11 9.5L21.5 3.5" stroke="#667eea" stroke-width="1" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#e07a5f;margin-top:6px;font-weight:500;">Takes hours for 100 contacts</div>
+      </div>
+    </div>
+
+    <!-- VS divider -->
+    <div style="display:flex;align-items:center;gap:10px;width:100%;">
+      <div style="flex:1;height:1px;background:#ddd8f5;"></div>
+      <div style="font-size:11px;color:#b3aed4;font-weight:500;letter-spacing:0.5px;">vs</div>
+      <div style="flex:1;height:1px;background:#ddd8f5;"></div>
+    </div>
+
+    <!-- Campaign feature card -->
+    <div style="background:#fff;border:2px solid #667eea;border-radius:16px;padding:14px 18px;width:100%;position:relative;">
+      <div style="position:absolute;top:-11px;left:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:10px;font-weight:500;padding:2px 10px;border-radius:999px;">Campaign feature</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M10 2L12.5 7.5H18L13.5 11L15.5 17L10 13.5L4.5 17L6.5 11L2 7.5H7.5L10 2Z" fill="white" opacity="0.9"/></svg>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:500;color:#1e1346;">AI writes every email automatically</div>
+          <div style="font-size:11px;color:#9f99c0;">Personalized for each contact in seconds</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;" id="loaderRecipients">
+        <div style="display:flex;align-items:center;gap:8px;background:#f7f5ff;border-radius:8px;padding:7px 10px;">
+          <div style="width:22px;height:22px;border-radius:50%;background:#667eea;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#fff;flex-shrink:0;">RJ</div>
+          <div style="flex:1;"><div style="font-size:12px;font-weight:500;color:#1e1346;">Rahul Joshi</div><div style="font-size:10px;color:#b3aed4;">rahul@techcorp.in</div></div>
+          <div style="width:16px;height:16px;border-radius:50%;background:#e8f8f2;display:flex;align-items:center;justify-content:center;"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M2 5L4.5 7.5L8 3" stroke="#0f6e56" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;background:#f7f5ff;border-radius:8px;padding:7px 10px;">
+          <div style="width:22px;height:22px;border-radius:50%;background:#764ba2;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#fff;flex-shrink:0;">PM</div>
+          <div style="flex:1;"><div style="font-size:12px;font-weight:500;color:#1e1346;">Priya Mehta</div><div style="font-size:10px;color:#b3aed4;">priya@startupx.io</div></div>
+          <div style="width:16px;height:16px;border-radius:50%;background:#e8f8f2;display:flex;align-items:center;justify-content:center;"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M2 5L4.5 7.5L8 3" stroke="#0f6e56" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;background:#f7f5ff;border-radius:8px;padding:7px 10px;">
+          <div style="width:22px;height:22px;border-radius:50%;background:#0f6e56;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#fff;flex-shrink:0;">AK</div>
+          <div style="flex:1;"><div style="font-size:12px;font-weight:500;color:#1e1346;">Arjun Kapoor</div><div style="font-size:10px;color:#b3aed4;">arjun@venture.co</div></div>
+          <div style="width:16px;height:16px;border-radius:50%;background:#e8f8f2;display:flex;align-items:center;justify-content:center;"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M2 5L4.5 7.5L8 3" stroke="#0f6e56" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#9f99c0;text-align:center;margin-top:8px;" id="loaderMoreCount">+ 97 more contacts generating...</div>
+    </div>
+
+    <!-- Info strip -->
+    <div style="background:#fff;border:1.5px solid #ede9fb;border-radius:12px;padding:12px 14px;width:100%;display:flex;align-items:flex-start;gap:10px;">
+      <div style="width:30px;height:30px;border-radius:8px;background:#f0eeff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#667eea" stroke-width="1.5"/><path d="M10 9v5M10 7v1" stroke="#667eea" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div style="font-size:13px;color:#1e1346;line-height:1.5;" id="loaderInfoText">
+        <span style="color:#667eea;font-weight:500;">No more manual writing.</span> Your campaign AI personalizes every email using each contact's name, company &amp; role — all at once.
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div style="width:100%;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#9f99c0;margin-bottom:5px;">
+        <span id="loadingTitle">Generating emails...</span>
+        <span id="loaderCountDisp">0 / 0</span>
+      </div>
+      <div style="height:5px;background:#ede9fb;border-radius:999px;overflow:hidden;">
+        <div id="loaderProgressFill" style="height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#667eea,#764ba2);transition:width 0.5s ease;"></div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <style>
 .loading-overlay {
-    position: fixed; top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(25, 25, 40, 0.85);
-    backdrop-filter: blur(6px);
-    z-index: 9999;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(240,238,255,0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 9999;
+  display: flex; justify-content: center; align-items: center;
+  overflow-y: auto;
 }
+@keyframes loaderArmWrite {
+  0%,100%{transform:rotate(-8deg) translateX(0)} 50%{transform:rotate(4deg) translateX(6px)}
+}
+@keyframes loaderCursorBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+@keyframes loaderFloatEnv {
+  0%{transform:translateY(0) scale(1);opacity:1}
+  80%{transform:translateY(-50px) scale(0.75);opacity:0.6}
+  100%{transform:translateY(-65px) scale(0.55);opacity:0}
+}
+@keyframes loaderLineGrow { from{width:0} to{width:100% } }
 .loading-content { text-align: center; }
 .card-body { font-size: 14px; }
 .form-label { font-size: 13px; margin-bottom: 5px; }
@@ -410,6 +529,7 @@
 </style>
 
 <script>
+const TASK_STATUS_URL = "{% url 'campaign_task_status' task_id='TASK_ID_PLACEHOLDER' %}";
 // ── State ──
 let campaignGeneratedData = [];
 let campaignFormData = null;
@@ -437,39 +557,221 @@ updateTagRequired();
 document.getElementById("campaignConfigForm").addEventListener("submit", async function(e) {
     e.preventDefault();
 
-    const overlay = document.getElementById("loadingOverlay");
-    document.getElementById("loadingTitle").textContent = "Generating Campaign Emails...";
-    document.getElementById("loadingSubtext").textContent = "Please wait while we prepare personalized emails for each contact";
+    const overlay    = document.getElementById("loadingOverlay");
+    const titleEl    = document.getElementById("loadingTitle");
+    const subtextEl  = document.getElementById("loadingSubtext");
+
+    titleEl.textContent   = "Starting Generation...";
+    {% comment %} subtextEl.textContent = "Preparing your contacts..."; {% endcomment %}
     overlay.classList.remove("d-none");
+
+    initLoaderCarousel();
 
     const formData = new FormData(this);
     campaignFormData = formData;
 
     try {
+        // Step 1 — kick off background generation, returns instantly
         const resp = await fetch("{% url 'campaign_generate_emails' %}", {
             method: "POST",
             headers: { "X-CSRFToken": getCsrf() },
             body: formData
         });
         const data = await resp.json();
-        overlay.classList.add("d-none");
 
         if (!data.success) {
-            alert(data.error || "Failed to generate emails.");
+            overlay.classList.add("d-none");
+            stopLoaderCarousel(); 
+            alert(data.error || "Failed to start generation.");
             return;
         }
 
-        campaignGeneratedData = data.generated;
-        renderEmailPreviews(data.generated, data.framework);
+        // Initialize loader with real contact names
+        if (data.contact_names && data.contact_names.length > 0) {
+            initLoaderWithContacts(data.contact_names);
+        }
+
+        // Step 2 — poll until done, showing live counter
+        titleEl.textContent = `Generating Emails (0 / ${data.total})`;
+        {% comment %} subtextEl.textContent = "AI is personalizing each email..."; {% endcomment %}
+
+        const result = await pollUntilDone(data.task_id, data.total, titleEl, data.contact_names);
+
+        overlay.classList.add("d-none");
+        stopLoaderCarousel();
+
+        if (!result) return; // error already alerted inside pollUntilDone
+
+        campaignGeneratedData = result.generated;
+        renderEmailPreviews(result.generated, result.framework);
         document.getElementById("campaignStep1").style.display = "none";
         document.getElementById("campaignStep2").style.display = "block";
 
     } catch (err) {
         overlay.classList.add("d-none");
+        stopLoaderCarousel()
         alert("Error generating emails. Please try again.");
         console.error(err);
     }
 });
+
+// ── Initialize loader with real contacts and rotate ──
+let loaderContactRotationTimer = null;
+let loaderCurrentContactIndex = 0;
+
+function initLoaderWithContacts(contactNames) {
+    if (!contactNames || contactNames.length === 0) return;
+    
+    loaderCurrentContactIndex = 0;
+    
+    // Show first batch immediately
+    updateLoaderRecipientsWithRotation(contactNames, 0);
+    updateEmailMockWithContact(contactNames);
+    
+    // Rotate through contacts every 5 seconds
+    if (loaderContactRotationTimer) clearInterval(loaderContactRotationTimer);
+    loaderContactRotationTimer = setInterval(() => {
+        loaderCurrentContactIndex = (loaderCurrentContactIndex + 3) % contactNames.length;
+        updateLoaderRecipientsWithRotation(contactNames, 0);
+    }, 5000);
+}
+
+function updateLoaderRecipientsWithRotation(contactNames, completedCount) {
+    const container = document.getElementById('loaderRecipients');
+    if (!container) return;
+    
+    // Show batch of 3 starting from current index
+    const startIdx = loaderCurrentContactIndex;
+    const displayContacts = [];
+    for (let i = 0; i < 3 && startIdx + i < contactNames.length; i++) {
+        displayContacts.push(contactNames[startIdx + i]);
+    }
+    
+    // Build HTML with real contact names
+    let html = '';
+    displayContacts.forEach((contact, idx) => {
+        // Generate initials
+        const firstName = contact.first_name || 'U';
+        const lastName = contact.last_name || '';
+        const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+        
+        // Generate a color for the avatar based on batch position
+        const colors = ['#667eea', '#764ba2', '#0f6e56'];
+        const bgColor = colors[idx % colors.length];
+        
+        html += `
+            <div style="display:flex;align-items:center;gap:8px;background:#f7f5ff;border-radius:8px;padding:7px 10px;">
+                <div style="width:22px;height:22px;border-radius:50%;background:${bgColor};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#fff;flex-shrink:0;">${initials}</div>
+                <div style="flex:1;"><div style="font-size:12px;font-weight:500;color:#1e1346;">${firstName} ${lastName}</div><div style="font-size:10px;color:#b3aed4;">${contact.email}</div></div>
+                <div style="width:16px;height:16px;border-radius:50%;background:#ede9fb;"></div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// ── Update email mock with real contact ──
+function updateEmailMockWithContact(contactNames) {
+    if (!contactNames || contactNames.length === 0) return;
+    const contact = contactNames[0];
+    
+    const firstName = contact.first_name || 'Contact';
+    const lastName = contact.last_name || '';
+    const email = contact.email || '';
+    const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+    
+    // Find and update the To: field in email mock
+    const toFields = document.querySelectorAll('[style*="font-size:11px"][style*="color:#9f99c0"]');
+    for (let toField of toFields) {
+        if (toField.textContent.trim() === 'To') {
+            const nameField = toField.nextElementSibling;
+            if (nameField) {
+                nameField.textContent = firstName + ' ' + lastName;
+            }
+            break;
+        }
+    }
+}
+
+async function pollUntilDone(taskId, total, titleEl, contactNames) {
+    let lastRenderedCount = 0;  // Track how many contacts we've rendered
+    
+    while (true) {
+        await new Promise(r => setTimeout(r, 2000)); // wait 2s between polls
+
+        let data;
+        try {
+            const url = TASK_STATUS_URL.replace("TASK_ID_PLACEHOLDER", taskId);
+            const resp = await fetch(url);
+            data = await resp.json();
+        } catch (err) {
+            alert("Lost connection while generating. Please try again.");
+            return null;
+        }
+
+        if (data.status === "pending") {
+            const pct = Math.round((data.progress / data.total) * 100);
+            const fill = document.getElementById('loaderProgressFill');
+            if (fill) fill.style.width = pct + '%';
+            const cd = document.getElementById('loaderCountDisp');
+            if (cd) cd.textContent = data.progress + ' / ' + data.total;
+            const mc = document.getElementById('loaderMoreCount');
+            if (mc) mc.textContent = '+ ' + Math.max(0, data.total - data.progress) + ' more contacts generating...';
+            
+            // Update loader recipients with real names
+            const namesToShow = contactNames || (data.contact_names && data.contact_names.length > 0) ? data.contact_names : [];
+            if (namesToShow && namesToShow.length > 0) {
+                updateLoaderRecipients(namesToShow, data.progress);
+            }
+            continue;
+        }
+
+        if (data.status === "error") {
+            alert("Generation failed: " + (data.error || "Unknown error"));
+            return null;
+        }
+
+        if (data.status === "done") {
+            if (loaderContactRotationTimer) clearInterval(loaderContactRotationTimer);
+            return { generated: data.result, framework: data.framework };
+        }
+    }
+}
+
+function updateLoaderRecipients(contactNames, completedCount) {
+    const container = document.getElementById('loaderRecipients');
+    if (!container) return;
+    
+    // Show first 3 contacts
+    const displayContacts = contactNames.slice(0, 3);
+    
+    // Build the HTML with real contact names
+    let html = '';
+    displayContacts.forEach((contact, idx) => {
+        // Generate initials
+        const firstName = contact.first_name || 'U';
+        const lastName = contact.last_name || '';
+        const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+        
+        // Determine if this contact is completed
+        const isCompleted = idx < Math.min(3, completedCount);
+        
+        // Generate a color for the avatar based on index
+        const colors = ['#667eea', '#764ba2', '#0f6e56'];
+        const bgColor = colors[idx % colors.length];
+        
+        html += `
+            <div style="display:flex;align-items:center;gap:8px;background:#f7f5ff;border-radius:8px;padding:7px 10px;">
+                <div style="width:22px;height:22px;border-radius:50%;background:${bgColor};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#fff;flex-shrink:0;">${initials}</div>
+                <div style="flex:1;"><div style="font-size:12px;font-weight:500;color:#1e1346;">${firstName} ${lastName}</div><div style="font-size:10px;color:#b3aed4;">${contact.email}</div></div>
+                ${isCompleted ? '<div style="width:16px;height:16px;border-radius:50%;background:#e8f8f2;display:flex;align-items:center;justify-content:center;"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M2 5L4.5 7.5L8 3" stroke="#0f6e56" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></div>' : '<div style="width:16px;height:16px;border-radius:50%;background:#ede9fb;"></div>'}
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
 
 // ── Render Previews ──
 function renderEmailPreviews(generated, framework) {
@@ -611,8 +913,9 @@ document.getElementById("sendCampaignBtn").addEventListener("click", async funct
 
     const overlay = document.getElementById("loadingOverlay");
     document.getElementById("loadingTitle").textContent = "Sending Campaign...";
-    document.getElementById("loadingSubtext").textContent = "Sending personalized emails to each contact";
+    {% comment %} document.getElementById("loadingSubtext").textContent = "Sending personalized emails to each contact"; {% endcomment %}
     overlay.classList.remove("d-none");
+    initLoaderCarousel(); 
 
     // Build a new form with all the original data plus generated emails
     const form = document.createElement("form");
@@ -643,6 +946,39 @@ document.getElementById("sendCampaignBtn").addEventListener("click", async funct
     document.body.appendChild(form);
     form.submit();
 });
+
+// ── Loader carousel ──
+const loaderInfoMessages = [
+  '<span style="color:#667eea;font-weight:500;">No more manual writing.</span> Your campaign AI personalizes every email using each contact\'s name, company &amp; role — all at once.',
+  '<span style="color:#667eea;font-weight:500;">Pick your framework.</span> AIDA, PAS, STAR — the AI writes every email in the structure that converts best for your goal.',
+  '<span style="color:#667eea;font-weight:500;">Schedule &amp; forget.</span> Set a send time once and all emails go out automatically at the perfect moment.',
+  '<span style="color:#667eea;font-weight:500;">One click, 100 emails.</span> What used to take hours now takes seconds. Review, edit, and launch.',
+];
+const loaderTitles = [
+  'Generating emails...','Personalizing subject lines...','Applying your framework...',
+  'Tailoring to each role...','Adding your signature...','Finalizing previews...',
+];
+let loaderInfoIdx = 0, loaderTitleIdx = 0, loaderInfoTimer = null, loaderTitleTimer = null;
+
+function initLoaderCarousel() {
+  loaderInfoIdx = 0; loaderTitleIdx = 0;
+  loaderInfoTimer = setInterval(() => {
+    loaderInfoIdx = (loaderInfoIdx + 1) % loaderInfoMessages.length;
+    const el = document.getElementById('loaderInfoText');
+    if (el) { el.style.opacity = 0; setTimeout(() => { el.innerHTML = loaderInfoMessages[loaderInfoIdx]; el.style.opacity = 1; el.style.transition = 'opacity 0.3s'; }, 300); }
+  }, 4000);
+  loaderTitleTimer = setInterval(() => {
+    loaderTitleIdx = (loaderTitleIdx + 1) % loaderTitles.length;
+    const el = document.getElementById('loadingTitle');
+    if (el) el.textContent = loaderTitles[loaderTitleIdx];
+  }, 2200);
+}
+
+function stopLoaderCarousel() {
+  if (loaderInfoTimer) { clearInterval(loaderInfoTimer); loaderInfoTimer = null; }
+  if (loaderTitleTimer) { clearInterval(loaderTitleTimer); loaderTitleTimer = null; }
+  if (loaderContactRotationTimer) { clearInterval(loaderContactRotationTimer); loaderContactRotationTimer = null; }
+}
 </script>
 
 {% endblock %}
