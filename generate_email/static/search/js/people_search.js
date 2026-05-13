@@ -719,10 +719,17 @@ function restorePeopleFormValues(saved) {
         // Re-attach remove buttons
         cont.querySelectorAll(".tag-remove").forEach(function(btn) {
             btn.addEventListener("click", function() {
-                var idx = parseInt(btn.getAttribute("data-index"), 10);
-                tags.splice(idx, 1);
+                btn.closest(".tag").remove();
+                tags.splice(parseInt(btn.getAttribute("data-index"), 10), 1);
                 hidden.value = tags.join(",");
-                restorePeopleFormValues(JSON.parse(localStorage.getItem("people_last_form") || "{}"));
+                cont.querySelectorAll(".tag-remove").forEach(function(b, i) {
+                    b.setAttribute("data-index", i);
+                });
+                try {
+                    var sf = JSON.parse(localStorage.getItem("people_last_form") || "{}");
+                    sf[hidden.getAttribute("name")] = hidden.value;
+                    localStorage.setItem("people_last_form", JSON.stringify(sf));
+                } catch(e) {}
             });
         });
     });
@@ -761,6 +768,57 @@ function restorePeopleFormValues(saved) {
     }
 }
 
+    // ══ Helper: Add to recent searches ══
+    function addToRecentSearches(formValues, results) {
+        try {
+            console.log("Adding to recent searches:", formValues);
+            var recentSearches = [];
+            var existing = localStorage.getItem("people_recent_searches");
+            if (existing) recentSearches = JSON.parse(existing);
+            if (!Array.isArray(recentSearches)) recentSearches = [];
+
+            // Create a search entry with a summary label
+            var searchSummary = buildSearchSummary(formValues);
+            var entry = {
+                timestamp: Date.now(),
+                label: searchSummary.label,
+                icon: searchSummary.icon,
+                formValues: formValues,
+                results: results,
+                resultCount: (results && results.people) ? results.people.length : 0
+            };
+
+            // Remove duplicates (same label) to keep only unique searches
+            recentSearches = recentSearches.filter(function(s) { return s.label !== entry.label; });
+
+            // Keep only last 12 searches
+            recentSearches.unshift(entry);
+            if (recentSearches.length > 12) recentSearches = recentSearches.slice(0, 12);
+
+            localStorage.setItem("people_recent_searches", JSON.stringify(recentSearches));
+            console.log("Saved recent searches, total:", recentSearches.length);
+        } catch(e) {
+            console.error("Error saving recent search:", e);
+        }
+    }
+
+    // ══ Helper: Build search summary label ══
+    function buildSearchSummary(formValues) {
+        var parts = [];
+        if (formValues.name) parts.push(formValues.name);
+        if (formValues.location) parts.push(formValues.location + " (location)");
+        if (formValues.company) parts.push(formValues.company + " (company)");
+        if (formValues.job_title) parts.push(formValues.job_title + " (title)");
+        if (formValues.is_decision_maker) parts.push("Decision Makers");
+
+        var label = parts.length > 0 ? parts.slice(0, 2).join(", ") : "Recent Search";
+        if (parts.length > 2) label += " (+" + (parts.length - 2) + ")";
+
+        var icon = formValues.is_decision_maker ? "fa-crown" : "fa-search";
+
+        return { label: label.substring(0, 60), icon: icon };
+    }
+
     window.doAjaxSearch = function(pageOverride) {
         tagInputInstances.forEach(function(inst) { inst.finalizePendingInput(); });
         var formData = new FormData(peopleSearchForm);
@@ -780,9 +838,12 @@ function restorePeopleFormValues(saved) {
             try {
                 localStorage.removeItem("people_last_results");
                 localStorage.removeItem("people_last_form");
+                var formValues = getPeopleFormValues();
                 localStorage.setItem("people_last_results", JSON.stringify(data));
-                localStorage.setItem("people_last_form", JSON.stringify(getPeopleFormValues()));
-            } catch(e) {}
+                localStorage.setItem("people_last_form", JSON.stringify(formValues));
+                addToRecentSearches(formValues, data);
+                if (window.renderSidebarRecentSearches) window.renderSidebarRecentSearches();
+            } catch(e) { console.error("Error updating recent searches:", e); }
         })
         .catch(function(err) {
             hideSearchLoader();
@@ -951,8 +1012,8 @@ function restorePeopleFormValues(saved) {
                 }
 
                 // Show a non-blocking badge — thread does the real work server-side
-                showMessage(data.message, "success");
-                showBgEnrichBadge(data.job_id, data.request_ids.length, data.redirect_url);
+                var totalCount = (data.request_ids && data.request_ids.length) || data.total || 0;
+                showBgEnrichBadge(data.job_id, totalCount, data.redirect_url);
 
             } catch(e) {
                 console.error("Save & enrich error:", e);
@@ -962,75 +1023,21 @@ function restorePeopleFormValues(saved) {
             }
         });
     }
+            // localStorage.setItem("bgEnrichJob", JSON.stringify({jobId: jobId,total: total,redirectUrl: redirectUrl,startedAt: Date.now()}));
 
             function showBgEnrichBadge(jobId, total, redirectUrl) {
-            var existing = document.getElementById("bgEnrichBadge");
-            if (existing) existing.remove();
-
-            var badge = document.createElement("div");
-            badge.id = "bgEnrichBadge";
-            badge.style.cssText = [
-                "position:fixed", "bottom:24px", "right:24px",
-                "background:#fff", "border:1px solid #e4e8f0",
-                "border-radius:14px", "padding:12px 20px",
-                "box-shadow:0 4px 18px rgba(0,0,0,.12)",
-                "font-size:13px", "font-weight:600", "color:#2e374d",
-                "z-index:99999", "display:flex", "align-items:center",
-                "gap:10px", "min-width:260px"
-            ].join(";");
-            document.body.appendChild(badge);
-
-            function update(done, tot) {
-                badge.innerHTML =
-                    '<i class="fas fa-spinner fa-spin" style="color:#6276ea;font-size:15px;"></i>'
-                    + '<span>Enriching: ' + done + '/' + tot + ' contacts</span>'
-                    + '<button onclick="document.getElementById(\'bgEnrichBadge\').remove()"'
-                    + ' style="border:none;background:none;color:#aaa;cursor:pointer;'
-                    + 'font-size:18px;line-height:1;margin-left:auto;">×</button>';
-            }
-
-            function done(successMsg) {
-                badge.innerHTML =
-                    '<i class="fas fa-check-circle" style="color:#50b87a;font-size:15px;"></i>'
-                    + '<span>' + successMsg + '</span>'
-                    + '<a href="' + redirectUrl + '" style="color:#6276ea;margin-left:auto;'
-                    + 'font-size:12px;text-decoration:none;white-space:nowrap;">View list →</a>';
-                // Auto-remove after 8 seconds
-                setTimeout(function() {
-                    var b = document.getElementById("bgEnrichBadge");
-                    if (b) b.remove();
-                }, 8000);
-            }
-
-            update(0, total);
-
-            // Lightweight poll — just for the badge display
-            // The real work is done by the server thread regardless
-            (async function poll() {
-                var url = CHECK_ENRICHMENT_JOB_URL.replace("PLACEHOLDER", jobId);
-                for (var i = 0; i < 30; i++) {
-                    await new Promise(function(r) { setTimeout(r, 5000); });
-                    try {
-                        var res      = await fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } });
-                        var jobData  = await res.json();
-
-                        if (typeof jobData.credits === "number" && typeof slUpdatePill === "function") {
-                            slUpdatePill(jobData.credits);
-                        }
-
-                        update(jobData.done || 0, jobData.total || total);
-
-                        if (jobData.all_done) {
-                            done("Enrichment complete!");
-                            return;
-                        }
-                    } catch(e) { /* network blip — keep polling */ }
+            var checkUrl = CHECK_ENRICHMENT_JOB_URL.replace("PLACEHOLDER", jobId);
+                if (!checkUrl || checkUrl.includes("undefined")) {
+                    console.error("CHECK_ENRICHMENT_JOB_URL not defined");
+                    return;
                 }
-                // After 30 polls (~2.5 min) stop badge polling
-                // Thread on server still runs up to 10 minutes
-                done("Enrichment running in background.");
-            })();
-        }
+                
+                // Persist to localStorage so other pages can resume
+                localStorage.setItem("bgEnrichJob", JSON.stringify({jobId: jobId,total: total,redirectUrl: redirectUrl,checkUrl: checkUrl,startedAt: Date.now()}));
+
+                // Use the global function defined in base.html
+                showBgEnrichBadgeGlobal(jobId, total, redirectUrl, checkUrl);
+            }
 
     // ══ Enrich events ══
     function attachEnrichEvents() {
@@ -1168,15 +1175,29 @@ function restorePeopleFormValues(saved) {
     try {
         var savedResults = localStorage.getItem("people_last_results");
         var savedForm    = localStorage.getItem("people_last_form");
-        if (!savedResults) return;
-
-        var data = JSON.parse(savedResults);
-        var form = JSON.parse(savedForm || "{}");
-
-        restorePeopleFormValues(form);
-        renderAjaxResults(data);
+        // Don't auto-render on page load - only show sidebar
+        // Results will render only when user clicks a recent search
+        // if (!savedResults) return;
+        // var data = JSON.parse(savedResults);
+        // var form = JSON.parse(savedForm || "{}");
+        // restorePeopleFormValues(form);
+        // renderAjaxResults(data);
     } catch(e) {}
 })();
+
+    // ══ Clear initial results on page load - show only AI panel ══
+    (function clearInitialResults() {
+        // Remove any server-rendered results on initial page load
+        // Results should only show when user clicks a recent search
+        var resultsCard = document.getElementById("resultsCard");
+        var profileTpls = document.querySelectorAll(".person-profile-tpl");
+        if (resultsCard) resultsCard.remove();
+        profileTpls.forEach(function(el) { el.remove(); });
+        
+        // Show AI search panel
+        var aiPanel = document.getElementById("aiSearchPanel");
+        if (aiPanel) aiPanel.style.display = "block";
+    })();
 
     setTab("new"); updateSelectionUI(); attachEnrichEvents();
 
@@ -1394,6 +1415,150 @@ function restorePeopleFormValues(saved) {
             currentPersonIdx = personIdx;
             openDrawer();
         });
+    })();
+
+    // ══════════════════════════════════════════════
+    // ══ Sidebar Recent Searches Panel (People)  ══
+    // ══════════════════════════════════════════════
+    (function() {
+        var panel = document.getElementById("sidebarRecentResults");
+        if (!panel) {
+            console.error("sidebarRecentResults panel not found");
+            return;
+        }
+
+        window.renderSidebarRecentSearches = function() {
+            try {
+                console.log("renderSidebarRecentSearches called");
+                var raw = localStorage.getItem("people_recent_searches");
+                console.log("Raw data from localStorage:", raw);
+                
+                if (!raw) { 
+                    console.log("No recent searches data found");
+                    // Show empty state instead of hiding
+                    var list = panel.querySelector(".srp-list");
+                    if (list) {
+                        list.innerHTML = '<div style="padding: 12px; text-align: center; color: #8a94b0; font-size: 12px;">No recent searches yet. Perform a search to get started!</div>';
+                    }
+                    panel.style.display = "block";
+                    var badge = panel.querySelector(".srp-count");
+                    if (badge) badge.textContent = "0 searches";
+                    return; 
+                }
+                
+                var searches = JSON.parse(raw);
+                if (!Array.isArray(searches) || !searches.length) { 
+                    console.log("Recent searches array is empty");
+                    var list = panel.querySelector(".srp-list");
+                    if (list) {
+                        list.innerHTML = '<div style="padding: 12px; text-align: center; color: #8a94b0; font-size: 12px;">No recent searches yet. Perform a search to get started!</div>';
+                    }
+                    panel.style.display = "block";
+                    return; 
+                }
+
+                console.log("Found " + searches.length + " recent searches");
+                panel.style.display = "block";
+                var list = panel.querySelector(".srp-list");
+                if (!list) return;
+                list.innerHTML = "";
+
+                // Display only the 5 most recent searches
+                var displayedSearches = searches.slice(0, 5);
+
+                displayedSearches.forEach(function(entry, idx) {
+                    var item = document.createElement("div");
+                    item.className = "srp-item";
+                    item.setAttribute("data-search-idx", idx);
+                    item.setAttribute("data-label", entry.label);
+
+                    var timeAgo = getTimeAgo(entry.timestamp);
+
+                    item.innerHTML =
+                        '<div class="srp-avatar" style="background: linear-gradient(135deg, #8b5cf6, #d946ef);">' +
+                            '<i class="fas ' + esc(entry.icon || "fa-search") + '" style="font-size:14px;"></i>' +
+                        '</div>' +
+                        '<div class="srp-info">' +
+                            '<div class="srp-name">' + esc(entry.label) + '</div>' +
+                            '<div class="srp-sub">' + esc(entry.resultCount) + ' results • ' + timeAgo + '</div>' +
+                        '</div>' +
+                        '<i class="fas fa-chevron-right srp-arrow"></i>';
+
+                    item.addEventListener("click", function() {
+                        loadRecentSearch(entry, this);
+                    });
+
+                    list.appendChild(item);
+                });
+
+                // Count badge
+                var badge = panel.querySelector(".srp-count");
+                if (badge) badge.textContent = displayedSearches.length + " search" + (displayedSearches.length !== 1 ? "es" : "");
+
+            } catch(e) {
+                console.error("Error rendering recent searches:", e);
+                var list = panel.querySelector(".srp-list");
+                if (list) {
+                    list.innerHTML = '<div style="padding: 12px; text-align: center; color: #e74c3c; font-size: 11px;">Error loading recent searches</div>';
+                }
+                panel.style.display = "block";
+            }
+        };
+
+        // Helper: Get time ago string
+        function getTimeAgo(timestamp) {
+            var now = Date.now();
+            var diff = now - timestamp;
+            var minutes = Math.floor(diff / 60000);
+            var hours = Math.floor(diff / 3600000);
+            var days = Math.floor(diff / 86400000);
+
+            if (minutes < 1) return "just now";
+            if (minutes < 60) return minutes + "m ago";
+            if (hours < 24) return hours + "h ago";
+            if (days < 7) return days + "d ago";
+            return new Date(timestamp).toLocaleDateString();
+        }
+
+        // Load a recent search: restore form and display cached results
+        function loadRecentSearch(entry, itemEl) {
+            try {
+                if (!entry.formValues || !entry.results) return;
+
+                // Restore form values
+                restorePeopleFormValues(entry.formValues);
+
+                // Highlight the sidebar item
+                document.querySelectorAll(".srp-item.active").forEach(function(el){ el.classList.remove("active"); });
+                itemEl.classList.add("active");
+
+                // Display cached results without API call
+                renderAjaxResults(entry.results);
+
+                // Show success message
+                // showMessage("Loaded cached search results (" + entry.resultCount + " results)", "success");
+
+            } catch(e) {
+                console.error("Error loading recent search:", e);
+                showMessage("Could not load recent search.", "error");
+            }
+        }
+
+        // Toggle collapse/expand
+        var header = panel.querySelector(".srp-header");
+        var body   = panel.querySelector(".srp-body");
+        var chevron = panel.querySelector(".srp-chevron");
+        if (header && body) {
+            header.addEventListener("click", function() {
+                var collapsed = body.style.display === "none";
+                body.style.display = collapsed ? "block" : "none";
+                if (chevron) chevron.style.transform = collapsed ? "rotate(0deg)" : "rotate(-90deg)";
+            });
+        }
+
+        // Initialize on page load
+        console.log("Initializing people recent searches");
+        window.renderSidebarRecentSearches();
     })();
 
 });

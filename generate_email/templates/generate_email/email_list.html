@@ -104,6 +104,17 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="text-center mt-3" id="show-more-container">
+                    {% if page_obj.has_next %}
+                        <button
+                            id="show-more-btn"
+                            class="btn btn-primary"
+                            data-next-page="{{ page_obj.next_page_number }}"
+                        >
+                            Show More
+                        </button>
+                    {% endif %}
+                </div>
             {% else %}
                 <div class="text-center text-muted py-5">
                     <i class="fas fa-envelope-open-text fa-3x mb-3"></i>
@@ -113,33 +124,7 @@
         </div>
     </div>
 
-    {% if is_paginated %}
-    <div class="mx-3">
-        <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center">
-                {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
-                {% endif %}
-
-                <li class="page-item disabled">
-                    <span class="page-link">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
-                </li>
-
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled"><span class="page-link">Next</span></li>
-                {% endif %}
-            </ul>
-        </nav>
-    </div>
-    {% endif %}
+    
 </div>
 
 <script>
@@ -268,71 +253,156 @@ function bindReminderToggles() {
     });
 }
 
+    document.addEventListener('DOMContentLoaded', function () {
 
-document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('search');
     const tableBody = document.getElementById('emails-tbody');
+    const showMoreContainer = document.getElementById('show-more-container');
 
     let debounceTimer = null;
 
+    // SEARCH
     searchInput.addEventListener('input', function () {
+
         clearTimeout(debounceTimer);
+
         const query = this.value.trim();
 
         debounceTimer = setTimeout(() => {
+
             fetch(`?search=${encodeURIComponent(query)}&ajax=1`)
                 .then(response => response.json())
                 .then(data => {
-                    tableBody.innerHTML = '';
 
-                    if (data.length === 0) {
-                        tableBody.innerHTML = `
-                            <tr>
-                                <td colspan="5" class="text-center text-muted">
-                                    No matching emails
-                                </td>
-                            </tr>`;
-                        return;
-                    }
+                    renderEmails(data.emails);
 
-                     data.forEach(email => {
-    const toggleHtml = email.next_reminder_date ? `
-        <div class="form-check form-switch">
-            <input
-                class="form-check-input reminder-toggle"
-                type="checkbox"
-                role="switch"
-                id="reminder-${email.id}"
-                
-                data-email-id="${email.id}"
-                ${email.stop_reminder ? 'checked disabled' : ''}
-            >
-            ${!email.stop_reminder ? `
-                <label class="form-check-label fw-medium"
-                       for="reminder-${email.id}">
-                    Stop Reminders
-                </label>` : ''}
-        </div>
-    ` : '—';
+                    setupShowMoreButton(data);
 
-    tableBody.innerHTML += `
-        <tr>
-            <td>
-                ${email.name}
-                <small class="text-muted">(${email.email})</small>
-            </td>
-            <td>${email.subject}</td>
-            <td>${email.created}</td>
-            <td>${email.next_reminder_date ?? '—'}</td>
-            <td>${toggleHtml}</td>
-        </tr>
-    `;
-});
-        bindReminderToggles();
-           })
-                .catch(err => console.error(err));
-        }, 300); // debounce
+                });
+
+        }, 300);
+
     });
+
+    // SHOW MORE
+    document.addEventListener('click', function (e) {
+
+        if (e.target.id === 'show-more-btn') {
+
+            const btn = e.target;
+
+            const nextPage = btn.dataset.nextPage;
+
+            const search = searchInput.value.trim();
+
+            fetch(`?page=${nextPage}&search=${encodeURIComponent(search)}&ajax=1`)
+                .then(response => response.json())
+                .then(data => {
+
+                    renderEmails(data.emails, true);
+
+                    setupShowMoreButton(data);
+
+                });
+
+        }
+
+    });
+
+    // RENDER EMAILS
+    function renderEmails(emails, append = false) {
+
+        if (!append) {
+            tableBody.innerHTML = '';
+        }
+
+        if (emails.length === 0) {
+
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-muted">
+                        No matching emails
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        emails.forEach(email => {
+
+            const toggleHtml = email.next_reminder_date ? `
+                <div class="form-check form-switch">
+                    <input
+                        class="form-check-input reminder-toggle"
+                        type="checkbox"
+                        role="switch"
+                        id="reminder-${email.id}"
+                        data-email-id="${email.id}"
+                        ${email.stop_reminder ? 'checked disabled' : ''}
+                    >
+
+                    ${!email.stop_reminder ? `
+                        <label class="form-check-label fw-medium"
+                               for="reminder-${email.id}">
+                            Stop Reminders
+                        </label>
+                    ` : ''}
+                </div>
+            ` : '—';
+
+            tableBody.innerHTML += `
+                <tr>
+
+                    <td>
+                        ${email.name}
+                        <small class="text-muted">
+                            (${email.email})
+                        </small>
+                    </td>
+
+                    <td>
+                        ${email.subject}
+                    </td>
+
+                    <td>
+                        ${email.created}
+                    </td>
+
+                    <td>
+                        ${email.next_reminder_date ?? '—'}
+                    </td>
+
+                    <td>
+                        ${toggleHtml}
+                    </td>
+
+                </tr>
+            `;
+        });
+
+        bindReminderToggles();
+    }
+
+    // SHOW MORE BUTTON
+    function setupShowMoreButton(data) {
+
+        showMoreContainer.innerHTML = '';
+
+        if (data.has_next) {
+
+            showMoreContainer.innerHTML = `
+                <button
+                    id="show-more-btn"
+                    class="btn btn-primary"
+                    data-next-page="${data.next_page}"
+                >
+                    Show More
+                </button>
+            `;
+        }
+    }
+
 });
 </script>
 {% endblock content %}

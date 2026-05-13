@@ -25,11 +25,32 @@ import time
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "saleswithai.settings")
 django.setup()
 
+# def send_reminder_email(er):
+#     print("Sending email to:", er.email)
+#     sendReminderEmail(er)
+#     er.sent = True
+#     er.save()
+
 def send_reminder_email(er):
-    print("Sending email to:", er.email)
-    sendReminderEmail(er)
-    er.sent = True
-    er.save()
+    from django.db import transaction
+    
+    with transaction.atomic():
+        # Lock the row
+        locked = ReminderEmail.objects.select_for_update().get(pk=er.pk)
+        if locked.sent:
+            print(f"Already sent, skipping: {locked.email}")
+            return
+        locked.sent = True
+        locked.save(update_fields=["sent"])
+
+    print(f"Sending follow-up to: {locked.email}")
+    try:
+        sendReminderEmail(locked)
+    except Exception as e:
+        # Roll back so it retries tomorrow
+        ReminderEmail.objects.filter(pk=er.pk).update(sent=False)
+        print(f"Failed to send to {locked.email}: {e}")
+        raise
 
 # def send_reminder_email(er):
 #     print("🚀 START sending reminder:", er.id, er.email)
@@ -47,28 +68,61 @@ def send_reminder_email(er):
 #         import traceback
 #         traceback.print_exc()
 
+# ------------------fix1--------------------
+
 def send_reminders():
     today = timezone.now().date()
 
-    # Only send if it's a business day
     if not np.is_busday(today.strftime('%Y-%m-%d')):
         print("Not a business day. Exiting.")
         return
 
-    reminders = ReminderEmail.objects.filter(send_at=today, sent=False)
+    reminders = ReminderEmail.objects.filter(
+        send_at=today,
+        sent=False
+    ).select_related("sent_email", "user")
+
+    print(f"Found {reminders.count()} follow-ups for today")
 
     for er in reminders:
-        if EmailSubscription.objects.filter(user=er.user).exists():
-            for sub in EmailSubscription.objects.filter(user=er.user):
-                if sub.expires_at <= timezone.now() + timedelta(days=1):
-                    create_subscription(er.user)
-        if not er.sent and not er.sent_email.stop_reminder:
+        # Refresh to avoid race condition
+        er.refresh_from_db()
+        if er.sent:
+            continue
 
-            send_reminder_email(er)
-            time.sleep(90)
+        if er.sent_email.stop_reminder:
+            continue
 
-if __name__ == "__main__":
-    send_reminders()
+        # Refresh Microsoft subscription
+        for sub in EmailSubscription.objects.filter(user=er.user):
+            if sub.expires_at <= timezone.now() + timedelta(days=1):
+                create_subscription(er.user)
+
+        send_reminder_email(er)
+        time.sleep(90) # 90s gap between each send
+
+# def send_reminders():
+#     today = timezone.now().date()
+
+#     # Only send if it's a business day
+#     if not np.is_busday(today.strftime('%Y-%m-%d')):
+#         print("Not a business day. Exiting.")
+#         return
+
+#     reminders = ReminderEmail.objects.filter(send_at=today, sent=False)
+
+#     for er in reminders:
+#         if EmailSubscription.objects.filter(user=er.user).exists():
+#             for sub in EmailSubscription.objects.filter(user=er.user):
+#                 if sub.expires_at <= timezone.now() + timedelta(days=1):
+#                     create_subscription(er.user)
+#         if not er.sent and not er.sent_email.stop_reminder:
+
+#             send_reminder_email(er)
+#             time.sleep(90)
+
+# if __name__ == "__main__":
+#     send_reminders()
 
 # @shared_task
 # def send_reminder_email_task(id):
@@ -204,6 +258,27 @@ def process_msgraph_change(change):
     if stop_ids:
         SentEmail.objects.filter(id__in=stop_ids).update(stop_reminder=True)
         print(f"Stopped reminders for {len(stop_ids)} emails")
+
+
+
+
+import threading
+
+_tasks = {}
+_tasks_lock = threading.Lock()
+
+def set_task(task_id, data):
+    with _tasks_lock:
+        _tasks[task_id] = data
+
+def get_task(task_id):
+    with _tasks_lock:
+        return _tasks.get(task_id)
+
+def update_task(task_id, **kwargs):
+    with _tasks_lock:
+        if task_id in _tasks:
+            _tasks[task_id].update(kwargs)
 
 
 

@@ -5,7 +5,7 @@ from .views import (CheckBulkEnrichmentView, GenerateEmailView, SendEmailView, E
 from .views import (SearchPeopleView,EnrichPersonView,CheckEnrichmentView,SelectPersonForEmailView,SearchPeopleByLinkdinView,SearchCompanyView,DataEnrichmentView,PeopleListView,
                     GetSavedListsView,EnrichSavedListView,ExportSavedListCsvView,SavePeopleToListView,DownloadListCSVView,DeleteSavedListView,RemovePersonFromListView,
                     SaveCompaniesToListView,RemoveCompanyFromListView,UseSavedListInCampaignView,SaveEnrichAndGoToCampaignView,SearchHistoryView,
-                    AiParseSearchView,CheckEnrichmentJobView)
+                    AiParseSearchView,CheckEnrichmentJobView,campaign_task_status)
 
 
 urlpatterns = [
@@ -23,6 +23,7 @@ urlpatterns = [
     path("import-leads/", import_leads, name="import_leads"),
     path("campaign/", campaign_view, name="campaign_view"),
     path("campaign/generate-emails/", campaign_generate_emails, name="campaign_generate_emails"),
+    path("campaign/task-status/<str:task_id>/", campaign_task_status, name="campaign_task_status"),
 
 
     path("search-people/", SearchPeopleView.as_view(), name="search_people"),

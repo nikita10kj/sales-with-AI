@@ -381,6 +381,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
                 renderAjaxResults(data);
+                
+                // Save to recent searches
+                try {
+                    var linkedinUrl = document.getElementById("linkedin_url").value;
+                    addToRecentSearches(linkedinUrl, data);
+                    if (window.renderSidebarRecentSearches) window.renderSidebarRecentSearches();
+                } catch(e) { console.error("Error updating recent searches:", e); }
             })
             .catch(function (err) {
                 hideLoader();
@@ -388,6 +395,52 @@ document.addEventListener("DOMContentLoaded", function () {
                 showMessage("Search failed. Please try again.", "error");
             });
         });
+    }
+
+    // ══ Helper: Add to recent searches ══
+    function addToRecentSearches(linkedinUrl, results) {
+        try {
+            console.log("Adding to recent LinkedIn searches:", linkedinUrl);
+            var recentSearches = [];
+            var existing = localStorage.getItem("linkedin_recent_searches");
+            if (existing) recentSearches = JSON.parse(existing);
+            if (!Array.isArray(recentSearches)) recentSearches = [];
+
+            // Create a search entry with a summary label
+            var entry = {
+                timestamp: Date.now(),
+                label: buildLinkedInSearchSummary(linkedinUrl),
+                icon: "fa-linkedin",
+                linkedinUrl: linkedinUrl,
+                results: results,
+                resultCount: (results && results.people) ? results.people.length : 0
+            };
+
+            // Remove duplicates (same URL) to keep only unique searches
+            recentSearches = recentSearches.filter(function(s) { return s.linkedinUrl !== entry.linkedinUrl; });
+
+            // Keep only last 12 searches
+            recentSearches.unshift(entry);
+            if (recentSearches.length > 12) recentSearches = recentSearches.slice(0, 12);
+
+            localStorage.setItem("linkedin_recent_searches", JSON.stringify(recentSearches));
+            console.log("Saved recent LinkedIn searches, total:", recentSearches.length);
+        } catch(e) {
+            console.error("Error saving recent LinkedIn search:", e);
+        }
+    }
+
+    // ══ Helper: Build LinkedIn search summary label ══
+    function buildLinkedInSearchSummary(linkedinUrl) {
+        try {
+            // Extract username from LinkedIn URL
+            var urlParts = linkedinUrl.split('/');
+            var username = urlParts[urlParts.length - 1].replace(/\/$/, '');
+            if (!username) username = "LinkedIn Profile";
+            return username.substring(0, 60);
+        } catch(e) {
+            return "LinkedIn Profile";
+        }
     }
 
     // ── Utility ──
@@ -1461,6 +1514,149 @@ if (mobileFilterBtn && filtersPanel) {
                     </div>`;
             }).join("");
         }
+    })();
+
+    // ══ Sidebar Recent Searches Panel (LinkedIn) ══
+    // ═══════════════════════════════════════════════
+    (function() {
+        var panel = document.getElementById("sidebarRecentResults");
+        if (!panel) {
+            console.error("sidebarRecentResults panel not found");
+            return;
+        }
+
+        window.renderSidebarRecentSearches = function() {
+            try {
+                console.log("renderSidebarRecentSearches called");
+                var panel = document.getElementById("sidebarRecentResults");
+                if (!panel) {
+                    console.error("sidebarRecentResults panel not found");
+                    return;
+                }
+                
+                var raw = localStorage.getItem("linkedin_recent_searches");
+                console.log("Raw data from localStorage:", raw);
+                
+                var list = panel.querySelector(".srp-list");
+                if (!list) {
+                    console.error("srp-list not found");
+                    return;
+                }
+                
+                if (!raw) { 
+                    console.log("No recent searches data found");
+                    list.innerHTML = '<div style="padding: 12px; text-align: center; color: #8a94b0; font-size: 12px;">No recent searches yet. Perform a search to get started!</div>';
+                    var badge = panel.querySelector(".srp-count");
+                    if (badge) badge.textContent = "0 searches";
+                    return; 
+                }
+                
+                var searches = JSON.parse(raw);
+                if (!Array.isArray(searches) || !searches.length) { 
+                    console.log("Recent searches array is empty");
+                    list.innerHTML = '<div style="padding: 12px; text-align: center; color: #8a94b0; font-size: 12px;">No recent searches yet. Perform a search to get started!</div>';
+                    return; 
+                }
+
+                console.log("Found " + searches.length + " recent searches");
+                list.innerHTML = "";
+
+                // Display only the 5 most recent searches
+                var displayedSearches = searches.slice(0, 5);
+
+                displayedSearches.forEach(function(entry, idx) {
+                    var item = document.createElement("div");
+                    item.className = "srp-item";
+                    item.setAttribute("data-search-idx", idx);
+                    item.setAttribute("data-label", entry.label);
+
+                    var timeAgo = getTimeAgo(entry.timestamp);
+
+                    item.innerHTML =
+                        '<div class="srp-avatar" style="background: linear-gradient(135deg, #0a66c2, #00a4ef);">' +
+                            '<i class="fab ' + escapeHtml(entry.icon || "fa-linkedin") + '" style="font-size:14px;"></i>' +
+                        '</div>' +
+                        '<div class="srp-info">' +
+                            '<div class="srp-name">' + escapeHtml(entry.label) + '</div>' +
+                            '<div class="srp-sub">' + escapeHtml(entry.resultCount) + ' results • ' + timeAgo + '</div>' +
+                        '</div>' +
+                        '<i class="fas fa-chevron-right srp-arrow"></i>';
+
+                    item.addEventListener("click", function() {
+                        loadRecentSearch(entry, this);
+                    });
+
+                    list.appendChild(item);
+                });
+
+                // Count badge
+                var badge = panel.querySelector(".srp-count");
+                if (badge) badge.textContent = displayedSearches.length + " search" + (displayedSearches.length !== 1 ? "es" : "");
+
+            } catch(e) {
+                console.error("Error rendering recent searches:", e);
+                var panel = document.getElementById("sidebarRecentResults");
+                if (panel) {
+                    var list = panel.querySelector(".srp-list");
+                    if (list) {
+                        list.innerHTML = '<div style="padding: 12px; text-align: center; color: #e74c3c; font-size: 11px;">Error loading recent searches</div>';
+                    }
+                }
+            }
+        };
+
+        // Helper: Get time ago string
+        function getTimeAgo(timestamp) {
+            var now = Date.now();
+            var diff = now - timestamp;
+            var minutes = Math.floor(diff / 60000);
+            var hours = Math.floor(diff / 3600000);
+            var days = Math.floor(diff / 86400000);
+
+            if (minutes < 1) return "just now";
+            if (minutes < 60) return minutes + "m ago";
+            if (hours < 24) return hours + "h ago";
+            if (days < 7) return days + "d ago";
+            return new Date(timestamp).toLocaleDateString();
+        }
+
+        // Load a recent search: restore form and display cached results
+        function loadRecentSearch(entry, itemEl) {
+            try {
+                if (!entry.linkedinUrl || !entry.results) return;
+
+                // Restore form values
+                var urlInput = document.getElementById("linkedin_url");
+                if (urlInput) urlInput.value = entry.linkedinUrl;
+
+                // Highlight the sidebar item
+                document.querySelectorAll(".srp-item.active").forEach(function(el){ el.classList.remove("active"); });
+                itemEl.classList.add("active");
+
+                // Display cached results without API call
+                renderAjaxResults(entry.results);
+
+            } catch(e) {
+                console.error("Error loading recent search:", e);
+                showMessage("Could not load recent search.", "error");
+            }
+        }
+
+        // Toggle collapse/expand
+        var header = panel.querySelector(".srp-header");
+        var body   = panel.querySelector(".srp-body");
+        var chevron = panel.querySelector(".srp-chevron");
+        if (header && body) {
+            header.addEventListener("click", function() {
+                var collapsed = body.style.display === "none";
+                body.style.display = collapsed ? "block" : "none";
+                if (chevron) chevron.style.transform = collapsed ? "rotate(0deg)" : "rotate(-90deg)";
+            });
+        }
+
+        // Initialize on page load
+        console.log("Initializing LinkedIn recent searches");
+        window.renderSidebarRecentSearches();
     })();
 
     // ── Init ──
