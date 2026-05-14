@@ -3586,21 +3586,56 @@ class SelectPersonForEmailView(View):
         print(request.session["prefill_email_data"])
 
         return redirect("generate_email")
-
+    
+from django.utils.timesince import timesince
 class SearchHistoryView(LoginRequiredMixin, View):
     template_name = "generate_email/search_history.html"
+    PAGE_SIZE = 10
 
     def get(self, request, *args, **kwargs):
+        from django.template.loader import render_to_string
         search_type = request.GET.get("type", "")
-        histories   = SearchHistory.objects.filter(user=request.user)
+        histories_qs = SearchHistory.objects.filter(user=request.user)
         if search_type:
-            histories = histories.filter(search_type=search_type)
+            histories_qs = histories_qs.filter(search_type=search_type)
 
         limit, _ = UserSearchLimit.objects.get_or_create(user=request.user)
+
+        # ── AJAX pagination for "Show More" ──
+        if request.GET.get("ajax") == "1":
+            offset = int(request.GET.get("offset", 0))
+            total = histories_qs.count()
+            batch = list(histories_qs[offset: offset + self.PAGE_SIZE])
+
+            def serialize_history(h):
+                return {
+                    "id": h.id,
+                    "search_type": h.search_type,
+                    "search_type_display": h.get_search_type_display(),
+                    "result_count": h.result_count,
+                    "created_at_display": h.created_at.strftime("%b %d, %Y"),
+                    "created_at_time": h.created_at.strftime("%H:%M"),
+                    "timesince": timesince(h.created_at),
+                    "filters": h.filters or {},
+                    "results": h.results or [],
+                }
+
+            return JsonResponse({
+                "histories": [serialize_history(h) for h in batch],
+                "has_more": (offset + self.PAGE_SIZE) < total,
+                "next_offset": offset + self.PAGE_SIZE,
+            })
+
+        # ── Normal full-page render — first 10 only ──
+        total = histories_qs.count()
+        first_batch = list(histories_qs[: self.PAGE_SIZE])
         return render(request, self.template_name, {
-            "histories":   histories[:50],
-            "search_type": search_type,
+            "histories":    first_batch,
+            "search_type":  search_type,
             "search_limit": limit,
+            "has_more":     total > self.PAGE_SIZE,
+            "next_offset":  self.PAGE_SIZE,
+            "total_count":  total,
         })
 
     def delete(self, request, *args, **kwargs):
@@ -5928,6 +5963,29 @@ def campaign_generate_emails(request):
     if not selected_list_id and not tag_id:
         return JsonResponse({"success": False, "error": "Please select a Tag or a Saved List."}, status=400)
 
+    # ── EMAIL LIMIT CHECK ──
+    user_domain = (request.user.email or "").split("@")[-1].lower()
+    if user_domain != ORG_DOMAIN:
+        sent_count = SentEmail.objects.filter(user=request.user).count()
+        if sent_count >= EMAIL_SEND_LIMIT:
+            return JsonResponse({
+                "success": False,
+                "email_limit_reached": True,
+                "redirect_url": reverse('pricing'),
+                "error": f"You have reached the limit of {EMAIL_SEND_LIMIT} emails. Please upgrade your plan."
+            }, status=403)
+        wallet, _ = UserWallet.objects.get_or_create(
+            user=request.user,
+            defaults={"credits": 50}
+        )
+        if wallet.credits <= 0:
+            return JsonResponse({
+                "success": False,
+                "email_limit_reached": True,
+                "redirect_url": reverse('pricing'),
+                "error": "Free limit finished. Please buy credits to continue."
+            }, status=403)
+
     selected_service = ProductService.objects.filter(
         service_name=service_name, user=request.user
     ).first()
@@ -6212,6 +6270,27 @@ def campaign_view(request):
         if not audiences or not audiences.exists():
             messages.error(request, "No leads found. Please check your Tag or Saved List.")
             return redirect("campaign_view")
+
+        # ── EMAIL LIMIT CHECK ──
+        user_domain = (request.user.email or "").split("@")[-1].lower()
+        if user_domain != ORG_DOMAIN:
+            sent_count = SentEmail.objects.filter(user=request.user).count()
+            if sent_count >= EMAIL_SEND_LIMIT:
+                messages.error(
+                    request,
+                    f"You have reached the limit of {EMAIL_SEND_LIMIT} emails. Please upgrade your plan."
+                )
+                return redirect(reverse('pricing'))
+            wallet, _ = UserWallet.objects.get_or_create(
+                user=request.user,
+                defaults={"credits": 50}
+            )
+            if wallet.credits <= 0:
+                messages.error(
+                    request,
+                    "Free email limit finished. Please purchase credits to continue."
+                )
+                return redirect(reverse('pricing'))
 
         selected_service = ProductService.objects.filter(
             service_name=service_name,
