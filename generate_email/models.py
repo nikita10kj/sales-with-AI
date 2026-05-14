@@ -289,3 +289,20 @@ class EnrichmentJob(models.Model):
 
     def __str__(self):
         return f"EnrichmentJob {self.id} [{self.status}] {self.done_count}/{self.total}"
+    
+
+
+# models.py
+class TaskResult(models.Model):
+    task_id = models.CharField(max_length=100, unique=True, db_index=True)
+    status  = models.CharField(max_length=20, default="pending")
+    progress = models.IntegerField(default=0)
+    total = models.IntegerField(default=0)
+    framework = models.CharField(max_length=100, blank=True)
+    result = models.JSONField(null=True, blank=True)
+    contact_names = models.JSONField(null=True, blank=True)
+    error = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "task_results"
