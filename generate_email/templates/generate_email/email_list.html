@@ -84,22 +84,7 @@
                                     </div>
                                 </td>
                             </tr>
-                            <div class="modal fade" id="reminderConfirmModal" tabindex="-1" aria-hidden="true">
-                              <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
-                                  <div class="modal-header">
-                                    <h5 class="modal-title">Confirm Action</h5>
-                                  </div>
-                                  <div class="modal-body">
-                                    Are You Sure You Want to Stop Reminders?
-                                  </div>
-                                  <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" id="modalCancelBtn" data-bs-dismiss="modal">No</button>
-                                    <button type="button" class="btn btn-primary" id="modalConfirmBtn">Yes</button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
+
                             {% endfor %}
                         </tbody>
                     </table>
@@ -124,7 +109,24 @@
         </div>
     </div>
 
-    
+</div>
+
+<!-- Reminder confirmation modal (single instance, outside the loop) -->
+<div class="modal fade" id="reminderConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirm Action</h5>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to stop reminders?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="modalCancelBtn" data-bs-dismiss="modal">No</button>
+        <button type="button" class="btn btn-primary" id="modalConfirmBtn">Yes</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -178,32 +180,25 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+// ── Single shared state for the reminder modal ──
+window._reminderEmailId = null;
+window._reminderCheckbox = null;
+window._reminderModal  = null;
+
 document.addEventListener('DOMContentLoaded', function () {
-    let selectedEmailId = null;
-    let checkboxRef = null;
-    let modalInstance = null; // 👈 new
+    // Initialise the modal once
+    const modalEl = document.getElementById('reminderConfirmModal');
+    window._reminderModal = new bootstrap.Modal(modalEl);
 
-    const modalElement = document.getElementById('reminderConfirmModal');
-    modalInstance = new bootstrap.Modal(modalElement);
+    // Bind initial (server-rendered) toggles
+    bindReminderToggles();
 
-    document.querySelectorAll('.reminder-toggle').forEach(function (toggle) {
-        toggle.addEventListener('change', function (e) {
-            e.preventDefault();
-
-            selectedEmailId = this.getAttribute('data-email-id');
-            checkboxRef = this;
-            const isChecked = this.checked;
-
-
-            // Revert change until confirmed
-            this.checked = !isChecked;
-
-            modalInstance.show();
-        });
-    });
-
+    // Single confirm-button listener (always attached to the one modal)
     document.getElementById('modalConfirmBtn').addEventListener('click', function () {
-        const isChecked = !checkboxRef.checked;
+        const cb = window._reminderCheckbox;
+        if (!cb) return;
+
+        const willStop = !cb.checked; // cb was reverted, so !cb.checked = desired new state
 
         fetch("{% url 'view-emails' %}", {
             method: 'POST',
@@ -212,43 +207,49 @@ document.addEventListener('DOMContentLoaded', function () {
                 'X-CSRFToken': '{{ csrf_token }}',
             },
             body: JSON.stringify({
-                email_id: selectedEmailId,
-                stop_reminder: isChecked
+                email_id: window._reminderEmailId,
+                stop_reminder: willStop
             })
         })
         .then(response => {
-            if (!response.ok) throw new Error("Request failed");
-            modalInstance.hide();
-            checkboxRef.checked = isChecked;
-            checkboxRef.disabled = true;
-            // ✅ Remove the label
-            const label = document.querySelector(`label[for="reminder-${selectedEmailId}"]`);
-            if (label) {
-                label.remove(); // or: label.textContent = '';
-            }
+            if (!response.ok) throw new Error('Request failed');
+            window._reminderModal.hide();
+            cb.checked  = willStop;
+            cb.disabled = true;
+            const label = document.querySelector(`label[for="reminder-${window._reminderEmailId}"]`);
+            if (label) label.remove();
+            window._reminderCheckbox = null;
+            window._reminderEmailId  = null;
         })
         .catch(error => {
-            alert("Something went wrong");
+            alert('Something went wrong');
             console.error(error);
         });
     });
+
+    // Cancel — make sure checkbox stays reverted
+    document.getElementById('modalCancelBtn').addEventListener('click', function () {
+        window._reminderCheckbox = null;
+        window._reminderEmailId  = null;
+    });
 });
 
+// Called after every AJAX render — uses a data attribute flag to avoid duplicate listeners
 function bindReminderToggles() {
-    document.querySelectorAll('.reminder-toggle').forEach(toggle => {
+    document.querySelectorAll('.reminder-toggle:not([data-bound])').forEach(toggle => {
+        toggle.dataset.bound = '1'; // mark so we never double-bind
         toggle.addEventListener('change', function (e) {
             e.preventDefault();
 
-            window.selectedEmailId = this.dataset.emailId;
-            window.checkboxRef = this;
+            window._reminderEmailId  = this.dataset.emailId;
+            window._reminderCheckbox = this;
 
-            // revert until confirmed
+            // Revert until user confirms
             this.checked = !this.checked;
 
-            const modal = new bootstrap.Modal(
-                document.getElementById('reminderConfirmModal')
-            );
-            modal.show();
+            if (window._reminderModal) {
+                window._reminderModal.show();
+            }
         });
     });
 }
