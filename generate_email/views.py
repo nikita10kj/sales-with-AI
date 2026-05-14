@@ -5785,6 +5785,65 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from .tasks import set_task, get_task, update_task
 
 
+# def _generate_single_email(user, audience, selected_service, framework, signature_html):
+#     """Called in parallel for each person."""
+#     try:
+#         ai_raw  = get_response(user, audience, selected_service)
+#         ai_data = json.loads(ai_raw)
+
+#         subject    = ai_data["main_email"]["subject"]
+#         body       = ai_data["main_email"]["body"]
+#         final_body = body + "<br><br>" + signature_html if signature_html else body
+
+#         follow_ups = ai_data.get("follow_ups", [])
+#         for fu in follow_ups:
+#             fu["body"] = fu.get("body", "") + ("<br><br>" + signature_html if signature_html else "")
+
+#         return {
+#             "audience_id": audience.id,
+#             "email":       audience.email,
+#             "first_name":  audience.receiver_first_name or "",
+#             "last_name":   audience.receiver_last_name or "",
+#             "framework":   ai_data.get("framework", framework),
+#             "main_email":  {"subject": subject, "body": final_body},
+#             "follow_ups":  follow_ups,
+#             "error":       None,
+#         }
+#     except Exception as e:
+#         return {
+#             "audience_id": audience.id,
+#             "email":       audience.email,
+#             "first_name":  audience.receiver_first_name or "",
+#             "last_name":   audience.receiver_last_name or "",
+#             "error":       str(e),
+#         }
+
+
+# def _run_generation_background(task_id, user, audiences_list, selected_service, framework, signature_html):
+#     """Runs in a background thread — generates all emails in parallel."""
+#     results = [None] * len(audiences_list)
+
+#     try:
+#         with ThreadPoolExecutor(max_workers=10) as executor:
+#             future_to_index = {
+#                 executor.submit(
+#                     _generate_single_email,
+#                     user, audience, selected_service, framework, signature_html
+#                 ): idx
+#                 for idx, audience in enumerate(audiences_list)
+#             }
+
+#             for future in as_completed(future_to_index):
+#                 idx = future_to_index[future]
+#                 results[idx] = future.result()
+#                 completed = sum(1 for r in results if r is not None)
+#                 update_task(task_id, progress=completed)
+
+#         update_task(task_id, status="done", result=results)
+
+#     except Exception as e:
+#         update_task(task_id, status="error", error=str(e))
+
 def _generate_single_email(user, audience, selected_service, framework, signature_html):
     """Called in parallel for each person."""
     try:
@@ -5797,7 +5856,9 @@ def _generate_single_email(user, audience, selected_service, framework, signatur
 
         follow_ups = ai_data.get("follow_ups", [])
         for fu in follow_ups:
-            fu["body"] = fu.get("body", "") + ("<br><br>" + signature_html if signature_html else "")
+            fu["body"] = fu.get("body", "") + (
+                "<br><br>" + signature_html if signature_html else ""
+            )
 
         return {
             "audience_id": audience.id,
@@ -5810,6 +5871,7 @@ def _generate_single_email(user, audience, selected_service, framework, signatur
             "error":       None,
         }
     except Exception as e:
+        logger.exception("Failed to generate email for %s", audience.email)
         return {
             "audience_id": audience.id,
             "email":       audience.email,
@@ -5820,7 +5882,7 @@ def _generate_single_email(user, audience, selected_service, framework, signatur
 
 
 def _run_generation_background(task_id, user, audiences_list, selected_service, framework, signature_html):
-    """Runs in a background thread — generates all emails in parallel."""
+    """Runs in background thread — generates all emails in parallel, stores progress in DB."""
     results = [None] * len(audiences_list)
 
     try:
@@ -5834,14 +5896,15 @@ def _run_generation_background(task_id, user, audiences_list, selected_service, 
             }
 
             for future in as_completed(future_to_index):
-                idx = future_to_index[future]
-                results[idx] = future.result()
-                completed = sum(1 for r in results if r is not None)
-                update_task(task_id, progress=completed)
+                idx             = future_to_index[future]
+                results[idx]    = future.result()
+                completed       = sum(1 for r in results if r is not None)
+                update_task(task_id, progress=completed)  # writes to DB
 
-        update_task(task_id, status="done", result=results)
+        update_task(task_id, status="done", result=results)  # writes to DB
 
     except Exception as e:
+        logger.exception("Background generation failed for task %s", task_id)
         update_task(task_id, status="error", error=str(e))
 
 

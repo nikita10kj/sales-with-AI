@@ -262,23 +262,58 @@ def process_msgraph_change(change):
 
 
 
-import threading
+# import threading
 
-_tasks = {}
-_tasks_lock = threading.Lock()
+# _tasks = {}
+# _tasks_lock = threading.Lock()
+
+# def set_task(task_id, data):
+#     with _tasks_lock:
+#         _tasks[task_id] = data
+
+# def get_task(task_id):
+#     with _tasks_lock:
+#         return _tasks.get(task_id)
+
+# def update_task(task_id, **kwargs):
+#     with _tasks_lock:
+#         if task_id in _tasks:
+#             _tasks[task_id].update(kwargs)
+
+
+
+# tasks.py
+from .models import TaskResult
 
 def set_task(task_id, data):
-    with _tasks_lock:
-        _tasks[task_id] = data
+    TaskResult.objects.create(
+        task_id  = task_id,
+        status = data.get("status", "pending"),
+        progress = data.get("progress", 0),
+        total = data.get("total", 0),
+        framework = data.get("framework", ""),
+        result = data.get("result"),
+        contact_names = data.get("contact_names", []),
+        error = data.get("error", "") or "",
+    )
 
 def get_task(task_id):
-    with _tasks_lock:
-        return _tasks.get(task_id)
+    try:
+        t = TaskResult.objects.get(task_id=task_id)
+        return {
+            "status":        t.status,
+            "progress":      t.progress,
+            "total":         t.total,
+            "framework":     t.framework,
+            "result":        t.result,
+            "contact_names": t.contact_names,
+            "error":         t.error,
+        }
+    except TaskResult.DoesNotExist:
+        return None
 
 def update_task(task_id, **kwargs):
-    with _tasks_lock:
-        if task_id in _tasks:
-            _tasks[task_id].update(kwargs)
+    TaskResult.objects.filter(task_id=task_id).update(**kwargs)
 
 
 
