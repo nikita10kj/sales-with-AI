@@ -4107,11 +4107,21 @@ class SendEmailView(BlockDirectAccessMixin,LoginRequiredMixin, View):
         days = [3, 5, 7, 10]
         reminders = []
         index = 0
+        
+        # Get the time from when the original email was sent (convert to local timezone first)
+        if sent_email.created:
+            local_created = timezone.localtime(sent_email.created)
+            send_time = local_created.time()
+        else:
+            send_time = timezone.localtime(timezone.now()).time()
 
         for fe in followup_emails:
             day = int(fe.get("day", days[index] if index < len(days) else 3))
 
             send_date = add_business_days_np(today, day)
+            # Combine the send date with the original send time
+            naive_dt = datetime.combine(send_date, send_time)
+            send_datetime = timezone.make_aware(naive_dt, timezone=timezone.get_current_timezone())
             subject = main_email["subject"]
             reminder, created = ReminderEmail.objects.get_or_create(
                 user=request.user,
@@ -4120,7 +4130,7 @@ class SendEmailView(BlockDirectAccessMixin,LoginRequiredMixin, View):
                 target_audience=target,
                 subject=subject,
                 message=fe["body"],
-                send_at=send_date,
+                send_at=send_datetime,
                 message_id=message_id
             )
             reminders.append({
@@ -6449,6 +6459,8 @@ def campaign_view(request):
                     )
 
                 if sent_email_obj:
+                    # Preserve the send time from the scheduled email
+                    send_time = schedule_dt.time()
                     for i, follow in enumerate(follow_ups):
                         if i >= len(follow_up_days):
                             break
@@ -6457,6 +6469,11 @@ def campaign_view(request):
                         if not pg and signature_html:
                             follow_body += "<br><br>" + signature_html
 
+                        # Calculate follow-up datetime preserving the original send time
+                        followup_datetime = schedule_dt + timezone.timedelta(days=follow_up_days[i])
+                        # Replace the time with the original send time
+                        followup_datetime = followup_datetime.replace(hour=send_time.hour, minute=send_time.minute, second=send_time.second)
+                        
                         ReminderEmail.objects.create(
                             user=request.user,
                             target_audience=audience,
@@ -6465,9 +6482,7 @@ def campaign_view(request):
                             email=audience.email,
                             subject=f"Re: {subject}",
                             message=follow_body,
-                            send_at=(
-                                schedule_dt + timezone.timedelta(days=follow_up_days[i])
-                            ).date(),
+                            send_at=followup_datetime,
                             sent=False
                         )
             messages.success(request, "Campaign Scheduled Successfully.")
@@ -6538,6 +6553,8 @@ def campaign_view(request):
                 follow_up_days = [2, 4, 6, 8]
                 today = timezone.now().date()
 
+                # Get the current time to use for follow-ups (convert to local timezone)
+                send_time = timezone.localtime(timezone.now()).time()
                 for i, follow in enumerate(follow_ups):
                     if i >= len(follow_up_days):
                         break
@@ -6546,7 +6563,10 @@ def campaign_view(request):
                     if not pg and signature_html:
                         follow_body += "<br><br>" + signature_html
 
-                    send_at = today + timezone.timedelta(days=follow_up_days[i])
+                    # Calculate follow-up datetime, preserving the current time
+                    send_date_obj = today + timezone.timedelta(days=follow_up_days[i])
+                    naive_dt = datetime.combine(send_date_obj, send_time)
+                    send_at = timezone.make_aware(naive_dt, timezone=timezone.get_current_timezone())
 
                     ReminderEmail.objects.create(
                         user=request.user,
