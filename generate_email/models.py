@@ -73,7 +73,7 @@ class ReminderEmail(models.Model):
     message = models.TextField()
     opened = models.BooleanField(default=False)
     sent = models.BooleanField(default=False)
-    send_at = models.DateField()
+    send_at = models.DateTimeField()
 
     created = models.DateTimeField(auto_now_add=True)
 

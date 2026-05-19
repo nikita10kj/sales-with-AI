@@ -72,13 +72,14 @@ def send_reminder_email(er):
 
 def send_reminders():
     today = timezone.now().date()
+    tomorrow = today + timedelta(days=1)
 
     if not np.is_busday(today.strftime('%Y-%m-%d')):
         print("Not a business day. Exiting.")
         return
 
     reminders = ReminderEmail.objects.filter(
-        send_at=today,
+        send_at__date=today,
         sent=False
     ).select_related("sent_email", "user")
 
