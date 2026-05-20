@@ -1,4 +1,5 @@
 import base64
+import time
 import datetime
 from multiprocessing import context
 from urllib import request
@@ -4292,7 +4293,10 @@ class EmailListView(BlockDirectAccessMixin, LoginRequiredMixin, ListView):
                 'target_audience__receiver_last_name',
                 'created',
                 'next_reminder_date',
-                'stop_reminder'
+                'stop_reminder',
+                'opened',
+                'replied',
+                'replied_at'
             )
 
             data = [
@@ -4308,7 +4312,14 @@ class EmailListView(BlockDirectAccessMixin, LoginRequiredMixin, ListView):
                         if e['next_reminder_date']
                         else None
                     ),
-                    'stop_reminder': e['stop_reminder']
+                    'stop_reminder': e['stop_reminder'],
+                    'opened': e['opened'],
+                    'replied': e['replied'],
+                    'replied_at': (
+                        e['replied_at'].strftime("%d %b %Y, %I:%M %p")
+                        if e['replied_at']
+                        else None
+                    )
                 }
                 for e in emails
             ]
@@ -6406,7 +6417,7 @@ def campaign_view(request):
                 messages.error(request, "Invalid schedule time.")
                 return redirect("campaign_view")
 
-            for audience in audiences:
+            for i, audience in enumerate(audiences):
                 audience.campaign_goal    = campaign_goal
                 audience.framework        = framework
                 audience.selected_service = service_name
@@ -6431,26 +6442,31 @@ def campaign_view(request):
                 if not pg and signature_html:
                     final_message += "<br><br>" + signature_html
 
-                SentEmail.objects.create(
+                # Stagger each email by 1 minute so they don't all fire at once
+                staggered_dt = schedule_dt + timezone.timedelta(minutes=i)
+
+                sent_email_obj = SentEmail.objects.create(
                     user=request.user,
                     target_audience=audience,
                     email=audience.email,
                     subject=subject,
                     message=final_message,
                     is_scheduled=True,
-                    scheduled_at=schedule_dt,
+                    scheduled_at=staggered_dt,
                     sending_account=None if shuffle_accounts else selected_account,
                     attachment=saved_obj,
                     shuffle_accounts=shuffle_accounts
                 )
 
+                # Add open tracking pixel to campaign email
+                track_url = request.build_absolute_uri(reverse("email_open_pixel", kwargs={"uid": sent_email_obj.uid}))
+                track_url += f"?v={int(time.time())}"
+                tracking_pixel = f"<img src='{track_url}' width='1' height='1' style='display:none;' alt='' />"
+                sent_email_obj.message += tracking_pixel
+                sent_email_obj.save(update_fields=['message'])
+
                 follow_ups     = ai_data.get("follow_ups", [])
                 follow_up_days = [2, 4, 6, 8]
-
-                sent_email_obj = SentEmail.objects.filter(
-                    user=request.user,
-                    target_audience=audience
-                ).order_by("-created").first()
                 ActivityLog.objects.create(
                         user=request.user,
                         action="EMAIL_SENT",
@@ -6491,11 +6507,10 @@ def campaign_view(request):
             # return redirect("campaign_view")
 
         # =========================
-        # IMMEDIATE SEND
+        # IMMEDIATE SEND (via background scheduler with 1-min stagger)
         # =========================
         else:
-            account_list = list(google_accounts)
-            send_errors  = []
+            now_dt = timezone.now()
 
             for index, audience in enumerate(audiences):
                 audience.campaign_goal    = campaign_goal
@@ -6524,37 +6539,43 @@ def campaign_view(request):
                 if not pg and signature_html:
                     final_message += "<br><br>" + signature_html
 
-                main_email = {
-                    "subject": subject,
-                    "body": final_message
-                }
+                # Stagger each email by 1 minute from now
+                staggered_dt = now_dt + timezone.timedelta(minutes=index)
 
-                try:
-                    sent_email_obj = sendCampaignEmail(
-                        request=request,
-                        user=request.user,
-                        target_audience=audience,
-                        main_email=main_email,
-                        selected_account=selected_account,
-                        attachment=attachment_file
-                    )
-                    ActivityLog.objects.create(
-                        user=request.user,
-                        action="EMAIL_SENT",
-                        description=f"{framework} Campaign email sent to {audience.email}",
-                        sent_email=sent_email_obj
-                    )
-                except Exception as e:
-                    send_errors.append(f"{audience.email}: {e}")
-                    continue   # skip follow-ups for this contact, try next
+                sent_email_obj = SentEmail.objects.create(
+                    user=request.user,
+                    target_audience=audience,
+                    email=audience.email,
+                    subject=subject,
+                    message=final_message,
+                    is_scheduled=True,
+                    scheduled_at=staggered_dt,
+                    sending_account=None if shuffle_accounts else selected_account,
+                    attachment=saved_obj,
+                    shuffle_accounts=shuffle_accounts
+                )
 
-                # ── Follow-up reminders for immediate send ──
+                # Add open tracking pixel to campaign email
+                track_url = request.build_absolute_uri(reverse("email_open_pixel", kwargs={"uid": sent_email_obj.uid}))
+                track_url += f"?v={int(time.time())}"
+                tracking_pixel = f"<img src='{track_url}' width='1' height='1' style='display:none;' alt='' />"
+                sent_email_obj.message += tracking_pixel
+                sent_email_obj.save(update_fields=['message'])
+
+                ActivityLog.objects.create(
+                    user=request.user,
+                    action="EMAIL_SENT",
+                    description=f"{framework} Campaign scheduled for {audience.email}",
+                    sent_email=sent_email_obj
+                )
+
+                # ── Follow-up reminders ──
                 follow_ups = ai_data.get("follow_ups", [])
                 follow_up_days = [2, 4, 6, 8]
-                today = timezone.now().date()
 
-                # Get the current time to use for follow-ups (convert to local timezone)
-                send_time = timezone.localtime(timezone.now()).time()
+                # Use the staggered send time for follow-ups
+                send_time = timezone.localtime(staggered_dt).time()
+                today = staggered_dt.date()
                 for i, follow in enumerate(follow_ups):
                     if i >= len(follow_up_days):
                         break
@@ -6563,7 +6584,7 @@ def campaign_view(request):
                     if not pg and signature_html:
                         follow_body += "<br><br>" + signature_html
 
-                    # Calculate follow-up datetime, preserving the current time
+                    # Calculate follow-up datetime, preserving the staggered send time
                     send_date_obj = today + timezone.timedelta(days=follow_up_days[i])
                     naive_dt = datetime.combine(send_date_obj, send_time)
                     send_at = timezone.make_aware(naive_dt, timezone=timezone.get_current_timezone())
@@ -6580,18 +6601,8 @@ def campaign_view(request):
                         sent=False
                     )
 
-            if send_errors:
-                error_summary = "; ".join(send_errors)
-                messages.error(
-                    request,
-                    f"Some emails failed to send — {error_summary}. "
-                    "Check the server logs for details."
-                )
-            else:
-                messages.success(request, "Campaign Sent Successfully")
+            messages.success(request, "Campaign Sent Successfully — emails will be delivered with 1-minute gaps.")
             return redirect(f"{request.path}?list_id={request.POST.get('selected_list_id', '')}")
-            #     messages.success(request, "Campaign Sent Successfully")
-            # return redirect("campaign_view")
 
 
     # =========================

@@ -44,6 +44,8 @@ class SentEmail(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     opened_count = models.PositiveIntegerField(default=0,null=False)
     clicked_count = models.IntegerField(default=0)
+    replied = models.BooleanField(default=False)
+    replied_at = models.DateTimeField(null=True, blank=True)
     replied_count = models.IntegerField(default=0)
     scheduled_at = models.DateTimeField(null=True, blank=True)
     is_scheduled = models.BooleanField(default=False)

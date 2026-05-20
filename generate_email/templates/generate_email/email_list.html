@@ -45,7 +45,17 @@
                                     style="cursor: pointer;">
                                     {{ email.subject }}
                                     {% if email.opened %}
-                                        <span class="badge bg-success">Opened</span>
+                                        <a tabindex="0" class="fas fa-eye text-primary ms-2 text-decoration-none" 
+                                           role="button" 
+                                           data-bs-toggle="popover" 
+                                           data-bs-trigger="focus" 
+                                           data-bs-html="true" 
+                                           title="Tracking Details"
+                                           data-bs-content="<strong>Sent:</strong> {% if email.scheduled_at %}{{ email.scheduled_at|date:'M d, Y H:i' }}{% else %}{{ email.created|date:'M d, Y H:i' }}{% endif %}<br>{% if email.replied %}<strong>Replied:</strong> {{ email.replied_at|date:'M d, Y H:i' }}{% else %}<strong>Next Follow-up:</strong> {% if email.next_reminder_date %}{{ email.next_reminder_date|date:'M d, Y' }}{% else %}None{% endif %}{% endif %}"
+                                           onclick="event.stopPropagation();"></a>
+                                    {% endif %}
+                                    {% if email.replied %}
+                                        <span class="badge bg-info ms-1">Replied</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -177,6 +187,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 window.location.href = href;
             }
         });
+    });
+
+    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    popoverTriggerList.map(function (popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl);
     });
 });
 
@@ -352,18 +367,36 @@ function bindReminderToggles() {
                 </div>
             ` : '—';
 
+            let trackingHtml = '';
+            if (email.opened) {
+                let content = `<strong>Sent:</strong> ${email.created}<br>`;
+                if (email.replied) {
+                    content += `<strong>Replied:</strong> ${email.replied_at || ''}`;
+                } else {
+                    content += `<strong>Next Follow-up:</strong> ${email.next_reminder_date || 'None'}`;
+                }
+                trackingHtml = `<a tabindex="0" class="fas fa-eye text-primary ms-2 text-decoration-none" role="button" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-html="true" title="Tracking Details" data-bs-content="${content}" onclick="event.stopPropagation();"></a>`;
+            }
+
+            let badgeHtml = '';
+            if (email.replied) {
+                badgeHtml = `<span class="badge bg-info ms-1">Replied</span>`;
+            }
+
             tableBody.innerHTML += `
                 <tr>
 
-                    <td>
+                    <td class="clickable-row" data-href="/generate_email/emailmessage/${email.uid}/" style="cursor: pointer;">
                         ${email.name}
                         <small class="text-muted">
                             (${email.email})
                         </small>
                     </td>
 
-                    <td>
+                    <td class="clickable-row" data-href="/generate_email/emailmessage/${email.uid}/" style="cursor: pointer;">
                         ${email.subject}
+                        ${trackingHtml}
+                        ${badgeHtml}
                     </td>
 
                     <td>
@@ -383,6 +416,21 @@ function bindReminderToggles() {
         });
 
         bindReminderToggles();
+
+        const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+        popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl);
+        });
+
+        // Re-bind clickable rows after rendering
+        document.querySelectorAll('.clickable-row').forEach(row => {
+            row.addEventListener('click', () => {
+                const href = row.getAttribute('data-href');
+                if (href) {
+                    window.location.href = href;
+                }
+            });
+        });
     }
 
     // SHOW MORE BUTTON

@@ -294,7 +294,7 @@ def send_bulk_campaign_emails():
                 except Exception:
                     pass
 
-        time.sleep(random.randint(2, 5))
+        time.sleep(60)  # 1-minute gap between each email send
 
 
 def send_followup_emails():
@@ -316,6 +316,8 @@ def send_followup_emails():
             with transaction.atomic():
                 locked_r = ReminderEmail.objects.select_for_update().get(pk=r.pk)
                 if locked_r.sent:
+                    continue
+                if locked_r.sent_email.stop_reminder:
                     continue
                 locked_r.sent = True
                 locked_r.save(update_fields=["sent"])

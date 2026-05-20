@@ -197,6 +197,7 @@ def send_reminders():
 #     sendGeneratedEmail(dummy_request, user, target, main_email)
 
 from django.conf import settings
+from django.db.models import F
 from .utils import get_message_details, get_conversation_id
 
 def process_msgraph_change(change):
@@ -255,10 +256,16 @@ def process_msgraph_change(change):
         if conversation_id == in_reply_to:
             stop_ids.append(email.id)
 
-    # Bulk update — one DB query instead of one per email
+    # Bulk update — stop reminders + mark as replied with timestamp
     if stop_ids:
-        SentEmail.objects.filter(id__in=stop_ids).update(stop_reminder=True)
-        print(f"Stopped reminders for {len(stop_ids)} emails")
+        reply_time = timezone.now()
+        SentEmail.objects.filter(id__in=stop_ids).update(
+            stop_reminder=True,
+            replied=True,
+            replied_at=reply_time,
+            replied_count=F('replied_count') + 1,
+        )
+        print(f"✅ Stopped reminders + marked replied for {len(stop_ids)} emails at {reply_time}")
 
 
 
