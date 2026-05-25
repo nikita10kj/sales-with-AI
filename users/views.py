@@ -101,7 +101,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
                 ).count()
             else:
                 total_sent_user = SentEmail.objects.filter(user=user).count()
-            email_limit = 50
+            email_limit = user.email_limit  # per-user limit set by admin (default 50)
             remaining_emails = max(email_limit - total_sent_user, 0)
         else:
             total_sent_user = SentEmail.objects.filter(user=user).count()
@@ -1449,3 +1449,68 @@ def remove_microsoft_account(request, pk):
     acc.delete()
     messages.success(request, "Microsoft account removed successfully.")
     return redirect("profile")
+
+
+@login_required
+def prospect_unlock_request(request):
+    """
+    Handles the 'Prospect & Enrich' unlock request form.
+    Sends client details via email to the admin/owner account.
+    """
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "Invalid request method."}, status=405)
+
+    name = request.POST.get("name", "").strip()
+    phone = request.POST.get("phone", "").strip()
+    email = request.POST.get("email", "").strip()
+
+    if not name or not phone or not email:
+        return JsonResponse({"success": False, "error": "All fields are required."}, status=400)
+
+    # Validate email format
+    try:
+        EmailValidator()(email)
+    except ValidationError:
+        return JsonResponse({"success": False, "error": "Please enter a valid email address."}, status=400)
+
+    # Build email content
+    subject = f"🔓 Prospect & Enrich Access Request — {name}"
+    body = f"""
+Hello,
+
+A user has requested access to the Prospect & Enrich feature on SellSharp.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CLIENT DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Name        : {name}
+Phone No.   : {phone}
+Email ID    : {email}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Logged-in Account : {request.user.email}
+Request Time      : {timezone.now().strftime("%d %B %Y, %I:%M %p")} (IST)
+
+Please review and grant access if appropriate.
+
+— SellSharp Automated Notification
+""".strip()
+
+    import logging
+    logger = logging.getLogger(__name__)
+
+    try:
+        from django.core.mail import send_mail
+        from django.conf import settings as django_settings
+
+        send_mail(
+            subject=subject,
+            message=body,
+            from_email=django_settings.DEFAULT_FROM_EMAIL,
+            recipient_list=["hardik@jmsadvisory.in","japan@jmsadvisory.in","harshil@jmsadvisory.in"],
+            fail_silently=False,
+        )
+        return JsonResponse({"success": True, "message": "Your request has been submitted. We will get back to you shortly!"})
+    except Exception as e:
+        logger.error(f"[prospect_unlock_request] Email send failed: {e}")
+        return JsonResponse({"success": False, "error": f"Failed to send request. Please try again later. ({e})"}, status=500)

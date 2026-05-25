@@ -28,7 +28,7 @@ class CustomUserManager(BaseUserManager):
         if not email:
             raise ValueError("Users must have an email address")
         email = self.normalize_email(email)
-        user = self.model(email=email)
+        user = self.model(email=email, has_prospect_access=False)  # New users start with no access
         user.set_unusable_password()  # No password for normal users
         user.save(using=self._db)
         return user
@@ -41,6 +41,7 @@ class CustomUserManager(BaseUserManager):
         user.set_password(password)
         user.is_staff = True
         user.is_superuser = True
+        user.has_prospect_access = True  # Superusers always have full access
         user.save(using=self._db)
         return user
 
@@ -55,6 +56,17 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    has_prospect_access = models.BooleanField(
+        default=False,  # True so all existing users keep their current access
+        verbose_name="Prospect & Enrich Access",
+        help_text="If enabled, this user can access the Prospect & Enrich feature. "
+                  "Uncheck to restrict new users until manually approved by admin."
+    )
+    email_limit = models.PositiveIntegerField(
+        default=50,
+        verbose_name="Email Send Limit",
+        help_text="Maximum number of emails this user is allowed to send. Default is 50."
+    )
 
     USERNAME_FIELD = 'email'
     # REQUIRED_FIELDS = []
