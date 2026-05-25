@@ -206,12 +206,19 @@
 
                     </div>
 
-                    {% if email_limit %}
-                    <div class="mt-2 fw-semibold"
-                        style="font-size: 0.75rem;
-                                color: {% if remaining_emails <= 10 %}#dc3545{% else %}#00b894{% endif %};">
-                    {{ remaining_emails }} left out of {{ email_limit }}
-                    </div>
+                    {% if remaining_emails != None %}
+                        {% if remaining_emails > 0 %}
+                        <div class="mt-2 fw-semibold"
+                            style="font-size: 0.75rem;
+                                    color: {% if remaining_emails <= 10 %}#dc3545{% else %}#00b894{% endif %};">
+                            {{ remaining_emails }} left out of {{ email_limit }}
+                        </div>
+                        {% else %}
+                        <div class="mt-2 fw-semibold" style="font-size: 0.75rem;">
+                            <span style="color:#dc3545;">&#9888; Email limit reached.</span>
+                            <a href="{% url 'pricing' %}" style="color:#6f42c1; text-decoration:none; margin-left:4px;">Upgrade Plan →</a>
+                        </div>
+                        {% endif %}
                     {% endif %}
                 </div>
             </div>

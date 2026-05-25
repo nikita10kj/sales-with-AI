@@ -5990,12 +5990,13 @@ def campaign_generate_emails(request):
     user_domain = (request.user.email or "").split("@")[-1].lower()
     if user_domain != ORG_DOMAIN:
         sent_count = SentEmail.objects.filter(user=request.user).count()
-        if sent_count >= EMAIL_SEND_LIMIT:
+        user_email_limit = request.user.email_limit  # per-user limit (admin-configurable)
+        if sent_count >= user_email_limit:
             return JsonResponse({
                 "success": False,
                 "email_limit_reached": True,
                 "redirect_url": reverse('pricing'),
-                "error": f"You have reached the limit of {EMAIL_SEND_LIMIT} emails. Please upgrade your plan."
+                "error": f"You have reached the limit of {user_email_limit} emails. Please upgrade your plan."
             }, status=403)
         wallet, _ = UserWallet.objects.get_or_create(
             user=request.user,
@@ -6298,10 +6299,11 @@ def campaign_view(request):
         user_domain = (request.user.email or "").split("@")[-1].lower()
         if user_domain != ORG_DOMAIN:
             sent_count = SentEmail.objects.filter(user=request.user).count()
-            if sent_count >= EMAIL_SEND_LIMIT:
+            user_email_limit = request.user.email_limit  # per-user limit (admin-configurable)
+            if sent_count >= user_email_limit:
                 messages.error(
                     request,
-                    f"You have reached the limit of {EMAIL_SEND_LIMIT} emails. Please upgrade your plan."
+                    f"You have reached the limit of {user_email_limit} emails. Please upgrade your plan."
                 )
                 return redirect(reverse('pricing'))
             wallet, _ = UserWallet.objects.get_or_create(
