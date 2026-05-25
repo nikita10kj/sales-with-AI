@@ -1,5 +1,7 @@
 # tasks.py
 # from celery import shared_task
+
+
 # from django.utils import timezone
 # from datetime import timedelta
 # from django.core.mail import send_mail
@@ -242,9 +244,25 @@ def process_msgraph_change(change):
     ).distinct()
 
     stop_ids = []
+    # OLD CODE (disabled - was filtering out valid message IDs):
+    # for email in emails:
+    #     sent_msg_id = email.message_id
+    #     if not sent_msg_id or not sent_msg_id.startswith("AA"):
+    #         continue
+    #     try:
+    #         from .utils import get_conversation_id
+    #         conversation_id = get_conversation_id(user, sent_msg_id)
+    #     except Exception as e:
+    #         print(f"Graph API error: {e}")
+    #         continue
+    #
+    #     if conversation_id == in_reply_to:
+    #         stop_ids.append(email.id)
+
+    # NEW CODE (fixed - accepts all message ID formats):
     for email in emails:
         sent_msg_id = email.message_id
-        if not sent_msg_id or not sent_msg_id.startswith("AA"):
+        if not sent_msg_id:  # Only skip if NO message_id
             continue
         try:
             from .utils import get_conversation_id
