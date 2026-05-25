@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import ( HomeView, LoginView,LandingPageView, RegisterView, VerifyOTPView, ResendOTPView,
-                    UserDetailsView,ProfileView,PrivacyPolicyView,TermsConditionsView,SupportView,LearningHubView,delete_signature,dashboard, delete_attachment, list_user_attachments, remove_google_account, AdminDashboardView, razorpay_create_order,razorpay_verify_payment,PricingView,RefundPolicyView,ContactUsView)
+                    UserDetailsView,ProfileView,PrivacyPolicyView,TermsConditionsView,SupportView,LearningHubView,delete_signature,dashboard, delete_attachment, list_user_attachments, remove_google_account, AdminDashboardView, razorpay_create_order,razorpay_verify_payment,PricingView,RefundPolicyView,ContactUsView, prospect_unlock_request)
 from users import views
 
 
@@ -29,5 +29,6 @@ urlpatterns = [
     path("razorpay/verify/", razorpay_verify_payment, name="razorpay_verify_payment"),
     path('remove-microsoft-account/<int:pk>/', views.remove_microsoft_account, name='remove_microsoft_account'),
     path('admin-dashboard/export/', views.AdminDashboardExportView.as_view(), name='admin_dashboard_export'),
+    path('prospect-unlock-request/', prospect_unlock_request, name='prospect_unlock_request'),
 
 ]

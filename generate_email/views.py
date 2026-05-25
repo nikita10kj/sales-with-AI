@@ -3659,7 +3659,7 @@ class SearchHistoryView(LoginRequiredMixin, View):
         
 # Create your views here.
 ORG_DOMAIN = "jmsadvisory.in"
-EMAIL_SEND_LIMIT = 50
+# EMAIL_SEND_LIMIT is now per-user via CustomUser.email_limit (default=50)
 class GenerateEmailView(BlockDirectAccessMixin,LoginRequiredMixin, View):
     def normalize_url(self, url):
         """Ensure the URL starts with http:// or https://"""
@@ -3773,14 +3773,15 @@ class GenerateEmailView(BlockDirectAccessMixin,LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         user_domain = (request.user.email or "").split("@")[-1].lower()
         if user_domain != ORG_DOMAIN:
-            # ── Hard 50-email send limit ──
+            # ── Per-user email send limit (admin-configurable) ──
+            user_email_limit = request.user.email_limit  # from CustomUser.email_limit
             sent_count = SentEmail.objects.filter(user=request.user).count()
-            if sent_count >= EMAIL_SEND_LIMIT:
+            if sent_count >= user_email_limit:
                 return JsonResponse({
                     'success': False,
                     'email_limit_reached': True,
                     'redirect_url': reverse('pricing'),
-                    'errors': f"You have reached the limit of {EMAIL_SEND_LIMIT} emails. Please upgrade your plan."
+                    'errors': f"You have reached the limit of {user_email_limit} emails. Please upgrade your plan."
                 }, status=403)
 
             wallet, _ = UserWallet.objects.get_or_create(
@@ -4065,14 +4066,15 @@ class SendEmailView(BlockDirectAccessMixin,LoginRequiredMixin, View):
         wallet = None
 
         if user_domain != ORG_DOMAIN:
-            # ── Hard 50-email send limit ──
+            # ── Per-user email send limit (admin-configurable) ──
+            user_email_limit = request.user.email_limit  # from CustomUser.email_limit
             sent_count = SentEmail.objects.filter(user=request.user).count()
-            if sent_count >= EMAIL_SEND_LIMIT:
+            if sent_count >= user_email_limit:
                 return JsonResponse({
                     "success": False,
                     "email_limit_reached": True,
                     "redirect_url": reverse('pricing'),
-                    "error": f"You have reached the limit of {EMAIL_SEND_LIMIT} emails. Please upgrade your plan."
+                    "error": f"You have reached the limit of {user_email_limit} emails. Please upgrade your plan."
                 }, status=403)
 
             wallet, _ = UserWallet.objects.get_or_create(
