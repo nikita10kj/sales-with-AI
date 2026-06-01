@@ -317,6 +317,10 @@ def send_followup_emails():
                 locked_r = ReminderEmail.objects.select_for_update().get(pk=r.pk)
                 if locked_r.sent:
                     continue
+                # ✅ FIX: Re-fetch sent_email fresh from DB to avoid stale
+                # select_related cache — the webhook may have set stop_reminder=True
+                # after this queryset was evaluated.
+                locked_r.sent_email.refresh_from_db()
                 if locked_r.sent_email.stop_reminder:
                     continue
                 locked_r.sent = True

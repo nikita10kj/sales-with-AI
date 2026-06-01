@@ -4,7 +4,7 @@ from .models import CustomUser, EmailAttachment, ProductService, Signature, User
 
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
-    list_display = ('email', 'full_name', 'company_name', 'email_limit', 'has_prospect_access', 'is_staff', 'is_superuser', 'is_active')
+    list_display = ('email','full_name','company_name','total_sent_emails','remaining_email_limit','email_limit','has_prospect_access','is_staff','is_superuser','is_active')
     list_filter = ('has_prospect_access', 'is_staff', 'is_superuser', 'is_active')
     search_fields = ('email', 'full_name', 'company_name')
     list_editable = ('email_limit', 'has_prospect_access')  # Admin can change directly from the list

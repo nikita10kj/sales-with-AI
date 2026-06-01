@@ -79,6 +79,15 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def get_full_name(self):
         return self.full_name or self.email
 
+    @property
+    def total_sent_emails(self):
+        return self.sent_email.count()
+
+    @property
+    def remaining_email_limit(self):
+        remaining = self.email_limit - self.total_sent_emails
+        return remaining if remaining >= 0 else 0
+
     def save(self, *args, **kwargs):
         self.email = self.email.lower()  # Always save email as lowercase
         super().save(*args, **kwargs)
