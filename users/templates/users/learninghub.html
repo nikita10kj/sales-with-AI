@@ -101,7 +101,7 @@
     font-weight: 600;
   }
 
-/* .modal ને .qa-modal કરો */
+
 .qa-modal {
   width: min(700px, 90%);
   background: #fff;
@@ -143,8 +143,8 @@
   padding: 1rem 1.25rem 1.25rem; 
   overflow: auto; 
 }
-  /* MODAL + ACCORDION */
-.modal-overlay {
+  /* MODAL + ACCORDION — prefixed with lh- to avoid Bootstrap .modal conflict */
+.lh-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -161,7 +161,7 @@
   z-index: 99999;
 }
 
-.modal {
+.lh-modal {
   width: min(700px, 90%);
   background: #fff;
   border-radius: 18px;
@@ -171,9 +171,9 @@
   display: flex;
   flex-direction: column;
 }
-  .modal-overlay.open { display: flex; }
+  .lh-modal-overlay.open { display: flex; }
 
-  .modal-header {
+  .lh-modal-header {
     padding: 1rem 1.25rem;
     border-bottom: 1px solid rgba(0,0,0,0.08);
     display: flex;
@@ -182,14 +182,14 @@
     gap: 1rem;
   }
 
-  .modal-title {
+  .lh-modal-title {
     margin: 0;
     font-size: 1.15rem;
     line-height: 1.2;
     font-weight: 800;
   }
 
-  .modal-close {
+  .lh-modal-close {
     border: none;
     background: rgba(0,0,0,0.06);
     padding: 0.5rem 0.75rem;
@@ -197,9 +197,9 @@
     cursor: pointer;
     font-weight: 700;
   }
-  .modal-close:hover { background: rgba(0,0,0,0.10); }
+  .lh-modal-close:hover { background: rgba(0,0,0,0.10); }
 
-  .modal-body { padding: 1rem 1.25rem 1.25rem; overflow: auto; }
+  .lh-modal-body { padding: 1rem 1.25rem 1.25rem; overflow: auto; }
 
   .accordion { display: grid; gap: 0.75rem; margin-top: 0.5rem; }
 
@@ -385,7 +385,7 @@
   </div>
 
   <!-- MODAL -->
-<div class="modal-overlay" id="qaModalOverlay" aria-hidden="true">
+<div class="lh-modal-overlay" id="qaModalOverlay" aria-hidden="true">
   <div class="qa-modal" role="dialog" aria-modal="true" aria-labelledby="qaModalTitle">
     <div class="qa-modal-header">
       <h3 class="qa-modal-title" id="qaModalTitle">Questions</h3>
