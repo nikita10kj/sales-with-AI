@@ -512,8 +512,13 @@ def sendReminderEmail(reminder_email):
             replied_count=0,
         )
         track_url = f"https://sellsharp.co{reverse('email_open_pixel', args=[sent_email.uid])}"
+        track_url += f"?v={int(time.time())}"
 
         message += f"<img src='{track_url}' width='1' height='1' style='display:none;' />"
+
+        # Save the tracking pixel back to the SentEmail record
+        sent_email.message = message
+        sent_email.save(update_fields=["message"])
 
         provider = get_user_provider(reminder_email.user)
 
@@ -747,6 +752,76 @@ def create_subscription(user):
 send_email = sendGeneratedEmail
 
 
+def check_gmail_thread_for_reply(sent_email):
+    """
+    Check if a Gmail thread has received a reply from the target audience.
+    Sets stop_reminder=True and replied=True if a reply is found.
+    Returns True if a reply was detected, False otherwise.
+    """
+    if not sent_email.threadId:
+        return False
+
+    # Get the sending account used for this email
+    selected_account = sent_email.sending_account
+    if not selected_account or selected_account.provider != 'google':
+        return False
+
+    try:
+        service = get_gmail_service_campaign(selected_account)
+
+        # Get all messages in this thread
+        thread = service.users().threads().get(
+            userId='me',
+            id=sent_email.threadId,
+            format='metadata',
+            metadataHeaders=['From', 'To']
+        ).execute()
+
+        messages = thread.get('messages', [])
+
+        # If there's more than just the sent messages, someone replied
+        # Check if any message in the thread is FROM the target audience
+        target_email_lower = sent_email.email.lower()
+
+        # Get sender's email to exclude our own messages
+        sender_email_lower = (
+            selected_account.extra_data.get("email", "")
+        ).lower()
+
+        for msg in messages:
+            headers = msg.get('payload', {}).get('headers', [])
+            from_header = ""
+            for h in headers:
+                if h['name'].lower() == 'from':
+                    from_header = h['value'].lower()
+                    break
+
+            # Check if this message is from the target (not from us)
+            if (target_email_lower in from_header
+                    and sender_email_lower not in from_header):
+                # Reply found! Mark the sent email
+                sent_email.stop_reminder = True
+                sent_email.replied = True
+                sent_email.replied_at = timezone.now()
+                sent_email.replied_count = (sent_email.replied_count or 0) + 1
+                sent_email.save(update_fields=[
+                    "stop_reminder", "replied", "replied_at", "replied_count"
+                ])
+                logger.info(
+                    "Gmail reply detected for sent_email id=%s from %s",
+                    sent_email.id, target_email_lower
+                )
+                return True
+
+    except Exception as e:
+        logger.warning(
+            "Gmail reply check failed for sent_email id=%s: %s",
+            sent_email.id, e
+        )
+
+    return False
+
+
 def refresh_google_token_campaign(selected_account):
 
     token = SocialToken.objects.filter(
@@ -850,6 +925,14 @@ def sendCampaignEmail(request, user, target_audience, main_email, selected_accou
         replied_count=0,
         sending_account=selected_account
     )
+
+    # Add open tracking pixel to campaign/followup email
+    track_url = f"{settings.SITE_URL}/email/open/{sent_email.uid}/"
+    track_url += f"?v={int(time.time())}"
+    tracking_pixel = f"<img src='{track_url}' width='1' height='1' style='display:none;' alt='' />"
+    message += tracking_pixel
+    sent_email.message = message
+    sent_email.save(update_fields=["message"])
 
     # =========================
     # GOOGLE
