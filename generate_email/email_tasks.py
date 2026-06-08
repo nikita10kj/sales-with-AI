@@ -138,6 +138,7 @@ from generate_email.utils import (
     get_gmail_service_campaign,
     send_microsoft_email,
     create_message,
+    check_gmail_thread_for_reply,
 )
 from allauth.socialaccount.models import SocialAccount
 from email.utils import make_msgid
@@ -317,12 +318,26 @@ def send_followup_emails():
                 locked_r = ReminderEmail.objects.select_for_update().get(pk=r.pk)
                 if locked_r.sent:
                     continue
-                # ✅ FIX: Re-fetch sent_email fresh from DB to avoid stale
+                # Re-fetch sent_email fresh from DB to avoid stale
                 # select_related cache — the webhook may have set stop_reminder=True
                 # after this queryset was evaluated.
                 locked_r.sent_email.refresh_from_db()
                 if locked_r.sent_email.stop_reminder:
                     continue
+
+                # Check for Gmail replies before sending follow-up
+                # (Microsoft replies are handled via webhook, but Gmail has no webhook)
+                sending_acct = locked_r.sent_email.sending_account
+                if (sending_acct and sending_acct.provider == 'google'
+                        and locked_r.sent_email.threadId):
+                    replied = check_gmail_thread_for_reply(locked_r.sent_email)
+                    if replied:
+                        logger.info(
+                            "Gmail reply detected — skipping followup id=%s for %s",
+                            locked_r.pk, locked_r.email
+                        )
+                        continue
+
                 locked_r.sent = True
                 locked_r.save(update_fields=["sent"])
 

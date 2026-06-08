@@ -9,7 +9,7 @@ from .models import ReminderEmail, SentEmail, EmailSubscription
 from saleswithai.settings import EMAIL_HOST_USER
 # from django.db.models import Q
 # from django.urls import reverse
-from .utils import sendReminderEmail, create_subscription
+from .utils import sendReminderEmail, create_subscription, check_gmail_thread_for_reply
 # from django.conf import settings
 # from datetime import datetime, time
 # import numpy as np
@@ -95,6 +95,15 @@ def send_reminders():
 
         if er.sent_email.stop_reminder:
             continue
+
+        # Check for Gmail replies before sending follow-up
+        sending_acct = er.sent_email.sending_account
+        if (sending_acct and sending_acct.provider == 'google'
+                and er.sent_email.threadId):
+            replied = check_gmail_thread_for_reply(er.sent_email)
+            if replied:
+                print(f"Gmail reply detected — skipping followup for {er.email}")
+                continue
 
         # Refresh Microsoft subscription
         for sub in EmailSubscription.objects.filter(user=er.user):

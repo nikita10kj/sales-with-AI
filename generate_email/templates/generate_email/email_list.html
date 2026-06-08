@@ -386,14 +386,14 @@ function bindReminderToggles() {
             tableBody.innerHTML += `
                 <tr>
 
-                    <td class="clickable-row" data-href="/generate_email/emailmessage/${email.uid}/" style="cursor: pointer;">
+                    <td class="clickable-row" data-href="/generator/emailmessage/${email.uid}/" style="cursor: pointer;">
                         ${email.name}
                         <small class="text-muted">
                             (${email.email})
                         </small>
                     </td>
 
-                    <td class="clickable-row" data-href="/generate_email/emailmessage/${email.uid}/" style="cursor: pointer;">
+                    <td class="clickable-row" data-href="/generator/emailmessage/${email.uid}/" style="cursor: pointer;">
                         ${email.subject}
                         ${trackingHtml}
                         ${badgeHtml}
