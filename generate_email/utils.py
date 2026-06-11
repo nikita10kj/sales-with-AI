@@ -927,7 +927,13 @@ def sendCampaignEmail(request, user, target_audience, main_email, selected_accou
     )
 
     # Add open tracking pixel to campaign/followup email
-    track_url = f"{settings.SITE_URL}/email/open/{sent_email.uid}/"
+    # track_url = f"{settings.SITE_URL}/email/open/{sent_email.uid}/"
+    if request:
+        track_url = request.build_absolute_uri(
+            reverse("email_open_pixel", kwargs={"uid": sent_email.uid})
+        )
+    else:
+        track_url = f"{settings.SITE_URL}/email/open/{sent_email.uid}/"
     track_url += f"?v={int(time.time())}"
     tracking_pixel = f"<img src='{track_url}' width='1' height='1' style='display:none;' alt='' />"
     message += tracking_pixel
