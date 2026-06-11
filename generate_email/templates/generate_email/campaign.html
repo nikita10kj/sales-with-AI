@@ -283,9 +283,17 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body" id="campaignEditModalBody"></div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-primary" id="saveCampaignEmailEdit">Save Changes</button>
+        <div class="modal-footer d-flex justify-content-between align-items-center">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="applyToAllToggle" style="cursor:pointer;">
+                <label class="form-check-label fw-semibold" for="applyToAllToggle" style="cursor:pointer;font-size:13px;color:#667eea;">
+                    Apply to all emails
+                </label>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveCampaignEmailEdit">Save Changes</button>
+            </div>
         </div>
     </div>
 </div>
@@ -929,10 +937,28 @@ function editCampaignEmail(pIdx, type, fIdx) {
             </div>
         `;
         document.getElementById("saveCampaignEmailEdit").onclick = () => {
-            person.main_email.subject = document.getElementById("ceEditSubject").value;
-            person.main_email.body = document.getElementById("ceEditBody").innerHTML;
-            document.getElementById(`cmp-subj-${pIdx}`).innerHTML = `<strong>Subject:</strong> ${person.main_email.subject}`;
-            document.getElementById(`cmp-body-${pIdx}`).innerHTML = person.main_email.body;
+            const newSubject = document.getElementById("ceEditSubject").value;
+            const newBody = document.getElementById("ceEditBody").innerHTML;
+            const applyToAll = document.getElementById("applyToAllToggle").checked;
+
+            if (applyToAll) {
+                // Apply to ALL people's main emails
+                campaignGeneratedData.forEach((p, idx) => {
+                    if (p.error) return;
+                    p.main_email.subject = newSubject;
+                    p.main_email.body = newBody;
+                    const subjEl = document.getElementById(`cmp-subj-${idx}`);
+                    const bodyEl = document.getElementById(`cmp-body-${idx}`);
+                    if (subjEl) subjEl.innerHTML = `<strong>Subject:</strong> ${newSubject}`;
+                    if (bodyEl) bodyEl.innerHTML = newBody;
+                });
+            } else {
+                person.main_email.subject = newSubject;
+                person.main_email.body = newBody;
+                document.getElementById(`cmp-subj-${pIdx}`).innerHTML = `<strong>Subject:</strong> ${newSubject}`;
+                document.getElementById(`cmp-body-${pIdx}`).innerHTML = newBody;
+            }
+            document.getElementById("applyToAllToggle").checked = false;
             modal.hide();
         };
     } else {
@@ -944,8 +970,22 @@ function editCampaignEmail(pIdx, type, fIdx) {
             </div>
         `;
         document.getElementById("saveCampaignEmailEdit").onclick = () => {
-            fu.body = document.getElementById("ceEditBody").innerHTML;
-            document.getElementById(`cmp-fu-body-${pIdx}-${fIdx}`).innerHTML = fu.body;
+            const newBody = document.getElementById("ceEditBody").innerHTML;
+            const applyToAll = document.getElementById("applyToAllToggle").checked;
+
+            if (applyToAll) {
+                // Apply to ALL people's corresponding follow-up
+                campaignGeneratedData.forEach((p, idx) => {
+                    if (p.error || !p.follow_ups || !p.follow_ups[fIdx]) return;
+                    p.follow_ups[fIdx].body = newBody;
+                    const bodyEl = document.getElementById(`cmp-fu-body-${idx}-${fIdx}`);
+                    if (bodyEl) bodyEl.innerHTML = newBody;
+                });
+            } else {
+                fu.body = newBody;
+                document.getElementById(`cmp-fu-body-${pIdx}-${fIdx}`).innerHTML = newBody;
+            }
+            document.getElementById("applyToAllToggle").checked = false;
             modal.hide();
         };
     }
