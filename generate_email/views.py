@@ -6526,9 +6526,6 @@ def campaign_view(request):
                     "selected_service"
                 ])
 
-                if shuffle_accounts and account_list:
-                    selected_account = account_list[index % len(account_list)]
-
                 # Use pre-generated email if available
                 pg = pre_generated.get(audience.id)
                 if pg:
