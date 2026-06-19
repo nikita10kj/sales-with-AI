@@ -49,9 +49,13 @@ class SentEmail(models.Model):
     replied_count = models.IntegerField(default=0)
     scheduled_at = models.DateTimeField(null=True, blank=True)
     is_scheduled = models.BooleanField(default=False)
+    bounced = models.BooleanField(default=False)
+    bounced_at = models.DateTimeField(null=True, blank=True)
     sending_account = models.ForeignKey(SocialAccount,on_delete=models.SET_NULL,null=True,blank=True)
     attachment = models.ForeignKey(EmailAttachment,on_delete=models.SET_NULL,null=True, blank=True)
     shuffle_accounts = models.BooleanField(default=False)
+    is_campaign = models.BooleanField(default=False)
+    campaign_batch_id = models.UUIDField(null=True, blank=True, db_index=True)
 
     def save(self, *args, **kwargs):
         if self.opened_count is None:

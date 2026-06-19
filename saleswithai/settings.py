@@ -76,8 +76,8 @@ SOCIALACCOUNT_PROVIDERS = {
         'SCOPE': [
             'profile',
             'email',
-            'https://www.googleapis.com/auth/gmail.send',  # Add this line
-
+            'https://www.googleapis.com/auth/gmail.send',
+            # 'https://www.googleapis.com/auth/gmail.readonly',
         ],
     },
     'microsoft': {

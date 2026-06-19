@@ -79,6 +79,8 @@
                                     {% endif %}
                                     {% if email.replied %}
                                         <span class="badge bg-info">Replied</span>
+                                    {% elif email.bounced %}
+                                        <span class="badge bg-danger">Bounced</span>
                                     {% endif %}
                                 </td>
                                 <td>

@@ -4,7 +4,7 @@
 <div class="container mt-4 mb-5" style="max-width:1400px;">
     <div class="card shadow border-0 rounded-4 overflow-hidden w-100">
 
-       <!-- Header -->
+        <!-- Header -->
         <div class="card-header text-white py-4 d-flex align-items-center justify-content-between"
             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
 
@@ -18,13 +18,13 @@
                 </div>
             </div>
 
-        <!-- Notification Bell Icon -->
+            <!-- Notification Bell Icon -->
             {% if scheduled_emails %}
-            <button type="button" id="scheduleNotifBtn"
-                    class="btn position-relative p-0 border-0 bg-transparent" title="Scheduled Emails">
+            <button type="button" id="scheduleNotifBtn" class="btn position-relative p-0 border-0 bg-transparent"
+                title="Scheduled Emails">
                 <i class="fas fa-bell text-white" style="font-size:22px;"></i>
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                      style="font-size:10px; min-width:18px; padding:3px 6px;">
+                    style="font-size:10px; min-width:18px; padding:3px 6px;">
                     {{ scheduled_emails|length }}
                 </span>
             </button>
@@ -33,8 +33,7 @@
 
         <!-- Scheduled Popup -->
         {% if scheduled_emails %}
-        <div id="scheduledPopup"
-             style="display:none; position:fixed; top:70px; right:20px; width:700px;
+        <div id="scheduledPopup" style="display:none; position:fixed; top:70px; right:20px; width:700px;
                     background:#fff; border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.18);
                     border:1px solid #ffc107; z-index:9999;">
             <div class="px-4 py-3">
@@ -46,8 +45,7 @@
                             {{ scheduled_emails|length }} Total
                         </span>
                     </h6>
-                    <button type="button" id="closeSchedulePopup"
-                            class="btn-close" style="font-size:10px;"></button>
+                    <button type="button" id="closeSchedulePopup" class="btn-close" style="font-size:10px;"></button>
                 </div>
                 <div class="table-responsive" style="max-height:300px; overflow-y:auto;">
                     <table class="table table-sm table-hover mb-0 align-middle" style="font-size:12px;">
@@ -60,35 +58,37 @@
                             </tr>
                         </thead>
                         <tbody>
-                        {% for em in scheduled_emails %}
-                        <tr>
-                            <td class="ps-2">
-                                <span class="fw-semibold">
-                                    {{ em.target_audience.receiver_first_name }}
-                                    {{ em.target_audience.receiver_last_name }}
-                                </span>
-                                <br>
-                                <small class="text-muted">{{ em.email }}</small>
-                            </td>
-                            <td>{{ em.subject|truncatechars:40 }}</td>
-                            <td style="white-space:nowrap;">
-                                {{ em.scheduled_at|date:"d M Y, h:i A" }}
-                            </td>
-                            <td style="white-space:nowrap;">
-                                {% if em.sending_account %}
+                            {% for em in scheduled_emails %}
+                            <tr>
+                                <td class="ps-2">
+                                    <span class="fw-semibold">
+                                        {{ em.target_audience.receiver_first_name }}
+                                        {{ em.target_audience.receiver_last_name }}
+                                    </span>
+                                    <br>
+                                    <small class="text-muted">{{ em.email }}</small>
+                                </td>
+                                <td>{{ em.subject|truncatechars:40 }}</td>
+                                <td style="white-space:nowrap;">
+                                    {{ em.scheduled_at|date:"d M Y, h:i A" }}
+                                </td>
+                                <td style="white-space:nowrap;">
+                                    {% if em.sending_account %}
                                     {% if em.sending_account.provider == "google" %}
-                                        🟢 {{ em.sending_account.extra_data.email }}
+                                    🟢 {{ em.sending_account.extra_data.email }}
                                     {% elif em.sending_account.provider == "microsoft" %}
-                                        🔵 {{ em.sending_account.extra_data.userPrincipalName|default:em.sending_account.extra_data.mail }}
+                                    🔵 {{
+                                    em.sending_account.extra_data.userPrincipalName|default:em.sending_account.extra_data.mail
+                                    }}
                                     {% else %}
-                                        {{ em.sending_account.uid }}
+                                    {{ em.sending_account.uid }}
                                     {% endif %}
-                                {% else %}
+                                    {% else %}
                                     <span class="text-muted">Shuffle</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -96,13 +96,13 @@
         </div>
 
         <script>
-        document.getElementById('scheduleNotifBtn').addEventListener('click', function () {
-            const popup = document.getElementById('scheduledPopup');
-            popup.style.display = popup.style.display === 'none' ? 'block' : 'none';
-        });
-        document.getElementById('closeSchedulePopup').addEventListener('click', function () {
-            document.getElementById('scheduledPopup').style.display = 'none';
-        });
+            document.getElementById('scheduleNotifBtn').addEventListener('click', function () {
+                const popup = document.getElementById('scheduledPopup');
+                popup.style.display = popup.style.display === 'none' ? 'block' : 'none';
+            });
+            document.getElementById('closeSchedulePopup').addEventListener('click', function () {
+                document.getElementById('scheduledPopup').style.display = 'none';
+            });
         </script>
         {% endif %}
 
@@ -113,7 +113,7 @@
                 <form id="campaignConfigForm" enctype="multipart/form-data">
                     {% csrf_token %}
                     {% if selected_person_ids %}
-                        <input type="hidden" name="person_ids" value="{{ selected_person_ids }}">
+                    <input type="hidden" name="person_ids" value="{{ selected_person_ids }}">
                     {% endif %}
 
                     <!-- TAG -->
@@ -122,10 +122,9 @@
                         <select name="tag_id" class="form-select" id="tagSelect">
                             <option value="">Choose Target Group </option>
                             {% for tag in tags %}
-                                <option value="{{ tag.id }}"
-                                    {% if selected_tag_id == tag.id|stringformat:"s" %}selected{% endif %}>
-                                    {{ tag.name }}
-                                </option>
+                            <option value="{{ tag.id }}" {% if selected_tag_id == tag.id|stringformat:"s" %}selected{% endif %}>
+                                {{ tag.name }}
+                            </option>
                             {% endfor %}
                         </select>
                     </div>
@@ -137,8 +136,7 @@
                         <select name="selected_list_id" class="form-select" id="savedListSelect">
                             <option value="">-- Select a Saved List --</option>
                             {% for lst in saved_lists %}
-                            <option value="{{ lst.id }}"
-                                {% if selected_list_id == lst.id|stringformat:"s" %}selected{% endif %}>
+                            <option value="{{ lst.id }}" {% if selected_list_id == lst.id|stringformat:"s" %}selected{% endif %}>
                                 {{ lst.name }} &nbsp;({{ lst.email_count }} email{% if lst.email_count != 1 %}s{% endif %} ready)
                             </option>
                             {% endfor %}
@@ -151,7 +149,7 @@
                         <label class="form-label fw-semibold">Service *</label>
                         <select class="form-select" name="selected_service" required>
                             {% for service in user_services %}
-                                <option value="{{ service.service_name }}">{{ service.service_name }}</option>
+                            <option value="{{ service.service_name }}">{{ service.service_name }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -162,7 +160,8 @@
                         <select class="form-select" name="framework" required>
                             <option value="AIDA" selected>AIDA — Attention → Interest → Desire → Action</option>
                             <option value="PAS">PAS — Problem → Agitate → Solution</option>
-                            <option value="Before-After-Bridge">Before-After-Bridge — Current → Desired → Solution</option>
+                            <option value="Before-After-Bridge">Before-After-Bridge — Current → Desired → Solution
+                            </option>
                             <option value="STAR">STAR — Situation → Task → Action → Result</option>
                             <option value="Magic">Magic — Hook → Story → Offer → Close</option>
                             <option value="ACCA">ACCA — Awareness → Comprehension → Conviction → Action</option>
@@ -186,7 +185,7 @@
                         <select name="signature_id" class="form-select">
                             <option value="">Default Signature</option>
                             {% for sig in signatures %}
-                                <option value="{{ sig.id }}">{{ sig.name }}</option>
+                            <option value="{{ sig.id }}">{{ sig.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -196,15 +195,15 @@
                         <label class="form-label fw-semibold">Sent From *</label>
                         <select name="sent_from" class="form-select" id="sentFromSelect" required>
                             {% for acc in google_accounts %}
-                                <option value="{{ acc.id }}">
-                                    {% if acc.provider == "google" %}
-                                    🟢 {{ acc.extra_data.email }}
-                                    {% elif acc.provider == "microsoft" %}
-                                    🔵 {{ acc.extra_data.userPrincipalName|default:acc.extra_data.mail }}
-                                    {% else %}
-                                        {{ acc.uid }}
-                                    {% endif %}
-                                    ({{ acc.provider|title }})
+                            <option value="{{ acc.id }}">
+                                {% if acc.provider == "google" %}
+                                🟢 {{ acc.extra_data.email }}
+                                {% elif acc.provider == "microsoft" %}
+                                🔵 {{ acc.extra_data.userPrincipalName|default:acc.extra_data.mail }}
+                                {% else %}
+                                {{ acc.uid }}
+                                {% endif %}
+                                ({{ acc.provider|title }})
                             </option>
                             {% endfor %}
                         </select>
@@ -237,9 +236,7 @@
 
                     <!-- Button -->
                     <div class="d-grid">
-                        <button type="submit" id="generatePreviewBtn"
-                                class="btn text-white fw-semibold"
-                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        <button type="submit" id="generatePreviewBtn" class="btn text-white fw-semibold" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                                        border:none; padding:10px;">
                             <i class="fas fa-magic me-2"></i> Generate & Preview Emails
                         </button>
@@ -254,15 +251,16 @@
                         <h5 class="fw-bold mb-1" style="color:#162033;">
                             <i class="fas fa-envelope-open-text me-2" style="color:#667eea;"></i>Generated Emails
                         </h5>
-                        <p class="text-muted mb-0" style="font-size:13px;">Review and edit each person's email before sending</p>
+                        <p class="text-muted mb-0" style="font-size:13px;">Review and edit each person's email before
+                            sending</p>
                     </div>
                     <div class="d-flex gap-2 flex-wrap">
-                        <button type="button" id="backToConfigBtn" class="btn btn-outline-secondary fw-semibold" style="border-radius:10px;">
+                        <button type="button" id="backToConfigBtn" class="btn btn-outline-secondary fw-semibold"
+                            style="border-radius:10px;">
                             <i class="fas fa-arrow-left me-1"></i> Back
                         </button>
-                        <button type="button" id="sendCampaignBtn"
-                                class="btn text-white fw-semibold"
-                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border:none; border-radius:10px; padding:8px 20px;">
+                        <button type="button" id="sendCampaignBtn" class="btn text-white fw-semibold"
+                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border:none; border-radius:10px; padding:8px 20px;">
                             🚀 Launch Campaign
                         </button>
                     </div>
@@ -276,66 +274,70 @@
 
 <!-- Email Edit Modal -->
 <div class="modal fade" id="campaignEmailEditModal" tabindex="-1">
-<div class="modal-dialog modal-lg">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h5 class="modal-title">Edit Email</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body" id="campaignEditModalBody"></div>
-        <div class="modal-footer d-flex justify-content-between align-items-center">
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="applyToAllToggle" style="cursor:pointer;">
-                <label class="form-check-label fw-semibold" for="applyToAllToggle" style="cursor:pointer;font-size:13px;color:#667eea;">
-                    Apply to all emails
-                </label>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Email</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="saveCampaignEmailEdit">Save Changes</button>
+            <div class="modal-body" id="campaignEditModalBody"></div>
+            <div class="modal-footer d-flex justify-content-between align-items-center">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="applyToAllToggle" style="cursor:pointer;">
+                    <label class="form-check-label fw-semibold" for="applyToAllToggle"
+                        style="cursor:pointer;font-size:13px;color:#667eea;">
+                        Apply to all emails
+                    </label>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveCampaignEmailEdit">Save Changes</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 </div>
 
 <!-- Email Limit / Purchase Modal -->
 <div class="modal fade" id="campaignLimitModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 28px 24px 18px; text-align: center;">
-        <div style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
-          <i class="fas fa-rocket" style="font-size:26px;color:#fff;"></i>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div
+                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 28px 24px 18px; text-align: center;">
+                <div
+                    style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+                    <i class="fas fa-rocket" style="font-size:26px;color:#fff;"></i>
+                </div>
+                <h4 style="color:#fff;font-weight:700;margin-bottom:4px;">Email Limit Reached</h4>
+                <p style="color:rgba(255,255,255,0.85);font-size:13px;margin:0;">You\'ve used all your free campaign
+                    emails.</p>
+            </div>
+            <div class="modal-body px-4 py-4">
+                <p id="campaignLimitMessage" class="text-center text-muted mb-4" style="font-size:14px;"></p>
+                <div style="background:#f8f7ff;border-radius:12px;padding:16px 18px;">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <i class="fas fa-check-circle" style="color:#667eea;font-size:16px;"></i>
+                        <span style="font-size:13px;color:#162033;">Unlimited email campaigns</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <i class="fas fa-check-circle" style="color:#667eea;font-size:16px;"></i>
+                        <span style="font-size:13px;color:#162033;">AI-powered personalization at scale</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <i class="fas fa-check-circle" style="color:#667eea;font-size:16px;"></i>
+                        <span style="font-size:13px;color:#162033;">Scheduled send &amp; follow-ups</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4 pt-0 d-flex gap-2">
+                <button type="button" class="btn btn-light flex-fill" data-bs-dismiss="modal">Not now</button>
+                <button type="button" class="btn text-white fw-semibold flex-fill" id="campaignLimitUpgradeBtn"
+                    style="background:linear-gradient(135deg,#667eea,#764ba2);border:none;">
+                    <i class="fas fa-crown me-1"></i> Upgrade Plan
+                </button>
+            </div>
         </div>
-        <h4 style="color:#fff;font-weight:700;margin-bottom:4px;">Email Limit Reached</h4>
-        <p style="color:rgba(255,255,255,0.85);font-size:13px;margin:0;">You\'ve used all your free campaign emails.</p>
-      </div>
-      <div class="modal-body px-4 py-4">
-        <p id="campaignLimitMessage" class="text-center text-muted mb-4" style="font-size:14px;"></p>
-        <div style="background:#f8f7ff;border-radius:12px;padding:16px 18px;">
-          <div class="d-flex align-items-center gap-3 mb-2">
-            <i class="fas fa-check-circle" style="color:#667eea;font-size:16px;"></i>
-            <span style="font-size:13px;color:#162033;">Unlimited email campaigns</span>
-          </div>
-          <div class="d-flex align-items-center gap-3 mb-2">
-            <i class="fas fa-check-circle" style="color:#667eea;font-size:16px;"></i>
-            <span style="font-size:13px;color:#162033;">AI-powered personalization at scale</span>
-          </div>
-          <div class="d-flex align-items-center gap-3">
-            <i class="fas fa-check-circle" style="color:#667eea;font-size:16px;"></i>
-            <span style="font-size:13px;color:#162033;">Scheduled send &amp; follow-ups</span>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer border-0 px-4 pb-4 pt-0 d-flex gap-2">
-        <button type="button" class="btn btn-light flex-fill" data-bs-dismiss="modal">Not now</button>
-        <button type="button" class="btn text-white fw-semibold flex-fill" id="campaignLimitUpgradeBtn"
-                style="background:linear-gradient(135deg,#667eea,#764ba2);border:none;">
-          <i class="fas fa-crown me-1"></i> Upgrade Plan
-        </button>
-      </div>
     </div>
-  </div>
 </div>
 
 <!-- Full Screen Loading Overlay -->
@@ -343,522 +345,710 @@
     <div class="loading-content text-center">
         <div class="spinner-border text-light mb-3" style="width:3rem;height:3rem;"></div>
         <h5 class="text-white fw-semibold" id="loadingTitle">Generating Campaign Emails...</h5>
-        <p class="text-white-50 small" id="loadingSubtext">Please wait while we prepare personalized emails for each contact</p>
+        <p class="text-white-50 small" id="loadingSubtext">Please wait while we prepare personalized emails for each
+            contact</p>
     </div>
 </div> {% endcomment %}
 
 <!-- Full Screen Loading Overlay -->
 <div id="loadingOverlay" class="loading-overlay d-none">
-  <div style="width:100%;max-width:520px;padding:1.5rem;display:flex;flex-direction:column;align-items:center;gap:16px;">
+    <div
+        style="width:100%;max-width:520px;padding:1.5rem;display:flex;flex-direction:column;align-items:center;gap:16px;">
 
-    <!-- VS Scene -->
-    <div style="background:#fff;border:1.5px solid #ede9fb;border-radius:16px;padding:18px 20px;width:100%;display:flex;gap:18px;align-items:flex-start;">
-      <!-- Person SVG -->
-      <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;">
-        <svg width="72" height="100" viewBox="0 0 80 110" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="40" cy="18" r="14" fill="#fde8d8" stroke="#f0997b" stroke-width="1.5"/>
-          <ellipse cx="40" cy="16" rx="7" ry="6" fill="#e8956d"/>
-          <circle cx="35" cy="16" r="1.5" fill="#333"/><circle cx="45" cy="16" r="1.5" fill="#333"/>
-          <path d="M36 21 Q40 24 44 21" stroke="#c06040" stroke-width="1" fill="none" stroke-linecap="round"/>
-          <rect x="22" y="34" width="36" height="40" rx="8" fill="#667eea"/>
-          <rect x="26" y="38" width="28" height="22" rx="4" fill="#fff" opacity="0.2"/>
-          <g style="transform-origin:22px 54px;animation:loaderArmWrite 1.2s ease-in-out infinite">
-            <rect x="8" y="50" width="22" height="8" rx="4" fill="#fde8d8" stroke="#f0997b" stroke-width="1"/>
-            <rect x="27" y="52" width="8" height="3" rx="1.5" fill="#764ba2"/>
-          </g>
-          <rect x="50" y="50" width="20" height="8" rx="4" fill="#fde8d8" stroke="#f0997b" stroke-width="1"/>
-          <rect x="28" y="74" width="10" height="28" rx="5" fill="#4a3880"/>
-          <rect x="42" y="74" width="10" height="28" rx="5" fill="#4a3880"/>
-          <rect x="26" y="98" width="14" height="7" rx="3" fill="#2d1f5e"/>
-          <rect x="40" y="98" width="14" height="7" rx="3" fill="#2d1f5e"/>
-        </svg>
-        <div style="font-size:11px;color:#9f99c0;text-align:center;line-height:1.3;">Writing<br>manually?</div>
-      </div>
-      <!-- Email mock -->
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:12px;color:#b3aed4;margin-bottom:6px;">Manually writing for each person...</div>
-        <div style="background:#f9f8ff;border:1.5px solid #ddd8f5;border-radius:10px;padding:12px;position:relative;overflow:hidden;">
-          <div style="display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid #ede9fb;margin-bottom:8px;">
-            <div style="width:24px;height:24px;border-radius:50%;background:#667eea;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:500;">RJ</div>
-            <div><div style="font-size:11px;color:#9f99c0;">To</div><div style="font-size:12px;font-weight:500;color:#1e1346;">Rahul Joshi</div></div>
-          </div>
-          <div style="height:7px;border-radius:4px;background:#e0dbf7;margin-bottom:5px;animation:loaderLineGrow 0.6s ease forwards;--w:100%;width:0"></div>
-          <div style="height:7px;border-radius:4px;background:#e0dbf7;margin-bottom:5px;width:75%"></div>
-          <div style="height:7px;border-radius:4px;background:#e0dbf7;margin-bottom:5px;width:55%"></div>
-          <span style="display:inline-block;width:2px;height:10px;background:#667eea;vertical-align:middle;animation:loaderCursorBlink 0.8s step-end infinite;"></span>
-          <div style="position:absolute;right:10px;top:10px;animation:loaderFloatEnv 1.8s ease-in-out infinite;">
-            <svg width="20" height="15" viewBox="0 0 22 16" fill="none"><rect x=".5" y=".5" width="21" height="15" rx="3" fill="#f0eeff" stroke="#667eea" stroke-width="1"/><path d="M.5 3.5L11 9.5L21.5 3.5" stroke="#667eea" stroke-width="1" stroke-linecap="round"/></svg>
-          </div>
+        <!-- VS Scene -->
+        <div
+            style="background:#fff;border:1.5px solid #ede9fb;border-radius:16px;padding:18px 20px;width:100%;display:flex;gap:18px;align-items:flex-start;">
+            <!-- Person SVG -->
+            <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;">
+                <svg width="72" height="100" viewBox="0 0 80 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="40" cy="18" r="14" fill="#fde8d8" stroke="#f0997b" stroke-width="1.5" />
+                    <ellipse cx="40" cy="16" rx="7" ry="6" fill="#e8956d" />
+                    <circle cx="35" cy="16" r="1.5" fill="#333" />
+                    <circle cx="45" cy="16" r="1.5" fill="#333" />
+                    <path d="M36 21 Q40 24 44 21" stroke="#c06040" stroke-width="1" fill="none"
+                        stroke-linecap="round" />
+                    <rect x="22" y="34" width="36" height="40" rx="8" fill="#667eea" />
+                    <rect x="26" y="38" width="28" height="22" rx="4" fill="#fff" opacity="0.2" />
+                    <g style="transform-origin:22px 54px;animation:loaderArmWrite 1.2s ease-in-out infinite">
+                        <rect x="8" y="50" width="22" height="8" rx="4" fill="#fde8d8" stroke="#f0997b"
+                            stroke-width="1" />
+                        <rect x="27" y="52" width="8" height="3" rx="1.5" fill="#764ba2" />
+                    </g>
+                    <rect x="50" y="50" width="20" height="8" rx="4" fill="#fde8d8" stroke="#f0997b" stroke-width="1" />
+                    <rect x="28" y="74" width="10" height="28" rx="5" fill="#4a3880" />
+                    <rect x="42" y="74" width="10" height="28" rx="5" fill="#4a3880" />
+                    <rect x="26" y="98" width="14" height="7" rx="3" fill="#2d1f5e" />
+                    <rect x="40" y="98" width="14" height="7" rx="3" fill="#2d1f5e" />
+                </svg>
+                <div style="font-size:11px;color:#9f99c0;text-align:center;line-height:1.3;">Writing<br>manually?</div>
+            </div>
+            <!-- Email mock -->
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:12px;color:#b3aed4;margin-bottom:6px;">Manually writing for each person...</div>
+                <div
+                    style="background:#f9f8ff;border:1.5px solid #ddd8f5;border-radius:10px;padding:12px;position:relative;overflow:hidden;">
+                    <div
+                        style="display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid #ede9fb;margin-bottom:8px;">
+                        <div
+                            style="width:24px;height:24px;border-radius:50%;background:#667eea;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:500;">
+                            RJ</div>
+                        <div>
+                            <div style="font-size:11px;color:#9f99c0;">To</div>
+                            <div style="font-size:12px;font-weight:500;color:#1e1346;">Rahul Joshi</div>
+                        </div>
+                    </div>
+                    <div
+                        style="height:7px;border-radius:4px;background:#e0dbf7;margin-bottom:5px;animation:loaderLineGrow 0.6s ease forwards;--w:100%;width:0">
+                    </div>
+                    <div style="height:7px;border-radius:4px;background:#e0dbf7;margin-bottom:5px;width:75%"></div>
+                    <div style="height:7px;border-radius:4px;background:#e0dbf7;margin-bottom:5px;width:55%"></div>
+                    <span
+                        style="display:inline-block;width:2px;height:10px;background:#667eea;vertical-align:middle;animation:loaderCursorBlink 0.8s step-end infinite;"></span>
+                    <div
+                        style="position:absolute;right:10px;top:10px;animation:loaderFloatEnv 1.8s ease-in-out infinite;">
+                        <svg width="20" height="15" viewBox="0 0 22 16" fill="none">
+                            <rect x=".5" y=".5" width="21" height="15" rx="3" fill="#f0eeff" stroke="#667eea"
+                                stroke-width="1" />
+                            <path d="M.5 3.5L11 9.5L21.5 3.5" stroke="#667eea" stroke-width="1"
+                                stroke-linecap="round" />
+                        </svg>
+                    </div>
+                </div>
+                <div style="font-size:11px;color:#e07a5f;margin-top:6px;font-weight:500;">Takes hours for 100 contacts
+                </div>
+            </div>
         </div>
-        <div style="font-size:11px;color:#e07a5f;margin-top:6px;font-weight:500;">Takes hours for 100 contacts</div>
-      </div>
+
+        <!-- VS divider -->
+        <div style="display:flex;align-items:center;gap:10px;width:100%;">
+            <div style="flex:1;height:1px;background:#ddd8f5;"></div>
+            <div style="font-size:11px;color:#b3aed4;font-weight:500;letter-spacing:0.5px;">vs</div>
+            <div style="flex:1;height:1px;background:#ddd8f5;"></div>
+        </div>
+
+        <!-- Campaign feature card -->
+        <div
+            style="background:#fff;border:2px solid #667eea;border-radius:16px;padding:14px 18px;width:100%;position:relative;">
+            <div
+                style="position:absolute;top:-11px;left:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:10px;font-weight:500;padding:2px 10px;border-radius:999px;">
+                Campaign feature</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                <div
+                    style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                        <path d="M10 2L12.5 7.5H18L13.5 11L15.5 17L10 13.5L4.5 17L6.5 11L2 7.5H7.5L10 2Z" fill="white"
+                            opacity="0.9" />
+                    </svg>
+                </div>
+                <div>
+                    <div style="font-size:13px;font-weight:500;color:#1e1346;">AI writes every email automatically</div>
+                    <div style="font-size:11px;color:#9f99c0;">Personalized for each contact in seconds</div>
+                </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;" id="loaderRecipients">
+                <div
+                    style="display:flex;align-items:center;gap:8px;background:#f7f5ff;border-radius:8px;padding:7px 10px;">
+                    <div
+                        style="width:22px;height:22px;border-radius:50%;background:#667eea;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#fff;flex-shrink:0;">
+                        RJ</div>
+                    <div style="flex:1;">
+                        <div style="font-size:12px;font-weight:500;color:#1e1346;">Rahul Joshi</div>
+                        <div style="font-size:10px;color:#b3aed4;">rahul@techcorp.in</div>
+                    </div>
+                    <div
+                        style="width:16px;height:16px;border-radius:50%;background:#e8f8f2;display:flex;align-items:center;justify-content:center;">
+                        <svg width="9" height="9" viewBox="0 0 10 10">
+                            <path d="M2 5L4.5 7.5L8 3" stroke="#0f6e56" stroke-width="1.5" fill="none"
+                                stroke-linecap="round" />
+                        </svg></div>
+                </div>
+                <div
+                    style="display:flex;align-items:center;gap:8px;background:#f7f5ff;border-radius:8px;padding:7px 10px;">
+                    <div
+                        style="width:22px;height:22px;border-radius:50%;background:#764ba2;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#fff;flex-shrink:0;">
+                        PM</div>
+                    <div style="flex:1;">
+                        <div style="font-size:12px;font-weight:500;color:#1e1346;">Priya Mehta</div>
+                        <div style="font-size:10px;color:#b3aed4;">priya@startupx.io</div>
+                    </div>
+                    <div
+                        style="width:16px;height:16px;border-radius:50%;background:#e8f8f2;display:flex;align-items:center;justify-content:center;">
+                        <svg width="9" height="9" viewBox="0 0 10 10">
+                            <path d="M2 5L4.5 7.5L8 3" stroke="#0f6e56" stroke-width="1.5" fill="none"
+                                stroke-linecap="round" />
+                        </svg></div>
+                </div>
+                <div
+                    style="display:flex;align-items:center;gap:8px;background:#f7f5ff;border-radius:8px;padding:7px 10px;">
+                    <div
+                        style="width:22px;height:22px;border-radius:50%;background:#0f6e56;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#fff;flex-shrink:0;">
+                        AK</div>
+                    <div style="flex:1;">
+                        <div style="font-size:12px;font-weight:500;color:#1e1346;">Arjun Kapoor</div>
+                        <div style="font-size:10px;color:#b3aed4;">arjun@venture.co</div>
+                    </div>
+                    <div
+                        style="width:16px;height:16px;border-radius:50%;background:#e8f8f2;display:flex;align-items:center;justify-content:center;">
+                        <svg width="9" height="9" viewBox="0 0 10 10">
+                            <path d="M2 5L4.5 7.5L8 3" stroke="#0f6e56" stroke-width="1.5" fill="none"
+                                stroke-linecap="round" />
+                        </svg></div>
+                </div>
+            </div>
+            <div style="font-size:11px;color:#9f99c0;text-align:center;margin-top:8px;" id="loaderMoreCount">+ 97 more
+                contacts generating...</div>
+        </div>
+
+        <!-- Info strip -->
+        <div
+            style="background:#fff;border:1.5px solid #ede9fb;border-radius:12px;padding:12px 14px;width:100%;display:flex;align-items:flex-start;gap:10px;">
+            <div
+                style="width:30px;height:30px;border-radius:8px;background:#f0eeff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="8" stroke="#667eea" stroke-width="1.5" />
+                    <path d="M10 9v5M10 7v1" stroke="#667eea" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+            </div>
+            <div style="font-size:13px;color:#1e1346;line-height:1.5;" id="loaderInfoText">
+                <span style="color:#667eea;font-weight:500;">No more manual writing.</span> Your campaign AI
+                personalizes every email using each contact's name, company &amp; role — all at once.
+            </div>
+        </div>
+
+        <!-- Progress -->
+        <div style="width:100%;">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:#9f99c0;margin-bottom:5px;">
+                <span id="loadingTitle">Generating emails...</span>
+                <span id="loaderCountDisp">0 / 0</span>
+            </div>
+            <div style="height:5px;background:#ede9fb;border-radius:999px;overflow:hidden;">
+                <div id="loaderProgressFill"
+                    style="height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#667eea,#764ba2);transition:width 0.5s ease;">
+                </div>
+            </div>
+        </div>
+
     </div>
-
-    <!-- VS divider -->
-    <div style="display:flex;align-items:center;gap:10px;width:100%;">
-      <div style="flex:1;height:1px;background:#ddd8f5;"></div>
-      <div style="font-size:11px;color:#b3aed4;font-weight:500;letter-spacing:0.5px;">vs</div>
-      <div style="flex:1;height:1px;background:#ddd8f5;"></div>
-    </div>
-
-    <!-- Campaign feature card -->
-    <div style="background:#fff;border:2px solid #667eea;border-radius:16px;padding:14px 18px;width:100%;position:relative;">
-      <div style="position:absolute;top:-11px;left:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:10px;font-weight:500;padding:2px 10px;border-radius:999px;">Campaign feature</div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-        <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M10 2L12.5 7.5H18L13.5 11L15.5 17L10 13.5L4.5 17L6.5 11L2 7.5H7.5L10 2Z" fill="white" opacity="0.9"/></svg>
-        </div>
-        <div>
-          <div style="font-size:13px;font-weight:500;color:#1e1346;">AI writes every email automatically</div>
-          <div style="font-size:11px;color:#9f99c0;">Personalized for each contact in seconds</div>
-        </div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px;" id="loaderRecipients">
-        <div style="display:flex;align-items:center;gap:8px;background:#f7f5ff;border-radius:8px;padding:7px 10px;">
-          <div style="width:22px;height:22px;border-radius:50%;background:#667eea;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#fff;flex-shrink:0;">RJ</div>
-          <div style="flex:1;"><div style="font-size:12px;font-weight:500;color:#1e1346;">Rahul Joshi</div><div style="font-size:10px;color:#b3aed4;">rahul@techcorp.in</div></div>
-          <div style="width:16px;height:16px;border-radius:50%;background:#e8f8f2;display:flex;align-items:center;justify-content:center;"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M2 5L4.5 7.5L8 3" stroke="#0f6e56" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;background:#f7f5ff;border-radius:8px;padding:7px 10px;">
-          <div style="width:22px;height:22px;border-radius:50%;background:#764ba2;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#fff;flex-shrink:0;">PM</div>
-          <div style="flex:1;"><div style="font-size:12px;font-weight:500;color:#1e1346;">Priya Mehta</div><div style="font-size:10px;color:#b3aed4;">priya@startupx.io</div></div>
-          <div style="width:16px;height:16px;border-radius:50%;background:#e8f8f2;display:flex;align-items:center;justify-content:center;"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M2 5L4.5 7.5L8 3" stroke="#0f6e56" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;background:#f7f5ff;border-radius:8px;padding:7px 10px;">
-          <div style="width:22px;height:22px;border-radius:50%;background:#0f6e56;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#fff;flex-shrink:0;">AK</div>
-          <div style="flex:1;"><div style="font-size:12px;font-weight:500;color:#1e1346;">Arjun Kapoor</div><div style="font-size:10px;color:#b3aed4;">arjun@venture.co</div></div>
-          <div style="width:16px;height:16px;border-radius:50%;background:#e8f8f2;display:flex;align-items:center;justify-content:center;"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M2 5L4.5 7.5L8 3" stroke="#0f6e56" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></div>
-        </div>
-      </div>
-      <div style="font-size:11px;color:#9f99c0;text-align:center;margin-top:8px;" id="loaderMoreCount">+ 97 more contacts generating...</div>
-    </div>
-
-    <!-- Info strip -->
-    <div style="background:#fff;border:1.5px solid #ede9fb;border-radius:12px;padding:12px 14px;width:100%;display:flex;align-items:flex-start;gap:10px;">
-      <div style="width:30px;height:30px;border-radius:8px;background:#f0eeff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#667eea" stroke-width="1.5"/><path d="M10 9v5M10 7v1" stroke="#667eea" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </div>
-      <div style="font-size:13px;color:#1e1346;line-height:1.5;" id="loaderInfoText">
-        <span style="color:#667eea;font-weight:500;">No more manual writing.</span> Your campaign AI personalizes every email using each contact's name, company &amp; role — all at once.
-      </div>
-    </div>
-
-    <!-- Progress -->
-    <div style="width:100%;">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:#9f99c0;margin-bottom:5px;">
-        <span id="loadingTitle">Generating emails...</span>
-        <span id="loaderCountDisp">0 / 0</span>
-      </div>
-      <div style="height:5px;background:#ede9fb;border-radius:999px;overflow:hidden;">
-        <div id="loaderProgressFill" style="height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#667eea,#764ba2);transition:width 0.5s ease;"></div>
-      </div>
-    </div>
-
-  </div>
 </div>
 
 <style>
-.loading-overlay {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(240,238,255,0.94);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  z-index: 9999;
-  display: flex; justify-content: center; align-items: center;
-  overflow-y: auto;
-}
-@keyframes loaderArmWrite {
-  0%,100%{transform:rotate(-8deg) translateX(0)} 50%{transform:rotate(4deg) translateX(6px)}
-}
-@keyframes loaderCursorBlink { 0%,100%{opacity:1} 50%{opacity:0} }
-@keyframes loaderFloatEnv {
-  0%{transform:translateY(0) scale(1);opacity:1}
-  80%{transform:translateY(-50px) scale(0.75);opacity:0.6}
-  100%{transform:translateY(-65px) scale(0.55);opacity:0}
-}
-@keyframes loaderLineGrow { from{width:0} to{width:100% } }
-.loading-content { text-align: center; }
-.card-body { font-size: 14px; }
-.form-label { font-size: 13px; margin-bottom: 5px; }
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(240, 238, 255, 0.94);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow-y: auto;
+    }
 
-/* Person accordion cards */
-.cmp-person-card {
-    background: #fff;
-    border: 1.5px solid #e1e5ee;
-    border-radius: 14px;
-    margin-bottom: 16px;
-    overflow: hidden;
-    transition: border-color 0.2s;
-}
-.cmp-person-card:hover { border-color: #667eea; }
-.cmp-person-card.has-error { border-color: #e53935; }
+    @keyframes loaderArmWrite {
 
-.cmp-person-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 18px;
-    cursor: pointer;
-    background: #f8f9fc;
-    border-bottom: 1px solid #e9edf4;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-.cmp-person-header:hover { background: #f0f2ff; }
+        0%,
+        100% {
+            transform: rotate(-8deg) translateX(0)
+        }
 
-.cmp-person-info { display: flex; align-items: center; gap: 10px; }
-.cmp-person-avatar {
-    width: 38px; height: 38px; border-radius: 50%;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: #fff; display: flex; align-items: center;
-    justify-content: center; font-size: 13px; font-weight: 700;
-    flex-shrink: 0; text-transform: uppercase;
-}
-.cmp-person-name { font-size: 14px; font-weight: 700; color: #162033; }
-.cmp-person-email { font-size: 12px; color: #7c879d; }
-.cmp-toggle-icon { font-size: 14px; color: #9aa5be; transition: transform 0.2s; }
-.cmp-person-card.open .cmp-toggle-icon { transform: rotate(180deg); }
+        50% {
+            transform: rotate(4deg) translateX(6px)
+        }
+    }
 
-.cmp-person-body { display: none; padding: 18px; }
-.cmp-person-card.open .cmp-person-body { display: block; }
+    @keyframes loaderCursorBlink {
 
-/* Email cards inside person */
-.cmp-email-block {
-    background: #f8f9fc;
-    border: 1px solid #e9edf4;
-    border-radius: 10px;
-    padding: 14px;
-    margin-bottom: 12px;
-}
-.cmp-email-block-header {
-    display: flex; align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-}
-.cmp-email-label {
-    font-size: 12px; font-weight: 700;
-    color: #667eea; text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-.cmp-email-subject {
-    font-size: 13px; font-weight: 600;
-    color: #162033; margin-bottom: 6px;
-}
-.cmp-email-body {
-    font-size: 13px; color: #42506b;
-    line-height: 1.6;
-    max-height: 200px;
-    overflow-y: auto;
-    padding: 10px;
-    background: #fff;
-    border-radius: 8px;
-    border: 1px solid #e9edf4;
-}
-.cmp-edit-btn {
-    border: 1px solid #e0e5f0;
-    background: #fff;
-    color: #667eea;
-    border-radius: 7px;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 4px 10px;
-    cursor: pointer;
-}
-.cmp-edit-btn:hover { background: #eef1ff; border-color: #667eea; }
+        0%,
+        100% {
+            opacity: 1
+        }
 
-.cmp-error-msg {
-    padding: 12px 16px;
-    background: #ffebee;
-    color: #c62828;
-    border-radius: 8px;
-    font-size: 13px;
-}
+        50% {
+            opacity: 0
+        }
+    }
+
+    @keyframes loaderFloatEnv {
+        0% {
+            transform: translateY(0) scale(1);
+            opacity: 1
+        }
+
+        80% {
+            transform: translateY(-50px) scale(0.75);
+            opacity: 0.6
+        }
+
+        100% {
+            transform: translateY(-65px) scale(0.55);
+            opacity: 0
+        }
+    }
+
+    @keyframes loaderLineGrow {
+        from {
+            width: 0
+        }
+
+        to {
+            width: 100%
+        }
+    }
+
+    .loading-content {
+        text-align: center;
+    }
+
+    .card-body {
+        font-size: 14px;
+    }
+
+    .form-label {
+        font-size: 13px;
+        margin-bottom: 5px;
+    }
+
+    /* Person accordion cards */
+    .cmp-person-card {
+        background: #fff;
+        border: 1.5px solid #e1e5ee;
+        border-radius: 14px;
+        margin-bottom: 16px;
+        overflow: hidden;
+        transition: border-color 0.2s;
+    }
+
+    .cmp-person-card:hover {
+        border-color: #667eea;
+    }
+
+    .cmp-person-card.has-error {
+        border-color: #e53935;
+    }
+
+    .cmp-person-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        cursor: pointer;
+        background: #f8f9fc;
+        border-bottom: 1px solid #e9edf4;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .cmp-person-header:hover {
+        background: #f0f2ff;
+    }
+
+    .cmp-person-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .cmp-person-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        flex-shrink: 0;
+        text-transform: uppercase;
+    }
+
+    .cmp-person-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: #162033;
+    }
+
+    .cmp-person-email {
+        font-size: 12px;
+        color: #7c879d;
+    }
+
+    .cmp-toggle-icon {
+        font-size: 14px;
+        color: #9aa5be;
+        transition: transform 0.2s;
+    }
+
+    .cmp-person-card.open .cmp-toggle-icon {
+        transform: rotate(180deg);
+    }
+
+    .cmp-person-body {
+        display: none;
+        padding: 18px;
+    }
+
+    .cmp-person-card.open .cmp-person-body {
+        display: block;
+    }
+
+    /* Email cards inside person */
+    .cmp-email-block {
+        background: #f8f9fc;
+        border: 1px solid #e9edf4;
+        border-radius: 10px;
+        padding: 14px;
+        margin-bottom: 12px;
+    }
+
+    .cmp-email-block-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+
+    .cmp-email-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #667eea;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .cmp-email-subject {
+        font-size: 13px;
+        font-weight: 600;
+        color: #162033;
+        margin-bottom: 6px;
+    }
+
+    .cmp-email-body {
+        font-size: 13px;
+        color: #42506b;
+        line-height: 1.6;
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 10px;
+        background: #fff;
+        border-radius: 8px;
+        border: 1px solid #e9edf4;
+    }
+
+    .cmp-edit-btn {
+        border: 1px solid #e0e5f0;
+        background: #fff;
+        color: #667eea;
+        border-radius: 7px;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        cursor: pointer;
+    }
+
+    .cmp-edit-btn:hover {
+        background: #eef1ff;
+        border-color: #667eea;
+    }
+
+    .cmp-error-msg {
+        padding: 12px 16px;
+        background: #ffebee;
+        color: #c62828;
+        border-radius: 8px;
+        font-size: 13px;
+    }
 </style>
 
 <script>
-const TASK_STATUS_URL = "{% url 'campaign_task_status' task_id='TASK_ID_PLACEHOLDER' %}";
-// ── State ──
-let campaignGeneratedData = [];
-let campaignFormData = null;
+    const TASK_STATUS_URL = "{% url 'campaign_task_status' task_id='TASK_ID_PLACEHOLDER' %}";
+    // ── State ──
+    let campaignGeneratedData = [];
+    let campaignFormData = null;
 
-function getCsrf() {
-    let v = null;
-    document.cookie.split(";").forEach(c => {
-        c = c.trim();
-        if (c.startsWith("csrftoken=")) v = decodeURIComponent(c.substring(10));
-    });
-    return v;
-}
-
-// ── Tag required logic ──
-const tagSelect       = document.getElementById("tagSelect");
-const savedListSelect = document.getElementById("savedListSelect");
-function updateTagRequired() {
-    if (!tagSelect) return;
-    tagSelect.required = !savedListSelect || savedListSelect.value === "";
-}
-if (savedListSelect) savedListSelect.addEventListener("change", updateTagRequired);
-updateTagRequired();
-
-// ── Limit modal helpers ──
-let _limitModal = null;
-function showCampaignLimitModal(message, redirectUrl) {
-    document.getElementById('campaignLimitMessage').textContent = message;
-    document.getElementById('campaignLimitUpgradeBtn').onclick = () => {
-        window.location.href = redirectUrl;
-    };
-    if (!_limitModal) {
-        _limitModal = new bootstrap.Modal(document.getElementById('campaignLimitModal'));
-    }
-    _limitModal.show();
-}
-
-// ── Step 1: Generate Preview ──
-document.getElementById("campaignConfigForm").addEventListener("submit", async function(e) {
-    e.preventDefault();
-
-    const overlay    = document.getElementById("loadingOverlay");
-    const titleEl    = document.getElementById("loadingTitle");
-    const subtextEl  = document.getElementById("loadingSubtext");
-
-    titleEl.textContent   = "Starting Generation...";
-    {% comment %} subtextEl.textContent = "Preparing your contacts..."; {% endcomment %}
-    overlay.classList.remove("d-none");
-
-    initLoaderCarousel();
-
-    const formData = new FormData(this);
-    campaignFormData = formData;
-
-    try {
-        // Step 1 — kick off background generation, returns instantly
-        const resp = await fetch("{% url 'campaign_generate_emails' %}", {
-            method: "POST",
-            headers: { "X-CSRFToken": getCsrf() },
-            body: formData
+    function getCsrf() {
+        let v = null;
+        document.cookie.split(";").forEach(c => {
+            c = c.trim();
+            if (c.startsWith("csrftoken=")) v = decodeURIComponent(c.substring(10));
         });
-        const data = await resp.json();
+        return v;
+    }
 
-        if (!data.success) {
+    // ── Tag required logic ──
+    const tagSelect = document.getElementById("tagSelect");
+    const savedListSelect = document.getElementById("savedListSelect");
+    function updateTagRequired() {
+        if (!tagSelect) return;
+        tagSelect.required = !savedListSelect || savedListSelect.value === "";
+    }
+    if (savedListSelect) savedListSelect.addEventListener("change", updateTagRequired);
+    updateTagRequired();
+
+    // ── Limit modal helpers ──
+    let _limitModal = null;
+    function showCampaignLimitModal(message, redirectUrl) {
+        document.getElementById('campaignLimitMessage').textContent = message;
+        document.getElementById('campaignLimitUpgradeBtn').onclick = () => {
+            window.location.href = redirectUrl;
+        };
+        if (!_limitModal) {
+            _limitModal = new bootstrap.Modal(document.getElementById('campaignLimitModal'));
+        }
+        _limitModal.show();
+    }
+
+    // ── Step 1: Generate Preview ──
+    document.getElementById("campaignConfigForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const overlay = document.getElementById("loadingOverlay");
+        const titleEl = document.getElementById("loadingTitle");
+        const subtextEl = document.getElementById("loadingSubtext");
+
+        titleEl.textContent = "Starting Generation...";
+        {% comment %} subtextEl.textContent = "Preparing your contacts..."; {% endcomment %}
+        overlay.classList.remove("d-none");
+
+        initLoaderCarousel();
+
+        const formData = new FormData(this);
+        campaignFormData = formData;
+
+        try {
+            // Step 1 — kick off background generation, returns instantly
+            const resp = await fetch("{% url 'campaign_generate_emails' %}", {
+                method: "POST",
+                headers: { "X-CSRFToken": getCsrf() },
+                body: formData
+            });
+            const data = await resp.json();
+
+            if (!data.success) {
+                overlay.classList.add("d-none");
+                stopLoaderCarousel();
+                // ── Email limit reached → show purchase popup ──
+                if (data.email_limit_reached && data.redirect_url) {
+                    showCampaignLimitModal(
+                        data.error || 'You have reached your email limit. Please upgrade to continue.',
+                        data.redirect_url
+                    );
+                } else {
+                    alert(data.error || "Failed to start generation.");
+                }
+                return;
+            }
+
+            // Initialize loader with real contact names
+            if (data.contact_names && data.contact_names.length > 0) {
+                initLoaderWithContacts(data.contact_names);
+            }
+
+            // Step 2 — poll until done, showing live counter
+            titleEl.textContent = `Generating Emails (0 / ${data.total})`;
+            {% comment %} subtextEl.textContent = "AI is personalizing each email..."; {% endcomment %}
+
+            const result = await pollUntilDone(data.task_id, data.total, titleEl, data.contact_names);
+
             overlay.classList.add("d-none");
             stopLoaderCarousel();
-            // ── Email limit reached → show purchase popup ──
-            if (data.email_limit_reached && data.redirect_url) {
-                showCampaignLimitModal(
-                    data.error || 'You have reached your email limit. Please upgrade to continue.',
-                    data.redirect_url
-                );
-            } else {
-                alert(data.error || "Failed to start generation.");
-            }
-            return;
+
+            if (!result) return; // error already alerted inside pollUntilDone
+
+            campaignGeneratedData = result.generated;
+            renderEmailPreviews(result.generated, result.framework);
+            document.getElementById("campaignStep1").style.display = "none";
+            document.getElementById("campaignStep2").style.display = "block";
+
+        } catch (err) {
+            overlay.classList.add("d-none");
+            stopLoaderCarousel()
+            alert("Error generating emails. Please try again.");
+            console.error(err);
         }
+    });
 
-        // Initialize loader with real contact names
-        if (data.contact_names && data.contact_names.length > 0) {
-            initLoaderWithContacts(data.contact_names);
-        }
+    // ── Initialize loader with real contacts and rotate ──
+    let loaderContactRotationTimer = null;
+    let loaderCurrentContactIndex = 0;
 
-        // Step 2 — poll until done, showing live counter
-        titleEl.textContent = `Generating Emails (0 / ${data.total})`;
-        {% comment %} subtextEl.textContent = "AI is personalizing each email..."; {% endcomment %}
+    function initLoaderWithContacts(contactNames) {
+        if (!contactNames || contactNames.length === 0) return;
 
-        const result = await pollUntilDone(data.task_id, data.total, titleEl, data.contact_names);
+        loaderCurrentContactIndex = 0;
 
-        overlay.classList.add("d-none");
-        stopLoaderCarousel();
-
-        if (!result) return; // error already alerted inside pollUntilDone
-
-        campaignGeneratedData = result.generated;
-        renderEmailPreviews(result.generated, result.framework);
-        document.getElementById("campaignStep1").style.display = "none";
-        document.getElementById("campaignStep2").style.display = "block";
-
-    } catch (err) {
-        overlay.classList.add("d-none");
-        stopLoaderCarousel()
-        alert("Error generating emails. Please try again.");
-        console.error(err);
-    }
-});
-
-// ── Initialize loader with real contacts and rotate ──
-let loaderContactRotationTimer = null;
-let loaderCurrentContactIndex = 0;
-
-function initLoaderWithContacts(contactNames) {
-    if (!contactNames || contactNames.length === 0) return;
-    
-    loaderCurrentContactIndex = 0;
-    
-    // Show first batch immediately
-    updateLoaderRecipientsWithRotation(contactNames, 0);
-    updateEmailMockWithContact(contactNames);
-    
-    // Rotate through contacts every 5 seconds
-    if (loaderContactRotationTimer) clearInterval(loaderContactRotationTimer);
-    loaderContactRotationTimer = setInterval(() => {
-        loaderCurrentContactIndex = (loaderCurrentContactIndex + 3) % contactNames.length;
+        // Show first batch immediately
         updateLoaderRecipientsWithRotation(contactNames, 0);
-    }, 5000);
-}
+        updateEmailMockWithContact(contactNames);
 
-function updateLoaderRecipientsWithRotation(contactNames, completedCount) {
-    const container = document.getElementById('loaderRecipients');
-    if (!container) return;
-    
-    // Show batch of 3 starting from current index
-    const startIdx = loaderCurrentContactIndex;
-    const displayContacts = [];
-    for (let i = 0; i < 3 && startIdx + i < contactNames.length; i++) {
-        displayContacts.push(contactNames[startIdx + i]);
+        // Rotate through contacts every 5 seconds
+        if (loaderContactRotationTimer) clearInterval(loaderContactRotationTimer);
+        loaderContactRotationTimer = setInterval(() => {
+            loaderCurrentContactIndex = (loaderCurrentContactIndex + 3) % contactNames.length;
+            updateLoaderRecipientsWithRotation(contactNames, 0);
+        }, 5000);
     }
-    
-    // Build HTML with real contact names
-    let html = '';
-    displayContacts.forEach((contact, idx) => {
-        // Generate initials
-        const firstName = contact.first_name || 'U';
-        const lastName = contact.last_name || '';
-        const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
-        
-        // Generate a color for the avatar based on batch position
-        const colors = ['#667eea', '#764ba2', '#0f6e56'];
-        const bgColor = colors[idx % colors.length];
-        
-        html += `
+
+    function updateLoaderRecipientsWithRotation(contactNames, completedCount) {
+        const container = document.getElementById('loaderRecipients');
+        if (!container) return;
+
+        // Show batch of 3 starting from current index
+        const startIdx = loaderCurrentContactIndex;
+        const displayContacts = [];
+        for (let i = 0; i < 3 && startIdx + i < contactNames.length; i++) {
+            displayContacts.push(contactNames[startIdx + i]);
+        }
+
+        // Build HTML with real contact names
+        let html = '';
+        displayContacts.forEach((contact, idx) => {
+            // Generate initials
+            const firstName = contact.first_name || 'U';
+            const lastName = contact.last_name || '';
+            const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+
+            // Generate a color for the avatar based on batch position
+            const colors = ['#667eea', '#764ba2', '#0f6e56'];
+            const bgColor = colors[idx % colors.length];
+
+            html += `
             <div style="display:flex;align-items:center;gap:8px;background:#f7f5ff;border-radius:8px;padding:7px 10px;">
                 <div style="width:22px;height:22px;border-radius:50%;background:${bgColor};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#fff;flex-shrink:0;">${initials}</div>
                 <div style="flex:1;"><div style="font-size:12px;font-weight:500;color:#1e1346;">${firstName} ${lastName}</div><div style="font-size:10px;color:#b3aed4;">${contact.email}</div></div>
                 <div style="width:16px;height:16px;border-radius:50%;background:#ede9fb;"></div>
             </div>
         `;
-    });
-    
-    container.innerHTML = html;
-}
+        });
 
-// ── Update email mock with real contact ──
-function updateEmailMockWithContact(contactNames) {
-    if (!contactNames || contactNames.length === 0) return;
-    const contact = contactNames[0];
-    
-    const firstName = contact.first_name || 'Contact';
-    const lastName = contact.last_name || '';
-    const email = contact.email || '';
-    const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
-    
-    // Find and update the To: field in email mock
-    const toFields = document.querySelectorAll('[style*="font-size:11px"][style*="color:#9f99c0"]');
-    for (let toField of toFields) {
-        if (toField.textContent.trim() === 'To') {
-            const nameField = toField.nextElementSibling;
-            if (nameField) {
-                nameField.textContent = firstName + ' ' + lastName;
-            }
-            break;
-        }
+        container.innerHTML = html;
     }
-}
 
-async function pollUntilDone(taskId, total, titleEl, contactNames) {
-    let lastRenderedCount = 0;  // Track how many contacts we've rendered
-    
-    while (true) {
-        await new Promise(r => setTimeout(r, 2000)); // wait 2s between polls
+    // ── Update email mock with real contact ──
+    function updateEmailMockWithContact(contactNames) {
+        if (!contactNames || contactNames.length === 0) return;
+        const contact = contactNames[0];
 
-        let data;
-        try {
-            const url = TASK_STATUS_URL.replace("TASK_ID_PLACEHOLDER", taskId);
-            const resp = await fetch(url);
-            data = await resp.json();
-        } catch (err) {
-            alert("Lost connection while generating. Please try again.");
-            return null;
-        }
-
-        if (data.status === "pending") {
-            const pct = Math.round((data.progress / data.total) * 100);
-            const fill = document.getElementById('loaderProgressFill');
-            if (fill) fill.style.width = pct + '%';
-            const cd = document.getElementById('loaderCountDisp');
-            if (cd) cd.textContent = data.progress + ' / ' + data.total;
-            const mc = document.getElementById('loaderMoreCount');
-            if (mc) mc.textContent = '+ ' + Math.max(0, data.total - data.progress) + ' more contacts generating...';
-            
-            // Update loader recipients with real names
-            const namesToShow = contactNames || (data.contact_names && data.contact_names.length > 0) ? data.contact_names : [];
-            if (namesToShow && namesToShow.length > 0) {
-                updateLoaderRecipients(namesToShow, data.progress);
-            }
-            continue;
-        }
-
-        if (data.status === "error") {
-            alert("Generation failed: " + (data.error || "Unknown error"));
-            return null;
-        }
-
-        if (data.status === "done") {
-            if (loaderContactRotationTimer) clearInterval(loaderContactRotationTimer);
-            return { generated: data.result, framework: data.framework };
-        }
-    }
-}
-
-function updateLoaderRecipients(contactNames, completedCount) {
-    const container = document.getElementById('loaderRecipients');
-    if (!container) return;
-    
-    // Show first 3 contacts
-    const displayContacts = contactNames.slice(0, 3);
-    
-    // Build the HTML with real contact names
-    let html = '';
-    displayContacts.forEach((contact, idx) => {
-        // Generate initials
-        const firstName = contact.first_name || 'U';
+        const firstName = contact.first_name || 'Contact';
         const lastName = contact.last_name || '';
+        const email = contact.email || '';
         const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
-        
-        // Determine if this contact is completed
-        const isCompleted = idx < Math.min(3, completedCount);
-        
-        // Generate a color for the avatar based on index
-        const colors = ['#667eea', '#764ba2', '#0f6e56'];
-        const bgColor = colors[idx % colors.length];
-        
-        html += `
+
+        // Find and update the To: field in email mock
+        const toFields = document.querySelectorAll('[style*="font-size:11px"][style*="color:#9f99c0"]');
+        for (let toField of toFields) {
+            if (toField.textContent.trim() === 'To') {
+                const nameField = toField.nextElementSibling;
+                if (nameField) {
+                    nameField.textContent = firstName + ' ' + lastName;
+                }
+                break;
+            }
+        }
+    }
+
+    async function pollUntilDone(taskId, total, titleEl, contactNames) {
+        let lastRenderedCount = 0;  // Track how many contacts we've rendered
+
+        while (true) {
+            await new Promise(r => setTimeout(r, 2000)); // wait 2s between polls
+
+            let data;
+            try {
+                const url = TASK_STATUS_URL.replace("TASK_ID_PLACEHOLDER", taskId);
+                const resp = await fetch(url);
+                data = await resp.json();
+            } catch (err) {
+                alert("Lost connection while generating. Please try again.");
+                return null;
+            }
+
+            if (data.status === "pending") {
+                const pct = Math.round((data.progress / data.total) * 100);
+                const fill = document.getElementById('loaderProgressFill');
+                if (fill) fill.style.width = pct + '%';
+                const cd = document.getElementById('loaderCountDisp');
+                if (cd) cd.textContent = data.progress + ' / ' + data.total;
+                const mc = document.getElementById('loaderMoreCount');
+                if (mc) mc.textContent = '+ ' + Math.max(0, data.total - data.progress) + ' more contacts generating...';
+
+                // Update loader recipients with real names
+                const namesToShow = contactNames || (data.contact_names && data.contact_names.length > 0) ? data.contact_names : [];
+                if (namesToShow && namesToShow.length > 0) {
+                    updateLoaderRecipients(namesToShow, data.progress);
+                }
+                continue;
+            }
+
+            if (data.status === "error") {
+                alert("Generation failed: " + (data.error || "Unknown error"));
+                return null;
+            }
+
+            if (data.status === "done") {
+                if (loaderContactRotationTimer) clearInterval(loaderContactRotationTimer);
+                return { generated: data.result, framework: data.framework };
+            }
+        }
+    }
+
+    function updateLoaderRecipients(contactNames, completedCount) {
+        const container = document.getElementById('loaderRecipients');
+        if (!container) return;
+
+        // Show first 3 contacts
+        const displayContacts = contactNames.slice(0, 3);
+
+        // Build the HTML with real contact names
+        let html = '';
+        displayContacts.forEach((contact, idx) => {
+            // Generate initials
+            const firstName = contact.first_name || 'U';
+            const lastName = contact.last_name || '';
+            const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+
+            // Determine if this contact is completed
+            const isCompleted = idx < Math.min(3, completedCount);
+
+            // Generate a color for the avatar based on index
+            const colors = ['#667eea', '#764ba2', '#0f6e56'];
+            const bgColor = colors[idx % colors.length];
+
+            html += `
             <div style="display:flex;align-items:center;gap:8px;background:#f7f5ff;border-radius:8px;padding:7px 10px;">
                 <div style="width:22px;height:22px;border-radius:50%;background:${bgColor};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#fff;flex-shrink:0;">${initials}</div>
                 <div style="flex:1;"><div style="font-size:12px;font-weight:500;color:#1e1346;">${firstName} ${lastName}</div><div style="font-size:10px;color:#b3aed4;">${contact.email}</div></div>
                 ${isCompleted ? '<div style="width:16px;height:16px;border-radius:50%;background:#e8f8f2;display:flex;align-items:center;justify-content:center;"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M2 5L4.5 7.5L8 3" stroke="#0f6e56" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></div>' : '<div style="width:16px;height:16px;border-radius:50%;background:#ede9fb;"></div>'}
             </div>
         `;
-    });
-    
-    container.innerHTML = html;
-}
+        });
 
-// ── Render Previews ──
-function renderEmailPreviews(generated, framework) {
-    const container = document.getElementById("emailPreviewsContainer");
-    container.innerHTML = "";
+        container.innerHTML = html;
+    }
 
-    generated.forEach((person, pIdx) => {
-        const card = document.createElement("div");
-        card.className = "cmp-person-card" + (person.error ? " has-error" : "") + (pIdx === 0 ? " open" : "");
-        card.dataset.personIdx = pIdx;
+    // ── Render Previews ──
+    function renderEmailPreviews(generated, framework) {
+        const container = document.getElementById("emailPreviewsContainer");
+        container.innerHTML = "";
 
-        const initials = ((person.first_name || "U")[0] + (person.last_name || "")[0]).toUpperCase();
+        generated.forEach((person, pIdx) => {
+            const card = document.createElement("div");
+            card.className = "cmp-person-card" + (person.error ? " has-error" : "") + (pIdx === 0 ? " open" : "");
+            card.dataset.personIdx = pIdx;
 
-        let bodyHtml = "";
-        if (person.error) {
-            bodyHtml = `<div class="cmp-error-msg"><i class="fas fa-exclamation-triangle me-2"></i>${person.error}</div>`;
-        } else {
-            // Main email
-            bodyHtml += `
+            const initials = ((person.first_name || "U")[0] + (person.last_name || "")[0]).toUpperCase();
+
+            let bodyHtml = "";
+            if (person.error) {
+                bodyHtml = `<div class="cmp-error-msg"><i class="fas fa-exclamation-triangle me-2"></i>${person.error}</div>`;
+            } else {
+                // Main email
+                bodyHtml += `
                 <div class="cmp-email-block" data-person="${pIdx}" data-type="main">
                     <div class="cmp-email-block-header">
                         <span class="cmp-email-label"><i class="fas fa-envelope me-1"></i> Main Email — ${person.framework || framework}</span>
@@ -872,10 +1062,10 @@ function renderEmailPreviews(generated, framework) {
                     <div class="cmp-email-body" id="cmp-body-${pIdx}">${person.main_email.body}</div>
                 </div>
             `;
-            // Follow-ups
-            if (person.follow_ups && person.follow_ups.length) {
-                person.follow_ups.forEach((fu, fIdx) => {
-                    bodyHtml += `
+                // Follow-ups
+                if (person.follow_ups && person.follow_ups.length) {
+                    person.follow_ups.forEach((fu, fIdx) => {
+                        bodyHtml += `
                         <div class="cmp-email-block" data-person="${pIdx}" data-type="followup" data-fu="${fIdx}">
                             <div class="cmp-email-block-header">
                                 <span class="cmp-email-label"><i class="fas fa-reply me-1"></i> Follow-up ${fIdx + 1}</span>
@@ -886,11 +1076,11 @@ function renderEmailPreviews(generated, framework) {
                             <div class="cmp-email-body" id="cmp-fu-body-${pIdx}-${fIdx}">${fu.body}</div>
                         </div>
                     `;
-                });
+                    });
+                }
             }
-        }
 
-        card.innerHTML = `
+            card.innerHTML = `
             <div class="cmp-person-header" onclick="togglePersonCard(this)">
                 <div class="cmp-person-info">
                     <div class="cmp-person-avatar">${initials}</div>
@@ -901,32 +1091,32 @@ function renderEmailPreviews(generated, framework) {
                 </div>
                 <div>
                     ${person.error
-                        ? '<span style="font-size:11px;color:#e53935;font-weight:600;"><i class="fas fa-exclamation-circle me-1"></i>Error</span>'
-                        : '<span style="font-size:11px;color:#2e7d32;font-weight:600;"><i class="fas fa-check-circle me-1"></i>Ready</span>'
-                    }
+                    ? '<span style="font-size:11px;color:#e53935;font-weight:600;"><i class="fas fa-exclamation-circle me-1"></i>Error</span>'
+                    : '<span style="font-size:11px;color:#2e7d32;font-weight:600;"><i class="fas fa-check-circle me-1"></i>Ready</span>'
+                }
                     <i class="fas fa-chevron-down cmp-toggle-icon ms-2"></i>
                 </div>
             </div>
             <div class="cmp-person-body">${bodyHtml}</div>
         `;
-        container.appendChild(card);
-    });
-}
+            container.appendChild(card);
+        });
+    }
 
-function togglePersonCard(header) {
-    header.closest(".cmp-person-card").classList.toggle("open");
-}
+    function togglePersonCard(header) {
+        header.closest(".cmp-person-card").classList.toggle("open");
+    }
 
-// ── Edit Email ──
-function editCampaignEmail(pIdx, type, fIdx) {
-    const person = campaignGeneratedData[pIdx];
-    if (!person) return;
+    // ── Edit Email ──
+    function editCampaignEmail(pIdx, type, fIdx) {
+        const person = campaignGeneratedData[pIdx];
+        if (!person) return;
 
-    const modal = new bootstrap.Modal(document.getElementById("campaignEmailEditModal"));
-    const body = document.getElementById("campaignEditModalBody");
+        const modal = new bootstrap.Modal(document.getElementById("campaignEmailEditModal"));
+        const body = document.getElementById("campaignEditModalBody");
 
-    if (type === "main") {
-        body.innerHTML = `
+        if (type === "main") {
+            body.innerHTML = `
             <div class="mb-3">
                 <label class="form-label fw-semibold">Subject</label>
                 <input type="text" class="form-control" id="ceEditSubject" value="${person.main_email.subject}">
@@ -936,149 +1126,149 @@ function editCampaignEmail(pIdx, type, fIdx) {
                 <div id="ceEditBody" contenteditable="true" class="form-control" style="min-height:200px;">${person.main_email.body}</div>
             </div>
         `;
-        document.getElementById("saveCampaignEmailEdit").onclick = () => {
-            const newSubject = document.getElementById("ceEditSubject").value;
-            const newBody = document.getElementById("ceEditBody").innerHTML;
-            const applyToAll = document.getElementById("applyToAllToggle").checked;
+            document.getElementById("saveCampaignEmailEdit").onclick = () => {
+                const newSubject = document.getElementById("ceEditSubject").value;
+                const newBody = document.getElementById("ceEditBody").innerHTML;
+                const applyToAll = document.getElementById("applyToAllToggle").checked;
 
-            if (applyToAll) {
-                // Apply to ALL people's main emails
-                campaignGeneratedData.forEach((p, idx) => {
-                    if (p.error) return;
-                    p.main_email.subject = newSubject;
-                    p.main_email.body = newBody;
-                    const subjEl = document.getElementById(`cmp-subj-${idx}`);
-                    const bodyEl = document.getElementById(`cmp-body-${idx}`);
-                    if (subjEl) subjEl.innerHTML = `<strong>Subject:</strong> ${newSubject}`;
-                    if (bodyEl) bodyEl.innerHTML = newBody;
-                });
-            } else {
-                person.main_email.subject = newSubject;
-                person.main_email.body = newBody;
-                document.getElementById(`cmp-subj-${pIdx}`).innerHTML = `<strong>Subject:</strong> ${newSubject}`;
-                document.getElementById(`cmp-body-${pIdx}`).innerHTML = newBody;
-            }
-            document.getElementById("applyToAllToggle").checked = false;
-            modal.hide();
-        };
-    } else {
-        const fu = person.follow_ups[fIdx];
-        body.innerHTML = `
+                if (applyToAll) {
+                    // Apply to ALL people's main emails
+                    campaignGeneratedData.forEach((p, idx) => {
+                        if (p.error) return;
+                        p.main_email.subject = newSubject;
+                        p.main_email.body = newBody;
+                        const subjEl = document.getElementById(`cmp-subj-${idx}`);
+                        const bodyEl = document.getElementById(`cmp-body-${idx}`);
+                        if (subjEl) subjEl.innerHTML = `<strong>Subject:</strong> ${newSubject}`;
+                        if (bodyEl) bodyEl.innerHTML = newBody;
+                    });
+                } else {
+                    person.main_email.subject = newSubject;
+                    person.main_email.body = newBody;
+                    document.getElementById(`cmp-subj-${pIdx}`).innerHTML = `<strong>Subject:</strong> ${newSubject}`;
+                    document.getElementById(`cmp-body-${pIdx}`).innerHTML = newBody;
+                }
+                document.getElementById("applyToAllToggle").checked = false;
+                modal.hide();
+            };
+        } else {
+            const fu = person.follow_ups[fIdx];
+            body.innerHTML = `
             <div class="mb-3">
                 <label class="form-label fw-semibold">Follow-up ${fIdx + 1} Body</label>
                 <div id="ceEditBody" contenteditable="true" class="form-control" style="min-height:200px;">${fu.body}</div>
             </div>
         `;
-        document.getElementById("saveCampaignEmailEdit").onclick = () => {
-            const newBody = document.getElementById("ceEditBody").innerHTML;
-            const applyToAll = document.getElementById("applyToAllToggle").checked;
+            document.getElementById("saveCampaignEmailEdit").onclick = () => {
+                const newBody = document.getElementById("ceEditBody").innerHTML;
+                const applyToAll = document.getElementById("applyToAllToggle").checked;
 
-            if (applyToAll) {
-                // Apply to ALL people's corresponding follow-up
-                campaignGeneratedData.forEach((p, idx) => {
-                    if (p.error || !p.follow_ups || !p.follow_ups[fIdx]) return;
-                    p.follow_ups[fIdx].body = newBody;
-                    const bodyEl = document.getElementById(`cmp-fu-body-${idx}-${fIdx}`);
-                    if (bodyEl) bodyEl.innerHTML = newBody;
-                });
-            } else {
-                fu.body = newBody;
-                document.getElementById(`cmp-fu-body-${pIdx}-${fIdx}`).innerHTML = newBody;
-            }
-            document.getElementById("applyToAllToggle").checked = false;
-            modal.hide();
-        };
-    }
-    modal.show();
-}
-
-// ── Back button ──
-document.getElementById("backToConfigBtn").addEventListener("click", function() {
-    document.getElementById("campaignStep2").style.display = "none";
-    document.getElementById("campaignStep1").style.display = "block";
-});
-
-// ── Send Campaign ──
-document.getElementById("sendCampaignBtn").addEventListener("click", async function() {
-    if (!campaignFormData || !campaignGeneratedData.length) {
-        alert("No emails to send.");
-        return;
+                if (applyToAll) {
+                    // Apply to ALL people's corresponding follow-up
+                    campaignGeneratedData.forEach((p, idx) => {
+                        if (p.error || !p.follow_ups || !p.follow_ups[fIdx]) return;
+                        p.follow_ups[fIdx].body = newBody;
+                        const bodyEl = document.getElementById(`cmp-fu-body-${idx}-${fIdx}`);
+                        if (bodyEl) bodyEl.innerHTML = newBody;
+                    });
+                } else {
+                    fu.body = newBody;
+                    document.getElementById(`cmp-fu-body-${pIdx}-${fIdx}`).innerHTML = newBody;
+                }
+                document.getElementById("applyToAllToggle").checked = false;
+                modal.hide();
+            };
+        }
+        modal.show();
     }
 
-    const validEmails = campaignGeneratedData.filter(p => !p.error);
-    if (!validEmails.length) {
-        alert("No valid emails to send. All generations had errors.");
-        return;
+    // ── Back button ──
+    document.getElementById("backToConfigBtn").addEventListener("click", function () {
+        document.getElementById("campaignStep2").style.display = "none";
+        document.getElementById("campaignStep1").style.display = "block";
+    });
+
+    // ── Send Campaign ──
+    document.getElementById("sendCampaignBtn").addEventListener("click", async function () {
+        if (!campaignFormData || !campaignGeneratedData.length) {
+            alert("No emails to send.");
+            return;
+        }
+
+        const validEmails = campaignGeneratedData.filter(p => !p.error);
+        if (!validEmails.length) {
+            alert("No valid emails to send. All generations had errors.");
+            return;
+        }
+
+        const overlay = document.getElementById("loadingOverlay");
+        document.getElementById("loadingTitle").textContent = "Sending Campaign...";
+        {% comment %} document.getElementById("loadingSubtext").textContent = "Sending personalized emails to each contact"; {% endcomment %}
+        overlay.classList.remove("d-none");
+        initLoaderCarousel();
+
+        // Build a new form with all the original data plus generated emails
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = "{% url 'campaign_view' %}";
+        form.style.display = "none";
+
+        // CSRF
+        const csrfInput = document.createElement("input");
+        csrfInput.type = "hidden"; csrfInput.name = "csrfmiddlewaretoken"; csrfInput.value = getCsrf();
+        form.appendChild(csrfInput);
+
+        // Copy original form fields
+        for (const [key, value] of campaignFormData.entries()) {
+            if (key === "csrfmiddlewaretoken") continue;
+            const inp = document.createElement("input");
+            inp.type = "hidden"; inp.name = key; inp.value = value;
+            form.appendChild(inp);
+        }
+
+        // Attach generated emails JSON
+        const genInput = document.createElement("input");
+        genInput.type = "hidden";
+        genInput.name = "generated_emails_json";
+        genInput.value = JSON.stringify(campaignGeneratedData);
+        form.appendChild(genInput);
+
+        document.body.appendChild(form);
+        form.submit();
+    });
+
+    // ── Loader carousel ──
+    const loaderInfoMessages = [
+        '<span style="color:#667eea;font-weight:500;">No more manual writing.</span> Your campaign AI personalizes every email using each contact\'s name, company &amp; role — all at once.',
+        '<span style="color:#667eea;font-weight:500;">Pick your framework.</span> AIDA, PAS, STAR — the AI writes every email in the structure that converts best for your goal.',
+        '<span style="color:#667eea;font-weight:500;">Schedule &amp; forget.</span> Set a send time once and all emails go out automatically at the perfect moment.',
+        '<span style="color:#667eea;font-weight:500;">One click, 100 emails.</span> What used to take hours now takes seconds. Review, edit, and launch.',
+    ];
+    const loaderTitles = [
+        'Generating emails...', 'Personalizing subject lines...', 'Applying your framework...',
+        'Tailoring to each role...', 'Adding your signature...', 'Finalizing previews...',
+    ];
+    let loaderInfoIdx = 0, loaderTitleIdx = 0, loaderInfoTimer = null, loaderTitleTimer = null;
+
+    function initLoaderCarousel() {
+        loaderInfoIdx = 0; loaderTitleIdx = 0;
+        loaderInfoTimer = setInterval(() => {
+            loaderInfoIdx = (loaderInfoIdx + 1) % loaderInfoMessages.length;
+            const el = document.getElementById('loaderInfoText');
+            if (el) { el.style.opacity = 0; setTimeout(() => { el.innerHTML = loaderInfoMessages[loaderInfoIdx]; el.style.opacity = 1; el.style.transition = 'opacity 0.3s'; }, 300); }
+        }, 4000);
+        loaderTitleTimer = setInterval(() => {
+            loaderTitleIdx = (loaderTitleIdx + 1) % loaderTitles.length;
+            const el = document.getElementById('loadingTitle');
+            if (el) el.textContent = loaderTitles[loaderTitleIdx];
+        }, 2200);
     }
 
-    const overlay = document.getElementById("loadingOverlay");
-    document.getElementById("loadingTitle").textContent = "Sending Campaign...";
-    {% comment %} document.getElementById("loadingSubtext").textContent = "Sending personalized emails to each contact"; {% endcomment %}
-    overlay.classList.remove("d-none");
-    initLoaderCarousel(); 
-
-    // Build a new form with all the original data plus generated emails
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = "{% url 'campaign_view' %}";
-    form.style.display = "none";
-
-    // CSRF
-    const csrfInput = document.createElement("input");
-    csrfInput.type = "hidden"; csrfInput.name = "csrfmiddlewaretoken"; csrfInput.value = getCsrf();
-    form.appendChild(csrfInput);
-
-    // Copy original form fields
-    for (const [key, value] of campaignFormData.entries()) {
-        if (key === "csrfmiddlewaretoken") continue;
-        const inp = document.createElement("input");
-        inp.type = "hidden"; inp.name = key; inp.value = value;
-        form.appendChild(inp);
+    function stopLoaderCarousel() {
+        if (loaderInfoTimer) { clearInterval(loaderInfoTimer); loaderInfoTimer = null; }
+        if (loaderTitleTimer) { clearInterval(loaderTitleTimer); loaderTitleTimer = null; }
+        if (loaderContactRotationTimer) { clearInterval(loaderContactRotationTimer); loaderContactRotationTimer = null; }
     }
-
-    // Attach generated emails JSON
-    const genInput = document.createElement("input");
-    genInput.type = "hidden";
-    genInput.name = "generated_emails_json";
-    genInput.value = JSON.stringify(campaignGeneratedData);
-    form.appendChild(genInput);
-
-    document.body.appendChild(form);
-    form.submit();
-});
-
-// ── Loader carousel ──
-const loaderInfoMessages = [
-  '<span style="color:#667eea;font-weight:500;">No more manual writing.</span> Your campaign AI personalizes every email using each contact\'s name, company &amp; role — all at once.',
-  '<span style="color:#667eea;font-weight:500;">Pick your framework.</span> AIDA, PAS, STAR — the AI writes every email in the structure that converts best for your goal.',
-  '<span style="color:#667eea;font-weight:500;">Schedule &amp; forget.</span> Set a send time once and all emails go out automatically at the perfect moment.',
-  '<span style="color:#667eea;font-weight:500;">One click, 100 emails.</span> What used to take hours now takes seconds. Review, edit, and launch.',
-];
-const loaderTitles = [
-  'Generating emails...','Personalizing subject lines...','Applying your framework...',
-  'Tailoring to each role...','Adding your signature...','Finalizing previews...',
-];
-let loaderInfoIdx = 0, loaderTitleIdx = 0, loaderInfoTimer = null, loaderTitleTimer = null;
-
-function initLoaderCarousel() {
-  loaderInfoIdx = 0; loaderTitleIdx = 0;
-  loaderInfoTimer = setInterval(() => {
-    loaderInfoIdx = (loaderInfoIdx + 1) % loaderInfoMessages.length;
-    const el = document.getElementById('loaderInfoText');
-    if (el) { el.style.opacity = 0; setTimeout(() => { el.innerHTML = loaderInfoMessages[loaderInfoIdx]; el.style.opacity = 1; el.style.transition = 'opacity 0.3s'; }, 300); }
-  }, 4000);
-  loaderTitleTimer = setInterval(() => {
-    loaderTitleIdx = (loaderTitleIdx + 1) % loaderTitles.length;
-    const el = document.getElementById('loadingTitle');
-    if (el) el.textContent = loaderTitles[loaderTitleIdx];
-  }, 2200);
-}
-
-function stopLoaderCarousel() {
-  if (loaderInfoTimer) { clearInterval(loaderInfoTimer); loaderInfoTimer = null; }
-  if (loaderTitleTimer) { clearInterval(loaderTitleTimer); loaderTitleTimer = null; }
-  if (loaderContactRotationTimer) { clearInterval(loaderContactRotationTimer); loaderContactRotationTimer = null; }
-}
 </script>
 
 {% endblock %}
