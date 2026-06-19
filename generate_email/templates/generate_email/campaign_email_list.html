@@ -5,7 +5,7 @@
 <div class="container mt-4 mb-5" style="max-width: 1400px;">
         <div class="card shadow border-0 mb-4 w-100"> 
         <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">  
-            <h4 class="mb-0"><i class="fas fa-envelope me-2"></i> Sent Emails</h4>
+            <h4 class="mb-0"><i class="fas fa-envelope me-2"></i> Campaign Emails for {{ campaign_tag.name }}</h4>
             <form class="d-flex" method="get" onsubmit="return false;">
             <div class="position-relative">
             <input type="text"
@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const willStop = !cb.checked; // cb was reverted, so !cb.checked = desired new state
 
-        fetch("{% url 'view-emails' %}", {
+        fetch("{% url 'campaign_emails' campaign_tag.id %}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

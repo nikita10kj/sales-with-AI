@@ -110,6 +110,11 @@ def send_reminders():
             if sub.expires_at <= timezone.now() + timedelta(days=1):
                 create_subscription(er.user)
 
+        # Check for bounces for this user
+        from generate_email.utils import check_gmail_bounces_for_user, check_microsoft_bounces_for_user
+        check_gmail_bounces_for_user(er.user)
+        check_microsoft_bounces_for_user(er.user)
+
         send_reminder_email(er)
         time.sleep(90) # 90s gap between each send
 

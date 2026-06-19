@@ -5,8 +5,8 @@ from .views import (CheckBulkEnrichmentView, GenerateEmailView, SendEmailView, E
 from .views import (SearchPeopleView,EnrichPersonView,CheckEnrichmentView,SelectPersonForEmailView,SearchPeopleByLinkdinView,SearchCompanyView,DataEnrichmentView,PeopleListView,
                     GetSavedListsView,EnrichSavedListView,ExportSavedListCsvView,SavePeopleToListView,DownloadListCSVView,DeleteSavedListView,RemovePersonFromListView,
                     SaveCompaniesToListView,RemoveCompanyFromListView,UseSavedListInCampaignView,SaveEnrichAndGoToCampaignView,SearchHistoryView,
-                    AiParseSearchView,CheckEnrichmentJobView,campaign_task_status)
-
+                    AiParseSearchView,CheckEnrichmentJobView,campaign_task_status,
+                    CampaignHistoryView, CampaignEmailListView)
 
 urlpatterns = [
     path("generate_email/", GenerateEmailView.as_view(), name="generate_email"),
@@ -24,7 +24,8 @@ urlpatterns = [
     path("campaign/", campaign_view, name="campaign_view"),
     path("campaign/generate-emails/", campaign_generate_emails, name="campaign_generate_emails"),
     path("campaign/task-status/<str:task_id>/", campaign_task_status, name="campaign_task_status"),
-
+    path("campaign-history/", CampaignHistoryView.as_view(), name="campaign_history"),
+    path("campaign-emails/<int:tag_id>/", CampaignEmailListView.as_view(), name="campaign_emails"),
 
     path("search-people/", SearchPeopleView.as_view(), name="search_people"),
     path("ai-parse-search/", AiParseSearchView.as_view(), name="ai_parse_search"),

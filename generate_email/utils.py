@@ -1150,3 +1150,89 @@ def redrob_search_by_company(filters: dict) -> dict:
 #         "emails": p.get("emails", []),
 #         "phones": p.get("phones", []),
 #     }
+
+import re
+from django.utils import timezone
+
+def check_gmail_bounces_for_user(user):
+    from allauth.socialaccount.models import SocialAccount
+    from generate_email.models import SentEmail
+    
+    google_accounts = SocialAccount.objects.filter(user=user, provider='google')
+    for account in google_accounts:
+        try:
+            service = get_gmail_service_campaign(account)
+            query = "from:mailer-daemon@googlemail.com OR from:postmaster newer_than:1d"
+            response = service.users().messages().list(userId='me', q=query, maxResults=50).execute()
+            messages = response.get('messages', [])
+            
+            for msg in messages:
+                msg_id = msg['id']
+                msg_data = service.users().messages().get(userId='me', id=msg_id, format='full').execute()
+                snippet = msg_data.get('snippet', '')
+                
+                # Exclude self email to avoid matching sender's email if it's in the snippet
+                sender_email = account.extra_data.get("email", "").lower()
+                
+                emails_in_snippet = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', snippet)
+                valid_emails = [e.lower() for e in emails_in_snippet if e.lower() != sender_email]
+                
+                if valid_emails:
+                    updated = SentEmail.objects.filter(
+                        user=user,
+                        email__in=valid_emails,
+                        bounced=False
+                    ).update(
+                        bounced=True,
+                        bounced_at=timezone.now(),
+                        stop_reminder=True
+                    )
+                    if updated:
+                        logger.info(f"Marked {updated} emails as bounced for user {user.id}")
+        except Exception as e:
+            logger.error(f"Failed to check Gmail bounces for user {user.id} account {account.id}: {e}")
+
+def check_microsoft_bounces_for_user(user):
+    from allauth.socialaccount.models import SocialAccount
+    from generate_email.models import SentEmail
+    from generate_email.utils import get_latest_microsoft_token
+    import requests
+    
+    ms_accounts = SocialAccount.objects.filter(user=user, provider='microsoft')
+    for account in ms_accounts:
+        try:
+            access_token = get_latest_microsoft_token(user)
+            if not access_token:
+                continue
+                
+            sender_email = account.extra_data.get("userPrincipalName", "").lower()
+            
+            headers = {"Authorization": f"Bearer {access_token}"}
+            # Search for postmaster messages in the last day
+            from_time = (timezone.now() - timezone.timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            url = f"https://graph.microsoft.com/v1.0/me/messages?$filter=receivedDateTime ge {from_time} and (from/emailAddress/address eq 'postmaster@outlook.com' or from/emailAddress/address eq 'mailer-daemon@googlemail.com')&$select=bodyPreview"
+            
+            resp = requests.get(url, headers=headers)
+            if resp.status_code != 200:
+                continue
+                
+            messages = resp.json().get('value', [])
+            for msg in messages:
+                snippet = msg.get('bodyPreview', '')
+                emails_in_snippet = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', snippet)
+                valid_emails = [e.lower() for e in emails_in_snippet if e.lower() != sender_email]
+                
+                if valid_emails:
+                    updated = SentEmail.objects.filter(
+                        user=user,
+                        email__in=valid_emails,
+                        bounced=False
+                    ).update(
+                        bounced=True,
+                        bounced_at=timezone.now(),
+                        stop_reminder=True
+                    )
+                    if updated:
+                        logger.info(f"Marked {updated} emails as bounced for user {user.id} (Microsoft)")
+        except Exception as e:
+            logger.error(f"Failed to check Microsoft bounces for user {user.id} account {account.id}: {e}")

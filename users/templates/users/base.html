@@ -127,6 +127,12 @@
             </li>
 
             <li>
+                <a href="{% url 'campaign_history' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'campaign_history' %}active-link{% endif %}">
+                    <i class="fas fa-history me-2"></i><span>Campaign History</span>
+                </a>
+            </li>
+
+            <li>
                 <a href="{% url 'view-leads' %}{% if acc_param %}?account={{ acc_param }}{% endif %}" class="nav-link {% if request.resolver_match.url_name == 'view-leads' %}active-link{% endif %}">
                     <i class="fas fa-users me-2"></i><span>Leads</span>
                 </a>

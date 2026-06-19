@@ -1,0 +1,101 @@
+{% extends "users/base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container mt-4 mb-5" style="max-width: 1400px;">
+        <div class="card shadow border-0 mb-4 w-100"> 
+        <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">  
+            <h4 class="mb-0"><i class="fas fa-history me-2"></i> Campaign History</h4>
+        </div>
+        <div class="card-body px-4 py-3">
+            {% if campaigns %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0" id="campaigns-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Campaign Tag / List</th>
+                                <th scope="col">Date Sent</th>
+                                <th scope="col">Emails Sent</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="campaigns-tbody">
+                            {% for campaign in campaigns %}
+                            <tr>
+                                <td>
+                                    {{ campaign.target_audience__tag__name|default:"Unknown Target" }}
+                                </td>
+                                <td>
+                                    <span class="utc-time" data-utc="{{ campaign.latest_send|date:'c' }}"></span>
+                                </td>
+                                <td>
+                                    {{ campaign.email_count }}
+                                </td>
+                                <td>
+                                    {% if campaign.target_audience__tag__id %}
+                                        {% if campaign.campaign_batch_id %}
+                                        <a href="{% url 'campaign_emails' campaign.target_audience__tag__id %}?batch={{ campaign.campaign_batch_id }}" class="btn btn-sm btn-outline-primary">View Emails</a>
+                                        {% else %}
+                                        <a href="{% url 'campaign_emails' campaign.target_audience__tag__id %}" class="btn btn-sm btn-outline-primary">View Emails</a>
+                                        {% endif %}
+                                    {% else %}
+                                    <span class="text-muted">No details</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-mail-bulk fa-3x mb-3"></i>
+                    <p>No campaigns started yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Convert UTC to local time
+    const elements = document.querySelectorAll('.utc-time');
+    elements.forEach(el => {
+        const utcDateStr = el.getAttribute('data-utc');
+        if (!utcDateStr) return;
+
+        const utcDate = new Date(utcDateStr);
+        const localDate = new Date(utcDate.getTime());
+
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+
+        const emailDate = new Date(localDate.getFullYear(), localDate.getMonth(), localDate.getDate());
+
+        let label;
+        if (emailDate.getTime() === today.getTime()) {
+            label = "Today";
+        } else if (emailDate.getTime() === tomorrow.getTime()) {
+            label = "Tomorrow";
+        } else {
+            label = localDate.toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        const timePart = localDate.toLocaleTimeString(undefined, {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+
+        el.textContent = `${label}, ${timePart}`;
+    });
+});
+</script>
+{% endblock content %}

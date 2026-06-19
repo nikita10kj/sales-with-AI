@@ -17,14 +17,14 @@ from users.models import ProductService, ActivityLog,Signature,UserWallet
 import json
 import datetime
 from django.http import HttpResponse
-from django.db.models import Q
+from django.db.models import Q, Max, Count
 from .utils import sendGeneratedEmail, create_subscription, refresh_microsoft_token, MicrosoftEmailSendError
 from django.shortcuts import get_object_or_404
 from email.utils import make_msgid
 from datetime import timedelta, date,datetime
 from django.utils import timezone
 from django.db.models import OuterRef, Subquery, DateField
-from django.db.models.functions import Cast
+from django.db.models.functions import Cast, TruncDate
 from django.utils.timezone import now
 import calendar
 from allauth.socialaccount.models import SocialAccount, SocialToken
@@ -4237,7 +4237,7 @@ class EmailListView(BlockDirectAccessMixin, LoginRequiredMixin, ListView):
 
         qs = (
             SentEmail.objects
-            .filter(user=self.request.user, is_scheduled=False)
+            .filter(user=self.request.user, is_scheduled=False, is_campaign=False)
             .select_related('target_audience')
             .annotate(next_reminder_date=Subquery(next_reminder))
             .order_by('-created')
@@ -4298,7 +4298,9 @@ class EmailListView(BlockDirectAccessMixin, LoginRequiredMixin, ListView):
                 'stop_reminder',
                 'opened',
                 'replied',
-                'replied_at'
+                'replied_at',
+                'bounced',
+                'bounced_at'
             )
 
             data = [
@@ -4320,6 +4322,12 @@ class EmailListView(BlockDirectAccessMixin, LoginRequiredMixin, ListView):
                     'replied_at': (
                         e['replied_at'].strftime("%d %b %Y, %I:%M %p")
                         if e['replied_at']
+                        else None
+                    ),
+                    'bounced': e['bounced'],
+                    'bounced_at': (
+                        e['bounced_at'].strftime("%d %b %Y, %I:%M %p")
+                        if e['bounced_at']
                         else None
                     )
                 }
@@ -6421,6 +6429,9 @@ def campaign_view(request):
                 messages.error(request, "Invalid schedule time.")
                 return redirect("campaign_view")
 
+            # Generate a unique batch ID for this campaign run
+            batch_id = uuid.uuid4()
+
             for i, audience in enumerate(audiences):
                 audience.campaign_goal    = campaign_goal
                 audience.framework        = framework
@@ -6459,7 +6470,9 @@ def campaign_view(request):
                     scheduled_at=staggered_dt,
                     sending_account=None if shuffle_accounts else selected_account,
                     attachment=saved_obj,
-                    shuffle_accounts=shuffle_accounts
+                    shuffle_accounts=shuffle_accounts,
+                    is_campaign=True,
+                    campaign_batch_id=batch_id,
                 )
 
                 # Add open tracking pixel to campaign email
@@ -6516,6 +6529,9 @@ def campaign_view(request):
         else:
             now_dt = timezone.now()
 
+            # Generate a unique batch ID for this campaign run
+            batch_id = uuid.uuid4()
+
             for index, audience in enumerate(audiences):
                 audience.campaign_goal    = campaign_goal
                 audience.framework        = framework
@@ -6553,7 +6569,9 @@ def campaign_view(request):
                     scheduled_at=staggered_dt,
                     sending_account=None if shuffle_accounts else selected_account,
                     attachment=saved_obj,
-                    shuffle_accounts=shuffle_accounts
+                    shuffle_accounts=shuffle_accounts,
+                    is_campaign=True,
+                    campaign_batch_id=batch_id,
                 )
 
                 # Add open tracking pixel to campaign email
@@ -6631,3 +6649,125 @@ def campaign_view(request):
         "selected_list_id": selected_list_id,
         "selected_person_ids": selected_person_ids,
     })
+
+class CampaignHistoryView(BlockDirectAccessMixin, LoginRequiredMixin, ListView):
+    template_name = 'generate_email/campaign_history.html'
+    context_object_name = 'campaigns'
+    paginate_by = 20
+
+    def get_queryset(self):
+        qs = (
+            SentEmail.objects
+            .filter(user=self.request.user, is_campaign=True, is_scheduled=False)
+            .values('campaign_batch_id', 'target_audience__tag__id', 'target_audience__tag__name')
+            .annotate(
+                latest_send=Max('created'),
+                email_count=Count('id')
+            )
+            .order_by('-latest_send')
+        )
+        return qs
+
+class CampaignEmailListView(BlockDirectAccessMixin, LoginRequiredMixin, ListView):
+    template_name = 'generate_email/campaign_email_list.html'
+    context_object_name = 'sent_emails'
+    paginate_by = 20
+
+    def get_queryset(self):
+        tag_id = self.kwargs.get('tag_id')
+        batch_id = self.request.GET.get('batch')  # campaign_batch_id filter
+        today = timezone.now().date()
+
+        next_reminder = ReminderEmail.objects.filter(
+            sent_email=OuterRef('pk'),
+            sent=False,
+            send_at__gte=today
+        ).order_by('send_at').values('send_at')[:1]
+
+        qs = (
+            SentEmail.objects
+            .filter(user=self.request.user, is_campaign=True, target_audience__tag_id=tag_id, is_scheduled=False)
+            .select_related('target_audience')
+            .annotate(next_reminder_date=Subquery(next_reminder))
+            .order_by('-created')
+        )
+
+        if batch_id and batch_id != 'None':
+            try:
+                import uuid as _uuid
+                parsed_batch = _uuid.UUID(batch_id)
+                qs = qs.filter(campaign_batch_id=parsed_batch)
+            except (ValueError, AttributeError):
+                pass
+
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        tag_id = self.kwargs.get('tag_id')
+        from generate_email.models import AudienceTag
+        tag = AudienceTag.objects.filter(id=tag_id, user=self.request.user).first()
+        context['campaign_tag'] = tag
+        return context
+
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.GET.get('ajax') == '1':
+            emails = context['page_obj'].object_list.values(
+                'id',
+                'uid',
+                'subject',
+                'target_audience__email',
+                'target_audience__receiver_first_name',
+                'target_audience__receiver_last_name',
+                'created',
+                'next_reminder_date',
+                'stop_reminder',
+                'opened',
+                'replied',
+                'replied_at'
+            )
+
+            data = [
+                {
+                    'id': e['id'],
+                    'uid': str(e['uid']),
+                    'subject': e['subject'],
+                    'email': e['target_audience__email'],
+                    'name': f"{e['target_audience__receiver_first_name']} {e['target_audience__receiver_last_name']}",
+                    'created': e['created'].strftime("%d %b %Y, %I:%M %p"),
+                    'next_reminder_date': (
+                        e['next_reminder_date'].strftime("%d %b %Y")
+                        if e['next_reminder_date']
+                        else None
+                    ),
+                    'stop_reminder': e['stop_reminder'],
+                    'opened': e['opened'],
+                    'replied': e['replied'],
+                    'replied_at': (
+                        e['replied_at'].strftime("%d %b %Y, %I:%M %p")
+                        if e['replied_at']
+                        else None
+                    )
+                }
+                for e in emails
+            ]
+
+            return JsonResponse({
+                "emails": data,
+                "has_next": context['page_obj'].has_next(),
+                "next_page": (
+                    context['page_obj'].next_page_number()
+                    if context['page_obj'].has_next()
+                    else None
+                )
+            })
+
+        return super().render_to_response(context, **response_kwargs)
+
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        email_id = data.get("email_id")
+        email = SentEmail.objects.get(id=email_id)
+        email.stop_reminder = True
+        email.save()
+        return JsonResponse({'success': True})
