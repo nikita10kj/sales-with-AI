@@ -453,6 +453,10 @@ class AiParseSearchView(View):
         api_version = "2024-02-01"
         url = f"{endpoint.rstrip('/')}/openai/deployments/{deployment}/chat/completions?api-version={api_version}"
 
+        # Dynamically inject supported industries to enforce exact matches
+        # INDUSTRY_CHOICES is defined further down in this file but accessible at runtime
+        supported_industries_str = ", ".join(INDUSTRY_CHOICES)
+
         system_prompt = (
             "You are a smart search filter extractor for a B2B search tool. "
             "Given a free-text query, determine if it's about PEOPLE search or COMPANY search, then extract appropriate filters.\n"
@@ -470,12 +474,15 @@ class AiParseSearchView(View):
             "\n"
             "Values should be plain strings. If multiple values exist for a field, join with comma.\n"
             "\n"
+            "IMPORTANT INDUSTRY RULE: For the 'industry' field, you MUST map the user's intent to the closest exact match from the following list of supported industries. Do NOT invent industries. If it cannot be reasonably mapped to one of these, do not include the 'industry' field.\n"
+            f"Supported Industries: {supported_industries_str}\n"
+            "\n"
             "Examples:\n"
             "Query: 'dubai ceo' → {\"search_type\": \"people\", \"location\": \"Dubai\", \"job_title\": \"CEO\"}\n"
-            "Query: 'software engineer london fintech' → {\"search_type\": \"people\", \"location\": \"London\", \"job_title\": \"Software Engineer\", \"industry\": \"Fintech\"}\n"
+            "Query: 'software engineer london fintech' → {\"search_type\": \"people\", \"location\": \"London\", \"job_title\": \"Software Engineer\", \"industry\": \"Financial Services\"}\n"
             "Query: 'ai companies in silicon valley' → {\"search_type\": \"company\", \"company_location\": \"Silicon Valley\", \"company_specialites\": \"AI\"}\n"
             "Query: 'saas startups in london' → {\"search_type\": \"company\", \"company_location\": \"London\", \"company_specialites\": \"SaaS\"}\n"
-            "Query: 'fintech companies with funding' → {\"search_type\": \"company\", \"industry\": \"Fintech\"}\n"
+            "Query: 'fintech companies with funding' → {\"search_type\": \"company\", \"industry\": \"Financial Services\"}\n"
             "\n"
             "Return ONLY the JSON, no explanation."
         )

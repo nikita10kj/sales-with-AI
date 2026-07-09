@@ -458,13 +458,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (data.error && (!data.companies || !data.companies.length)) {
             resultsContent.insertAdjacentHTML("afterbegin", '<div class="error-box"><i class="fas fa-exclamation-circle"></i> ' + esc(data.error) + '</div>');
-            if (aiPanel) aiPanel.style.display = "";
+            if (aiPanel) aiPanel.style.display = "none";
             return;
         }
 
         if (!data.companies || !data.companies.length) {
             resultsContent.insertAdjacentHTML("afterbegin", '<div class="empty-box"><i class="fas fa-building"></i><p>No results yet. Use the filters on the left and hit <strong>Search</strong>.</p></div>');
-            if (aiPanel) aiPanel.style.display = "";
+            if (aiPanel) aiPanel.style.display = "none";
             return;
         }
 
