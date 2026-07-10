@@ -235,67 +235,71 @@ def send_bulk_campaign_emails():
     if not scheduled_emails:
         return
 
-    # Shuffle account logic
-    shuffle_enabled = any(e.shuffle_accounts for e in scheduled_emails)
-    user = scheduled_emails[0].user
+    # Group scheduled emails by user to prevent using wrong accounts
+    from collections import defaultdict
+    emails_by_user = defaultdict(list)
+    for e in scheduled_emails:
+        emails_by_user[e.user_id].append(e)
 
-    accounts = list(
-        SocialAccount.objects.filter(
-            user=user,
-            provider__in=["google", "microsoft"]
+    logger.info(f"Found {len(scheduled_emails)} scheduled emails to send across {len(emails_by_user)} users")
+
+    for user_id, user_emails in emails_by_user.items():
+        shuffle_enabled = any(e.shuffle_accounts for e in user_emails)
+        user = user_emails[0].user
+
+        accounts = list(
+            SocialAccount.objects.filter(
+                user=user,
+                provider__in=["google", "microsoft"]
+            )
         )
-    )
-    random.shuffle(accounts)
-    account_index = 0
+        random.shuffle(accounts)
+        account_index = 0
+        random.shuffle(user_emails)
 
-    random.shuffle(scheduled_emails)
-    logger.info(f"Found {len(scheduled_emails)} scheduled emails to send")
-
-    for email_obj in scheduled_emails:
-        attachment_file = None
-        try:
-            # ── Atomic lock: mark as no longer scheduled ──
-            with transaction.atomic():
-                locked_email = SentEmail.objects.select_for_update().get(pk=email_obj.pk)
-                if not locked_email.is_scheduled:
-                    continue  # already sent by another worker
-                locked_email.is_scheduled = False
-                locked_email.save(update_fields=["is_scheduled"])
-
-            # ── Account selection ──
-            if shuffle_enabled and accounts:
-                selected_account = accounts[account_index % len(accounts)]
-                account_index += 1
-            else:
-                selected_account = locked_email.sending_account
-
-            # ── Attachment ──
-            if locked_email.attachment:
-                attachment_file = locked_email.attachment.file
-                attachment_file.open()
-                attachment_file.seek(0)
-
-            # ── Send WITHOUT creating a new SentEmail ──
-            _send_email_directly(locked_email, selected_account, attachment_file)
-
-            logger.info(f"Scheduled email sent to {locked_email.email} (id={locked_email.pk})")
-
-        except Exception as e:
-            logger.error(f"Scheduled email send failed (id={email_obj.pk}): {e}")
-            # Roll back is_scheduled so it can be retried
+        for email_obj in user_emails:
+            attachment_file = None
             try:
-                SentEmail.objects.filter(pk=email_obj.pk).update(is_scheduled=True)
-            except Exception:
+                # ── Atomic lock: mark as no longer scheduled ──
+                with transaction.atomic():
+                    locked_email = SentEmail.objects.select_for_update().get(pk=email_obj.pk)
+                    if not locked_email.is_scheduled:
+                        continue  # already sent by another worker
+                    locked_email.is_scheduled = False
+                    locked_email.save(update_fields=["is_scheduled"])
+
+                # ── Account selection ──
+                if shuffle_enabled and accounts:
+                    selected_account = accounts[account_index % len(accounts)]
+                    account_index += 1
+                else:
+                    selected_account = locked_email.sending_account
+
+                # ── Attachment ──
+                if locked_email.attachment:
+                    attachment_file = locked_email.attachment.file
+                    attachment_file.open()
+                    attachment_file.seek(0)
+
+                # ── Send WITHOUT creating a new SentEmail ──
+                _send_email_directly(locked_email, selected_account, attachment_file)
+
+                logger.info(f"Scheduled email sent to {locked_email.email} (id={locked_email.pk})")
+
+            except Exception as e:
+                logger.error(f"Scheduled email send failed (id={email_obj.pk}): {e}")
+                # Intentionally NOT rolling back is_scheduled=True
+                # If we roll back, it causes an infinite retry loop that blocks the queue permanently.
                 pass
 
-        finally:
-            if attachment_file:
-                try:
-                    attachment_file.close()
-                except Exception:
-                    pass
+            finally:
+                if attachment_file:
+                    try:
+                        attachment_file.close()
+                    except Exception:
+                        pass
 
-        time.sleep(60)  # 1-minute gap between each email send
+            time.sleep(60)  # Reduced gap between each email send from 60s to 10s to prevent huge queue backlog
 
 
 def send_followup_emails():
