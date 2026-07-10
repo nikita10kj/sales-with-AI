@@ -108,6 +108,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'generate_email.middleware.ThreadKeepAliveMiddleware',
 ]
 
 ROOT_URLCONF = 'saleswithai.urls'

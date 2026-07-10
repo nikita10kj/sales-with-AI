@@ -12,6 +12,7 @@ class BackgroundTaskQueue:
 
         for i in range(worker_count):
             t = threading.Thread(target=self._worker, daemon=True)
+            t._is_task_worker = True
             t.start()
             logger.info(f"[TASK] Worker-{i+1} started")
 
