@@ -25,14 +25,12 @@ def _scheduler_thread():
 
 
 def start_scheduler():
-    global _scheduler_started
-
     with _scheduler_lock:
-        if _scheduler_started:
-            logger.info("Scheduler already running — skipping duplicate start")
+        # Check if thread is actually alive (important for pre-fork WSGI servers)
+        is_alive = any(t.name == "CampaignScheduler" and t.is_alive() for t in threading.enumerate())
+        if is_alive:
             return
 
         t = threading.Thread(target=_scheduler_thread, daemon=True, name="CampaignScheduler")
         t.start()
-        _scheduler_started = True
         logger.info("Campaign scheduler started")
