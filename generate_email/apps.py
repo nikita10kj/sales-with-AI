@@ -55,6 +55,7 @@
 from django.apps import AppConfig
 import threading
 import os
+import sys
 
 
 class GenerateEmailConfig(AppConfig):
@@ -62,11 +63,13 @@ class GenerateEmailConfig(AppConfig):
     name = 'generate_email'
 
     def ready(self):
-        # Only start in main process, not in migration/management commands
+        # Avoid running scheduler during management commands (migrate, collectstatic, etc.)
+        is_manage_script = len(sys.argv) > 0 and sys.argv[0].endswith('manage.py')
+        is_runserver = 'runserver' in sys.argv
+        if is_manage_script and not is_runserver:
+            return
+
+        # Only start in main process (runserver child process or WSGI workers)
         if os.environ.get("RUN_MAIN") == "true" or not os.environ.get("RUN_MAIN"):
-            # RUN_MAIN == "true" -> Development with autoreloader
-            # RUN_MAIN not set -> Production/Gunicorn
-            
-            if threading.current_thread().name == "MainThread":
-                from .scheduler import start_scheduler
-                start_scheduler()
+            from .scheduler import start_scheduler
+            start_scheduler()
