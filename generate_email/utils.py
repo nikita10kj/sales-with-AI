@@ -510,6 +510,10 @@ def sendReminderEmail(reminder_email):
             opened_count=0,  # explicit
             clicked_count=0,
             replied_count=0,
+            # Inherit campaign info from the parent email so reminders appear
+            # on the campaign history page as well.
+            is_campaign=reminder_email.sent_email.is_campaign,
+            campaign_batch_id=reminder_email.sent_email.campaign_batch_id,
         )
         track_url = f"https://sellsharp.co{reverse('email_open_pixel', args=[sent_email.uid])}"
         track_url += f"?v={int(time.time())}"
@@ -891,7 +895,7 @@ def get_gmail_service_campaign(selected_account):
 
 from email.utils import make_msgid
 
-def sendCampaignEmail(request, user, target_audience, main_email, selected_account=None, attachment=None):
+def sendCampaignEmail(request, user, target_audience, main_email, selected_account=None, attachment=None, is_campaign=False, campaign_batch_id=None):
 
     subject = main_email["subject"]
     message = main_email["body"]
@@ -923,7 +927,9 @@ def sendCampaignEmail(request, user, target_audience, main_email, selected_accou
         opened_count=0,
         clicked_count=0,
         replied_count=0,
-        sending_account=selected_account
+        sending_account=selected_account,
+        is_campaign=is_campaign,
+        campaign_batch_id=campaign_batch_id,
     )
 
     # Add open tracking pixel to campaign/followup email
