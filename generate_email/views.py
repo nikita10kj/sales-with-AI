@@ -6712,9 +6712,20 @@ class CampaignEmailListView(BlockDirectAccessMixin, LoginRequiredMixin, ListView
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         tag_id = self.kwargs.get('tag_id')
-        from generate_email.models import AudienceTag
+        from generate_email.models import AudienceTag, SentEmail
         tag = AudienceTag.objects.filter(id=tag_id, user=self.request.user).first()
         context['campaign_tag'] = tag
+        
+        # Check if there are any sent emails in this campaign that still have active reminders
+        has_active_reminders = SentEmail.objects.filter(
+            user=self.request.user, 
+            is_campaign=True, 
+            target_audience__tag_id=tag_id, 
+            stop_reminder=False
+        ).exists()
+        
+        context['all_reminders_stopped'] = not has_active_reminders
+        
         return context
 
     def render_to_response(self, context, **response_kwargs):
@@ -6773,6 +6784,19 @@ class CampaignEmailListView(BlockDirectAccessMixin, LoginRequiredMixin, ListView
 
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
+
+        # ── Stop ALL reminders for this campaign ──
+        if data.get("stop_all"):
+            tag_id = self.kwargs.get('tag_id')
+            updated = SentEmail.objects.filter(
+                user=request.user,
+                is_campaign=True,
+                target_audience__tag_id=tag_id,
+                stop_reminder=False,
+            ).update(stop_reminder=True)
+            return JsonResponse({'success': True, 'updated': updated})
+
+        # ── Stop a single reminder ──
         email_id = data.get("email_id")
         email = SentEmail.objects.get(id=email_id)
         email.stop_reminder = True

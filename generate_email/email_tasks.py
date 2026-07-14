@@ -356,7 +356,11 @@ def send_followup_emails():
                 target_audience=locked_r.target_audience,
                 main_email=main_email,
                 selected_account=locked_r.sent_email.sending_account,
-                attachment=None
+                attachment=None,
+                # Inherit campaign info from parent so follow-up appears
+                # on the campaign history page, not the main emails list.
+                is_campaign=locked_r.sent_email.is_campaign,
+                campaign_batch_id=locked_r.sent_email.campaign_batch_id,
             )
 
         except Exception as e:

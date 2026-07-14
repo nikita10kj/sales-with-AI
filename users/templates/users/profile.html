@@ -542,7 +542,8 @@ attachments-list {
             position:relative;
             transition:all .25s ease;
         ">
-            <!-- Remove -->
+            <!-- Remove — hidden for the primary login account -->
+            {% if acc.extra_data.email != request.user.email %}
             <form method="post"
                   action="{% url 'remove_google_account' acc.id %}"
                   style="position:absolute;top:14px;right:16px;">
@@ -563,6 +564,7 @@ attachments-list {
                     ×
                 </button>
             </form>
+            {% endif %}
 
             <div style="display:flex;align-items:center;gap:16px;">
                 <div style="
@@ -615,6 +617,9 @@ attachments-list {
             position:relative;
 
         ">
+            <!-- Remove — hidden for the primary login account -->
+            {% with ms_email=acc.extra_data.mail|default:acc.extra_data.userPrincipalName %}
+            {% if ms_email != request.user.email %}
             <form method="post"
                   action="{% url 'remove_microsoft_account' acc.id %}"
                   style="position:absolute;top:14px;right:16px;">
@@ -625,6 +630,8 @@ attachments-list {
                     cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.15);
                 ">×</button>
             </form>
+            {% endif %}
+            {% endwith %}
 
             <div style="display:flex;align-items:center;gap:16px;">
 
