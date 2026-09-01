@@ -163,8 +163,7 @@
                         <select name="tag_id" class="form-select" id="tagSelect">
                             <option value="">Choose Target Group </option>
                             {% for tag in tags %}
-                            <option value="{{ tag.id }}" {% if selected_tag_id==tag.id|stringformat:"s" %}selected{%
-                                endif %}>
+                            <option value="{{ tag.id }}" {% if tag.id|stringformat:"s" == selected_tag_id %}selected{% endif %}>
                                 {{ tag.name }}
                             </option>
                             {% endfor %}
@@ -178,10 +177,8 @@
                         <select name="selected_list_id" class="form-select" id="savedListSelect">
                             <option value="">-- Select a Saved List --</option>
                             {% for lst in saved_lists %}
-                            <option value="{{ lst.id }}" {% if selected_list_id==lst.id|stringformat:"s" %}selected{%
-                                endif %}>
-                                {{ lst.name }} &nbsp;({{ lst.email_count }} email{% if lst.email_count != 1 %}s{% endif
-                                %} ready)
+                            <option value="{{ lst.id }}" {% if lst.id|stringformat:"s" == selected_list_id %}selected{% endif %}>
+                                {{ lst.name }} &nbsp;({{ lst.email_count }} email{% if lst.email_count != 1 %}s{% endif %} ready)
                             </option>
                             {% endfor %}
                         </select>
