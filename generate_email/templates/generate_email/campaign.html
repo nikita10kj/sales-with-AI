@@ -1,6 +1,47 @@
 {% extends "users/base.html" %}
 {% block content %}
 
+<!-- ── Smart Edit Loading Overlay ── -->
+<div id="smartEditOverlay" style="position:fixed; inset:0; z-index:10000;
+     background:rgba(0,0,0,0.55); backdrop-filter:blur(4px);
+     align-items:center; justify-content:center; flex-direction:column;">
+    <div style="background:#1e1e2f; border-radius:20px; padding:48px 56px;
+                box-shadow:0 24px 64px rgba(0,0,0,0.5); text-align:center; max-width:420px; width:90%;">
+        <div style="margin-bottom:24px;">
+            <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="28" cy="28" r="26" stroke="#764ba2" stroke-width="3" stroke-dasharray="6 4" opacity="0.3" />
+                <circle cx="28" cy="28" r="18" stroke="url(#sg)" stroke-width="4" stroke-linecap="round"
+                    stroke-dasharray="60 40" style="transform-origin:28px 28px; animation:spin 1.1s linear infinite;" />
+                <defs>
+                    <linearGradient id="sg" x1="0" y1="0" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#667eea" />
+                        <stop offset="100%" stop-color="#764ba2" />
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+        <div style="font-size:20px; font-weight:700; color:#fff; margin-bottom:10px; letter-spacing:-0.3px;">Applying
+            Edits...</div>
+        <div style="font-size:14px; color:rgba(255,255,255,0.55); line-height:1.6;">Applying your changes to all emails
+        </div>
+    </div>
+</div>
+<style>
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    #smartEditOverlay {
+        display: none;
+    }
+
+    #smartEditOverlay.active {
+        display: flex;
+    }
+</style>
+
 <div class="container mt-4 mb-5" style="max-width:1400px;">
     <div class="card shadow border-0 rounded-4 overflow-hidden w-100">
 
@@ -122,7 +163,8 @@
                         <select name="tag_id" class="form-select" id="tagSelect">
                             <option value="">Choose Target Group </option>
                             {% for tag in tags %}
-                            <option value="{{ tag.id }}" {% if selected_tag_id == tag.id|stringformat:"s" %}selected{% endif %}>
+                            <option value="{{ tag.id }}" {% if selected_tag_id==tag.id|stringformat:"s" %}selected{%
+                                endif %}>
                                 {{ tag.name }}
                             </option>
                             {% endfor %}
@@ -136,8 +178,10 @@
                         <select name="selected_list_id" class="form-select" id="savedListSelect">
                             <option value="">-- Select a Saved List --</option>
                             {% for lst in saved_lists %}
-                            <option value="{{ lst.id }}" {% if selected_list_id == lst.id|stringformat:"s" %}selected{% endif %}>
-                                {{ lst.name }} &nbsp;({{ lst.email_count }} email{% if lst.email_count != 1 %}s{% endif %} ready)
+                            <option value="{{ lst.id }}" {% if selected_list_id==lst.id|stringformat:"s" %}selected{%
+                                endif %}>
+                                {{ lst.name }} &nbsp;({{ lst.email_count }} email{% if lst.email_count != 1 %}s{% endif
+                                %} ready)
                             </option>
                             {% endfor %}
                         </select>
@@ -460,7 +504,8 @@
                         <svg width="9" height="9" viewBox="0 0 10 10">
                             <path d="M2 5L4.5 7.5L8 3" stroke="#0f6e56" stroke-width="1.5" fill="none"
                                 stroke-linecap="round" />
-                        </svg></div>
+                        </svg>
+                    </div>
                 </div>
                 <div
                     style="display:flex;align-items:center;gap:8px;background:#f7f5ff;border-radius:8px;padding:7px 10px;">
@@ -476,7 +521,8 @@
                         <svg width="9" height="9" viewBox="0 0 10 10">
                             <path d="M2 5L4.5 7.5L8 3" stroke="#0f6e56" stroke-width="1.5" fill="none"
                                 stroke-linecap="round" />
-                        </svg></div>
+                        </svg>
+                    </div>
                 </div>
                 <div
                     style="display:flex;align-items:center;gap:8px;background:#f7f5ff;border-radius:8px;padding:7px 10px;">
@@ -492,7 +538,8 @@
                         <svg width="9" height="9" viewBox="0 0 10 10">
                             <path d="M2 5L4.5 7.5L8 3" stroke="#0f6e56" stroke-width="1.5" fill="none"
                                 stroke-linecap="round" />
-                        </svg></div>
+                        </svg>
+                    </div>
                 </div>
             </div>
             <div style="font-size:11px;color:#9f99c0;text-align:center;margin-top:8px;" id="loaderMoreCount">+ 97 more
@@ -1132,15 +1179,55 @@
                 const applyToAll = document.getElementById("applyToAllToggle").checked;
 
                 if (applyToAll) {
-                    // Apply to ALL people's main emails
+                    const originalBody = person.main_email.body;
+
+                    document.getElementById("smartEditOverlay").classList.add("active");
+                    modal.hide();
+
+                    const otherIdxs = [];
+                    const otherBodies = [];
                     campaignGeneratedData.forEach((p, idx) => {
-                        if (p.error) return;
-                        p.main_email.subject = newSubject;
-                        p.main_email.body = newBody;
-                        const subjEl = document.getElementById(`cmp-subj-${idx}`);
-                        const bodyEl = document.getElementById(`cmp-body-${idx}`);
-                        if (subjEl) subjEl.innerHTML = `<strong>Subject:</strong> ${newSubject}`;
-                        if (bodyEl) bodyEl.innerHTML = newBody;
+                        if (p.error || idx === pIdx) return;
+                        otherIdxs.push(idx);
+                        otherBodies.push(p.main_email.body);
+                    });
+
+                    fetch("{% url 'apply_smart_bulk_edit' %}", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            original_text: originalBody,
+                            edited_text: newBody,
+                            other_texts: otherBodies
+                        })
+                    }).then(res => res.json()).then(data => {
+                        if (data.success) {
+                            person.main_email.subject = newSubject;
+                            person.main_email.body = newBody;
+                            const mainSubjEl = document.getElementById(`cmp-subj-${pIdx}`);
+                            const mainBodyEl = document.getElementById(`cmp-body-${pIdx}`);
+                            if (mainSubjEl) mainSubjEl.innerHTML = `<strong>Subject:</strong> ${newSubject}`;
+                            if (mainBodyEl) mainBodyEl.innerHTML = newBody;
+
+                            data.updated_texts.forEach((updatedText, i) => {
+                                const idx = otherIdxs[i];
+                                const p = campaignGeneratedData[idx];
+                                p.main_email.subject = newSubject;
+                                p.main_email.body = updatedText;
+                                const subjEl = document.getElementById(`cmp-subj-${idx}`);
+                                const bodyEl = document.getElementById(`cmp-body-${idx}`);
+                                if (subjEl) subjEl.innerHTML = `<strong>Subject:</strong> ${newSubject}`;
+                                if (bodyEl) bodyEl.innerHTML = updatedText;
+                            });
+                        } else {
+                            alert("Failed to apply bulk edits: " + data.error);
+                        }
+                    }).catch(err => {
+                        console.error(err);
+                        alert("Error applying smart edits.");
+                    }).finally(() => {
+                        document.getElementById("smartEditOverlay").classList.remove("active");
+                        document.getElementById("applyToAllToggle").checked = false;
                     });
                 } else {
                     person.main_email.subject = newSubject;
@@ -1164,12 +1251,48 @@
                 const applyToAll = document.getElementById("applyToAllToggle").checked;
 
                 if (applyToAll) {
-                    // Apply to ALL people's corresponding follow-up
+                    const originalBody = fu.body;
+
+                    document.getElementById("smartEditOverlay").classList.add("active");
+                    modal.hide();
+
+                    const otherIdxs = [];
+                    const otherBodies = [];
                     campaignGeneratedData.forEach((p, idx) => {
-                        if (p.error || !p.follow_ups || !p.follow_ups[fIdx]) return;
-                        p.follow_ups[fIdx].body = newBody;
-                        const bodyEl = document.getElementById(`cmp-fu-body-${idx}-${fIdx}`);
-                        if (bodyEl) bodyEl.innerHTML = newBody;
+                        if (p.error || !p.follow_ups || !p.follow_ups[fIdx] || idx === pIdx) return;
+                        otherIdxs.push(idx);
+                        otherBodies.push(p.follow_ups[fIdx].body);
+                    });
+
+                    fetch("{% url 'apply_smart_bulk_edit' %}", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            original_text: originalBody,
+                            edited_text: newBody,
+                            other_texts: otherBodies
+                        })
+                    }).then(res => res.json()).then(data => {
+                        if (data.success) {
+                            fu.body = newBody;
+                            document.getElementById(`cmp-fu-body-${pIdx}-${fIdx}`).innerHTML = newBody;
+
+                            data.updated_texts.forEach((updatedText, i) => {
+                                const idx = otherIdxs[i];
+                                const p = campaignGeneratedData[idx];
+                                p.follow_ups[fIdx].body = updatedText;
+                                const bodyEl = document.getElementById(`cmp-fu-body-${idx}-${fIdx}`);
+                                if (bodyEl) bodyEl.innerHTML = updatedText;
+                            });
+                        } else {
+                            alert("Failed to apply bulk edits: " + data.error);
+                        }
+                    }).catch(err => {
+                        console.error(err);
+                        alert("Error applying smart edits.");
+                    }).finally(() => {
+                        document.getElementById("smartEditOverlay").classList.remove("active");
+                        document.getElementById("applyToAllToggle").checked = false;
                     });
                 } else {
                     fu.body = newBody;

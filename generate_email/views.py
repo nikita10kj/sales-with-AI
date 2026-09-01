@@ -6802,3 +6802,28 @@ class CampaignEmailListView(BlockDirectAccessMixin, LoginRequiredMixin, ListView
         email.stop_reminder = True
         email.save()
         return JsonResponse({'success': True})
+
+from django.views.decorators.csrf import csrf_exempt
+from .smart_edit import apply_smart_bulk_edit_llm
+
+@login_required(login_url="login")
+@csrf_exempt
+def apply_smart_bulk_edit(request):
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "POST required"}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        original_text = data.get("original_text", "")
+        edited_text = data.get("edited_text", "")
+        other_texts = data.get("other_texts", [])
+        
+        if not original_text or not edited_text or not other_texts:
+            return JsonResponse({"success": False, "error": "Missing required fields."})
+            
+        updated_texts = apply_smart_bulk_edit_llm(original_text, edited_text, other_texts)
+        
+        return JsonResponse({"success": True, "updated_texts": updated_texts})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
