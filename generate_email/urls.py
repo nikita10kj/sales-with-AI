@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (CheckBulkEnrichmentView, GenerateEmailView, SendEmailView, EmailListView,EmailMessageView,
-                    LeadListView, LeadEmailListView, campaign_view, campaign_generate_emails, email_open_pixel, export_target_audience_csv, import_leads, msgraph_webhook, CheckEmailHistoryView)
+                    LeadListView, LeadEmailListView, campaign_view, campaign_generate_emails, email_open_pixel, export_target_audience_csv, import_leads, msgraph_webhook, CheckEmailHistoryView, apply_smart_bulk_edit)
 
 from .views import (SearchPeopleView,EnrichPersonView,CheckEnrichmentView,SelectPersonForEmailView,SearchPeopleByLinkdinView,SearchCompanyView,DataEnrichmentView,PeopleListView,
                     GetSavedListsView,EnrichSavedListView,ExportSavedListCsvView,SavePeopleToListView,DownloadListCSVView,DeleteSavedListView,RemovePersonFromListView,
@@ -23,6 +23,7 @@ urlpatterns = [
     path("import-leads/", import_leads, name="import_leads"),
     path("campaign/", campaign_view, name="campaign_view"),
     path("campaign/generate-emails/", campaign_generate_emails, name="campaign_generate_emails"),
+    path("campaign/apply-smart-bulk-edit/", apply_smart_bulk_edit, name="apply_smart_bulk_edit"),
     path("campaign/task-status/<str:task_id>/", campaign_task_status, name="campaign_task_status"),
     path("campaign-history/", CampaignHistoryView.as_view(), name="campaign_history"),
     path("campaign-emails/<int:tag_id>/", CampaignEmailListView.as_view(), name="campaign_emails"),
